@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SettingsProvider } from '@/context/SettingsContext';
+import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { RouterProvider, useRouter } from '@/context/RouterContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { CustomerProvider } from '@/context/CustomerContext';
@@ -16,7 +16,24 @@ import { CategoryPage } from '@/pages/CategoryPage';
 import { AccountPage } from '@/pages/AccountPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { AdminLoginPage } from '@/pages/AdminLoginPage';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Cross } from 'lucide-react';
+
+function SiteLoading() {
+  const { loading, settings } = useSettings();
+  if (!loading) return null;
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <div
+        className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl animate-pulse"
+        style={{ backgroundColor: settings.primary_color }}
+      >
+        <Cross className="w-9 h-9 text-white" strokeWidth={2.5} />
+      </div>
+      <p className="mt-4 text-sm font-bold text-gray-500">جاري تحميل الصيدليتي...</p>
+    </div>
+  );
+}
 
 function AdminRoute() {
   const { user, loading } = useAuth();
@@ -72,6 +89,7 @@ function AppContent() {
     return (
       <AuthProvider>
         <SettingsProvider>
+          <SiteLoading />
           <AdminRoute />
         </SettingsProvider>
       </AuthProvider>
@@ -81,6 +99,7 @@ function AppContent() {
   return (
     <SettingsProvider>
       <RouterProvider>
+        <SiteLoading />
         <CustomerProvider>
           <FavoritesProvider>
             <OrderProvider>
