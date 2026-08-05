@@ -2568,7 +2568,7 @@ function SitePreviewMockup({
               الأكثر بحثاً:
             </span>
             {['بنادول اكسترا', 'كونجستال', 'أوميجا 3 بلس'].map((item) => (
-              <span key={item} className="px-[0.9em] py-[0.3em] rounded-full border bg-white text-[0.72em] font-bold" style={{ borderColor: `${colors.primaryColor}33`, color: colors.heroText }}>
+              <span key={item} className="px-[0.9em] py-[0.3em] rounded-full border bg-white text-[0.72em] font-bold" style={{ borderColor: `${colors.primaryColor}33`, color: colors.primaryColor }}>
                 {item}
               </span>
             ))}

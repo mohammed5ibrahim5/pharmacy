@@ -411,7 +411,7 @@ export function HomePage() {
                     className="px-3 py-1 rounded-full border transition-all shadow-2xs font-bold bg-white"
                     style={{
                       borderColor: `${themeColors.primaryColor}33`,
-                      color: themeColors.heroText
+                      color: themeColors.primaryColor
                     }}
                   >
                     {item}
