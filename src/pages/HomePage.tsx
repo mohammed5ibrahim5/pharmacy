@@ -350,26 +350,26 @@ export function HomePage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="ابحث عن اسم الدواء، المادة الفعالة، أو المنتج..."
-                    className="flex-1 pr-4 pl-28 py-3.5 text-slate-900 text-sm sm:text-base font-bold placeholder:font-normal placeholder:text-gray-400 focus:outline-none bg-transparent"
+                    className="flex-1 min-w-0 pr-4 pl-24 sm:pl-28 py-3.5 text-slate-900 text-sm sm:text-base font-bold placeholder:font-normal placeholder:text-gray-400 focus:outline-none bg-transparent"
                   />
 
-                  <div className="absolute left-28 sm:left-32 top-1/2 -translate-y-1/2 flex items-center gap-1 border-r border-gray-200 pr-2">
+                  <div className="absolute left-24 sm:left-28 top-1/2 -translate-y-1/2 flex items-center gap-1 border-r border-gray-200 pr-1.5 pl-1">
                     <button
                       type="button"
                       onClick={handleVoiceSearch}
-                      className={`p-2 rounded-xl text-gray-400 hover:bg-teal-50 transition-colors ${
+                      className={`p-1.5 sm:p-2 rounded-xl text-gray-400 hover:bg-teal-50 transition-colors ${
                         isListening ? 'text-red-500 animate-bounce' : ''
                       }`}
                       style={{ color: themeColors.primaryColor }}
                       title="بحث بالصوت"
                     >
-                      <Mic className="w-5 h-5" />
+                      <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setBarcodeModalOpen(true)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-colors text-xs font-bold border"
+                      className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1.5 rounded-xl transition-colors text-xs font-bold border"
                       style={{
                         backgroundColor: `${themeColors.primaryColor}10`,
                         color: themeColors.primaryColor,
@@ -384,14 +384,14 @@ export function HomePage() {
 
                   <button
                     type="submit"
-                    className="px-6 sm:px-8 py-3.5 rounded-2xl text-white font-black text-sm sm:text-base flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-95 shadow-md shrink-0"
+                    className="px-4 sm:px-8 py-3.5 rounded-2xl text-white font-black text-sm sm:text-base flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-95 shadow-md shrink-0"
                     style={{
                       backgroundColor: themeColors.heroBtnBg,
                       color: themeColors.heroBtnText
                     }}
                   >
                     <Search className="w-5 h-5" />
-                    <span>بحث</span>
+                    <span className="hidden sm:inline">بحث</span>
                   </button>
                 </div>
               </form>
@@ -420,42 +420,42 @@ export function HomePage() {
               </div>
             </div>
 
-            <div className="pt-3 flex flex-wrap items-center justify-center gap-3 text-xs font-black animate-fade-up" style={{ animationDelay: '0.4s' }}>
+            <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-2.5 text-xs font-black animate-fade-up" style={{ animationDelay: '0.4s' }}>
               <button
                 onClick={() => setPrescriptionModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-white shadow-md hover:scale-105 active:scale-95 transition-all"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-white shadow-md hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
                 style={{ backgroundColor: themeColors.primaryColor }}
               >
-                <FileText className="w-4 h-4" />
-                <span>روشتتك مش واضحة؟ ارفع صورتها للصيدلي فوراً</span>
+                <FileText className="w-4 h-4 shrink-0" />
+                <span className="truncate">ارفع روشتتك للصيدلي فوراً</span>
               </button>
 
               {!location ? (
                 <button
                   onClick={requestLocation}
                   disabled={loading}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border text-xs font-bold transition-all active:scale-95 shadow-2xs"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white border text-xs font-bold transition-all active:scale-95 shadow-2xs whitespace-nowrap"
                   style={{
                     color: themeColors.primaryColor,
                     borderColor: `${themeColors.primaryColor}33`
                   }}
                 >
-                  <Navigation className="w-4 h-4 animate-spin-slow" />
-                  <span>{loading ? 'جاري تحديد موقعك...' : permissionDenied ? 'تحديد الموقع يدوي' : 'حدد موقعك لإيجاد أقرب الصيدليات'}</span>
+                  <Navigation className="w-4 h-4 animate-spin-slow shrink-0" />
+                  <span className="truncate">{loading ? 'جاري تحديد موقعك...' : permissionDenied ? 'حدد الموقع يدوياً' : 'حدد موقعك لأقرب صيدلية'}</span>
                 </button>
               ) : (
                 <button
                   onClick={() => setLocationModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all shadow-2xs"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all shadow-2xs whitespace-nowrap"
                   style={{
                     backgroundColor: `${themeColors.primaryColor}15`,
                     color: themeColors.heroText,
                     borderColor: `${themeColors.primaryColor}33`
                   }}
                 >
-                  <span className="w-2.5 h-2.5 rounded-full animate-ping" style={{ backgroundColor: themeColors.primaryColor }} />
-                  <MapPin className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
-                  <span>تم تحديد موقعك - يتم ترتيب الصيدليات حسب الأقرب إليك</span>
+                  <span className="w-2.5 h-2.5 rounded-full animate-ping shrink-0" style={{ backgroundColor: themeColors.primaryColor }} />
+                  <MapPin className="w-4 h-4 shrink-0" style={{ color: themeColors.primaryColor }} />
+                  <span className="truncate">تم تحديد موقعك - أقرب الصيدليات أولاً</span>
                 </button>
               )}
             </div>
@@ -467,7 +467,7 @@ export function HomePage() {
       <section className="relative z-20 -mt-14 sm:-mt-16 mb-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div
-            className="rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border p-4 sm:p-6 grid grid-cols-2 lg:grid-cols-4 gap-4 divide-y sm:divide-y-0 sm:divide-x sm:divide-x-reverse divide-gray-100 transition-all duration-300"
+            className="rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border p-4 sm:p-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 transition-all duration-300"
             style={{
               backgroundColor: themeColors.statsCardBg,
               color: themeColors.statsCardText,
