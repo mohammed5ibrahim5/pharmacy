@@ -665,13 +665,7 @@ export function HomePage() {
 
       {/* ==================== FEATURED DISCOUNTED PRODUCTS ==================== */}
       {discountedProducts.length > 0 && (
-        <section
-          className="py-12 relative overflow-hidden border-t border-b"
-          style={{
-            background: `linear-gradient(to bottom, ${themeColors.heroBgEnd}, ${themeColors.heroBgStart})`,
-            borderColor: `${themeColors.primaryColor}15`
-          }}
-        >
+        <section className="py-12 relative overflow-hidden border-y border-gray-100">
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8">
               <div>
