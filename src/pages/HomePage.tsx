@@ -345,15 +345,7 @@ export function HomePage() {
                   className="relative flex items-center rounded-3xl shadow-xl border-2 p-2 transition-all group bg-white"
                   style={{ borderColor: `${themeColors.primaryColor}33` }}
                 >
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="ابحث عن اسم الدواء، المادة الفعالة، أو المنتج..."
-                    className="flex-1 min-w-0 pr-4 pl-24 sm:pl-28 py-3.5 text-slate-900 text-sm sm:text-base font-bold placeholder:font-normal placeholder:text-gray-400 focus:outline-none bg-transparent"
-                  />
-
-                  <div className="absolute left-24 sm:left-28 top-1/2 -translate-y-1/2 flex items-center gap-1 border-r border-gray-200 pr-1.5 pl-1">
+                  <div className="flex items-center gap-1 sm:gap-2 pr-2 sm:pr-3 pl-1 sm:pl-2 border-r border-gray-200 shrink-0">
                     <button
                       type="button"
                       onClick={handleVoiceSearch}
@@ -381,6 +373,14 @@ export function HomePage() {
                       <span className="hidden sm:inline">باركود</span>
                     </button>
                   </div>
+
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="ابحث عن اسم الدواء، المادة الفعالة، أو المنتج..."
+                    className="flex-1 min-w-0 px-3 py-3.5 text-slate-900 text-sm sm:text-base font-bold placeholder:font-normal placeholder:text-gray-400 focus:outline-none bg-transparent"
+                  />
 
                   <button
                     type="submit"
