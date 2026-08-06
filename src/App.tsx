@@ -10,6 +10,8 @@ import { Footer } from '@/components/Footer';
 import { OrderModal } from '@/components/OrderModal';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
 import { FloatingActions } from '@/components/FloatingActions';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { WelcomePopup } from '@/components/WelcomePopup';
 import { HomePage } from '@/pages/HomePage';
 import { SearchPage } from '@/pages/SearchPage';
 import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
@@ -61,7 +63,7 @@ function SiteContent() {
     <div className="min-h-screen flex flex-col bg-gray-50" dir="rtl">
       <AnnouncementBar />
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 pb-20 lg:pb-0">
         {route.name === 'home' && <HomePage />}
         {route.name === 'search' && <SearchPage query={route.query} />}
         {route.name === 'pharmacy' && <PharmacyDetailPage id={route.id} />}
@@ -71,6 +73,8 @@ function SiteContent() {
       <Footer />
       <OrderModal />
       <FloatingActions />
+      <MobileBottomNav />
+      <WelcomePopup />
     </div>
   );
 }

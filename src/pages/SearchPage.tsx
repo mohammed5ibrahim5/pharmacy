@@ -7,6 +7,7 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { ProductCard } from '@/components/ProductCard';
 import { PharmacyCard } from '@/components/PharmacyCard';
 import { getPharmacyWithDistance, sortPharmaciesByDistance } from '@/lib/distance';
+import { trackSearch } from '@/lib/searchHistory';
 import type { Product, Pharmacy } from '@/types';
 
 interface Props {
@@ -22,6 +23,7 @@ export function SearchPage({ query }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    trackSearch(query);
     const search = async () => {
       setLoading(true);
       const searchTerm = `%${query}%`;

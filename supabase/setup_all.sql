@@ -376,5 +376,33 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
+-- ============ 12) Pharmacy reviews ============
+CREATE TABLE IF NOT EXISTS reviews (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pharmacy_id uuid REFERENCES pharmacies(id) ON DELETE CASCADE,
+  customer_id uuid REFERENCES customers(id) ON DELETE SET NULL,
+  customer_name text NOT NULL,
+  rating int NOT NULL DEFAULT 5 CHECK (rating BETWEEN 1 AND 5),
+  comment text,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "reviews_public_select" ON reviews;
+CREATE POLICY "reviews_public_select" ON reviews FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "reviews_public_insert" ON reviews;
+CREATE POLICY "reviews_public_insert" ON reviews FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "reviews_public_delete" ON reviews;
+CREATE POLICY "reviews_public_delete" ON reviews FOR DELETE
+  TO anon, authenticated
+  USING (true);
+
 -- ============ Important note ============
 -- After running, wait a second then reload the page to refresh schema cache.

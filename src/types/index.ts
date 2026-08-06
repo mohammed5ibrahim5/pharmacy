@@ -145,6 +145,16 @@ export interface PharmacyWithDistance extends Pharmacy {
   distance?: number;
 }
 
+export interface Review {
+  id: string;
+  pharmacy_id: string;
+  customer_id: string | null;
+  customer_name: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+}
+
 export interface Coupon {
   id: string;
   code: string;

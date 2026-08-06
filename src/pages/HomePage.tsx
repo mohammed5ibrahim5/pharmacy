@@ -33,12 +33,15 @@ import { LocationSelectorModal } from '@/components/LocationSelectorModal';
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
 import { getPharmacyWithDistance, sortPharmaciesByDistance } from '@/lib/distance';
 import { findAreaLocation } from '@/lib/areaLocations';
+import { trackSearch } from '@/lib/searchHistory';
 import { PHARMACY_SECTIONS_META, type PharmacySectionKey } from '@/lib/pharmacySections';
 import { FeaturedProducts } from '@/components/FeaturedProducts';
 import { HomeHowItWorks } from '@/components/HomeHowItWorks';
 import { HomeTestimonials } from '@/components/HomeTestimonials';
 import { HomeHealthTips } from '@/components/HomeHealthTips';
 import { HomeFAQ } from '@/components/HomeFAQ';
+import { PharmacyMap } from '@/components/PharmacyMap';
+import { MostSearched } from '@/components/MostSearched';
 import type { Pharmacy, Product, Category } from '@/types';
 
 const CATEGORY_ICONS: Record<string, { icon: React.ReactNode; color: string; count: string }> = {
@@ -249,6 +252,7 @@ export function HomePage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      trackSearch(searchQuery.trim());
       navigate({ name: 'search', query: searchQuery.trim() });
     }
   };
@@ -453,6 +457,7 @@ export function HomePage() {
                     key={item}
                     onClick={() => {
                       setSearchQuery(item);
+                      trackSearch(item);
                       navigate({ name: 'search', query: item });
                     }}
                     className="px-3 py-1 rounded-full border transition-all shadow-2xs font-bold bg-white"
@@ -728,9 +733,15 @@ export function HomePage() {
         )}
       </section>
 
+      {/* ==================== PHARMACIES MAP ==================== */}
+      <PharmacyMap pharmacies={sortedPharmacies} loading={loadingData} />
+
       {/* ==================== FEATURED DISCOUNTED PRODUCTS ==================== */}
       {/* ==================== FEATURED PRODUCTS ==================== */}
       <FeaturedProducts products={products} loading={loadingData} />
+
+      {/* ==================== MOST SEARCHED ==================== */}
+      <MostSearched products={products} />
 
       {/* ==================== HOW IT WORKS ==================== */}
       <HomeHowItWorks />

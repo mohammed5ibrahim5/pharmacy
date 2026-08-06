@@ -5,6 +5,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { ProductCard } from '@/components/ProductCard';
+import { ReviewsSection } from '@/components/ReviewsSection';
 import { formatDistance, getPharmacyWithDistance } from '@/lib/distance';
 import { getDirectionsUrl } from '@/lib/directions';
 import type { Pharmacy, Product, Category } from '@/types';
@@ -328,6 +329,9 @@ export function PharmacyDetailPage({ id }: Props) {
             </div>
           )}
         </div>
+
+        {/* Customer Reviews */}
+        <ReviewsSection pharmacyId={pharmacy.id} pharmacyName={pharmacy.name} />
       </div>
     </div>
   );
