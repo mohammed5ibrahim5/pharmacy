@@ -9,6 +9,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { OrderModal } from '@/components/OrderModal';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
+import { FloatingActions } from '@/components/FloatingActions';
 import { HomePage } from '@/pages/HomePage';
 import { SearchPage } from '@/pages/SearchPage';
 import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
@@ -69,6 +70,7 @@ function SiteContent() {
       </main>
       <Footer />
       <OrderModal />
+      <FloatingActions />
     </div>
   );
 }

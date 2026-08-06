@@ -1,4 +1,4 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, Plus, Heart, Store, Phone } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, Plus, Heart, Store, Phone, Factory, FlaskConical, AlertTriangle } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -143,6 +143,20 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
           {product.description && (
             <p className="text-[11px] text-gray-500 line-clamp-1 font-medium">{product.description}</p>
           )}
+
+          {(product.form || product.dosage) && (
+            <p className="text-[11px] font-bold text-gray-500 flex items-center gap-1 truncate">
+              <FlaskConical className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+              <span className="truncate">{[product.form, product.dosage].filter(Boolean).join(' • ')}</span>
+            </p>
+          )}
+
+          {product.manufacturer && (
+            <p className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
+              <Factory className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+              <span className="truncate">{product.manufacturer}</span>
+            </p>
+          )}
         </div>
       </div>
 
@@ -162,13 +176,21 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg">
-            {product.is_available ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-            ) : (
-              <Tag className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1.5">
+            {typeof product.stock_quantity === 'number' && product.stock_quantity > 0 && product.stock_quantity <= 5 && (
+              <span className="flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg">
+                <AlertTriangle className="w-3 h-3" />
+                كمية محدودة
+              </span>
             )}
-            <span>{product.unit}</span>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg">
+              {product.is_available ? (
+                <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+              ) : (
+                <Tag className="w-3.5 h-3.5" />
+              )}
+              <span>{product.unit}</span>
+            </div>
           </div>
         </div>
       </div>

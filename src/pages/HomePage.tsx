@@ -28,12 +28,17 @@ import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { PharmacyCard } from '@/components/PharmacyCard';
-import { ProductCard } from '@/components/ProductCard';
 import { BarcodeScannerModal } from '@/components/BarcodeScannerModal';
 import { LocationSelectorModal } from '@/components/LocationSelectorModal';
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
 import { getPharmacyWithDistance, sortPharmaciesByDistance } from '@/lib/distance';
 import { PHARMACY_SECTIONS_META, type PharmacySectionKey } from '@/lib/pharmacySections';
+import { FeaturedProducts } from '@/components/FeaturedProducts';
+import { HomeTrustBar } from '@/components/HomeTrustBar';
+import { HomeHowItWorks } from '@/components/HomeHowItWorks';
+import { HomeTestimonials } from '@/components/HomeTestimonials';
+import { HomeHealthTips } from '@/components/HomeHealthTips';
+import { HomeFAQ } from '@/components/HomeFAQ';
 import type { Pharmacy, Product, Category } from '@/types';
 
 const CATEGORY_ICONS: Record<string, { icon: React.ReactNode; color: string; count: string }> = {
@@ -119,7 +124,7 @@ export function HomePage() {
     const fetchData = async () => {
       const [pharmRes, prodRes, catRes, ordersRes, sectionsRes] = await Promise.all([
         supabase.from('pharmacies').select('*').eq('is_active', true),
-        supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').eq('is_available', true).limit(8),
+        supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').eq('is_available', true).limit(20),
         supabase.from('categories').select('*').order('name'),
         supabase.from('orders').select('pharmacy_id'),
         supabase.from('pharmacy_sections').select('pharmacy_id, section_key'),
@@ -223,11 +228,6 @@ export function HomePage() {
     deliveryPharmacies,
     pharmacies24h,
   ]);
-
-  const discountedProducts = useMemo(
-    () => products.filter((p) => p.discounts?.some((d) => d.is_active)).slice(0, 4),
-    [products]
-  );
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -542,6 +542,9 @@ export function HomePage() {
       </section>
       )}
 
+      {/* ==================== TRUST BAR ==================== */}
+      <HomeTrustBar />
+
       {/* ==================== CATEGORIES SECTION ==================== */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
@@ -671,37 +674,11 @@ export function HomePage() {
       </section>
 
       {/* ==================== FEATURED DISCOUNTED PRODUCTS ==================== */}
-      {discountedProducts.length > 0 && (
-        <section className="py-12 relative overflow-hidden border-y border-gray-100">
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <span
-                  className="text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider border"
-                  style={{
-                    backgroundColor: `${themeColors.primaryColor}15`,
-                    color: themeColors.primaryColor,
-                    borderColor: `${themeColors.primaryColor}30`
-                  }}
-                >
-                  عروض وتخفيضات خاصة
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">أحدث خصومات الأدوية</h2>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {discountedProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  pharmacyName={product.pharmacy?.name}
-                  onClick={product.for_all_pharmacies ? undefined : () => navigate({ name: 'pharmacy', id: product.pharmacy_id })}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* ==================== FEATURED PRODUCTS ==================== */}
+      <FeaturedProducts products={products} loading={loadingData} />
+
+      {/* ==================== HOW IT WORKS ==================== */}
+      <HomeHowItWorks />
 
       {/* ==================== WHY US SECTION ==================== */}
       <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -741,6 +718,15 @@ export function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ==================== TESTIMONIALS ==================== */}
+      <HomeTestimonials />
+
+      {/* ==================== HEALTH TIPS ==================== */}
+      <HomeHealthTips />
+
+      {/* ==================== FAQ ==================== */}
+      <HomeFAQ />
 
       {/* ==================== EMERGENCY CTA BANNER ==================== */}
       <section className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
