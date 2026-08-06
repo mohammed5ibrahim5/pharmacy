@@ -91,7 +91,7 @@ function statIconColor(key: string, colors: typeof import('@/context/SettingsCon
 type PharmacyTab = 'nearest' | 'highest_rated' | 'most_popular' | 'delivery' | '24h';
 
 export function HomePage() {
-  const { settings, themeColors, heroConfig } = useSettings();
+  const { settings, themeColors, heroConfig, storeConfig } = useSettings();
   const { navigate } = useRouter();
   const { location, requestLocation, loading, permissionDenied, setUserLocation } = useGeolocation();
 
@@ -784,6 +784,7 @@ export function HomePage() {
       <HomeFAQ />
 
       {/* ==================== EMERGENCY CTA BANNER ==================== */}
+      {storeConfig.purchasesEnabled && (
       <section className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           className="rounded-[2rem] relative overflow-hidden text-center text-white"
@@ -852,6 +853,7 @@ export function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* MODALS */}
       <BarcodeScannerModal
