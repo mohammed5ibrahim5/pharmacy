@@ -155,6 +155,32 @@ export interface Review {
   created_at: string;
 }
 
+export interface LoyaltyTransaction {
+  id: string;
+  customer_id: string;
+  points: number;
+  reason: string;
+  created_at: string;
+}
+
+export interface StockAlert {
+  id: string;
+  customer_id: string;
+  product_id: string;
+  created_at: string;
+  product?: Product;
+}
+
+export interface MedicationReminder {
+  id: string;
+  name: string;
+  dosage: string;
+  time: string;
+  days: number[];
+  note: string;
+  created_at: string;
+}
+
 export interface Coupon {
   id: string;
   code: string;

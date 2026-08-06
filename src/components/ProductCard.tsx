@@ -1,8 +1,12 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, Plus, Heart, Store, Phone, Factory, FlaskConical, AlertTriangle } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, Plus, Heart, Store, Phone, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, X } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
 import { useFavorites } from '@/context/FavoritesContext';
+import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { addStockAlert, removeStockAlert } from '@/lib/loyalty';
+import { PriceCompareModal } from '@/components/PriceCompareModal';
 
 interface Props {
   product: Product;
@@ -14,6 +18,10 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
   const { settings, storeConfig } = useSettings();
   const { openOrder } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
+  const { user } = useAuth();
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [alerting, setAlerting] = useState(false);
+  const [alerted, setAlerted] = useState(false);
   const isFav = isProductFavorite(product.id);
 
   const activeDiscount = product.discounts?.find((d: Discount) => d.is_active);
@@ -88,6 +96,62 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
               }`}
             />
           </button>
+
+          {/* Compare Prices Button */}
+          {!product.for_all_pharmacies && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCompareOpen(true);
+              }}
+              className="absolute top-2.5 right-12 w-9 h-9 rounded-2xl bg-white/90 backdrop-blur-sm border border-gray-100 shadow-lg hover:bg-white flex items-center justify-center transition-all duration-300 group-hover:scale-110 active:scale-90"
+              title="قارن الأسعار والبدائل"
+              aria-label="قارن الأسعار والبدائل"
+            >
+              <Scale className="w-[18px] h-[18px] text-teal-600" />
+            </button>
+          )}
+
+          {/* Stock Alert Button when unavailable */}
+          {!product.is_available && (
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (!user) {
+                  return;
+                }
+                setAlerting(true);
+                try {
+                  if (alerted) {
+                    await removeStockAlert(user.id, product.id);
+                    setAlerted(false);
+                  } else {
+                    await addStockAlert(user.id, product.id);
+                    setAlerted(true);
+                  }
+                } finally {
+                  setAlerting(false);
+                }
+              }}
+              className={`absolute bottom-2.5 right-2.5 w-9 h-9 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-300 active:scale-90 ${
+                alerted
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-white/90 backdrop-blur-sm border border-gray-100 hover:bg-white text-amber-600'
+              }`}
+              title={alerted ? 'تم الاشتراك — سنخبرك عند التوفر' : 'نبهني عند توفر الدواء'}
+              aria-label="نبهني عند توفر الدواء"
+            >
+              {alerting ? (
+                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : alerted ? (
+                <BellRing className="w-[18px] h-[18px]" />
+              ) : (
+                <BellOff className="w-[18px] h-[18px]" />
+              )}
+            </button>
+          )}
 
           {!product.is_available && (
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center">
@@ -194,6 +258,8 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
           </div>
         </div>
       </div>
+
+      {compareOpen && <PriceCompareModal product={product} onClose={() => setCompareOpen(false)} />}
     </div>
   );
 }

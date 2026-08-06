@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type AccountTab = 'orders' | 'prescriptions' | 'addresses' | 'favorites';
+export type AccountTab = 'orders' | 'prescriptions' | 'addresses' | 'favorites' | 'rewards' | 'reminders';
 
 type Route =
   | { name: 'home' }
@@ -20,7 +20,7 @@ const RouterContext = createContext<RouterContextType>({
 });
 
 function parseAccountTab(tab?: string): AccountTab {
-  if (tab === 'prescriptions' || tab === 'addresses' || tab === 'favorites') return tab;
+  if (tab === 'prescriptions' || tab === 'addresses' || tab === 'favorites' || tab === 'rewards' || tab === 'reminders') return tab;
   return 'orders';
 }
 

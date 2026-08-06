@@ -12,6 +12,7 @@ import { AnnouncementBar } from '@/components/AnnouncementBar';
 import { FloatingActions } from '@/components/FloatingActions';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { WelcomePopup } from '@/components/WelcomePopup';
+import { ReminderScheduler } from '@/components/ReminderScheduler';
 import { HomePage } from '@/pages/HomePage';
 import { SearchPage } from '@/pages/SearchPage';
 import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
@@ -75,6 +76,7 @@ function SiteContent() {
       <FloatingActions />
       <MobileBottomNav />
       <WelcomePopup />
+      <ReminderScheduler />
     </div>
   );
 }

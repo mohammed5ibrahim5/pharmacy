@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
-  Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark, Link2, Truck,
+  Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark, Link2, Truck, Sparkles,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useSettings } from '@/context/SettingsContext';
 import { supabase } from '@/lib/supabase';
 import { translateError } from '@/lib/errorMessages';
+import { awardLoyaltyPoints, POINTS_PER_ORDER } from '@/lib/loyalty';
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABEL,
@@ -286,6 +287,9 @@ export function OrderModal() {
       if (err) {
         setError(translateError(err.message).ar);
       } else {
+        const { data: customer } = await supabase.from('customers').select('loyalty_points').eq('id', user.id).maybeSingle();
+        const current = Number((customer as { loyalty_points?: number } | null)?.loyalty_points || 0);
+        await awardLoyaltyPoints(user.id, current + POINTS_PER_ORDER, `مكافأة طلب: ${product.name}`);
         setSuccess(true);
       }
     } catch {
@@ -306,6 +310,10 @@ export function OrderModal() {
           <p className="text-gray-500 text-sm leading-relaxed mb-3">
             سنراجع إثبات التحويل الخاص بك، وبمجرد تأكيد الدفع ستصل إليك رسالة بأن طلبك في الطريق.
           </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2 text-xs font-bold text-amber-700 mb-4">
+            <Sparkles className="w-4 h-4 shrink-0" />
+            حصلت على {POINTS_PER_ORDER} نقطة مكافأة أُضيفت لرصيدك!
+          </div>
           {selectedPharmacy && (
             <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2 mb-6 text-xs font-bold text-gray-700">
               <Store className="w-4 h-4" style={{ color: settings.primary_color }} />

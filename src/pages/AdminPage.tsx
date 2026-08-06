@@ -30,6 +30,7 @@ import {
   deletePrescription,
 } from '@/lib/prescriptions';
 import { insertNotification } from '@/lib/notifications';
+import { notifyStockAvailable } from '@/lib/loyalty';
 import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig } from '@/types';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'settings';
@@ -424,6 +425,7 @@ interface OrderRecord {
   payment_number: string | null;
   payment_screenshot_url: string | null;
   created_at: string;
+  customer_id: string | null;
   product?: Product;
   pharmacy?: Pharmacy;
   customer?: { full_name: string | null; phone: string | null } | null;
@@ -475,6 +477,17 @@ function OrdersTab() {
     } else {
       await fetchOrders();
       showToast('تم تحديث حالة الطلب بنجاح');
+      if (order.customer_id) {
+        const meta = ORDER_STATUS_META[(status as (typeof ORDER_STATUSES)[number])] || ORDER_STATUS_META.pending;
+        await insertNotification({
+          customerId: order.customer_id,
+          type: 'order',
+          title: `تحديث حالة طلبك: ${meta.label}`,
+          body: order.product?.name
+            ? `طلبك "${order.product.name}" أصبح ${meta.label}`
+            : `حالة طلبك أصبحت: ${meta.label}`,
+        });
+      }
     }
   };
 
@@ -1380,7 +1393,13 @@ function ProductForm({ product, pharmacies, categories, onClose, onSaved }: { pr
       stock_quantity: parseInt(form.stock_quantity) || 0, barcode: form.barcode || null,
       updated_at: new Date().toISOString(),
     };
-    if (product) { await supabase.from('products').update(payload).eq('id', product.id); }
+    if (product) {
+      const wasUnavailable = !product.is_available;
+      await supabase.from('products').update(payload).eq('id', product.id);
+      if (wasUnavailable && payload.is_available) {
+        await notifyStockAvailable(product.id);
+      }
+    }
     else { await supabase.from('products').insert(payload); }
     setSaving(false); onSaved();
   };

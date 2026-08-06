@@ -26,6 +26,7 @@ import {
   Info,
   Loader2,
   Wallet,
+  Bell,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useCustomer } from '@/context/CustomerContext';
@@ -34,7 +35,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useOrder } from '@/context/OrderContext';
 import type { AccountTab } from '@/context/RouterContext';
-import type { Pharmacy, Product } from '@/types';
+import type { Pharmacy, Product, LoyaltyTransaction, MedicationReminder } from '@/types';
 import { ProductCard } from '@/components/ProductCard';
 import { PharmacyCard } from '@/components/PharmacyCard';
 import { translateError } from '@/lib/errorMessages';
@@ -45,6 +46,15 @@ import {
   insertPrescription,
   deletePrescription,
 } from '@/lib/prescriptions';
+import {
+  fetchLoyaltyBalance,
+  fetchLoyaltyHistory,
+  POINTS_PER_ORDER,
+  POINTS_PER_POUND,
+  requestNotificationPermission,
+  loadLocalReminders,
+  saveLocalReminders,
+} from '@/lib/loyalty';
 
 interface OrderRecord {
   id: string;
@@ -118,6 +128,53 @@ function saveList<T>(key: string, list: T[]) {
   }
 }
 
+const ORDER_TRACK_STEPS = [
+  { key: 'pending', label: 'قيد المراجعة', icon: <Clock className="w-3.5 h-3.5" /> },
+  { key: 'confirmed', label: 'تم التأكيد', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+  { key: 'shipped', label: 'في الطريق', icon: <Truck className="w-3.5 h-3.5" /> },
+  { key: 'delivered', label: 'تم التسليم', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+];
+
+function OrderProgressTracker({ status, color }: { status: string; color: string }) {
+  if (status === 'cancelled') {
+    return (
+      <div className="mt-4 rounded-2xl bg-red-50 border border-red-100 p-3 flex items-center gap-2">
+        <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+        <p className="text-xs font-bold text-red-600">تم إلغاء هذا الطلب</p>
+      </div>
+    );
+  }
+  const currentIdx = ORDER_TRACK_STEPS.findIndex((s) => s.key === status);
+  const current = currentIdx === -1 ? 0 : currentIdx;
+  return (
+    <div className="mt-4">
+      <div className="flex items-center">
+        {ORDER_TRACK_STEPS.map((step, i) => {
+          const done = i <= current;
+          return (
+            <div key={step.key} className="flex items-center flex-1 last:flex-none">
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <span
+                  className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                    done ? 'text-white border-transparent shadow-md' : 'bg-gray-100 text-gray-400 border-gray-200'
+                  }`}
+                  style={done ? { backgroundColor: color } : {}}
+                >
+                  {done ? <CheckCircle2 className="w-4 h-4" /> : step.icon}
+                </span>
+                <span className={`text-[9px] font-bold whitespace-nowrap ${done ? 'text-gray-900' : 'text-gray-400'}`}>{step.label}</span>
+              </div>
+              {i < ORDER_TRACK_STEPS.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-1.5 mb-4 rounded-full ${i < current ? 'bg-teal-600' : 'bg-gray-200'}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function AccountPage({ tab }: { tab: AccountTab }) {
   const { user, profile, setAuthModalOpen, signOut } = useCustomer();
   const { settings, themeColors } = useSettings();
@@ -139,6 +196,68 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const [favProducts, setFavProducts] = useState<Product[]>([]);
   const [favPharmacies, setFavPharmacies] = useState<Pharmacy[]>([]);
   const [favLoading, setFavLoading] = useState(false);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [loyaltyHistory, setLoyaltyHistory] = useState<LoyaltyTransaction[]>([]);
+
+  // Medication reminder state
+  const [reminders, setReminders] = useState<MedicationReminder[]>([]);
+  const [remName, setRemName] = useState('');
+  const [remDose, setRemDose] = useState('');
+  const [remTime, setRemTime] = useState('09:00');
+  const [remDays, setRemDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+  const [remNote, setRemNote] = useState('');
+  const [permDenied, setPermDenied] = useState(false);
+  const WEEKDAYS = [
+    { n: 0, label: 'أحد', short: 'أ' },
+    { n: 1, label: 'اثنين', short: 'إ' },
+    { n: 2, label: 'ثلاثاء', short: 'ث' },
+    { n: 3, label: 'أربعاء', short: 'ر' },
+    { n: 4, label: 'خميس', short: 'خ' },
+    { n: 5, label: 'جمعة', short: 'ج' },
+    { n: 6, label: 'سبت', short: 'س' },
+  ];
+
+  const saveReminders = (next: MedicationReminder[]) => {
+    setReminders(next);
+    saveLocalReminders(next);
+  };
+
+  const handleAddReminder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!remName.trim()) {
+      showToast('يرجى إدخال اسم الدواء.');
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      setPermDenied(true);
+      showToast('قم بتفعيل إشعارات المتصفح لتذكير المواعيد');
+      return;
+    }
+    const rec: MedicationReminder = {
+      id: Math.random().toString(36).slice(2) + Date.now().toString(36),
+      name: remName.trim(),
+      dosage: remDose.trim(),
+      time: remTime,
+      days: remDays,
+      note: remNote.trim(),
+      created_at: new Date().toISOString(),
+    };
+    saveReminders([...reminders, rec]);
+    setRemName('');
+    setRemDose('');
+    setRemNote('');
+    showToast('تمت إضافة تذكير الدواء بنجاح');
+  };
+
+  const handleRemoveReminder = (id: string) => {
+    saveReminders(reminders.filter((r) => r.id !== id));
+    showToast('تم حذف التذكير');
+  };
+
+  const toggleReminderDay = (n: number) => {
+    setRemDays((prev) => (prev.includes(n) ? prev.filter((d) => d !== n) : [...prev, n].sort()));
+  };
 
   // Address form state
   const [addrTitle, setAddrTitle] = useState('');
@@ -176,6 +295,32 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     setAddrPhone(profile?.phone || '');
     setRxPhone(profile?.phone || '');
   }, [profile?.phone]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const loadLoyalty = async () => {
+      const [balance, history] = await Promise.all([
+        fetchLoyaltyBalance(user.id),
+        fetchLoyaltyHistory(user.id),
+      ]);
+      if (!cancelled) {
+        setLoyaltyPoints(balance);
+        setLoyaltyHistory(history);
+      }
+    };
+    loadLoyalty();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    setReminders(loadLocalReminders());
+    if (typeof Notification !== 'undefined') {
+      setPermDenied(Notification.permission === 'denied');
+    }
+  }, []);
 
   useEffect(() => {
     fetchPrescriptions();
@@ -370,6 +515,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const tabs: { id: AccountTab; label: string; icon: React.ReactNode; count: number }[] = [
     { id: 'orders', label: 'طلباتي ومتابعة الشحنات', icon: <PackageCheck className="w-4 h-4" />, count: activeOrdersCount },
     { id: 'prescriptions', label: 'الروشتات المحفوظة', icon: <FileText className="w-4 h-4" />, count: prescriptions.length },
+    { id: 'rewards', label: 'نقاطي ومكافآتي', icon: <Sparkles className="w-4 h-4" />, count: loyaltyPoints },
+    { id: 'reminders', label: 'تذكير مواعيد الأدوية', icon: <Bell className="w-4 h-4" />, count: reminders.length },
     { id: 'addresses', label: 'العناوين المسجلة', icon: <MapPin className="w-4 h-4" />, count: addresses.length },
     { id: 'favorites', label: 'المفضلة', icon: <Heart className="w-4 h-4" />, count: productFavoritesCount + pharmacyFavoritesCount },
   ];
@@ -421,7 +568,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               <p className="text-xs text-white/80 font-medium mt-0.5" dir="ltr">{user.email}</p>
               <div className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm text-[11px] font-bold text-amber-200">
                 <Sparkles className="w-3 h-3" />
-                نقاط المكافآت: 120 نقطة
+                نقاط المكافآت: {loyaltyPoints} نقطة
               </div>
             </div>
           </div>
@@ -550,6 +697,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                           {meta.label}
                         </span>
                       </div>
+
+                      <OrderProgressTracker status={order.status} color={themeColors.primaryColor} />
 
                       <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-xs text-gray-500">
                         <span className="flex items-center gap-1.5">
@@ -775,6 +924,263 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ===== Rewards tab ===== */}
+      {tab === 'rewards' && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-black text-gray-900">نقاطي ومكافآتي</h2>
+            <span className="text-xs font-bold text-gray-500">{loyaltyPoints} نقطة متاحة</span>
+          </div>
+
+          {/* Balance hero */}
+          <div
+            className="rounded-3xl text-white relative overflow-hidden p-6 sm:p-8 shadow-xl"
+            style={{ background: `linear-gradient(135deg, ${themeColors.accentColor}, #d97706)` }}
+          >
+            <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+            <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+            <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
+              <div
+                className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-lg"
+              >
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-amber-100 mb-1">رصيد نقاط المكافآت</p>
+                <p className="text-4xl font-black leading-none">{loyaltyPoints}</p>
+                <p className="text-xs font-bold text-amber-100 mt-1.5">
+                  أكمل {Math.max(0, 50 - loyaltyPoints)} نقطة إضافية لتحصل على خصم {POINTS_PER_ORDER * 5} ج.م على طلبك القادم
+                </p>
+              </div>
+              <div className="sm:mr-auto bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20 text-center">
+                <p className="text-[10px] font-bold text-amber-100 mb-0.5">كل {POINTS_PER_POUND} ج.م =</p>
+                <p className="text-lg font-black">1 نقطة</p>
+              </div>
+            </div>
+          </div>
+
+          {/* How to earn */}
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColors.accentColor}12`, color: themeColors.accentColor }}>
+                <PackageCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-gray-900">{POINTS_PER_ORDER} نقاط لكل طلب</p>
+                <p className="text-xs text-gray-500 mt-0.5">احصل عليها تلقائياً بعد تأكيد أي طلب جديد</p>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColors.secondaryColor}12`, color: themeColors.secondaryColor }}>
+                <Wallet className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-gray-900">50 نقطة = خصم {POINTS_PER_ORDER * 5} ج.م</p>
+                <p className="text-xs text-gray-500 mt-0.5">استبدل نقاطك بخصومات فورية عند الطلب</p>
+              </div>
+            </div>
+          </div>
+
+          {/* History */}
+          <div>
+            <h3 className="text-sm font-black text-gray-900 mb-3">سجل النقاط</h3>
+            {loyaltyHistory.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
+                <Sparkles className="w-10 h-10 mx-auto text-amber-300 mb-3" />
+                <h4 className="font-black text-gray-900 text-sm mb-1">لا توجد نقاط مكتسبة بعد</h4>
+                <p className="text-xs text-gray-500">اطلب أي منتج وسيتم إضافة {POINTS_PER_ORDER} نقطة لرصيدك تلقائياً.</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {loyaltyHistory.map((tx) => (
+                  <div key={tx.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${tx.points > 0 ? themeColors.accentColor : '#ef4444'}12`, color: tx.points > 0 ? themeColors.accentColor : '#ef4444' }}
+                    >
+                      <Sparkles className="w-4.5 h-4.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black text-gray-900">{tx.reason}</p>
+                      <p className="text-[11px] text-gray-400 font-bold mt-0.5">
+                        {new Date(tx.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    </div>
+                    <span className={`text-sm font-black ${tx.points > 0 ? 'text-amber-600' : 'text-red-500'}`}>
+                      {tx.points > 0 ? `+${tx.points}` : tx.points}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Reminders tab ===== */}
+      {tab === 'reminders' && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-black text-gray-900">تذكير مواعيد الأدوية</h2>
+            <span className="text-xs font-bold text-gray-500">{reminders.length} تذكير نشط</span>
+          </div>
+
+          {permDenied && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+              <Bell className="w-5 h-5 text-amber-600 shrink-0" />
+              <p className="text-xs font-bold text-amber-800">
+                الإشعارات معطلة في المتصفح. فعّل الإشعارات من إعدادات المتصفح لتستقبل تذكيرات مواعيد الأدوية.
+              </p>
+            </div>
+          )}
+
+          {/* Add reminder form */}
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}>
+                <Plus className="w-4.5 h-4.5" />
+              </div>
+              <h3 className="text-sm font-black text-gray-900">إضافة تذكير جديد</h3>
+            </div>
+            <form onSubmit={handleAddReminder} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">اسم الدواء *</label>
+                  <input
+                    value={remName}
+                    onChange={(e) => setRemName(e.target.value)}
+                    placeholder="مثال: بانادول أقراص"
+                    className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">الجرعة (اختياري)</label>
+                  <input
+                    value={remDose}
+                    onChange={(e) => setRemDose(e.target.value)}
+                    placeholder="مثال: قرص واحد"
+                    className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">موعد الجرعة *</label>
+                  <input
+                    type="time"
+                    value={remTime}
+                    onChange={(e) => setRemTime(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                    dir="ltr"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">أيام الأسبوع</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {WEEKDAYS.map((d) => {
+                      const active = remDays.includes(d.n);
+                      return (
+                        <button
+                          type="button"
+                          key={d.n}
+                          onClick={() => toggleReminderDay(d.n)}
+                          className={`px-2.5 py-1.5 rounded-xl text-[11px] font-extrabold border transition-all active:scale-95 ${
+                            active
+                              ? 'text-white border-transparent'
+                              : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                          }`}
+                          style={active ? { backgroundColor: themeColors.primaryColor } : {}}
+                        >
+                          {d.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-600 mb-1.5 block">ملاحظة (اختياري)</label>
+                <input
+                  value={remNote}
+                  onChange={(e) => setRemNote(e.target.value)}
+                  placeholder="مثال: بعد الأكل"
+                  className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full sm:w-auto px-6 py-3 rounded-2xl text-white text-sm font-black flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all"
+                style={{ backgroundColor: themeColors.primaryColor }}
+              >
+                <Bell className="w-4 h-4" />
+                إضافة التذكير
+              </button>
+            </form>
+          </div>
+
+          {/* Reminder list */}
+          <div>
+            <h3 className="text-sm font-black text-gray-900 mb-3">التذكيرات النشطة ({reminders.length})</h3>
+            {reminders.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
+                <Bell className="w-10 h-10 mx-auto text-gray-300 mb-3" />
+                <h4 className="font-black text-gray-900 text-sm mb-1">لا توجد تذكيرات</h4>
+                <p className="text-xs text-gray-500">أضف تذكيراً لأي دواء وسنرسل لك إشعاراً في الموعد المحدد.</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {[...reminders]
+                  .sort((a, b) => a.time.localeCompare(b.time))
+                  .map((r) => {
+                    const dayNames = WEEKDAYS.filter((d) => r.days.includes(d.n)).map((d) => d.short);
+                    const isToday = r.days.includes(new Date().getDay());
+                    const dueSoon = isToday && r.time <= new Date().toTimeString().slice(0, 5);
+                    return (
+                      <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
+                        <div
+                          className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}
+                        >
+                          <Pill className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black text-gray-900">{r.name}</p>
+                          <p className="text-[11px] text-gray-500 font-bold mt-0.5">
+                            {r.dosage ? `${r.dosage} • ` : ''}يومياً في {r.time}
+                            {r.note ? ` • ${r.note}` : ''}
+                          </p>
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {dayNames.map((s, i) => (
+                              <span
+                                key={i}
+                                className={`px-1.5 py-0.5 rounded-md text-[9px] font-extrabold ${
+                                  r.days.includes(new Date().getDay()) && s === dayNames[new Date().getDay()]
+                                    ? 'text-white'
+                                    : 'bg-gray-100 text-gray-500'
+                                }`}
+                                style={r.days.includes(new Date().getDay()) && s === dayNames[new Date().getDay()] ? { backgroundColor: themeColors.primaryColor } : {}}
+                              >
+                                {s}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveReminder(r.id)}
+                          className="shrink-0 w-9 h-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-all active:scale-90"
+                          title="حذف التذكير"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
