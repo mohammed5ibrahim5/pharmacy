@@ -39,7 +39,7 @@ export function AdminPage() {
   const { settings } = useSettings();
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
-  const [showPanel, setShowPanel] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'الرئيسية', icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -66,28 +66,45 @@ export function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row" dir="rtl">
-      {/* Sidebar */}
-      <aside className={`lg:w-64 bg-gray-900 text-white lg:min-h-screen lg:fixed lg:right-0 lg:top-0 lg:bottom-0 ${showPanel ? 'block fixed inset-0 z-50' : 'hidden'} lg:block`}>
+    <div className="min-h-screen bg-gray-50 flex" dir="rtl">
+      {/* Sidebar backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar drawer */}
+      <aside className={`fixed inset-y-0 right-0 z-50 w-72 bg-gray-900 text-white shadow-2xl transform transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="p-5 flex flex-col h-full">
-          <div className="flex items-center gap-2 mb-8">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: settings.primary_color }}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: settings.primary_color }}
+              >
+                <Cross className="w-5 h-5 text-white" strokeWidth={2.5} />
+              </div>
+              <div>
+                <h2 className="font-bold text-sm">{settings.site_name}</h2>
+                <p className="text-xs text-gray-400">لوحة التحكم</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+              aria-label="إغلاق القائمة"
             >
-              <Cross className="w-5 h-5 text-white" strokeWidth={2.5} />
-            </div>
-            <div>
-              <h2 className="font-bold text-sm">{settings.site_name}</h2>
-              <p className="text-xs text-gray-400">لوحة التحكم</p>
-            </div>
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <nav className="space-y-1 flex-1">
+          <nav className="space-y-1 flex-1 overflow-y-auto pb-4">
             {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => { setActiveTab(item.id); setShowPanel(false); }}
+                onClick={() => { setActiveTab(item.id); setSidebarOpen(false); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   activeTab === item.id ? 'bg-white/10 font-medium' : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
@@ -122,15 +139,16 @@ export function AdminPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 lg:mr-64">
+      <main className="flex-1 min-w-0">
         {/* Top bar */}
         <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setShowPanel(!showPanel)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+              aria-label="فتح القائمة"
             >
-              <LayoutDashboard className="w-5 h-5" />
+              <Menu className="w-5 h-5" />
             </button>
             <h1 className="text-lg font-bold text-gray-900">
               {navItems.find((n) => n.id === activeTab)?.label}
@@ -2688,21 +2706,32 @@ function SettingsTab() {
       )}
 
       {/* Sub navigation */}
-      <div className="sticky top-2 z-30 bg-white/95 backdrop-blur rounded-2xl border border-gray-100 p-1.5 shadow-sm flex items-center gap-1.5 overflow-x-auto">
-        {settingsNav.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setSettingsSubTab(item.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
-              settingsSubTab === item.id
-                ? 'bg-gray-900 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-            }`}
-          >
-            <span className={settingsSubTab === item.id ? 'text-teal-300' : 'text-gray-400'}>{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-lg bg-gray-900 text-white flex items-center justify-center">
+              <Settings className="w-3.5 h-3.5" />
+            </span>
+            <span className="text-xs font-black text-gray-800">إعدادات الموقع</span>
+          </div>
+          <span className="text-[10px] font-bold text-gray-400 hidden sm:block">اختر القسم الذي تريد تعديله</span>
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none p-2">
+          {settingsNav.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setSettingsSubTab(item.id)}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+                settingsSubTab === item.id
+                  ? 'bg-gray-900 text-white shadow-md'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+            >
+              <span className={settingsSubTab === item.id ? 'text-teal-300' : 'text-gray-400'}>{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {settingsSubTab === 'identity' && (
@@ -3062,13 +3091,11 @@ function SettingsTab() {
       )}
 
       {settingsSubTab === 'colors' && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-          {/* RIGHT PANEL: COLOR CONTROLS */}
-          <div className="xl:col-span-2 space-y-6">
+        <div className="space-y-6">
             {/* ADVANCED WEBSITE COLORS MANAGER */}
             <SettingsSection title="لوحة تخصيص ألوان الموقع بالكامل" icon={<Tag className="w-5 h-5" />}>
               <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                قم باختيار الألوان المخصصة لكل جزء بالموقع وشاهد النتيجة فوراً في المعاينة الحية بالجانب قبل الحفظ.
+                قم باختيار الألوان المخصصة لكل جزء بالموقع — كل مجموعة تُعرض مصغّرةً بالشكل الفعلي، واضغط "حفظ" في الأسفل لتطبيقها على الموقع بالكامل.
               </p>
 
             <div className="space-y-4">
@@ -3426,34 +3453,6 @@ function SettingsTab() {
               </div>
             </div>
             </SettingsSection>
-          </div>
-
-          {/* LEFT PANEL: STICKY LIVE PREVIEW */}
-          <div className="xl:col-span-1 xl:sticky xl:top-24 space-y-4">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-                <h4 className="text-xs font-black text-gray-900 flex items-center gap-1.5">
-                  <Eye className="w-4 h-4 text-teal-600" />
-                  معاينة حية للألوان
-                </h4>
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 text-[10px] font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-teal-600" />
-                  مباشر
-                </span>
-              </div>
-              <div className="p-3 bg-slate-100">
-                <div className="rounded-xl overflow-hidden border border-slate-200 shadow-xl text-slate-900">
-                  <SitePreviewMockup colors={colors} form={form} headerCfg={headerCfg} mockSearch={mockSearch} onSearchChange={setMockSearch} device="desktop" compact />
-                </div>
-              </div>
-              <div className="px-4 py-3 bg-gray-50 border-t border-gray-100">
-                <p className="text-[10px] text-gray-500 flex items-center gap-1.5">
-                  <Truck className="w-3 h-3 text-gray-400" />
-                  يتحدّث فورياً أثناء تعديل الألوان واختيار القوالب
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -3938,17 +3937,22 @@ function SettingsTab() {
         </div>
       )}
 
-      <div className="sticky bottom-4 bg-white rounded-xl shadow-lg border border-gray-100 p-4 flex items-center justify-between z-20">
-        <p className="text-sm text-gray-500">احفظ لتطبيق التغييرات على الموقع بالكامل</p>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50"
-          style={{ backgroundColor: colors.primaryColor }}
-        >
-          <Save className="w-4 h-4" />
-          {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات والألوان'}
-        </button>
+      <div className="sticky bottom-4 z-20 flex justify-center pointer-events-none">
+        <div className="pointer-events-auto w-full sm:w-auto bg-white/95 backdrop-blur rounded-2xl shadow-xl shadow-slate-900/5 border border-gray-100 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-gray-500 font-medium flex items-center gap-1.5 whitespace-nowrap">
+            <Info className="w-3.5 h-3.5 text-gray-400" />
+            احفظ لتطبيق التغييرات على الموقع بالكامل
+          </p>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50 transition-all hover:opacity-90 active:scale-95"
+            style={{ backgroundColor: colors.primaryColor }}
+          >
+            <Save className="w-4 h-4" />
+            {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات والألوان'}
+          </button>
+        </div>
       </div>
     </div>
   );
