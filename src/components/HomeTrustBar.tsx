@@ -4,7 +4,6 @@ import { useSettings } from '@/context/SettingsContext';
 const PARTNERS = [
   'التأمين الصحي',
   'التأمين الصحي الشامل',
-  'مصر للتأمين',
   'أليانز مصر',
   'GIG للتأمين',
   'ميدغلف',
