@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig } from '@/types';
+import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig, StoreConfig } from '@/types';
 import type { PaymentConfig } from '@/lib/orders';
 
 export interface ThemeColors {
@@ -90,6 +90,11 @@ export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
   shippingNote: 'التوصيل داخل المعادي خلال 30 دقيقة، وفي باقي المناطق خلال 24 ساعة',
 };
 
+export const DEFAULT_STORE_CONFIG: StoreConfig = {
+  purchasesEnabled: true,
+  contactMessage: 'للشراء يرجى التواصل مع الصيدلية مباشرة',
+};
+
 export const DEFAULT_HERO_CONFIG: HeroConfig = {
   showSearch: true,
   showTrending: true,
@@ -125,6 +130,7 @@ interface SettingsContextType {
   footerConfig: FooterConfig;
   paymentConfig: PaymentConfig;
   heroConfig: HeroConfig;
+  storeConfig: StoreConfig;
   loading: boolean;
   refresh: () => Promise<void>;
 }
@@ -164,6 +170,7 @@ const SettingsContext = createContext<SettingsContextType>({
   footerConfig: DEFAULT_FOOTER_CONFIG,
   paymentConfig: DEFAULT_PAYMENT_CONFIG,
   heroConfig: DEFAULT_HERO_CONFIG,
+  storeConfig: DEFAULT_STORE_CONFIG,
   loading: true,
   refresh: async () => {},
 });
@@ -175,6 +182,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(DEFAULT_PAYMENT_CONFIG);
   const [heroConfig, setHeroConfig] = useState<HeroConfig>(DEFAULT_HERO_CONFIG);
+  const [storeConfig, setStoreConfig] = useState<StoreConfig>(DEFAULT_STORE_CONFIG);
   const [loading, setLoading] = useState(true);
 
   const fetchSettings = async () => {
@@ -192,6 +200,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     let footer = { ...DEFAULT_FOOTER_CONFIG };
     let payment = { ...DEFAULT_PAYMENT_CONFIG };
     let hero = { ...DEFAULT_HERO_CONFIG };
+    let store = { ...DEFAULT_STORE_CONFIG };
     if (siteSettings.features_json) {
       try {
         const parsed = JSON.parse(siteSettings.features_json);
@@ -210,6 +219,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (parsed && parsed.heroConfig) {
           hero = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
         }
+        if (parsed && parsed.storeConfig) {
+          store = { ...DEFAULT_STORE_CONFIG, ...parsed.storeConfig };
+        }
       } catch (e) {
         console.error('Error parsing features_json for themeColors:', e);
       }
@@ -225,6 +237,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setFooterConfig(footer);
     setPaymentConfig(payment);
     setHeroConfig(hero);
+    setStoreConfig(store);
     setLoading(false);
   };
 
@@ -270,6 +283,7 @@ return (
         footerConfig,
         paymentConfig,
         heroConfig,
+        storeConfig,
         loading,
         refresh: fetchSettings,
       }}

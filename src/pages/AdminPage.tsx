@@ -7,10 +7,10 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, Monitor, Tablet, Smartphone, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard, Ban
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_PAYMENT_CONFIG, type ThemeColors } from '@/context/SettingsContext';
+import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, type ThemeColors } from '@/context/SettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { translateError } from '@/lib/errorMessages';
 import {
@@ -717,7 +717,8 @@ function OrdersTab() {
 // Dashboard Tab
 // ============================================
 function DashboardTab() {
-  const { settings } = useSettings();
+  const { settings, storeConfig, refresh } = useSettings();
+  const [togglingPurchases, setTogglingPurchases] = useState(false);
   const [stats, setStats] = useState({ pharmacies: 0, products: 0, categories: 0, discounts: 0, coupons: 0, customers: 0, orders: 0, revenue: 0 });
   const [recentPharmacies, setRecentPharmacies] = useState<Pharmacy[]>([]);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
@@ -776,6 +777,27 @@ function DashboardTab() {
     fetch();
   }, []);
 
+  const handleTogglePurchases = async () => {
+    if (togglingPurchases) return;
+    setTogglingPurchases(true);
+    try {
+      const parsed = settings.features_json ? JSON.parse(settings.features_json) : {};
+      const next = {
+        ...parsed,
+        storeConfig: { ...storeConfig, purchasesEnabled: !storeConfig.purchasesEnabled },
+      };
+      await supabase.from('site_settings').update({
+        features_json: JSON.stringify(next),
+        updated_at: new Date().toISOString(),
+      }).eq('id', settings.id);
+      await refresh();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTogglingPurchases(false);
+    }
+  };
+
   const cards = [
     { label: 'إجمالي المبيعات', value: `${stats.revenue.toFixed(0)} ج.م`, icon: <Wallet />, color: settings.primary_color },
     { label: 'الطلبات', value: stats.orders, icon: <ShoppingCart />, color: settings.secondary_color },
@@ -799,6 +821,37 @@ function DashboardTab() {
         <div className="absolute -bottom-8 -left-8 opacity-20">
           <Cross className="w-40 h-40" strokeWidth={1} />
         </div>
+      </div>
+
+      {/* Store purchases toggle */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${storeConfig.purchasesEnabled ? 'bg-teal-50 text-teal-600' : 'bg-red-50 text-red-600'}`}
+        >
+          {storeConfig.purchasesEnabled ? <ShoppingCart className="w-7 h-7" /> : <Ban className="w-7 h-7" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-gray-900 text-base">
+            {storeConfig.purchasesEnabled ? 'الشراء أونلاين مفعّل' : 'الشراء أونلاين متوقف'}
+          </h3>
+          <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+            {storeConfig.purchasesEnabled
+              ? 'يمكن للعملاء طلب المنتجات والدفع أونلاين مع خدمة التوصيل.'
+              : 'يتم عرض المنتجات فقط، ويطلب من العملاء التواصل مع الصيدلية مباشرة للشراء (بدون طلب أونلاين).'}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleTogglePurchases}
+          disabled={togglingPurchases}
+          className={`relative w-16 h-9 rounded-full transition-colors duration-300 shrink-0 disabled:opacity-60 ${storeConfig.purchasesEnabled ? 'bg-teal-600' : 'bg-red-500'}`}
+          aria-pressed={storeConfig.purchasesEnabled}
+        >
+          <span
+            className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all duration-300 ${storeConfig.purchasesEnabled ? 'right-1' : 'right-8'}`}
+          />
+          {togglingPurchases && <Loader2 className="absolute inset-0 m-auto w-4 h-4 text-white animate-spin" />}
+        </button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1975,12 +2028,20 @@ function SettingsTab() {
     setSaving(true);
     
 // Save colors and header config inside features_json
+    let existingStoreConfig = { ...DEFAULT_STORE_CONFIG };
+    try {
+      const p = settings.features_json ? JSON.parse(settings.features_json) : {};
+      if (p && p.storeConfig) existingStoreConfig = { ...DEFAULT_STORE_CONFIG, ...p.storeConfig };
+    } catch (e) {
+      console.error(e);
+    }
     const updatedFeaturesJson = JSON.stringify({
       themeColors: colors,
       headerConfig: headerCfg,
       footerConfig: footerCfg,
       paymentConfig: paymentCfg,
       heroConfig: heroCfg,
+      storeConfig: existingStoreConfig,
     });
 
     await supabase.from('site_settings').update({

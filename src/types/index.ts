@@ -107,6 +107,11 @@ export interface FooterConfig {
   bottomNoticeText: string;
 }
 
+export interface StoreConfig {
+  purchasesEnabled: boolean;
+  contactMessage: string;
+}
+
 export interface SiteSettings {
   id: string;
   site_name: string;

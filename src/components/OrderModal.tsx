@@ -24,7 +24,7 @@ const METHOD_ICONS: Record<PaymentMethod, React.ReactNode> = {
 export function OrderModal() {
   const { orderItem, orderModalOpen, closeOrder } = useOrder();
   const { user, profile, setAuthModalOpen } = useCustomer();
-  const { settings, paymentConfig } = useSettings();
+  const { settings, paymentConfig, storeConfig } = useSettings();
   const [quantity, setQuantity] = useState(1);
   const [address, setAddress] = useState(profile?.phone || '');
   const [note, setNote] = useState('');
@@ -55,7 +55,7 @@ export function OrderModal() {
   }, [orderItem, profile?.phone]);
 
   useEffect(() => {
-    if (!orderModalOpen || !user) return;
+    if (!orderModalOpen) return;
     let cancelled = false;
     const loadPharmacies = async () => {
       const { data } = await supabase.from('pharmacies').select('*').order('name');
@@ -65,7 +65,7 @@ export function OrderModal() {
     return () => {
       cancelled = true;
     };
-  }, [orderModalOpen, user]);
+  }, [orderModalOpen]);
 
   if (!orderModalOpen || !orderItem) return null;
 
@@ -78,6 +78,106 @@ export function OrderModal() {
   const selectedPharmacy = pharmacies.find((p) => p.id === pharmacyId);
   const methodNumber = paymentMethod === 'vodafone_cash' ? paymentConfig.vodafoneCash : paymentConfig.instapay;
   const hasMethodNumber = Boolean(methodNumber.trim());
+
+  // Catalog mode: online purchases are disabled, contact the pharmacy directly
+  if (!storeConfig.purchasesEnabled) {
+    const pharmacy = product.for_all_pharmacies
+      ? null
+      : pharmacies.find((p) => p.id === (pharmacyId || product.pharmacy_id)) || null;
+    const phone = pharmacy?.phone || settings.contact_phone || null;
+    const whatsapp = pharmacy?.whatsapp || settings.contact_whatsapp || null;
+    const contactName = pharmacy?.name || orderItem.pharmacyName || settings.site_name;
+    const whatsappDigits = whatsapp ? whatsapp.replace(/\D/g, '') : null;
+
+    return (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeOrder}>
+        <div className="bg-white rounded-3xl w-full max-w-md p-6 relative" onClick={(e) => e.stopPropagation()}>
+          <button onClick={closeOrder} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+
+          <div className="text-center mb-5">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: `${settings.primary_color}12`, color: settings.primary_color }}
+            >
+              <Phone className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-extrabold text-gray-900">تواصل مع الصيدلية مباشرة</h2>
+            <p className="text-gray-500 text-sm mt-2 leading-relaxed">{storeConfig.contactMessage}</p>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-3 mb-5">
+            {product.image_url ? (
+              <img src={product.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                <ShoppingBag className="w-6 h-6 text-gray-400" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-gray-900 truncate">{product.name}</p>
+              <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                <Store className="w-3.5 h-3.5 shrink-0" />
+                {contactName}
+              </p>
+              <p className="text-xs font-bold mt-0.5" style={{ color: settings.primary_color }}>
+                {finalPrice.toFixed(2)} ج.م
+              </p>
+            </div>
+          </div>
+
+          {whatsappDigits ? (
+            <a
+              href={`https://wa.me/${whatsappDigits}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={closeOrder}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg mb-3"
+              style={{ backgroundColor: '#25d366', boxShadow: '0 8px 20px -6px #25d36688' }}
+            >
+              <Send className="w-5 h-5" />
+              مراسلة {contactName} واتساب
+            </a>
+          ) : (
+            phone && (
+              <a
+                href={`tel:${phone}`}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg mb-3"
+                style={{ backgroundColor: settings.primary_color, boxShadow: `0 8px 20px -6px ${settings.primary_color}88` }}
+              >
+                <Phone className="w-5 h-5" />
+                الاتصال بـ {contactName}
+              </a>
+            )
+          )}
+
+          {phone && whatsappDigits && (
+            <a
+              href={`tel:${phone}`}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all hover:scale-[1.01] active:scale-95 border-2 mb-3"
+              style={{ borderColor: settings.primary_color, color: settings.primary_color }}
+            >
+              <Phone className="w-5 h-5" />
+              الاتصال المباشر
+            </a>
+          )}
+
+          {!phone && !whatsappDigits && (
+            <div className="w-full py-3.5 rounded-xl mb-3 bg-amber-50 border border-amber-200 text-center">
+              <p className="text-xs font-bold text-amber-700">لا يتوفر رقم تواصل مسجل حالياً، حاول لاحقاً.</p>
+            </div>
+          )}
+
+          <p className="text-[11px] text-gray-400 text-center leading-relaxed">
+            <Info className="w-3 h-3 inline -mt-0.5 ml-1" />
+            الطلب المباشر أونلاين متوقف حالياً، يمكنك الاتصال بالصيدلية لتأكيد توفر المنتج وطريقة الشراء.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeOrder}>

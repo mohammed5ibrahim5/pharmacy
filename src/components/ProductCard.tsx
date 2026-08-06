@@ -1,4 +1,4 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, Plus, Heart, Store } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, Plus, Heart, Store, Phone } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function ProductCard({ product, pharmacyName, onClick }: Props) {
-  const { settings } = useSettings();
+  const { settings, storeConfig } = useSettings();
   const { openOrder } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const isFav = isProductFavorite(product.id);
@@ -102,7 +102,7 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
             </div>
           )}
 
-          {/* Quick Buy Plus Button */}
+          {/* Quick Buy / Contact Button */}
           <button
             type="button"
             onClick={(e) => {
@@ -110,9 +110,13 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
               openOrder(product, pharmacyName);
             }}
             className="absolute bottom-2.5 left-2.5 w-9 h-9 rounded-2xl bg-white shadow-lg text-teal-700 hover:bg-teal-600 hover:text-white flex items-center justify-center transition-all duration-300 group-hover:scale-105"
-            title="اطلب الدواء الآن"
+            title={storeConfig.purchasesEnabled ? 'اطلب الدواء الآن' : 'تواصل مع الصيدلية'}
           >
-            <Plus className="w-5 h-5 font-bold" />
+            {storeConfig.purchasesEnabled ? (
+              <Plus className="w-5 h-5 font-bold" />
+            ) : (
+              <Phone className="w-4 h-4" />
+            )}
           </button>
         </div>
 
