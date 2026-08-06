@@ -60,6 +60,15 @@ export function Footer() {
     }
   };
 
+  const newsletterBgStart = footerConfig.newsletterBgStart || primary;
+  const newsletterBgEnd = footerConfig.newsletterBgEnd || secondary;
+  const newsletterText = footerConfig.newsletterTextColor || '#ffffff';
+  const newsletterBtnBg = footerConfig.newsletterBtnBg || '#ffffff';
+  const newsletterBtnText = footerConfig.newsletterBtnText || primary;
+  const newsletterImage = footerConfig.newsletterBgImage || '';
+  const newsletterFaint = withAlpha(newsletterText, 0.8);
+  const newsletterInputBg = withAlpha(newsletterText, 0.12);
+
   const sectionTitle = (label: string) => (
     <h4 className="text-sm font-black tracking-wide relative pb-2.5 mb-5">
       <span style={{ color: footerText }}>{label}</span>
@@ -103,8 +112,15 @@ export function Footer() {
         {footerConfig.showNewsletter && (
           <div
             className="mb-14 p-6 sm:p-8 rounded-3xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl"
-            style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }}
+            style={{ background: `linear-gradient(135deg, ${newsletterBgStart}, ${newsletterBgEnd})` }}
           >
+            {newsletterImage && (
+              <img
+                src={newsletterImage}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none"
+              />
+            )}
             <div
               className="absolute inset-0 opacity-[0.08] pointer-events-none"
               style={{
@@ -112,21 +128,21 @@ export function Footer() {
                 backgroundSize: '18px 18px',
               }}
             />
-            <div className="flex items-center gap-4 relative">
-              <div className="w-12 h-12 rounded-2xl bg-white/15 text-white flex items-center justify-center shrink-0 border border-white/25 backdrop-blur-sm">
-                <Sparkles className="w-6 h-6" />
+            <div className="flex items-center gap-4 relative" style={{ color: newsletterText }}>
+              <div className="w-12 h-12 rounded-2xl text-white flex items-center justify-center shrink-0 border backdrop-blur-sm" style={{ backgroundColor: newsletterInputBg, borderColor: newsletterFaint }}>
+                <Sparkles className="w-6 h-6" style={{ color: newsletterText }} />
               </div>
               <div>
-                <h4 className="text-lg font-black text-white">{footerConfig.newsletterTitle}</h4>
-                <p className="text-xs text-white/80 mt-0.5 font-medium">{footerConfig.newsletterSubtitle}</p>
+                <h4 className="text-lg font-black" style={{ color: newsletterText }}>{footerConfig.newsletterTitle}</h4>
+                <p className="text-xs mt-0.5 font-medium" style={{ color: newsletterFaint }}>{footerConfig.newsletterSubtitle}</p>
               </div>
             </div>
 
             <form onSubmit={handleSubscribe} className="w-full md:w-auto flex items-center gap-2 max-w-md relative">
               {subscribed ? (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/15 text-white border border-white/30 text-xs font-bold w-full backdrop-blur-sm">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold w-full backdrop-blur-sm" style={{ backgroundColor: newsletterInputBg, color: newsletterText, border: `1px solid ${newsletterFaint}` }}>
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  تم الاشتراك بنجاح في نشرة {settings.site_name}!
+                  {footerConfig.newsletterSuccessText}
                 </div>
               ) : (
                 <>
@@ -134,15 +150,16 @@ export function Footer() {
                     type="email"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
-                    placeholder="أدخل بريدك الإلكتروني..."
+                    placeholder={footerConfig.newsletterInputPlaceholder}
                     required
                     aria-label="البريد الإلكتروني"
-                    className="flex-1 min-w-0 px-4 py-2.5 bg-white/10 border border-white/25 rounded-2xl text-xs text-white placeholder:text-white/60 focus:outline-none focus:border-white/60 focus:bg-white/15 backdrop-blur-sm"
+                    className="flex-1 min-w-0 px-4 py-2.5 rounded-2xl text-xs focus:outline-none backdrop-blur-sm placeholder:opacity-70"
+                    style={{ backgroundColor: newsletterInputBg, border: `1px solid ${newsletterFaint}`, color: newsletterText }}
                   />
                   <button
                     type="submit"
-                    className="px-5 py-2.5 rounded-2xl bg-white text-primary font-extrabold text-xs transition-transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1.5 shrink-0"
-                    style={{ color: primary }}
+                    className="px-5 py-2.5 rounded-2xl text-xs font-extrabold transition-transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-1.5 shrink-0"
+                    style={{ backgroundColor: newsletterBtnBg, color: newsletterBtnText }}
                   >
                     <Send className="w-3.5 h-3.5" />
                     {footerConfig.newsletterButtonText}
@@ -183,21 +200,21 @@ export function Footer() {
                   style={{ backgroundColor: chipBg, borderColor: withAlpha(primary, 0.25), color: footerText }}
                 >
                   <Shield className="w-3.5 h-3.5" style={{ color: primary }} />
-                  طبي موثوق
+                  {footerConfig.trustBadge1}
                 </span>
                 <span
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border"
                   style={{ backgroundColor: chipBg, borderColor: withAlpha(primary, 0.25), color: footerText }}
                 >
                   <Truck className="w-3.5 h-3.5" style={{ color: primary }} />
-                  توصيل 24 ساعة
+                  {footerConfig.trustBadge2}
                 </span>
                 <span
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border"
                   style={{ backgroundColor: chipBg, borderColor: withAlpha(primary, 0.25), color: footerText }}
                 >
                   <Clock className="w-3.5 h-3.5" style={{ color: primary }} />
-                  خدمة على مدار اليوم
+                  {footerConfig.trustBadge3}
                 </span>
               </div>
             )}

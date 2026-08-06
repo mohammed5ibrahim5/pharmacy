@@ -93,6 +93,14 @@ export interface FooterConfig {
   newsletterTitle: string;
   newsletterSubtitle: string;
   newsletterButtonText: string;
+  newsletterInputPlaceholder: string;
+  newsletterSuccessText: string;
+  newsletterBgStart: string;
+  newsletterBgEnd: string;
+  newsletterTextColor: string;
+  newsletterBtnBg: string;
+  newsletterBtnText: string;
+  newsletterBgImage: string;
   showQuickLinks: boolean;
   quickLinksTitle: string;
   showContactSection: boolean;
@@ -101,6 +109,9 @@ export interface FooterConfig {
   socialTitle: string;
   socialText: string;
   showTrustBadges: boolean;
+  trustBadge1: string;
+  trustBadge2: string;
+  trustBadge3: string;
   footerTagline: string;
   showCopyright: boolean;
   showBottomNotice: boolean;
@@ -226,6 +237,19 @@ export interface HeroConfig {
   trendingLabel: string;
   trendingKeywords: string[];
   stats: HeroStat[];
+}
+
+export interface HowItWorksStep {
+  title: string;
+  desc: string;
+}
+
+export interface HowItWorksConfig {
+  enabled: boolean;
+  badge: string;
+  title: string;
+  subtitle: string;
+  steps: HowItWorksStep[];
 }
 
 export interface HomepageSection {

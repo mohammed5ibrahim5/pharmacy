@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig, StoreConfig } from '@/types';
+import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig, StoreConfig, HowItWorksConfig } from '@/types';
 import type { PaymentConfig } from '@/lib/orders';
 
 export interface ThemeColors {
@@ -66,6 +66,14 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   newsletterTitle: 'اشترك في النشرة الطبية وخصومات الأدوية',
   newsletterSubtitle: 'احصل على أحدث عروض الصيدليات والبدائل المتاحة أولاً بأول',
   newsletterButtonText: 'اشترك',
+  newsletterInputPlaceholder: 'أدخل بريدك الإلكتروني...',
+  newsletterSuccessText: 'تم الاشتراك بنجاح في النشرة!',
+  newsletterBgStart: '#0d9488',
+  newsletterBgEnd: '#0f766e',
+  newsletterTextColor: '#ffffff',
+  newsletterBtnBg: '#ffffff',
+  newsletterBtnText: '#0d9488',
+  newsletterBgImage: '',
   showQuickLinks: true,
   quickLinksTitle: 'روابط المنصة',
   showContactSection: true,
@@ -74,6 +82,9 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   socialTitle: 'تابعنا على التواصل',
   socialText: 'تصفح آخر الأدوية، الإرشادات الصحية والعروض الدورية عبر منصاتنا.',
   showTrustBadges: true,
+  trustBadge1: 'طبي موثوق',
+  trustBadge2: 'توصيل 24 ساعة',
+  trustBadge3: 'خدمة على مدار اليوم',
   footerTagline: 'صيدليتك الأقرب أينما كنت',
   showCopyright: true,
   showBottomNotice: true,
@@ -125,6 +136,31 @@ export const DEFAULT_FEATURES_CONFIG: FeaturesConfig = {
   reminders: true,
 };
 
+export const DEFAULT_HOW_IT_WORKS_CONFIG: HowItWorksConfig = {
+  enabled: true,
+  badge: 'خطوات بسيطة وسريعة',
+  title: 'كيف تعمل منصتنا؟',
+  subtitle: 'من البحث حتى الاستلام في 4 خطوات فقط',
+  steps: [
+    {
+      title: 'ابحث عن دوائك',
+      desc: 'ابحث بالاسم، امسح الباركود، استخدم البحث الصوتي، أو ارفع صورة الروشتة.',
+    },
+    {
+      title: 'قارن الصيدليات',
+      desc: 'راجع الأسعار والتقييمات واختر الصيدلية الأقرب إليك والأكثر ملاءمة.',
+    },
+    {
+      title: 'اطلب بأمان',
+      desc: 'اختر الكمية والطريقة، وادفع إلكترونياً عبر فودافون كاش أو إينستاباي.',
+    },
+    {
+      title: 'استلم في دقائق',
+      desc: 'توصيل مباشر وسريع حتى باب منزلك بتغليف محكم وآمن على مدار الساعة.',
+    },
+  ],
+};
+
 export const DEFAULT_HERO_CONFIG: HeroConfig = {
   showSearch: true,
   showTrending: true,
@@ -160,6 +196,7 @@ interface SettingsContextType {
   footerConfig: FooterConfig;
   paymentConfig: PaymentConfig;
   heroConfig: HeroConfig;
+  howItWorksConfig: HowItWorksConfig;
   storeConfig: StoreConfig;
   loyaltyConfig: LoyaltyConfig;
   featuresConfig: FeaturesConfig;
@@ -202,6 +239,7 @@ const SettingsContext = createContext<SettingsContextType>({
   footerConfig: DEFAULT_FOOTER_CONFIG,
   paymentConfig: DEFAULT_PAYMENT_CONFIG,
   heroConfig: DEFAULT_HERO_CONFIG,
+  howItWorksConfig: DEFAULT_HOW_IT_WORKS_CONFIG,
   storeConfig: DEFAULT_STORE_CONFIG,
   loyaltyConfig: DEFAULT_LOYALTY_CONFIG,
   featuresConfig: DEFAULT_FEATURES_CONFIG,
@@ -216,6 +254,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(DEFAULT_PAYMENT_CONFIG);
   const [heroConfig, setHeroConfig] = useState<HeroConfig>(DEFAULT_HERO_CONFIG);
+  const [howItWorksConfig, setHowItWorksConfig] = useState<HowItWorksConfig>(DEFAULT_HOW_IT_WORKS_CONFIG);
   const [storeConfig, setStoreConfig] = useState<StoreConfig>(DEFAULT_STORE_CONFIG);
   const [loyaltyConfig, setLoyaltyConfig] = useState<LoyaltyConfig>(DEFAULT_LOYALTY_CONFIG);
   const [featuresConfig, setFeaturesConfig] = useState<FeaturesConfig>(DEFAULT_FEATURES_CONFIG);
@@ -236,6 +275,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     let footer = { ...DEFAULT_FOOTER_CONFIG };
     let payment = { ...DEFAULT_PAYMENT_CONFIG };
     let hero = { ...DEFAULT_HERO_CONFIG };
+    let howItWorks = { ...DEFAULT_HOW_IT_WORKS_CONFIG };
     let store = { ...DEFAULT_STORE_CONFIG };
     let loyalty = { ...DEFAULT_LOYALTY_CONFIG };
     let features = { ...DEFAULT_FEATURES_CONFIG };
@@ -256,6 +296,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
         if (parsed && parsed.heroConfig) {
           hero = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
+        }
+        if (parsed && parsed.howItWorksConfig) {
+          howItWorks = { ...DEFAULT_HOW_IT_WORKS_CONFIG, ...parsed.howItWorksConfig };
         }
         if (parsed && parsed.storeConfig) {
           store = { ...DEFAULT_STORE_CONFIG, ...parsed.storeConfig };
@@ -281,6 +324,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setFooterConfig(footer);
     setPaymentConfig(payment);
     setHeroConfig(hero);
+    setHowItWorksConfig(howItWorks);
     setStoreConfig(store);
     setLoyaltyConfig(loyalty);
     setFeaturesConfig(features);
@@ -329,6 +373,7 @@ return (
         footerConfig,
         paymentConfig,
         heroConfig,
+        howItWorksConfig,
         storeConfig,
         loyaltyConfig,
         featuresConfig,

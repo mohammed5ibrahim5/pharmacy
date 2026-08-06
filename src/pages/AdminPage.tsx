@@ -10,7 +10,7 @@ import {
   Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, BellOff, BadgeCheck, Pill
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
+import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { translateError } from '@/lib/errorMessages';
 import {
@@ -31,7 +31,7 @@ import {
 } from '@/lib/prescriptions';
 import { insertNotification } from '@/lib/notifications';
 import { notifyStockAvailable } from '@/lib/loyalty';
-import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig } from '@/types';
+import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HowItWorksConfig } from '@/types';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
 
@@ -2233,7 +2233,7 @@ function LoyaltyTab() {
 // Settings Tab
 // ============================================
 function SettingsTab() {
-  const { settings, refresh } = useSettings();
+  const { settings, refresh, themeColors } = useSettings();
   const [form, setForm] = useState<SiteSettings>(settings);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -2243,6 +2243,7 @@ function SettingsTab() {
     { id: 'identity', label: 'الهوية والواجهة', icon: <Cross className="w-4 h-4" /> },
     { id: 'header', label: 'الهيدر', icon: <Megaphone className="w-4 h-4" /> },
     { id: 'hero', label: 'القسم الرئيسي (Hero)', icon: <Sparkles className="w-4 h-4" /> },
+    { id: 'howItWorks', label: 'كيف تعمل المنصة', icon: <List className="w-4 h-4" /> },
     { id: 'colors', label: 'الألوان والقوالب', icon: <Palette className="w-4 h-4" /> },
     { id: 'payment', label: 'الدفع والشحن', icon: <Wallet className="w-4 h-4" /> },
     { id: 'content', label: 'المحتوى والأقسام', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -2330,6 +2331,21 @@ function SettingsTab() {
     return { ...DEFAULT_HERO_CONFIG };
   });
 
+  // Initialize how-it-works config state
+  const [howCfg, setHowCfg] = useState<HowItWorksConfig>(() => {
+    if (settings.features_json) {
+      try {
+        const parsed = JSON.parse(settings.features_json);
+        if (parsed && parsed.howItWorksConfig) {
+          return { ...DEFAULT_HOW_IT_WORKS_CONFIG, ...parsed.howItWorksConfig };
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return { ...DEFAULT_HOW_IT_WORKS_CONFIG };
+  });
+
   // Initialize loyalty config state
   const [loyaltyCfg, setLoyaltyCfg] = useState<LoyaltyConfig>(() => {
     if (settings.features_json) {
@@ -2387,6 +2403,7 @@ function SettingsTab() {
       footerConfig: footerCfg,
       paymentConfig: paymentCfg,
       heroConfig: heroCfg,
+      howItWorksConfig: howCfg,
       storeConfig: existingStoreConfig,
       loyaltyConfig: loyaltyCfg,
       featuresConfig: featuresCfg,
@@ -2992,6 +3009,66 @@ function SettingsTab() {
         </div>
       )}
 
+      {settingsSubTab === 'howItWorks' && (
+        <div className="space-y-6">
+          <SettingsSection title="قسم «كيف تعمل المنصة؟»" icon={<List className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              صندوق الخطوات الأربع (ابحث - قارن - اطلب - استلم) في الصفحة الرئيسية. فعّل المفتاح لإظهاره في الموقع أو أوقفه لإخفائه تماماً، وعدّل نصوصه من هنا.
+            </p>
+
+            <div className="space-y-3 mb-5">
+              <Toggle
+                checked={howCfg.enabled}
+                onChange={(v) => setHowCfg({ ...howCfg, enabled: v })}
+                label="إظهار القسم في الصفحة الرئيسية"
+                hint="عند إيقافه يختفي صندوق الخطوات الأربع نهائياً من الموقع"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Field label="النص العلوي (الشارة)">
+                <input value={howCfg.badge} onChange={(e) => setHowCfg({ ...howCfg, badge: e.target.value })} className={inputClass} />
+              </Field>
+              <Field label="العنوان الرئيسي">
+                <input value={howCfg.title} onChange={(e) => setHowCfg({ ...howCfg, title: e.target.value })} className={inputClass} />
+              </Field>
+              <Field label="العنوان الفرعي">
+                <input value={howCfg.subtitle} onChange={(e) => setHowCfg({ ...howCfg, subtitle: e.target.value })} className={inputClass} />
+              </Field>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection title="نصوص الخطوات الأربع" icon={<List className="w-5 h-5" />}>
+            <div className="space-y-4">
+              {howCfg.steps.map((step, i) => (
+                <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <p className="text-xs font-bold text-gray-600 mb-3 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white" style={{ backgroundColor: themeColors.primaryColor }}>
+                      {i + 1}
+                    </span>
+                    الخطوة {i + 1}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input
+                      value={step.title}
+                      onChange={(e) => setHowCfg({ ...howCfg, steps: howCfg.steps.map((s, j) => (j === i ? { ...s, title: e.target.value } : s)) })}
+                      className={inputClass}
+                      placeholder="عنوان الخطوة"
+                    />
+                    <input
+                      value={step.desc}
+                      onChange={(e) => setHowCfg({ ...howCfg, steps: howCfg.steps.map((s, j) => (j === i ? { ...s, desc: e.target.value } : s)) })}
+                      className={inputClass}
+                      placeholder="وصف الخطوة"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SettingsSection>
+        </div>
+      )}
+
       {settingsSubTab === 'colors' && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
           {/* RIGHT PANEL: COLOR CONTROLS */}
@@ -3570,6 +3647,86 @@ function SettingsTab() {
                   className={inputClass}
                   disabled={!footerCfg.showSocialSection}
                 />
+              </Field>
+            </div>
+          </SettingsSection>
+
+          {/* تخصيص صندوق النشرة */}
+          <SettingsSection title="تخصيص صندوق النشرة" icon={<Sparkles className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              عدّل ألوان صندوق الاشتراك بالنشرة وأضف صورة خلفية له — ستظهر مباشرة في تذييل الموقع.
+            </p>
+
+            <div className="bg-gray-50 rounded-2xl p-4 mb-5">
+              <p className="text-xs font-bold text-gray-600 mb-3">معاينة حية</p>
+              <div
+                className="rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-3 relative overflow-hidden"
+                style={{ background: `linear-gradient(135deg, ${footerCfg.newsletterBgStart}, ${footerCfg.newsletterBgEnd})` }}
+              >
+                {footerCfg.newsletterBgImage && (
+                  <img src={footerCfg.newsletterBgImage} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none" />
+                )}
+                <div className="relative flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center border backdrop-blur-sm" style={{ backgroundColor: withAlphaHex(footerCfg.newsletterTextColor, 0.15), borderColor: withAlphaHex(footerCfg.newsletterTextColor, 0.8) }}>
+                    <Sparkles className="w-4 h-4" style={{ color: footerCfg.newsletterTextColor }} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black" style={{ color: footerCfg.newsletterTextColor }}>{footerCfg.newsletterTitle}</p>
+                    <p className="text-[10px] font-medium" style={{ color: withAlphaHex(footerCfg.newsletterTextColor, 0.8) }}>{footerCfg.newsletterSubtitle}</p>
+                  </div>
+                </div>
+                <div className="relative flex items-center gap-2">
+                  <span className="px-3 py-2 rounded-xl text-[10px] font-bold" style={{ backgroundColor: withAlphaHex(footerCfg.newsletterTextColor, 0.15), border: `1px solid ${withAlphaHex(footerCfg.newsletterTextColor, 0.8)}`, color: footerCfg.newsletterTextColor }}>
+                    {footerCfg.newsletterInputPlaceholder}
+                  </span>
+                  <span className="px-3 py-2 rounded-xl text-[10px] font-extrabold shadow-md" style={{ backgroundColor: footerCfg.newsletterBtnBg, color: footerCfg.newsletterBtnText }}>
+                    {footerCfg.newsletterButtonText}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ColorField label="لون بداية التدرج" value={footerCfg.newsletterBgStart} onChange={(v) => setFooterCfg({ ...footerCfg, newsletterBgStart: v })} />
+              <ColorField label="لون نهاية التدرج" value={footerCfg.newsletterBgEnd} onChange={(v) => setFooterCfg({ ...footerCfg, newsletterBgEnd: v })} />
+              <ColorField label="لون النصوص والأيقونات" value={footerCfg.newsletterTextColor} onChange={(v) => setFooterCfg({ ...footerCfg, newsletterTextColor: v })} />
+              <ColorField label="لون زر الاشتراك" value={footerCfg.newsletterBtnBg} onChange={(v) => setFooterCfg({ ...footerCfg, newsletterBtnBg: v })} />
+              <ColorField label="لون نص زر الاشتراك" value={footerCfg.newsletterBtnText} onChange={(v) => setFooterCfg({ ...footerCfg, newsletterBtnText: v })} />
+            </div>
+
+            <div className="mt-4">
+              <ImageUploader
+                label="صورة خلفية صندوق النشرة (اختياري)"
+                value={footerCfg.newsletterBgImage}
+                onChange={(v) => setFooterCfg({ ...footerCfg, newsletterBgImage: v })}
+                hint="تظهر خلفية الصندوق بشكل خافت فوق التدرج اللوني — ارفع صورة بأبعاد واسعة مثل 1200x300"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <Field label="نص حقل البريد (Placeholder)">
+                <input value={footerCfg.newsletterInputPlaceholder} onChange={(e) => setFooterCfg({ ...footerCfg, newsletterInputPlaceholder: e.target.value })} className={inputClass} disabled={!footerCfg.showNewsletter} />
+              </Field>
+              <Field label="رسالة نجاح الاشتراك">
+                <input value={footerCfg.newsletterSuccessText} onChange={(e) => setFooterCfg({ ...footerCfg, newsletterSuccessText: e.target.value })} className={inputClass} disabled={!footerCfg.showNewsletter} />
+              </Field>
+            </div>
+          </SettingsSection>
+
+          {/* شارات الثقة */}
+          <SettingsSection title="نصوص شارات الثقة" icon={<ShieldCheck className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+              الشارات الصغيرة أسفل اسم الموقع في التذييل — عدّل نصوصها لتوافق طبيعة متجرك.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Field label="الشارة الأولى (الأيقونة: درع)">
+                <input value={footerCfg.trustBadge1} onChange={(e) => setFooterCfg({ ...footerCfg, trustBadge1: e.target.value })} className={inputClass} disabled={!footerCfg.showTrustBadges} />
+              </Field>
+              <Field label="الشارة الثانية (الأيقونة: توصيل)">
+                <input value={footerCfg.trustBadge2} onChange={(e) => setFooterCfg({ ...footerCfg, trustBadge2: e.target.value })} className={inputClass} disabled={!footerCfg.showTrustBadges} />
+              </Field>
+              <Field label="الشارة الثالثة (الأيقونة: ساعة)">
+                <input value={footerCfg.trustBadge3} onChange={(e) => setFooterCfg({ ...footerCfg, trustBadge3: e.target.value })} className={inputClass} disabled={!footerCfg.showTrustBadges} />
               </Field>
             </div>
           </SettingsSection>
@@ -4187,6 +4344,16 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
       </div>
     </div>
   );
+}
+
+function withAlphaHex(hex: string, alpha: number): string {
+  if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return hex;
 }
 
 // ===== Visual mock helpers for the color editor =====
