@@ -15,10 +15,16 @@ import {
   Heart,
   Baby,
   Activity,
-  Percent,
+  Shield,
+  Stethoscope,
+  Sparkles,
+  Droplet,
   TrendingUp,
   Zap,
-  PhoneCall
+  PhoneCall,
+  Flame,
+  ArrowUpLeft,
+  type LucideIcon
 } from 'lucide-react';
 import { useRouter } from '@/context/RouterContext';
 import { useSettings } from '@/context/SettingsContext';
@@ -30,7 +36,7 @@ import { BarcodeScannerModal } from '@/components/BarcodeScannerModal';
 import { LocationSelectorModal } from '@/components/LocationSelectorModal';
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
 import { supabase } from '@/lib/supabase';
-import type { Product } from '@/types';
+import type { Product, Category } from '@/types';
 
 const UNIFIED_TRENDING = [
   'بنادول اكسترا',
@@ -42,13 +48,26 @@ const UNIFIED_TRENDING = [
   'كمامات طبية',
 ];
 
-const CATEGORY_PILLS = [
-  { slug: 'medicines', name: '💊 جميع الأدوية', icon: Pill },
-  { slug: 'skincare', name: '🧴 العناية والبشرة', icon: Heart },
-  { slug: 'baby', name: '👶 مستلزمات الأطفال', icon: Baby },
-  { slug: 'vitamins', name: '🧪 الفيتامينات والمكملات', icon: Activity },
-  { slug: '24h', name: '🏥 صيدليات 24/7', icon: Clock },
-  { slug: 'offers', name: '🏷️ العروض والتخفيضات', icon: Percent },
+const CATEGORY_STYLES: Record<string, { icon: LucideIcon; color: string }> = {
+  painkillers: { icon: Pill, color: '#0d9488' },
+  antibiotics: { icon: Shield, color: '#2563eb' },
+  supplements: { icon: Sparkles, color: '#d97706' },
+  'cold-flu': { icon: Stethoscope, color: '#dc2626' },
+  vitamins: { icon: Heart, color: '#7c3aed' },
+  'skin-care': { icon: Droplet, color: '#db2777' },
+  'baby-care': { icon: Baby, color: '#e11d48' },
+  digestive: { icon: Activity, color: '#16a34a' },
+};
+
+const FALLBACK_CATEGORIES: { slug: string; name: string }[] = [
+  { slug: 'painkillers', name: 'مسكنات الألم' },
+  { slug: 'antibiotics', name: 'مضادات حيوية' },
+  { slug: 'supplements', name: 'مكملات غذائية' },
+  { slug: 'cold-flu', name: 'برد وإنفلونزا' },
+  { slug: 'vitamins', name: 'فيتامينات' },
+  { slug: 'skin-care', name: 'العناية بالبشرة' },
+  { slug: 'baby-care', name: 'مستلزمات الأطفال' },
+  { slug: 'digestive', name: 'الجهاز الهضمي' },
 ];
 
 export function Header() {
@@ -65,11 +84,20 @@ export function Header() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [userLocation, setUserLocation] = useState<string>(() => {
     return localStorage.getItem('user_delivery_location') || 'القاهرة - المعادي';
   });
 
   const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data } = await supabase.from('categories').select('*').order('name');
+      if (data && data.length > 0) setCategories(data as Category[]);
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -453,27 +481,30 @@ export function Header() {
           {/* TRENDING QUICK SEARCH TAGS */}
           {headerConfig.showTrendingTags && (
             <div
-              className="hidden md:flex items-center gap-2 py-2 border-t text-xs overflow-x-auto scrollbar-none"
+              className="flex items-center gap-2 py-2 border-t overflow-x-auto scrollbar-none"
               style={{ borderColor: `${themeColors.headerText}10` }}
             >
-              <span className="font-bold opacity-60 flex items-center gap-1 shrink-0" style={{ color: themeColors.headerText }}>
-                <TrendingUp className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
+              <span className="font-bold opacity-70 flex items-center gap-1 shrink-0" style={{ color: themeColors.headerText }}>
+                <Flame className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
                 الأكثر طلباً:
               </span>
-              {UNIFIED_TRENDING.map((tag) => (
+              {UNIFIED_TRENDING.map((tag, i) => (
                 <button
                   key={tag}
                   onClick={() => {
                     setSearchQuery(tag);
                     handleSearchSubmit(undefined, tag);
                   }}
-                  className="px-3 py-1 rounded-full transition-all shrink-0 text-[11px] border font-bold hover:brightness-105"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full transition-all shrink-0 text-[11px] border font-bold hover:brightness-105 active:scale-95"
                   style={{
                     backgroundColor: `${themeColors.headerText}05`,
                     color: themeColors.headerText,
                     borderColor: `${themeColors.headerText}12`
                   }}
                 >
+                  <span className="text-[9px] font-black opacity-70" style={{ color: themeColors.accentColor }}>
+                    {i + 1}
+                  </span>
                   {tag}
                 </button>
               ))}
@@ -490,22 +521,44 @@ export function Header() {
               color: themeColors.headerNavText
             }}
           >
-            <div className="max-w-7xl mx-auto px-4 flex items-center justify-between sm:justify-start gap-2 min-w-max">
-              {CATEGORY_PILLS.map((cat) => {
-                const Icon = cat.icon;
+            <div className="max-w-7xl mx-auto px-4 flex items-center gap-2 min-w-max">
+              <span
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black shrink-0"
+                style={{ color: themeColors.accentColor }}
+              >
+                <Zap className="w-3.5 h-3.5 animate-pulse" />
+                تصفح حسب الفئة
+              </span>
+              <div className="w-px h-5 shrink-0" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
+              {(categories.length > 0 ? categories : FALLBACK_CATEGORIES).map((cat) => {
+                const style = CATEGORY_STYLES[cat.slug] || {
+                  icon: Pill,
+                  color: themeColors.accentColor,
+                };
+                const Icon = style.icon;
                 return (
                   <button
                     key={cat.slug}
                     onClick={() => navigate({ name: 'category', slug: cat.slug })}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border transition-all text-xs font-bold hover:brightness-110"
+                    className="group flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shrink-0"
                     style={{
-                      backgroundColor: `${themeColors.headerNavText}15`,
+                      backgroundColor: `${themeColors.headerNavText}10`,
                       color: themeColors.headerNavText,
-                      borderColor: `${themeColors.headerNavText}20`
+                      borderColor: `${themeColors.headerNavText}20`,
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                     }}
                   >
-                    <Icon className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
-                    <span>{cat.name}</span>
+                    <span
+                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+                      style={{
+                        backgroundColor: `${style.color}22`,
+                        color: style.color
+                      }}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="text-xs font-extrabold whitespace-nowrap">{cat.name}</span>
+                    <ArrowUpLeft className="w-3 h-3 opacity-0 group-hover:opacity-60 -mt-1 -mr-0.5 transition-opacity" />
                   </button>
                 );
               })}

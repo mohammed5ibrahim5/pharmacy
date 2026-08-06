@@ -10,7 +10,7 @@ import {
   Sparkles,
   Stethoscope,
   Shield,
-  HeartPulse,
+  Heart,
   Package,
   BadgeCheck,
   PhoneCall,
@@ -21,7 +21,10 @@ import {
   Barcode,
   FileText,
   Mic,
-  Zap
+  Zap,
+  Droplet,
+  Baby,
+  Activity
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
@@ -49,8 +52,10 @@ const CATEGORY_ICONS: Record<string, { icon: React.ReactNode; color: string; cou
   antibiotics: { icon: <Shield className="w-7 h-7" />, color: '#2563eb', count: '30+ منتج' },
   supplements: { icon: <Sparkles className="w-7 h-7" />, color: '#d97706', count: '60+ مكمل' },
   'cold-flu': { icon: <Stethoscope className="w-7 h-7" />, color: '#dc2626', count: '25+ علاج' },
-  vitamins: { icon: <HeartPulse className="w-7 h-7" />, color: '#7c3aed', count: '50+ فيتامين' },
-  baby: { icon: <ShoppingBag className="w-7 h-7" />, color: '#db2777', count: '40+ مستلزم' },
+  vitamins: { icon: <Heart className="w-7 h-7" />, color: '#7c3aed', count: '50+ فيتامين' },
+  'skin-care': { icon: <Droplet className="w-7 h-7" />, color: '#db2777', count: '35+ منتج' },
+  'baby-care': { icon: <Baby className="w-7 h-7" />, color: '#e11d48', count: '40+ مستلزم' },
+  digestive: { icon: <Activity className="w-7 h-7" />, color: '#16a34a', count: '30+ دواء' },
 };
 
 const HERO_TRENDING = [
