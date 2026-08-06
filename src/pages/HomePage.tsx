@@ -32,6 +32,7 @@ import { BarcodeScannerModal } from '@/components/BarcodeScannerModal';
 import { LocationSelectorModal } from '@/components/LocationSelectorModal';
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
 import { getPharmacyWithDistance, sortPharmaciesByDistance } from '@/lib/distance';
+import { findAreaLocation } from '@/lib/areaLocations';
 import { PHARMACY_SECTIONS_META, type PharmacySectionKey } from '@/lib/pharmacySections';
 import { FeaturedProducts } from '@/components/FeaturedProducts';
 import { HomeHowItWorks } from '@/components/HomeHowItWorks';
@@ -92,7 +93,7 @@ type PharmacyTab = 'nearest' | 'highest_rated' | 'most_popular' | 'delivery' | '
 export function HomePage() {
   const { settings, themeColors, heroConfig } = useSettings();
   const { navigate } = useRouter();
-  const { location, requestLocation, loading, permissionDenied } = useGeolocation();
+  const { location, requestLocation, loading, permissionDenied, setUserLocation } = useGeolocation();
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,6 +115,23 @@ export function HomePage() {
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+
+  // Nearest tab requires the user to set their location in this session
+  const [locationSet, setLocationSet] = useState(() => sessionStorage.getItem('pharmacy_location_set') === '1');
+  const markLocationSet = () => {
+    sessionStorage.setItem('pharmacy_location_set', '1');
+    setLocationSet(true);
+  };
+
+  const handleManualLocation = (loc: string) => {
+    setUserLocationName(loc);
+    localStorage.setItem('user_delivery_location', loc);
+    const coords = findAreaLocation(loc);
+    if (coords) {
+      setUserLocation(coords.latitude, coords.longitude);
+    }
+    markLocationSet();
+  };
 
   const [userLocationName, setUserLocationName] = useState<string>(() => {
     return localStorage.getItem('user_delivery_location') || 'القاهرة - المعادي';
@@ -467,7 +485,10 @@ export function HomePage() {
               <>
               {!location ? (
                 <button
-                  onClick={requestLocation}
+                  onClick={() => {
+                    markLocationSet();
+                    requestLocation();
+                  }}
                   disabled={loading}
                   className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white border text-xs font-bold transition-all active:scale-95 shadow-2xs whitespace-nowrap"
                   style={{
@@ -649,7 +670,7 @@ export function HomePage() {
         </div>
 
         {/* Pharmacy cards */}
-        {activePharmacyTab === 'nearest' && !location ? (
+        {activePharmacyTab === 'nearest' && !(location && locationSet) ? (
           <div className="py-14 text-center bg-white rounded-3xl border border-gray-200">
             <div
               className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 animate-pulse-soft"
@@ -663,7 +684,10 @@ export function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
-                onClick={requestLocation}
+                onClick={() => {
+                  markLocationSet();
+                  requestLocation();
+                }}
                 disabled={loading}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-white font-black text-xs shadow-md hover:scale-105 active:scale-95 transition-all disabled:opacity-60 w-full sm:w-auto"
                 style={{ backgroundColor: themeColors.primaryColor }}
@@ -839,10 +863,7 @@ export function HomePage() {
         open={locationModalOpen}
         onClose={() => setLocationModalOpen(false)}
         currentLocation={userLocationName}
-        onSelectLocation={(loc) => {
-          setUserLocationName(loc);
-          localStorage.setItem('user_delivery_location', loc);
-        }}
+        onSelectLocation={handleManualLocation}
       />
       <PrescriptionUploadModal
         open={prescriptionModalOpen}

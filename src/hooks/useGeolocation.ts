@@ -66,7 +66,15 @@ export function useGeolocation() {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
-  return { location, loading, error, permissionDenied, requestLocation, clearLocation };
+  const setUserLocation = useCallback((latitude: number, longitude: number) => {
+    const newLocation = { latitude, longitude };
+    setLocation(newLocation);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newLocation));
+    setPermissionDenied(false);
+    setError(null);
+  }, []);
+
+  return { location, loading, error, permissionDenied, requestLocation, clearLocation, setUserLocation };
 }
 
 export function calculateDistance(
