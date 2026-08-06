@@ -27,6 +27,7 @@ import {
   Loader2,
   Wallet,
   Bell,
+  Star,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useCustomer } from '@/context/CustomerContext';
@@ -38,6 +39,7 @@ import type { AccountTab } from '@/context/RouterContext';
 import type { Pharmacy, Product, LoyaltyTransaction, MedicationReminder } from '@/types';
 import { ProductCard } from '@/components/ProductCard';
 import { PharmacyCard } from '@/components/PharmacyCard';
+import { OrderReviewModal } from '@/components/OrderReviewModal';
 import { translateError } from '@/lib/errorMessages';
 import {
   PRESCRIPTION_STATUS_META,
@@ -187,6 +189,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
 
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [reviewOrder, setReviewOrder] = useState<OrderRecord | null>(null);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [rxLoading, setRxLoading] = useState(false);
   const [rxUploading, setRxUploading] = useState(false);
@@ -747,15 +750,27 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                         <p className="text-xl font-black text-gray-900">{Number(order.total_price).toFixed(2)}</p>
                         <p className="text-[11px] font-bold text-gray-400">ج.م</p>
                       </div>
-                      {product && (
-                        <button
-                          onClick={() => openOrder(product, order.pharmacy?.name)}
-                          className="px-4 py-2 rounded-xl text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-95 transition-all"
-                          style={{ backgroundColor: themeColors.primaryColor }}
-                        >
-                          اطلب مرة أخرى
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+                        {order.status === 'delivered' && (
+                          <button
+                            onClick={() => setReviewOrder(order)}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:brightness-110 active:scale-95 transition-all"
+                            style={{ backgroundColor: themeColors.accentColor, color: '#ffffff' }}
+                          >
+                            <Star className="w-3.5 h-3.5 fill-white" />
+                            قيّم طلبك
+                          </button>
+                        )}
+                        {product && (
+                          <button
+                            onClick={() => openOrder(product, order.pharmacy?.name)}
+                            className="px-4 py-2 rounded-xl text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-95 transition-all"
+                            style={{ backgroundColor: themeColors.primaryColor }}
+                          >
+                            اطلب مرة أخرى
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -763,6 +778,20 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
             })
           )}
         </div>
+      )}
+
+      {reviewOrder && (
+        <OrderReviewModal
+          orderId={reviewOrder.id}
+          pharmacyId={reviewOrder.pharmacy_id}
+          pharmacyName={reviewOrder.pharmacy?.name || 'الصيدلية'}
+          productName={reviewOrder.product?.name || 'منتج'}
+          onClose={() => setReviewOrder(null)}
+          onSubmitted={() => {
+            setReviewOrder(null);
+            showToast('شكراً لك! تم نشر تقييمك بنجاح');
+          }}
+        />
       )}
 
       {/* ===== Prescriptions tab ===== */}

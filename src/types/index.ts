@@ -153,6 +153,10 @@ export interface Review {
   rating: number;
   comment: string | null;
   created_at: string;
+  order_id?: string | null;
+  delivery_rating?: number | null;
+  product_quality_rating?: number | null;
+  value_rating?: number | null;
 }
 
 export interface LoyaltyTransaction {

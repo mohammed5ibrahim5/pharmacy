@@ -108,6 +108,40 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
               {review.comment && (
                 <p className="text-sm text-gray-600 leading-relaxed font-medium mt-2">{review.comment}</p>
               )}
+              {(review.delivery_rating || review.product_quality_rating || review.value_rating) && (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 pt-2.5 border-t border-gray-100">
+                  {typeof review.delivery_rating === 'number' && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                      التوصيل
+                      <span className="flex items-center gap-0.5" dir="ltr">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={`w-3 h-3 ${s <= review.delivery_rating! ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                        ))}
+                      </span>
+                    </span>
+                  )}
+                  {typeof review.product_quality_rating === 'number' && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                      الجودة
+                      <span className="flex items-center gap-0.5" dir="ltr">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={`w-3 h-3 ${s <= review.product_quality_rating! ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                        ))}
+                      </span>
+                    </span>
+                  )}
+                  {typeof review.value_rating === 'number' && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                      القيمة
+                      <span className="flex items-center gap-0.5" dir="ltr">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={`w-3 h-3 ${s <= review.value_rating! ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                        ))}
+                      </span>
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
