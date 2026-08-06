@@ -649,7 +649,42 @@ export function HomePage() {
         </div>
 
         {/* Pharmacy cards */}
-        {loadingData ? (
+        {activePharmacyTab === 'nearest' && !location ? (
+          <div className="py-14 text-center bg-white rounded-3xl border border-gray-200">
+            <div
+              className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 animate-pulse-soft"
+              style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}
+            >
+              <Navigation className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-black text-slate-900 mb-1.5">حدّد موقعك لعرض أقرب الصيدليات</h3>
+            <p className="text-sm text-slate-500 font-bold mb-6 max-w-md mx-auto leading-relaxed">
+              عشان نشوفلك أقرب صيدلية لجوّاك، حدد موقعك الحالي أو اختر منطقتك يدوياً.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={requestLocation}
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl text-white font-black text-xs shadow-md hover:scale-105 active:scale-95 transition-all disabled:opacity-60 w-full sm:w-auto"
+                style={{ backgroundColor: themeColors.primaryColor }}
+              >
+                <Navigation className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                {loading ? 'جاري تحديد موقعك...' : 'تحديد موقعي الآن'}
+              </button>
+              <button
+                onClick={() => setLocationModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white border-2 text-xs font-black transition-all hover:scale-105 active:scale-95 w-full sm:w-auto"
+                style={{ color: themeColors.primaryColor, borderColor: `${themeColors.primaryColor}40` }}
+              >
+                <MapPin className="w-4 h-4" />
+                اختيار المنطقة يدوياً
+              </button>
+            </div>
+            {permissionDenied && (
+              <p className="text-[11px] font-bold text-amber-600 mt-4">متصفحك رفض طلب الموقع، اختار منطقتك يدوياً بدلاً من ذلك.</p>
+            )}
+          </div>
+        ) : loadingData ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-slate-100 rounded-3xl h-72 animate-pulse" />
