@@ -34,7 +34,6 @@ import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
 import { getPharmacyWithDistance, sortPharmaciesByDistance } from '@/lib/distance';
 import { PHARMACY_SECTIONS_META, type PharmacySectionKey } from '@/lib/pharmacySections';
 import { FeaturedProducts } from '@/components/FeaturedProducts';
-import { HomeTrustBar } from '@/components/HomeTrustBar';
 import { HomeHowItWorks } from '@/components/HomeHowItWorks';
 import { HomeTestimonials } from '@/components/HomeTestimonials';
 import { HomeHealthTips } from '@/components/HomeHealthTips';
@@ -541,9 +540,6 @@ export function HomePage() {
         </div>
       </section>
       )}
-
-      {/* ==================== TRUST BAR ==================== */}
-      <HomeTrustBar />
 
       {/* ==================== CATEGORIES SECTION ==================== */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
