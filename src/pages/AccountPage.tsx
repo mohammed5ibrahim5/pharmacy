@@ -49,8 +49,6 @@ import {
 import {
   fetchLoyaltyBalance,
   fetchLoyaltyHistory,
-  POINTS_PER_ORDER,
-  POINTS_PER_POUND,
   requestNotificationPermission,
   loadLocalReminders,
   saveLocalReminders,
@@ -177,7 +175,7 @@ function OrderProgressTracker({ status, color }: { status: string; color: string
 
 export function AccountPage({ tab }: { tab: AccountTab }) {
   const { user, profile, setAuthModalOpen, signOut } = useCustomer();
-  const { settings, themeColors } = useSettings();
+  const { settings, themeColors, loyaltyConfig, featuresConfig } = useSettings();
   const { navigate } = useRouter();
   const { openOrder } = useOrder();
   const {
@@ -515,8 +513,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const tabs: { id: AccountTab; label: string; icon: React.ReactNode; count: number }[] = [
     { id: 'orders', label: 'طلباتي ومتابعة الشحنات', icon: <PackageCheck className="w-4 h-4" />, count: activeOrdersCount },
     { id: 'prescriptions', label: 'الروشتات المحفوظة', icon: <FileText className="w-4 h-4" />, count: prescriptions.length },
-    { id: 'rewards', label: 'نقاطي ومكافآتي', icon: <Sparkles className="w-4 h-4" />, count: loyaltyPoints },
-    { id: 'reminders', label: 'تذكير مواعيد الأدوية', icon: <Bell className="w-4 h-4" />, count: reminders.length },
+    ...(loyaltyConfig.enabled ? [{ id: 'rewards' as AccountTab, label: 'نقاطي ومكافآتي', icon: <Sparkles className="w-4 h-4" />, count: loyaltyPoints }] : []),
+    ...(featuresConfig.reminders ? [{ id: 'reminders' as AccountTab, label: 'تذكير مواعيد الأدوية', icon: <Bell className="w-4 h-4" />, count: reminders.length }] : []),
     { id: 'addresses', label: 'العناوين المسجلة', icon: <MapPin className="w-4 h-4" />, count: addresses.length },
     { id: 'favorites', label: 'المفضلة', icon: <Heart className="w-4 h-4" />, count: productFavoritesCount + pharmacyFavoritesCount },
   ];
@@ -566,10 +564,12 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <ShieldCheck className="w-5 h-5 text-teal-200" />
               </div>
               <p className="text-xs text-white/80 font-medium mt-0.5" dir="ltr">{user.email}</p>
-              <div className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm text-[11px] font-bold text-amber-200">
-                <Sparkles className="w-3 h-3" />
-                نقاط المكافآت: {loyaltyPoints} نقطة
-              </div>
+              {loyaltyConfig.enabled && (
+                <div className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm text-[11px] font-bold text-amber-200">
+                  <Sparkles className="w-3 h-3" />
+                  نقاط المكافآت: {loyaltyPoints} نقطة
+                </div>
+              )}
             </div>
           </div>
 
@@ -698,7 +698,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                         </span>
                       </div>
 
-                      <OrderProgressTracker status={order.status} color={themeColors.primaryColor} />
+                      {featuresConfig.orderTracking && <OrderProgressTracker status={order.status} color={themeColors.primaryColor} />}
 
                       <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-xs text-gray-500">
                         <span className="flex items-center gap-1.5">
@@ -952,11 +952,11 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <p className="text-xs font-bold text-amber-100 mb-1">رصيد نقاط المكافآت</p>
                 <p className="text-4xl font-black leading-none">{loyaltyPoints}</p>
                 <p className="text-xs font-bold text-amber-100 mt-1.5">
-                  أكمل {Math.max(0, 50 - loyaltyPoints)} نقطة إضافية لتحصل على خصم {POINTS_PER_ORDER * 5} ج.م على طلبك القادم
+                  أكمل {Math.max(0, loyaltyConfig.redeemThreshold - loyaltyPoints)} نقطة إضافية لتحصل على خصم {loyaltyConfig.redeemValue} ج.م على طلبك القادم
                 </p>
               </div>
               <div className="sm:mr-auto bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20 text-center">
-                <p className="text-[10px] font-bold text-amber-100 mb-0.5">كل {POINTS_PER_POUND} ج.م =</p>
+                <p className="text-[10px] font-bold text-amber-100 mb-0.5">كل {loyaltyConfig.pointsPerPound} ج.م =</p>
                 <p className="text-lg font-black">1 نقطة</p>
               </div>
             </div>
@@ -969,7 +969,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <PackageCheck className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-black text-gray-900">{POINTS_PER_ORDER} نقاط لكل طلب</p>
+                <p className="text-sm font-black text-gray-900">{loyaltyConfig.pointsPerOrder} نقاط لكل طلب</p>
                 <p className="text-xs text-gray-500 mt-0.5">احصل عليها تلقائياً بعد تأكيد أي طلب جديد</p>
               </div>
             </div>
@@ -978,7 +978,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <Wallet className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-black text-gray-900">50 نقطة = خصم {POINTS_PER_ORDER * 5} ج.م</p>
+                <p className="text-sm font-black text-gray-900">{loyaltyConfig.redeemThreshold} نقطة = خصم {loyaltyConfig.redeemValue} ج.م</p>
                 <p className="text-xs text-gray-500 mt-0.5">استبدل نقاطك بخصومات فورية عند الطلب</p>
               </div>
             </div>
@@ -991,7 +991,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
                 <Sparkles className="w-10 h-10 mx-auto text-amber-300 mb-3" />
                 <h4 className="font-black text-gray-900 text-sm mb-1">لا توجد نقاط مكتسبة بعد</h4>
-                <p className="text-xs text-gray-500">اطلب أي منتج وسيتم إضافة {POINTS_PER_ORDER} نقطة لرصيدك تلقائياً.</p>
+                <p className="text-xs text-gray-500">اطلب أي منتج وسيتم إضافة {loyaltyConfig.pointsPerOrder} نقطة لرصيدك تلقائياً.</p>
               </div>
             ) : (
               <div className="space-y-2.5">

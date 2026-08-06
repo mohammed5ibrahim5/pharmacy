@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function ProductCard({ product, pharmacyName, onClick }: Props) {
-  const { settings, storeConfig } = useSettings();
+  const { settings, storeConfig, featuresConfig } = useSettings();
   const { openOrder } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { user } = useAuth();
@@ -98,7 +98,7 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
           </button>
 
           {/* Compare Prices Button */}
-          {!product.for_all_pharmacies && (
+          {featuresConfig.priceCompare && !product.for_all_pharmacies && (
             <button
               type="button"
               onClick={(e) => {
@@ -114,7 +114,7 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
           )}
 
           {/* Stock Alert Button when unavailable */}
-          {!product.is_available && (
+          {featuresConfig.stockAlerts && !product.is_available && (
             <button
               type="button"
               onClick={async (e) => {

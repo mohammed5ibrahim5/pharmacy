@@ -7,10 +7,10 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, Monitor, Tablet, Smartphone, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard, Ban, Navigation, ExternalLink
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, BellOff, BadgeCheck, Pill
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, type ThemeColors } from '@/context/SettingsContext';
+import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { translateError } from '@/lib/errorMessages';
 import {
@@ -33,7 +33,7 @@ import { insertNotification } from '@/lib/notifications';
 import { notifyStockAvailable } from '@/lib/loyalty';
 import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig } from '@/types';
 
-type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'settings';
+type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
 
 export function AdminPage() {
   const { settings } = useSettings();
@@ -51,6 +51,8 @@ export function AdminPage() {
     { id: 'discounts', label: 'الخصومات', icon: <TrendingDown className="w-5 h-5" /> },
     { id: 'coupons', label: 'أكواد الخصم', icon: <Ticket className="w-5 h-5" /> },
     { id: 'customers', label: 'العملاء', icon: <Users className="w-5 h-5" /> },
+    { id: 'stockAlerts', label: 'تنبيهات التوفر', icon: <BellRing className="w-5 h-5" /> },
+    { id: 'loyalty', label: 'نقاط الولاء', icon: <Sparkles className="w-5 h-5" /> },
     { id: 'subscribers', label: 'المشتركون بالنشرة', icon: <Inbox className="w-5 h-5" /> },
     { id: 'settings', label: 'إعدادات الموقع', icon: <Settings className="w-5 h-5" /> },
   ];
@@ -158,6 +160,8 @@ export function AdminPage() {
           {activeTab === 'discounts' && <DiscountsTab />}
           {activeTab === 'coupons' && <CouponsTab />}
           {activeTab === 'customers' && <CustomersTab />}
+          {activeTab === 'stockAlerts' && <StockAlertsTab />}
+          {activeTab === 'loyalty' && <LoyaltyTab />}
           {activeTab === 'subscribers' && <SubscribersTab />}
           {activeTab === 'settings' && <SettingsTab />}
         </div>
@@ -732,7 +736,7 @@ function OrdersTab() {
 function DashboardTab() {
   const { settings, storeConfig, refresh } = useSettings();
   const [togglingPurchases, setTogglingPurchases] = useState(false);
-  const [stats, setStats] = useState({ pharmacies: 0, products: 0, categories: 0, discounts: 0, coupons: 0, customers: 0, orders: 0, revenue: 0 });
+  const [stats, setStats] = useState({ pharmacies: 0, products: 0, categories: 0, discounts: 0, coupons: 0, customers: 0, orders: 0, revenue: 0, stockAlerts: 0, loyaltyPoints: 0 });
   const [recentPharmacies, setRecentPharmacies] = useState<Pharmacy[]>([]);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [topProducts, setTopProducts] = useState<{ name: string; count: number; revenue: number }[]>([]);
@@ -740,7 +744,7 @@ function DashboardTab() {
 
   useEffect(() => {
     const fetch = async () => {
-      const [p, pr, c, d, cp, cu, orders] = await Promise.all([
+      const [p, pr, c, d, cp, cu, orders, alerts, loyalty] = await Promise.all([
         supabase.from('pharmacies').select('*', { count: 'exact', head: true }),
         supabase.from('products').select('*', { count: 'exact', head: true }),
         supabase.from('categories').select('*', { count: 'exact', head: true }),
@@ -748,6 +752,8 @@ function DashboardTab() {
         supabase.from('coupons').select('*', { count: 'exact', head: true }),
         supabase.from('customers').select('*', { count: 'exact', head: true }),
         supabase.from('orders').select('product_id, total_price, status, created_at, product:products(name)').order('created_at', { ascending: false }).limit(500),
+        supabase.from('stock_alerts').select('*', { count: 'exact', head: true }),
+        supabase.from('loyalty_transactions').select('points', { count: 'exact', head: true }).gt('points', 0),
       ]);
       const ordersData = (orders.data || []) as { product_id: string; total_price: number; status: string; created_at: string; product?: { name: string }[] }[];
       const active = ordersData.filter((o) => o.status !== 'cancelled');
@@ -761,6 +767,8 @@ function DashboardTab() {
         customers: cu.count || 0,
         orders: ordersData.length,
         revenue,
+        stockAlerts: alerts.count || 0,
+        loyaltyPoints: loyalty.count || 0,
       });
 
       const { data: recentP } = await supabase.from('pharmacies').select('*').order('created_at', { ascending: false }).limit(3);
@@ -820,6 +828,8 @@ function DashboardTab() {
     { label: 'الخصومات النشطة', value: stats.discounts, icon: <TrendingDown />, color: '#ef4444' },
     { label: 'أكواد الخصم', value: stats.coupons, icon: <Ticket />, color: '#8b5cf6' },
     { label: 'العملاء', value: stats.customers, icon: <Users />, color: '#0ea5e9' },
+    { label: 'تنبيهات التوفر', value: stats.stockAlerts, icon: <BellRing />, color: '#f59e0b' },
+    { label: 'حركات النقاط', value: stats.loyaltyPoints, icon: <Sparkles />, color: '#d97706' },
   ];
 
   const maxWeek = Math.max(1, ...weekChart.map((d) => d.count));
@@ -2008,6 +2018,218 @@ function SubscribersTab() {
 }
 
 // ============================================
+// Stock Alerts Tab
+
+function StockAlertsTab() {
+  const { settings } = useSettings();
+  const [list, setList] = useState<Array<{ id: string; created_at: string; product: { id: string; name: string; image_url?: string | null; is_available: boolean; unit?: string | null }; customer: { full_name?: string | null; phone?: string | null; email?: string | null } }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [notifyingId, setNotifyingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2200);
+  };
+
+  const fetchAlerts = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('stock_alerts')
+      .select('*, product:products(id, name, image_url, is_available, unit), customer:customers(full_name, phone, email)')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    setList((data || []) as typeof list);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, [fetchAlerts]);
+
+  const handleNotify = async (alert: typeof list[number]) => {
+    if (!confirm(`إرسال إشعار "الدواء أصبح متوفراً" لهذا العميل الآن وحذف طلبه؟`)) return;
+    setNotifyingId(alert.id);
+    const { error } = await supabase.from('products').update({ is_available: true }).eq('id', alert.product.id);
+    if (!error) {
+      await notifyStockAvailable(alert.product.id);
+      showToast('تم إرسال الإشعار وإعادة تفعيل المنتج');
+    }
+    setNotifyingId(null);
+    fetchAlerts();
+  };
+
+  const handleDeleteAll = async () => {
+    if (!confirm('حذف جميع طلبات تنبيه التوفر؟')) return;
+    await supabase.from('stock_alerts').delete().neq('id', '');
+    fetchAlerts();
+  };
+
+  return (
+    <div>
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl">
+          {toast}
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h2 className="text-sm text-gray-500">طلبات "نبهني عند التوفر": {list.length}</h2>
+        {list.length > 0 && (
+          <button onClick={handleDeleteAll} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 bg-white text-xs font-bold text-red-600 hover:bg-red-50">
+            <Trash2 className="w-3.5 h-3.5" /> حذف الكل
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-white rounded-xl animate-pulse" />)}</div>
+      ) : list.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
+          <BellRing className="w-12 h-12 mx-auto text-gray-200 mb-3" />
+          <p className="text-gray-500">لا توجد طلبات تنبيه حالياً — عندما يطلب العميل التنبيه على منتج غير متوفر سيظهر هنا</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          {list.map((alert, i) => {
+            const productAvailable = alert.product?.is_available;
+            return (
+              <div key={alert.id} className={`flex items-center gap-3 p-3.5 ${i !== 0 ? 'border-t border-gray-50' : ''} flex-wrap`}>
+                <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+                  {alert.product?.image_url ? (
+                    <img src={alert.product.image_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Pill className="w-5 h-5 text-gray-300" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-800 truncate">{alert.product?.name || 'منتج محذوف'}</p>
+                  <p className="text-[11px] text-gray-400 truncate">
+                    {alert.customer?.full_name || 'عميل'} • {alert.customer?.phone || alert.customer?.email || 'بدون بيانات'}
+                  </p>
+                  <p className="text-[10px] text-gray-300">طلب في {new Date(alert.created_at).toLocaleDateString('ar-EG')}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${productAvailable ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {productAvailable ? 'متوفر' : 'غير متوفر'}
+                  </span>
+                  {!productAvailable && (
+                    <button
+                      onClick={() => handleNotify(alert)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-white text-[11px] font-bold hover:brightness-110 active:scale-95 transition-all"
+                      style={{ backgroundColor: settings.primary_color }}
+                    >
+                      {notifyingId === alert.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BellRing className="w-3.5 h-3.5" />}
+                      فعّله وأشعره
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// Loyalty Tab
+
+function LoyaltyTab() {
+  const { settings } = useSettings();
+  const [history, setHistory] = useState<Array<{ id: string; points: number; reason: string; created_at: string; customer: { full_name?: string | null; phone?: string | null; email?: string | null } }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'earned' | 'spent'>('all');
+
+  const fetchHistory = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('loyalty_transactions')
+      .select('*, customer:customers(full_name, phone, email)')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    setHistory((data || []) as typeof history);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  const filtered = history.filter((h) => {
+    if (filter === 'earned') return h.points > 0;
+    if (filter === 'spent') return h.points < 0;
+    return true;
+  });
+
+  const totalEarned = history.filter((h) => h.points > 0).reduce((s, h) => s + h.points, 0);
+  const totalSpent = history.filter((h) => h.points < 0).reduce((s, h) => s + h.points, 0);
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <p className="text-xs text-gray-500 mb-1">إجمالي النقاط المكتسبة</p>
+          <p className="text-2xl font-black" style={{ color: settings.accent_color }}>{totalEarned}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <p className="text-xs text-gray-500 mb-1">النقاط المستهلكة</p>
+          <p className="text-2xl font-black text-red-500">{totalSpent}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 p-4">
+          <p className="text-xs text-gray-500 mb-1">عدد العمليات</p>
+          <p className="text-2xl font-black text-gray-900">{history.length}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 mb-4">
+        {(['all', 'earned', 'spent'] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+              filter === f ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+            }`}
+            style={filter === f ? { backgroundColor: settings.primary_color } : {}}
+          >
+            {f === 'all' ? 'الكل' : f === 'earned' ? 'مكتسبة' : 'مستهلكة'}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-white rounded-xl animate-pulse" />)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
+          <Sparkles className="w-12 h-12 mx-auto text-gray-200 mb-3" />
+          <p className="text-gray-500">لا توجد حركات نقاط بعد — النقاط تُمنح تلقائياً مع كل طلب ناجح</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          {filtered.map((tx, i) => (
+            <div key={tx.id} className={`flex items-center gap-3 p-3.5 ${i !== 0 ? 'border-t border-gray-50' : ''} flex-wrap`}>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${tx.points > 0 ? settings.accent_color : '#ef4444'}15` }}>
+                <Sparkles className="w-4 h-4" style={{ color: tx.points > 0 ? settings.accent_color : '#ef4444' }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-gray-800 truncate">{tx.reason}</p>
+                <p className="text-[11px] text-gray-400 truncate">
+                  {tx.customer?.full_name || 'عميل'} • {tx.customer?.phone || tx.customer?.email || 'بدون بيانات'} • {new Date(tx.created_at).toLocaleDateString('ar-EG')}
+                </p>
+              </div>
+              <span className={`text-sm font-black ${tx.points > 0 ? 'text-amber-600' : 'text-red-500'}`}>
+                {tx.points > 0 ? `+${tx.points}` : tx.points}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
 // Settings Tab
 // ============================================
 function SettingsTab() {
@@ -2024,6 +2246,7 @@ function SettingsTab() {
     { id: 'colors', label: 'الألوان والقوالب', icon: <Palette className="w-4 h-4" /> },
     { id: 'payment', label: 'الدفع والشحن', icon: <Wallet className="w-4 h-4" /> },
     { id: 'content', label: 'المحتوى والأقسام', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { id: 'features', label: 'الميزات والولاء', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'contact', label: 'التواصل', icon: <Phone className="w-4 h-4" /> },
     { id: 'footer', label: 'التذييل (Footer)', icon: <Globe className="w-4 h-4" /> },
     { id: 'preview', label: 'معاينة الموقع', icon: <Eye className="w-4 h-4" /> },
@@ -2107,6 +2330,36 @@ function SettingsTab() {
     return { ...DEFAULT_HERO_CONFIG };
   });
 
+  // Initialize loyalty config state
+  const [loyaltyCfg, setLoyaltyCfg] = useState<LoyaltyConfig>(() => {
+    if (settings.features_json) {
+      try {
+        const parsed = JSON.parse(settings.features_json);
+        if (parsed && parsed.loyaltyConfig) {
+          return { ...DEFAULT_LOYALTY_CONFIG, ...parsed.loyaltyConfig };
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return { ...DEFAULT_LOYALTY_CONFIG };
+  });
+
+  // Initialize features config state
+  const [featuresCfg, setFeaturesCfg] = useState<FeaturesConfig>(() => {
+    if (settings.features_json) {
+      try {
+        const parsed = JSON.parse(settings.features_json);
+        if (parsed && parsed.featuresConfig) {
+          return { ...DEFAULT_FEATURES_CONFIG, ...parsed.featuresConfig };
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return { ...DEFAULT_FEATURES_CONFIG };
+  });
+
   // Sync colors with site settings colors
   useEffect(() => {
     setColors(prev => ({
@@ -2135,6 +2388,8 @@ function SettingsTab() {
       paymentConfig: paymentCfg,
       heroConfig: heroCfg,
       storeConfig: existingStoreConfig,
+      loyaltyConfig: loyaltyCfg,
+      featuresConfig: featuresCfg,
     });
 
     await supabase.from('site_settings').update({
@@ -3109,6 +3364,70 @@ function SettingsTab() {
         </div>
       )}
 
+      {settingsSubTab === 'features' && (
+        <div className="space-y-6">
+          <SettingsSection title="تفعيل الميزات الرئيسية" icon={<Sparkles className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-4">تحكم في إظهار أو إخفاء كل ميزة من الميزات الجديدة على واجهة الموقع.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FeatureToggle
+                icon={<Scale className="w-4 h-4" />}
+                title="مقارنة الأسعار والبدائل"
+                desc="زر قارن الأسعار على بطاقات المنتجات + البدائل بنفس المادة الفعالة"
+                checked={featuresCfg.priceCompare}
+                onChange={(v) => setFeaturesCfg((p) => ({ ...p, priceCompare: v }))}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Truck className="w-4 h-4" />}
+                title="تتبع حالة الطلب"
+                desc="شريط تقدم بصري لحالة الطلب + إشعار للعميل عند كل تحديث"
+                checked={featuresCfg.orderTracking}
+                onChange={(v) => setFeaturesCfg((p) => ({ ...p, orderTracking: v }))}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<BellRing className="w-4 h-4" />}
+                title="تنبيه توفر الدواء"
+                desc="زر نبهني عند التوفر على المنتجات غير المتاحة + إشعار تلقائي عند التوفير"
+                checked={featuresCfg.stockAlerts}
+                onChange={(v) => setFeaturesCfg((p) => ({ ...p, stockAlerts: v }))}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Bell className="w-4 h-4" />}
+                title="تذكير مواعيد الأدوية"
+                desc="تبويب تذكير الأدوية في حساب العميل + إشعارات في المواعيد المحددة"
+                checked={featuresCfg.reminders}
+                onChange={(v) => setFeaturesCfg((p) => ({ ...p, reminders: v }))}
+                color={settings.primary_color}
+              />
+            </div>
+          </SettingsSection>
+
+          <SettingsSection title="نظام نقاط الولاء" icon={<Sparkles className="w-5 h-5" />}>
+            <label className="flex items-center gap-2 cursor-pointer mb-5"><input type="checkbox" checked={loyaltyCfg.enabled} onChange={(e) => setLoyaltyCfg((p) => ({ ...p, enabled: e.target.checked }))} className="w-4 h-4 rounded" /><span className="text-sm text-gray-700">تفعيل نظام نقاط الولاء</span></label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label={`نقاط لكل طلب (حالياً ${loyaltyCfg.pointsPerOrder})`}>
+                <input type="number" min="0" value={loyaltyCfg.pointsPerOrder} onChange={(e) => setLoyaltyCfg((p) => ({ ...p, pointsPerOrder: Math.max(0, parseInt(e.target.value) || 0) }))} className={inputClass} dir="ltr" />
+              </Field>
+              <Field label={`نقطة لكل (ج.م) — حالياً ${loyaltyCfg.pointsPerPound}`}>
+                <input type="number" min="1" value={loyaltyCfg.pointsPerPound} onChange={(e) => setLoyaltyCfg((p) => ({ ...p, pointsPerPound: Math.max(1, parseInt(e.target.value) || 1) }))} className={inputClass} dir="ltr" />
+              </Field>
+              <Field label={`نقاط الاستبدال — حالياً ${loyaltyCfg.redeemThreshold}`}>
+                <input type="number" min="1" value={loyaltyCfg.redeemThreshold} onChange={(e) => setLoyaltyCfg((p) => ({ ...p, redeemThreshold: Math.max(1, parseInt(e.target.value) || 1) }))} className={inputClass} dir="ltr" />
+              </Field>
+              <Field label={`قيمة الخصم عند الاستبدال (ج.م) — حالياً ${loyaltyCfg.redeemValue}`}>
+                <input type="number" min="0" value={loyaltyCfg.redeemValue} onChange={(e) => setLoyaltyCfg((p) => ({ ...p, redeemValue: Math.max(0, parseInt(e.target.value) || 0) }))} className={inputClass} dir="ltr" />
+              </Field>
+            </div>
+            <p className="text-xs text-gray-400 mt-4">
+              مثال: {loyaltyCfg.redeemThreshold} نقطة = خصم {loyaltyCfg.redeemValue} ج.م عند الطلب. تظهر هذه القيم للعميل في تبويب "نقاطي ومكافآتي".
+            </p>
+          </SettingsSection>
+        </div>
+      )}
+
       {settingsSubTab === 'contact' && (
         <div className="space-y-6">
           <SettingsSection title="معلومات التواصل" icon={<Phone className="w-5 h-5" />}>
@@ -3801,6 +4120,43 @@ const inputClass = "w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><label className="block text-xs font-medium text-gray-600 mb-1.5">{label}</label>{children}</div>;
+}
+
+function FeatureToggle({
+  icon, title, desc, checked, onChange, color,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  color: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`text-right p-4 rounded-xl border-2 transition-all ${checked ? 'border-teal-500 bg-teal-50/50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${checked ? 'text-white' : 'text-gray-400 bg-gray-100'}`}
+            style={checked ? { backgroundColor: color } : {}}
+          >
+            {icon}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-gray-900">{title}</p>
+            <p className="text-[11px] text-gray-500 leading-snug mt-0.5">{desc}</p>
+          </div>
+        </div>
+        <span className={`relative inline-flex w-10 h-6 shrink-0 items-center rounded-full px-0.5 transition-colors ${checked ? 'bg-teal-500' : 'bg-gray-300'}`}>
+          <span className={`inline-block w-4 h-4 rounded-full bg-white shadow transition-all ${checked ? 'mr-4' : 'mr-0'}`} />
+        </span>
+      </div>
+    </button>
+  );
 }
 
 function Modal({ children, onClose, title, wide }: { children: React.ReactNode; onClose: () => void; title: string; wide?: boolean }) {

@@ -2,9 +2,6 @@ import { supabase } from '@/lib/supabase';
 import { insertNotification } from '@/lib/notifications';
 import type { LoyaltyTransaction, StockAlert, MedicationReminder } from '@/types';
 
-export const POINTS_PER_ORDER = 10;
-export const POINTS_PER_POUND = 1;
-
 export async function fetchLoyaltyBalance(customerId: string): Promise<number> {
   const { data } = await supabase
     .from('customers')

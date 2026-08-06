@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { loadLocalReminders } from '@/lib/loyalty';
+import { useSettings } from '@/context/SettingsContext';
 
 export function ReminderScheduler() {
   const firedRef = useRef<Set<string>>(new Set());
+  const { featuresConfig } = useSettings();
 
   useEffect(() => {
+    if (!featuresConfig.reminders) return;
     if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') return;
 
     const check = () => {
@@ -39,7 +42,7 @@ export function ReminderScheduler() {
     check();
     const interval = setInterval(check, 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [featuresConfig.reminders]);
 
   return null;
 }

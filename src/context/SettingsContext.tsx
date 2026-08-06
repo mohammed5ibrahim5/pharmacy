@@ -95,6 +95,36 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
   contactMessage: 'للشراء يرجى التواصل مع الصيدلية مباشرة',
 };
 
+export interface LoyaltyConfig {
+  enabled: boolean;
+  pointsPerOrder: number;
+  pointsPerPound: number;
+  redeemThreshold: number;
+  redeemValue: number;
+}
+
+export const DEFAULT_LOYALTY_CONFIG: LoyaltyConfig = {
+  enabled: true,
+  pointsPerOrder: 10,
+  pointsPerPound: 1,
+  redeemThreshold: 50,
+  redeemValue: 50,
+};
+
+export interface FeaturesConfig {
+  priceCompare: boolean;
+  orderTracking: boolean;
+  stockAlerts: boolean;
+  reminders: boolean;
+}
+
+export const DEFAULT_FEATURES_CONFIG: FeaturesConfig = {
+  priceCompare: true,
+  orderTracking: true,
+  stockAlerts: true,
+  reminders: true,
+};
+
 export const DEFAULT_HERO_CONFIG: HeroConfig = {
   showSearch: true,
   showTrending: true,
@@ -131,6 +161,8 @@ interface SettingsContextType {
   paymentConfig: PaymentConfig;
   heroConfig: HeroConfig;
   storeConfig: StoreConfig;
+  loyaltyConfig: LoyaltyConfig;
+  featuresConfig: FeaturesConfig;
   loading: boolean;
   refresh: () => Promise<void>;
 }
@@ -171,6 +203,8 @@ const SettingsContext = createContext<SettingsContextType>({
   paymentConfig: DEFAULT_PAYMENT_CONFIG,
   heroConfig: DEFAULT_HERO_CONFIG,
   storeConfig: DEFAULT_STORE_CONFIG,
+  loyaltyConfig: DEFAULT_LOYALTY_CONFIG,
+  featuresConfig: DEFAULT_FEATURES_CONFIG,
   loading: true,
   refresh: async () => {},
 });
@@ -183,6 +217,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(DEFAULT_PAYMENT_CONFIG);
   const [heroConfig, setHeroConfig] = useState<HeroConfig>(DEFAULT_HERO_CONFIG);
   const [storeConfig, setStoreConfig] = useState<StoreConfig>(DEFAULT_STORE_CONFIG);
+  const [loyaltyConfig, setLoyaltyConfig] = useState<LoyaltyConfig>(DEFAULT_LOYALTY_CONFIG);
+  const [featuresConfig, setFeaturesConfig] = useState<FeaturesConfig>(DEFAULT_FEATURES_CONFIG);
   const [loading, setLoading] = useState(true);
 
   const fetchSettings = async () => {
@@ -201,6 +237,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     let payment = { ...DEFAULT_PAYMENT_CONFIG };
     let hero = { ...DEFAULT_HERO_CONFIG };
     let store = { ...DEFAULT_STORE_CONFIG };
+    let loyalty = { ...DEFAULT_LOYALTY_CONFIG };
+    let features = { ...DEFAULT_FEATURES_CONFIG };
     if (siteSettings.features_json) {
       try {
         const parsed = JSON.parse(siteSettings.features_json);
@@ -222,6 +260,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (parsed && parsed.storeConfig) {
           store = { ...DEFAULT_STORE_CONFIG, ...parsed.storeConfig };
         }
+        if (parsed && parsed.loyaltyConfig) {
+          loyalty = { ...DEFAULT_LOYALTY_CONFIG, ...parsed.loyaltyConfig };
+        }
+        if (parsed && parsed.featuresConfig) {
+          features = { ...DEFAULT_FEATURES_CONFIG, ...parsed.featuresConfig };
+        }
       } catch (e) {
         console.error('Error parsing features_json for themeColors:', e);
       }
@@ -238,6 +282,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setPaymentConfig(payment);
     setHeroConfig(hero);
     setStoreConfig(store);
+    setLoyaltyConfig(loyalty);
+    setFeaturesConfig(features);
     setLoading(false);
   };
 
@@ -284,6 +330,8 @@ return (
         paymentConfig,
         heroConfig,
         storeConfig,
+        loyaltyConfig,
+        featuresConfig,
         loading,
         refresh: fetchSettings,
       }}
