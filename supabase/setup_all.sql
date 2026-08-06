@@ -42,6 +42,12 @@ CREATE POLICY "customer_public_update" ON customers FOR UPDATE
   TO anon, authenticated
   USING (true) WITH CHECK (true);
 
+-- Public delete policy (allows admin panel to delete any customer - the app uses custom auth)
+DROP POLICY IF EXISTS "customer_public_delete" ON customers;
+CREATE POLICY "customer_public_delete" ON customers FOR DELETE
+  TO anon, authenticated
+  USING (true);
+
 -- ============ 2) Orders table ============
 CREATE TABLE IF NOT EXISTS orders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

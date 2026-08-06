@@ -1846,6 +1846,12 @@ function CustomersTab() {
     (r.phone || '').toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('حذف هذا العميل نهائياً؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+    await supabase.from('customers').delete().eq('id', id);
+    setRows((prev) => prev.filter((r) => r.id !== id));
+  };
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -1871,6 +1877,7 @@ function CustomersTab() {
                 <th className="p-3 font-medium">الطلبات</th>
                 <th className="p-3 font-medium">إجمالي المشتريات</th>
                 <th className="p-3 font-medium">تاريخ التسجيل</th>
+                <th className="p-3 font-medium">إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -1891,6 +1898,15 @@ function CustomersTab() {
                   </td>
                   <td className="p-3 font-bold" style={{ color: settings.primary_color }}>{r.totalSpent.toFixed(0)} ج.م</td>
                   <td className="p-3 text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString('ar-EG')}</td>
+                  <td className="p-3">
+                    <button
+                      onClick={() => handleDelete(r.id)}
+                      className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center transition-colors"
+                      title="حذف العميل"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
