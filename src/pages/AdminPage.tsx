@@ -2594,51 +2594,102 @@ function SettingsTab() {
               </p>
 
             <div className="space-y-4">
-              <div className="border-b border-gray-100 pb-3">
-                <h4 className="text-xs font-bold text-gray-800 mb-2">أولاً: ألوان الهوية الرئيسية</h4>
+              <ColorGroup
+                num="1"
+                title="ألوان الهوية الأساسية"
+                location="الشعار والأزرار"
+                hint="ألوان الهوية المستخدمة في الشعار وأزرار الموقع والوسومات — تغييرها يظهر فوراً في كل الأزرار والتسميات."
+                visual={<IdentityVisual colors={colors} />}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <ColorField label="اللون الأساسي (أزرار ونصوص)" value={colors.primaryColor} onChange={(v) => setColors({ ...colors, primaryColor: v })} />
                   <ColorField label="اللون الثانوي" value={colors.secondaryColor} onChange={(v) => setColors({ ...colors, secondaryColor: v })} />
                   <ColorField label="لون التمييز والوسومات" value={colors.accentColor} onChange={(v) => setColors({ ...colors, accentColor: v })} />
                 </div>
-              </div>
+              </ColorGroup>
 
-              <div className="border-b border-gray-100 pb-3">
-                <h4 className="text-xs font-bold text-gray-800 mb-2">ثانياً: الهيدر وشريط الملاحة</h4>
+              <ColorGroup
+                num="2"
+                title="الهيدر العلوي"
+                location="أعلى الموقع"
+                hint="الشريط العلوي ومساحة البحث وأيقونات الحساب والسلة — قم بتغيير الخلفية والنصوص وشاهد شكله هنا."
+                visual={<HeaderVisual colors={colors} />}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <ColorField label="خلفية الهيدر العلوي" value={colors.headerBg} onChange={(v) => setColors({ ...colors, headerBg: v })} />
                   <ColorField label="نصوص وأيقونات الهيدر" value={colors.headerText} onChange={(v) => setColors({ ...colors, headerText: v })} />
+                </div>
+              </ColorGroup>
+
+              <ColorGroup
+                num="3"
+                title="شريط التصنيفات (الملاحة)"
+                location="تحت الهيدر مباشرة"
+                hint="شريط الأقسام والتصنيفات أسفل الهيدر — الألوان هنا تخص خلفية الشريط ونصوص الأقسام."
+                visual={<NavVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <ColorField label="خلفية شريط التصنيفات" value={colors.headerNavBg} onChange={(v) => setColors({ ...colors, headerNavBg: v })} />
                   <ColorField label="نص شريط التصنيفات" value={colors.headerNavText} onChange={(v) => setColors({ ...colors, headerNavText: v })} />
                 </div>
-              </div>
+              </ColorGroup>
 
-              <div className="border-b border-gray-100 pb-3">
-                <h4 className="text-xs font-bold text-gray-800 mb-2">ثالثاً: قسم البانر الرئيسي (Hero)</h4>
+              <ColorGroup
+                num="4"
+                title="البانر الرئيسي (Hero)"
+                location="بداية الصفحة الرئيسية"
+                hint="البانر الترحيبي مع بحث الأدوية والوسمات الرائجة — تتدرج الخلفية من البداية للمنتصف للنهاية."
+                visual={<HeroVisual colors={colors} />}
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <ColorField label="بداية تدرج الهيرو" value={colors.heroBgStart} onChange={(v) => setColors({ ...colors, heroBgStart: v })} />
-                  <ColorField label="منتصف تدرج الهيرو" value={colors.heroBgMiddle} onChange={(v) => setColors({ ...colors, heroBgMiddle: v })} />
-                  <ColorField label="نهاية تدرج الهيرو" value={colors.heroBgEnd} onChange={(v) => setColors({ ...colors, heroBgEnd: v })} />
+                  <ColorField label="بداية تدرج البانر" value={colors.heroBgStart} onChange={(v) => setColors({ ...colors, heroBgStart: v })} />
+                  <ColorField label="منتصف تدرج البانر" value={colors.heroBgMiddle} onChange={(v) => setColors({ ...colors, heroBgMiddle: v })} />
+                  <ColorField label="نهاية تدرج البانر" value={colors.heroBgEnd} onChange={(v) => setColors({ ...colors, heroBgEnd: v })} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-                  <ColorField label="لون نصوص الهيرو" value={colors.heroText} onChange={(v) => setColors({ ...colors, heroText: v })} />
-                  <ColorField label="خلفية زر بحث الهيرو" value={colors.heroBtnBg} onChange={(v) => setColors({ ...colors, heroBtnBg: v })} />
-                  <ColorField label="نص زر بحث الهيرو" value={colors.heroBtnText} onChange={(v) => setColors({ ...colors, heroBtnText: v })} />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+                  <ColorField label="لون نصوص البانر" value={colors.heroText} onChange={(v) => setColors({ ...colors, heroText: v })} />
+                  <ColorField label="خلفية زر البحث" value={colors.heroBtnBg} onChange={(v) => setColors({ ...colors, heroBtnBg: v })} />
+                  <ColorField label="نص زر البحث" value={colors.heroBtnText} onChange={(v) => setColors({ ...colors, heroBtnText: v })} />
                 </div>
-              </div>
+              </ColorGroup>
 
-              <div className="border-b border-gray-100 pb-3">
-                <h4 className="text-xs font-bold text-gray-800 mb-2">رابعاً: البطاقات والتذييل</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <ColorGroup
+                num="5"
+                title="كروت الأرقام والإحصائيات"
+                location="منتصف الصفحة الرئيسية"
+                hint="البطاقات التي تعرض عدد الصيدليات والمنتجات وخدمات التوصيل — خلفية الكارت ونصوص الأرقام."
+                visual={<StatsVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <ColorField label="خلفية كروت الأرقام" value={colors.statsCardBg} onChange={(v) => setColors({ ...colors, statsCardBg: v })} />
                   <ColorField label="نصوص كروت الأرقام" value={colors.statsCardText} onChange={(v) => setColors({ ...colors, statsCardText: v })} />
+                </div>
+              </ColorGroup>
+
+              <ColorGroup
+                num="6"
+                title="كارت الصيدلية"
+                location="أقسام الصيدليات"
+                hint="إطار بطاقة الصيدلية عند مرور المؤشر عليها (Hover) — استخدم لوناً واضحاً يظهر عند التحديد."
+                visual={<PharmacyCardVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
                   <ColorField label="إطار كارت الصيدلية (Hover)" value={colors.pharmacyHoverBorder} onChange={(v) => setColors({ ...colors, pharmacyHoverBorder: v })} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                  <ColorField label="خلفية الفوتر (Footer)" value={colors.footerBg} onChange={(v) => setColors({ ...colors, footerBg: v })} />
+              </ColorGroup>
+
+              <ColorGroup
+                num="7"
+                title="الفوتر (التذييل)"
+                location="أسفل الموقع"
+                hint="التذييل النهائي مع الروابط والنشرة البريدية وأيقونات التواصل — تغيير الخلفية والنصوص يظهر هنا."
+                visual={<FooterVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية الفوتر" value={colors.footerBg} onChange={(v) => setColors({ ...colors, footerBg: v })} />
                   <ColorField label="نصوص الفوتر" value={colors.footerText} onChange={(v) => setColors({ ...colors, footerText: v })} />
                 </div>
-              </div>
+              </ColorGroup>
             </div>
 
             <div className="pt-5 mt-5 border-t border-gray-100">
@@ -3623,6 +3674,193 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
       <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg p-1.5">
         <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="w-10 h-10 rounded cursor-pointer border-0 bg-transparent" />
         <input value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 bg-transparent text-sm text-gray-600 focus:outline-none" dir="ltr" />
+      </div>
+    </div>
+  );
+}
+
+// ===== Visual mock helpers for the color editor =====
+function ColorGroup({
+  num,
+  title,
+  location,
+  hint,
+  visual,
+  children,
+}: {
+  num: string;
+  title: string;
+  location: string;
+  hint: string;
+  visual: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-sm transition-all hover:shadow-md">
+      <div className="relative p-3 border-b border-gray-100 bg-slate-50/70">
+        <span className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-900/80 text-white text-[9px] font-bold shadow-sm">
+          <MapPin className="w-2.5 h-2.5" />
+          {location}
+        </span>
+        {visual}
+      </div>
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-6 h-6 rounded-lg bg-gray-900 text-white flex items-center justify-center text-[10px] font-black shrink-0">{num}</span>
+          <h4 className="text-xs font-black text-gray-900">{title}</h4>
+        </div>
+        <p className="text-[11px] text-gray-400 mb-3">{hint}</p>
+        <div className="space-y-2">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function IdentityVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-3 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div className="flex items-center gap-1.5">
+        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[11px] font-black shadow-sm" style={{ backgroundColor: colors.primaryColor }}>+</span>
+        <span className="text-xs font-black" style={{ color: colors.headerText }}>صيدليتي</span>
+      </div>
+      <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-white shadow-sm" style={{ backgroundColor: colors.primaryColor }}>اشترِ الآن</span>
+      <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold" style={{ backgroundColor: `${colors.secondaryColor}1a`, color: colors.secondaryColor }}>عروض</span>
+      <span className="px-2 py-0.5 rounded-full text-[10px] font-black border-2" style={{ color: colors.accentColor, borderColor: colors.accentColor }}>خصم 20%</span>
+      <div className="h-2.5 w-12 rounded-full" style={{ background: `linear-gradient(to left, ${colors.primaryColor}, ${colors.secondaryColor})` }} />
+    </div>
+  );
+}
+
+function HeaderVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-300/60 shadow-sm">
+      <div className="flex items-center gap-2 px-3 py-1 text-[9px] font-bold" style={{ backgroundColor: colors.headerBg, color: colors.headerText }}>
+        <MapPin className="w-2.5 h-2.5" style={{ color: colors.accentColor }} />
+        <span className="opacity-80">القاهرة - المعادي</span>
+        <span className="mr-auto flex items-center gap-1 opacity-80">
+          <Truck className="w-2.5 h-2.5" style={{ color: colors.primaryColor }} />
+          توصيل سريع
+        </span>
+      </div>
+      <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: colors.headerBg, color: colors.headerText }}>
+        <span className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[9px] font-black shrink-0" style={{ backgroundColor: colors.primaryColor }}>+</span>
+        <span className="text-[10px] font-black shrink-0" style={{ color: colors.headerText }}>صيدليتي</span>
+        <div className="flex-1 h-6 rounded-full border flex items-center px-2 gap-1 text-[8px] min-w-0" style={{ borderColor: `${colors.headerText}2e`, color: colors.headerText }}>
+          <Search className="w-2.5 h-2.5 shrink-0 opacity-60" />
+          <span className="truncate opacity-70">ابحث عن دوائك...</span>
+        </div>
+        <span className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${colors.primaryColor}15`, color: colors.primaryColor }}>
+          <Heart className="w-3 h-3" />
+        </span>
+        <span className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${colors.headerText}08`, color: colors.headerText }}>
+          <ShoppingCart className="w-3 h-3" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function NavVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-300/60 shadow-sm">
+      <div className="flex items-center gap-1.5 px-3 py-2.5 overflow-hidden" style={{ backgroundColor: colors.headerNavBg, color: colors.headerNavText }}>
+        <span className="px-2 py-0.5 rounded-full text-[8px] font-bold whitespace-nowrap" style={{ backgroundColor: `${colors.headerNavText}15`, color: colors.headerNavText, border: `1px solid ${colors.headerNavText}22` }}>
+          <span className="inline-flex items-center gap-1"><Menu className="w-2 h-2" /> جميع الأقسام</span>
+        </span>
+        {['أدوية', 'عناية', 'أطفال', 'فيتامينات', '24/7'].map((c, i) => (
+          <span key={c} className="px-2 py-0.5 rounded-full text-[8px] font-bold whitespace-nowrap opacity-75" style={{ color: colors.headerNavText }}>
+            {i === 1 && <Sparkles className="w-2 h-2 inline" style={{ color: colors.accentColor }} />} {c}
+          </span>
+        ))}
+        <span className="w-1.5 h-1.5 rounded-full ml-auto shrink-0" style={{ backgroundColor: colors.accentColor }} />
+      </div>
+    </div>
+  );
+}
+
+function HeroVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-300/60 shadow-sm">
+      <div className="px-4 py-4 text-center space-y-2" style={{ background: `linear-gradient(135deg, ${colors.heroBgStart}, ${colors.heroBgMiddle}, ${colors.heroBgEnd})` }}>
+        <p className="text-[10px] font-black" style={{ color: colors.heroText }}>اعثر على دوائك في أقرب صيدلية</p>
+        <p className="text-[8px] font-bold opacity-75" style={{ color: colors.heroText }}>قارن الأسعار واطلب التوصيل حتى باب منزلك</p>
+        <div className="flex items-center gap-1 bg-white rounded-full p-1 max-w-[210px] mx-auto shadow-sm">
+          <span className="flex-1 text-[8px] text-gray-400 px-2 truncate">ابحث عن دواء...</span>
+          <span className="px-2 py-1 rounded-full text-[8px] font-black flex items-center gap-1 shrink-0" style={{ backgroundColor: colors.heroBtnBg, color: colors.heroBtnText }}>
+            <Search className="w-2.5 h-2.5" />
+            بحث
+          </span>
+        </div>
+        <div className="flex items-center justify-center gap-1.5 pt-0.5">
+          <span className="text-[7px] font-bold opacity-70" style={{ color: colors.heroText }}>الأكثر بحثاً:</span>
+          <span className="px-1.5 py-px rounded-full bg-white text-[7px] font-bold shadow-xs" style={{ color: colors.primaryColor }}>بنادول</span>
+          <span className="px-1.5 py-px rounded-full bg-white text-[7px] font-bold shadow-xs" style={{ color: colors.secondaryColor }}>أوجمنتين</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatsVisual({ colors }: { colors: ThemeColors }) {
+  const stats = [
+    { v: '1,200+', l: 'صيدلية شريكة' },
+    { v: '10k+', l: 'منتج طبي' },
+    { v: '24/7', l: 'توصيل سريع' },
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {stats.map((s) => (
+        <div key={s.l} className="rounded-xl border border-gray-200 p-2 text-center shadow-sm" style={{ backgroundColor: colors.statsCardBg }}>
+          <p className="text-[11px] font-black" style={{ color: colors.statsCardText }}>{s.v}</p>
+          <p className="text-[8px] font-bold opacity-70" style={{ color: colors.statsCardText }}>{s.l}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PharmacyCardVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl border-2 p-2.5 bg-white shadow-sm" style={{ borderColor: colors.pharmacyHoverBorder }}>
+      <div className="flex items-center gap-2">
+        <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${colors.primaryColor}15`, color: colors.primaryColor }}>
+          <Store className="w-4 h-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[9px] font-black text-gray-800">صيدلية المعادي</p>
+          <p className="text-[7px] font-bold text-gray-400 truncate">مفتوحة الآن - خدمة 24 ساعة</p>
+        </div>
+        <span className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-black shrink-0" style={{ backgroundColor: colors.primaryColor }}>+</span>
+      </div>
+      <div className="flex items-center gap-0.5 mt-1.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Star key={i} className="w-2.5 h-2.5 fill-current" style={{ color: colors.accentColor }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FooterVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-300/60 shadow-sm">
+      <div className="px-4 py-3 flex items-center justify-between gap-3" style={{ backgroundColor: colors.footerBg }}>
+        <div className="space-y-1 min-w-0">
+          <p className="text-[9px] font-black" style={{ color: colors.footerText }}>روابط سريعة</p>
+          <p className="text-[7px] font-bold opacity-80" style={{ color: colors.footerText }}>الرئيسية - العروض - تواصل معنا</p>
+          <p className="text-[7px] font-bold opacity-60" style={{ color: colors.footerText }}>© 2026 صيدليتي</p>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="w-6 h-6 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: colors.primaryColor }}>
+            <Facebook className="w-3 h-3" />
+          </span>
+          <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${colors.primaryColor}20`, color: colors.primaryColor }}>
+            <Instagram className="w-3 h-3" />
+          </span>
+          <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${colors.primaryColor}20`, color: colors.primaryColor }}>
+            <Twitter className="w-3 h-3" />
+          </span>
+        </div>
       </div>
     </div>
   );
