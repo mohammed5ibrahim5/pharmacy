@@ -26,8 +26,10 @@ const FAQS = [
 ];
 
 export function HomeFAQ() {
-  const { themeColors } = useSettings();
+  const { themeColors, storeConfig } = useSettings();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  const visibleFAQs = storeConfig.purchasesEnabled ? FAQS : FAQS.filter((f) => f.q !== 'هل التوصيل متاح على مدار الساعة؟');
 
   return (
     <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -52,7 +54,7 @@ export function HomeFAQ() {
         </div>
 
         <div className="lg:col-span-3 space-y-3">
-          {FAQS.map((faq, i) => {
+          {visibleFAQs.map((faq, i) => {
             const isOpen = openIndex === i;
             return (
               <div
