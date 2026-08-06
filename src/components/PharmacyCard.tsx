@@ -19,8 +19,9 @@ export function PharmacyCard({ pharmacy }: Props) {
   return (
     <div
       onClick={() => navigate({ name: 'pharmacy', id: pharmacy.id })}
-      className="group bg-white rounded-3xl border overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between relative"
+      className="group rounded-3xl border overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between relative"
       style={{
+        backgroundColor: themeColors.cardBg,
         borderColor: 'rgba(0, 0, 0, 0.08)',
       }}
       onMouseEnter={(e) => {
@@ -57,7 +58,8 @@ export function PharmacyCard({ pharmacy }: Props) {
           {/* Top Left: Delivery Badge */}
           <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
             {pharmacy.delivery_available && (
-              <div className="bg-teal-500/90 backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg border border-teal-400/30">
+              <div className="backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg border"
+                style={{ backgroundColor: themeColors.priceColor, borderColor: `${themeColors.priceColor}55` }}>
                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                 <Truck className="w-3.5 h-3.5" />
                 <span>توصيل سريع</span>
@@ -75,8 +77,8 @@ export function PharmacyCard({ pharmacy }: Props) {
 
           {/* Rating Badge on Cover Bottom Right */}
           <div className="absolute bottom-3 right-3 flex items-center gap-1 px-3 py-1 rounded-2xl bg-black/60 backdrop-blur-md text-white text-xs font-black shadow-md border border-white/20 z-10">
-            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-            <span className="text-amber-200">{pharmacy.rating}</span>
+            <Star className="w-3.5 h-3.5 fill-current" style={{ color: themeColors.ratingColor }} />
+            <span style={{ color: themeColors.ratingColor }}>{pharmacy.rating}</span>
             <span className="text-[10px] text-slate-300 font-normal">/ 5.0</span>
           </div>
 
@@ -121,16 +123,17 @@ export function PharmacyCard({ pharmacy }: Props) {
             <div className="flex-1 min-w-0 pt-2">
               <div className="flex items-center gap-1.5">
                 <h3
-                  className="font-black text-slate-900 text-base sm:text-lg truncate transition-colors"
+                  className="font-black text-base sm:text-lg truncate transition-colors"
+                  style={{ color: themeColors.cardText }}
                   onMouseEnter={(e) => e.currentTarget.style.color = themeColors.primaryColor}
-                  onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                  onMouseLeave={(e) => e.currentTarget.style.color = themeColors.cardText}
                 >
                   {pharmacy.name}
                 </h3>
-                <CheckCircle2 className="w-4 h-4 text-teal-500 fill-teal-100 shrink-0" aria-label="صيدلية معتمدة" role="img" />
+                <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: themeColors.inStockColor, fill: `${themeColors.inStockColor}20` }} aria-label="صيدلية معتمدة" role="img" />
               </div>
 
-              <div className="flex items-center gap-1 text-xs text-slate-500 font-bold mt-0.5">
+              <div className="flex items-center gap-1 text-xs font-bold mt-0.5" style={{ color: themeColors.cardMutedText }}>
                 <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: themeColors.primaryColor }} />
                 <span className="truncate">{pharmacy.area || pharmacy.city || pharmacy.address}</span>
               </div>
@@ -138,7 +141,7 @@ export function PharmacyCard({ pharmacy }: Props) {
           </div>
 
           {pharmacy.description && (
-            <p className="text-xs text-slate-600 mt-3 line-clamp-2 leading-relaxed font-medium">
+            <p className="text-xs mt-3 line-clamp-2 leading-relaxed font-medium" style={{ color: themeColors.cardMutedText }}>
               {pharmacy.description}
             </p>
           )}
@@ -189,7 +192,7 @@ export function PharmacyCard({ pharmacy }: Props) {
       </div>
 
       {/* Footer Action Bar */}
-      <div className="px-5 py-3.5 bg-slate-50/90 border-t border-slate-100 flex items-center justify-between mt-2">
+      <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between mt-2" style={{ backgroundColor: themeColors.sectionAltBg }}>
         <div className="flex items-center gap-2">
           {pharmacy.phone && (
             <a
@@ -210,8 +213,10 @@ export function PharmacyCard({ pharmacy }: Props) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="w-9 h-9 rounded-xl bg-teal-50 border flex items-center justify-center transition-all text-teal-700 shadow-2xs active:scale-95"
+              className="w-9 h-9 rounded-xl border flex items-center justify-center transition-all shadow-2xs active:scale-95"
               style={{
+                backgroundColor: `${themeColors.priceColor}15`,
+                color: themeColors.priceColor,
                 borderColor: `${themeColors.primaryColor}33`,
               }}
               title="تواصل مباشر عبر واتساب"

@@ -18,7 +18,7 @@ const SAMPLE_BARCODES = [
 ];
 
 export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerModalProps) {
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const [cameraActive, setCameraActive] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -93,13 +93,14 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in" onClick={onClose}>
       <div
-        className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative border border-gray-100 flex flex-col max-h-[90vh]"
+        className="rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative border border-gray-100 flex flex-col max-h-[90vh]"
+        style={{ backgroundColor: themeColors.modalBodyBg }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
           className="p-5 text-white relative flex items-center justify-between"
-          style={{ background: `linear-gradient(135deg, ${settings.primary_color}, ${settings.secondary_color})` }}
+          style={{ background: `linear-gradient(135deg, ${themeColors.modalHeaderBg}, ${themeColors.priceColor})` }}
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
@@ -154,7 +155,7 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
                 <button
                   onClick={startCamera}
                   className="px-5 py-2.5 rounded-xl font-bold text-xs text-white shadow-lg transition-transform hover:scale-[1.03] active:scale-95 flex items-center gap-2 mx-auto"
-                  style={{ backgroundColor: settings.primary_color }}
+                  style={{ backgroundColor: themeColors.priceColor }}
                 >
                   <Camera className="w-4 h-4" />
                   تشغيل الكاميرا الآن
@@ -201,13 +202,13 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
                   onChange={(e) => setManualCode(e.target.value)}
                   placeholder="مثال: 6223000123456"
                   className="w-full pr-10 pl-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
-                  style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                  style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                 />
               </div>
               <button
                 type="submit"
                 className="px-4 py-2 text-white font-bold text-xs rounded-xl shadow transition-transform hover:scale-[1.02]"
-                style={{ backgroundColor: settings.primary_color }}
+                style={{ backgroundColor: themeColors.priceColor }}
               >
                 بحث
               </button>

@@ -22,6 +22,40 @@ export interface ThemeColors {
   pharmacyHoverBorder: string;
   footerBg: string;
   footerText: string;
+  announcementBg: string;
+  announcementText: string;
+  headerSearchBg: string;
+  headerSearchText: string;
+  sectionBg: string;
+  sectionAltBg: string;
+  sectionHeadingText: string;
+  sectionSubheadingText: string;
+  badgePillBg: string;
+  badgePillText: string;
+  cardBg: string;
+  cardText: string;
+  cardMutedText: string;
+  cardHoverBorder: string;
+  priceColor: string;
+  discountBadgeBg: string;
+  discountBadgeText: string;
+  inStockColor: string;
+  outOfStockColor: string;
+  ratingColor: string;
+  pharmacyHeaderBg: string;
+  pharmacyHeaderText: string;
+  tabActiveBg: string;
+  tabActiveText: string;
+  pageSearchBg: string;
+  pageSearchText: string;
+  modalHeaderBg: string;
+  modalHeaderText: string;
+  modalBodyBg: string;
+  modalBodyText: string;
+  whatsappBtnBg: string;
+  bottomNavBg: string;
+  bottomNavText: string;
+  bottomNavActiveText: string;
 }
 
 export const DEFAULT_THEME_COLORS: ThemeColors = {
@@ -43,6 +77,40 @@ export const DEFAULT_THEME_COLORS: ThemeColors = {
   pharmacyHoverBorder: '#0d9488',
   footerBg: '#0f172a',
   footerText: '#cbd5e1',
+  announcementBg: '#0d9488',
+  announcementText: '#ffffff',
+  headerSearchBg: '#f1f5f9',
+  headerSearchText: '#334155',
+  sectionBg: '#ffffff',
+  sectionAltBg: '#f8fafc',
+  sectionHeadingText: '#0f172a',
+  sectionSubheadingText: '#64748b',
+  badgePillBg: '#0d9488',
+  badgePillText: '#0d9488',
+  cardBg: '#ffffff',
+  cardText: '#0f172a',
+  cardMutedText: '#64748b',
+  cardHoverBorder: '#0d9488',
+  priceColor: '#0d9488',
+  discountBadgeBg: '#dc2626',
+  discountBadgeText: '#ffffff',
+  inStockColor: '#16a34a',
+  outOfStockColor: '#dc2626',
+  ratingColor: '#f59e0b',
+  pharmacyHeaderBg: '#f0fdfa',
+  pharmacyHeaderText: '#0f172a',
+  tabActiveBg: '#0d9488',
+  tabActiveText: '#ffffff',
+  pageSearchBg: '#f1f5f9',
+  pageSearchText: '#334155',
+  modalHeaderBg: '#0d9488',
+  modalHeaderText: '#ffffff',
+  modalBodyBg: '#ffffff',
+  modalBodyText: '#0f172a',
+  whatsappBtnBg: '#25d366',
+  bottomNavBg: '#ffffff',
+  bottomNavText: '#94a3b8',
+  bottomNavActiveText: '#0d9488',
 };
 
 export const DEFAULT_HEADER_CONFIG: HeaderConfig = {

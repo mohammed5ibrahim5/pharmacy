@@ -43,11 +43,12 @@ export function FloatingActions() {
           href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent('مرحباً، أحتاج مساعدة في الطلب من صيدليتي')}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="relative w-14 h-14 rounded-2xl bg-[#25d366] text-white shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+          className="relative w-14 h-14 rounded-2xl text-white shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+          style={{ backgroundColor: themeColors.whatsappBtnBg }}
           title="تواصل معنا واتساب"
           aria-label="تواصل معنا واتساب"
         >
-          <span className="absolute inset-0 rounded-2xl bg-[#25d366] opacity-60 animate-ping" />
+          <span className="absolute inset-0 rounded-2xl opacity-60 animate-ping" style={{ backgroundColor: themeColors.whatsappBtnBg }} />
           <MessageCircle className="w-7 h-7 relative" />
         </a>
       )}

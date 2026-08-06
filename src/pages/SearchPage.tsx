@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function SearchPage({ query }: Props) {
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const { navigate } = useRouter();
   const { location } = useGeolocation();
   const [products, setProducts] = useState<Product[]>([]);
@@ -68,17 +68,18 @@ return (
       </button>
 
       {/* Header hero */}
-      <div className="relative rounded-3xl bg-gradient-to-l from-teal-50 via-teal-50/40 to-slate-50 p-8 mb-8 overflow-hidden border border-teal-100/60 shadow-2xs">
-        <div className="absolute inset-0 bg-[radial-gradient(#0d9488_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-10" />
-        <div className="absolute -top-16 -left-16 w-48 h-48 rounded-full opacity-[0.1] blur-3xl" style={{ backgroundColor: settings.primary_color }} />
+      <div className="relative rounded-3xl p-8 mb-8 overflow-hidden border shadow-2xs"
+        style={{ background: `linear-gradient(135deg, ${themeColors.pharmacyHeaderBg}, ${themeColors.sectionBg})`, borderColor: `${themeColors.priceColor}20` }}>
+        <div className="absolute inset-0 bg-[radial-gradient(transparent_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-10" />
+        <div className="absolute -top-16 -left-16 w-48 h-48 rounded-full opacity-[0.1] blur-3xl" style={{ backgroundColor: themeColors.priceColor }} />
         <div className="relative flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg bg-white border border-teal-100">
-            <Search className="w-8 h-8 text-teal-600" />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg border" style={{ backgroundColor: themeColors.cardBg, borderColor: `${themeColors.priceColor}20` }}>
+            <Search className="w-8 h-8" style={{ color: themeColors.priceColor }} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900">نتائج البحث</h1>
-            <p className="text-slate-500 mt-1 text-xs">
-              البحث عن: <span className="font-bold text-teal-700">"{query}"</span>
+            <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.sectionHeadingText }}>نتائج البحث</h1>
+            <p className="mt-1 text-xs" style={{ color: themeColors.sectionSubheadingText }}>
+              البحث عن: <span className="font-bold" style={{ color: themeColors.priceColor }}>"{query}"</span>
             </p>
           </div>
         </div>
@@ -96,9 +97,9 @@ return (
         <div className="text-center py-20">
           <div
             className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
-            style={{ backgroundColor: `${settings.primary_color}10` }}
+            style={{ backgroundColor: `${themeColors.priceColor}10` }}
           >
-            <Pill className="w-10 h-10" style={{ color: settings.primary_color, opacity: 0.5 }} />
+            <Pill className="w-10 h-10" style={{ color: themeColors.priceColor, opacity: 0.5 }} />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">لا توجد نتائج</h3>
           <p className="text-gray-500">لم نجد أي منتج أو صيدلية تطابق "{query}"</p>
@@ -109,10 +110,10 @@ return (
           {nearestPharmaciesWithProduct.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${settings.accent_color}12` }}>
-                  <Navigation className="w-4 h-4" style={{ color: settings.accent_color }} />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${themeColors.accentColor}12` }}>
+                  <Navigation className="w-4 h-4" style={{ color: themeColors.accentColor }} />
                 </div>
-                <h2 className="text-lg font-bold text-gray-900">
+                <h2 className="text-lg font-bold" style={{ color: themeColors.sectionHeadingText }}>
                   {location ? 'أقرب صيدليات بها هذا المنتج' : 'صيدليات بها هذا المنتج'}
                 </h2>
               </div>
@@ -128,10 +129,10 @@ return (
           {products.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${settings.primary_color}12` }}>
-                  <Package className="w-4 h-4" style={{ color: settings.primary_color }} />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${themeColors.priceColor}12` }}>
+                  <Package className="w-4 h-4" style={{ color: themeColors.priceColor }} />
                 </div>
-                <h2 className="text-lg font-bold text-gray-900">المنتجات ({products.length})</h2>
+                <h2 className="text-lg font-bold" style={{ color: themeColors.sectionHeadingText }}>المنتجات ({products.length})</h2>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {products.map((product) => (

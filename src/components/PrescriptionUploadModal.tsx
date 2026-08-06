@@ -11,7 +11,7 @@ interface PrescriptionUploadModalProps {
 }
 
 export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadModalProps) {
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const { profile, user } = useCustomer();
   const [image, setImage] = useState<string | null>(null);
   const [linkMode, setLinkMode] = useState(false);
@@ -84,13 +84,14 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in" onClick={onClose}>
       <div
-        className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative border border-gray-100 flex flex-col max-h-[90vh]"
+        className="rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative border border-gray-100 flex flex-col max-h-[90vh]"
+        style={{ backgroundColor: themeColors.modalBodyBg }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
           className="p-5 text-white relative flex items-center justify-between"
-          style={{ background: `linear-gradient(135deg, ${settings.primary_color}, ${settings.secondary_color})` }}
+          style={{ background: `linear-gradient(135deg, ${themeColors.modalHeaderBg}, ${themeColors.priceColor})` }}
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
@@ -140,7 +141,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                     <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 hover:border-teal-500 rounded-2xl bg-gray-50 hover:bg-teal-50/40 transition-all cursor-pointer group text-center space-y-2">
                       <div
                         className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md"
-                        style={{ backgroundColor: `${settings.primary_color}15`, color: settings.primary_color }}
+                        style={{ backgroundColor: `${themeColors.priceColor}15`, color: themeColors.priceColor }}
                       >
                         <Camera className="w-6 h-6" />
                       </div>
@@ -167,7 +168,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                           placeholder="https://example.com/rx.jpg"
                           dir="ltr"
                           className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
-                          style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                          style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                         />
                         <button
                           type="button"
@@ -179,7 +180,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                             }
                           }}
                           className="px-4 py-2.5 rounded-xl text-white text-xs font-bold shrink-0"
-                          style={{ backgroundColor: settings.primary_color }}
+                          style={{ backgroundColor: themeColors.priceColor }}
                         >
                           استخدام الرابط
                         </button>
@@ -202,7 +203,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                     required
                     dir="ltr"
                     className="w-full pr-10 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
-                    style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                    style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                   />
                 </div>
               </div>
@@ -218,7 +219,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                     rows={3}
                     placeholder="اكتب أية ملاحظات بخصوص الجرعات أو البدائل المتاحة..."
                     className="w-full pr-10 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 resize-none"
-                    style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                    style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                   />
                 </div>
               </div>
@@ -234,7 +235,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                 type="submit"
                 disabled={uploading}
                 className="w-full py-3 text-white font-bold text-sm rounded-xl shadow-lg transition-transform hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60"
-                style={{ backgroundColor: settings.primary_color }}
+                style={{ backgroundColor: themeColors.priceColor }}
               >
                 {uploading ? (
                   <>

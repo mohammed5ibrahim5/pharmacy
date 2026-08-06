@@ -25,7 +25,7 @@ const METHOD_ICONS: Record<PaymentMethod, React.ReactNode> = {
 export function OrderModal() {
   const { orderItem, orderModalOpen, closeOrder } = useOrder();
   const { user, profile, setAuthModalOpen } = useCustomer();
-  const { settings, paymentConfig, storeConfig, loyaltyConfig, featuresConfig } = useSettings();
+  const { settings, themeColors, paymentConfig, storeConfig, loyaltyConfig, featuresConfig } = useSettings();
   const [quantity, setQuantity] = useState(1);
   const [address, setAddress] = useState(profile?.phone || '');
   const [note, setNote] = useState('');
@@ -92,7 +92,7 @@ export function OrderModal() {
 
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeOrder}>
-        <div className="bg-white rounded-3xl w-full max-w-md p-6 relative" onClick={(e) => e.stopPropagation()}>
+        <div className="rounded-3xl w-full max-w-md p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
           <button onClick={closeOrder} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
             <X className="w-5 h-5 text-gray-500" />
           </button>
@@ -100,7 +100,7 @@ export function OrderModal() {
           <div className="text-center mb-5">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ backgroundColor: `${settings.primary_color}12`, color: settings.primary_color }}
+              style={{ backgroundColor: `${themeColors.priceColor}12`, color: themeColors.priceColor }}
             >
               <Phone className="w-8 h-8" />
             </div>
@@ -122,7 +122,7 @@ export function OrderModal() {
                 <Store className="w-3.5 h-3.5 shrink-0" />
                 {contactName}
               </p>
-              <p className="text-xs font-bold mt-0.5" style={{ color: settings.primary_color }}>
+              <p className="text-xs font-bold mt-0.5" style={{ color: themeColors.priceColor }}>
                 {finalPrice.toFixed(2)} ج.م
               </p>
             </div>
@@ -145,7 +145,7 @@ export function OrderModal() {
               <a
                 href={`tel:${phone}`}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg mb-3"
-                style={{ backgroundColor: settings.primary_color, boxShadow: `0 8px 20px -6px ${settings.primary_color}88` }}
+                style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
               >
                 <Phone className="w-5 h-5" />
                 الاتصال بـ {contactName}
@@ -157,7 +157,7 @@ export function OrderModal() {
             <a
               href={`tel:${phone}`}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all hover:scale-[1.01] active:scale-95 border-2 mb-3"
-              style={{ borderColor: settings.primary_color, color: settings.primary_color }}
+              style={{ borderColor: themeColors.priceColor, color: themeColors.priceColor }}
             >
               <Phone className="w-5 h-5" />
               الاتصال المباشر
@@ -182,7 +182,7 @@ export function OrderModal() {
   if (!user) {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeOrder}>
-        <div className="bg-white rounded-3xl w-full max-w-md p-6 relative" onClick={(e) => e.stopPropagation()}>
+        <div className="rounded-3xl w-full max-w-md p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
           <button onClick={closeOrder} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
             <X className="w-5 h-5 text-gray-500" />
           </button>
@@ -190,9 +190,9 @@ export function OrderModal() {
           <div className="text-center mb-6">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ backgroundColor: `${settings.primary_color}12` }}
+              style={{ backgroundColor: `${themeColors.priceColor}12` }}
             >
-              <Lock className="w-8 h-8" style={{ color: settings.primary_color }} />
+              <Lock className="w-8 h-8" style={{ color: themeColors.priceColor }} />
             </div>
             <h2 className="text-xl font-extrabold text-gray-900">سجّل دخولك أولاً</h2>
             <p className="text-gray-500 text-sm mt-2">يجب تسجيل الدخول أو إنشاء حساب لتتمكن من طلب المنتجات</p>
@@ -215,7 +215,7 @@ export function OrderModal() {
           <button
             onClick={() => { closeOrder(); setAuthModalOpen(true); }}
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg"
-            style={{ backgroundColor: settings.primary_color, boxShadow: `0 8px 20px -6px ${settings.primary_color}88` }}
+            style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
           >
             <User className="w-5 h-5" />
             تسجيل الدخول / إنشاء حساب
@@ -305,7 +305,7 @@ export function OrderModal() {
   if (success) {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeOrder}>
-        <div className="bg-white rounded-3xl w-full max-w-md p-8 text-center relative" onClick={(e) => e.stopPropagation()}>
+        <div className="rounded-3xl w-full max-w-md p-8 text-center relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
           <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-5">
             <CheckCircle2 className="w-10 h-10 text-teal-600" />
           </div>
@@ -321,14 +321,14 @@ export function OrderModal() {
           )}
           {selectedPharmacy && (
             <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2 mb-6 text-xs font-bold text-gray-700">
-              <Store className="w-4 h-4" style={{ color: settings.primary_color }} />
+              <Store className="w-4 h-4" style={{ color: themeColors.priceColor }} />
               سيتم التوصيل من: {selectedPharmacy.name}
             </div>
           )}
           <button
             onClick={closeOrder}
             className="w-full py-3 rounded-xl text-white font-bold"
-            style={{ backgroundColor: settings.primary_color }}
+            style={{ backgroundColor: themeColors.priceColor }}
           >
             حسناً
           </button>
@@ -339,7 +339,7 @@ export function OrderModal() {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeOrder}>
-      <div className="bg-white rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 relative" onClick={(e) => e.stopPropagation()}>
+      <div className="rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
         <button onClick={closeOrder} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
           <X className="w-5 h-5 text-gray-500" />
         </button>
@@ -356,7 +356,7 @@ export function OrderModal() {
             <p className="font-bold text-gray-900">{product.name}</p>
             {orderItem.pharmacyName && <p className="text-xs text-gray-500">{orderItem.pharmacyName}</p>}
             <div className="flex items-baseline gap-1.5 mt-1">
-              <span className="font-extrabold" style={{ color: settings.primary_color }}>{finalPrice.toFixed(2)}</span>
+              <span className="font-extrabold" style={{ color: themeColors.priceColor }}>{finalPrice.toFixed(2)}</span>
               <span className="text-xs text-gray-500">ج.م</span>
             </div>
           </div>
@@ -401,7 +401,7 @@ export function OrderModal() {
                 value={pharmacyId}
                 onChange={(e) => setPharmacyId(e.target.value)}
                 className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 appearance-none"
-                style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
               >
                 <option value="">اختر الصيدلية...</option>
                 {pharmacies.map((p) => (
@@ -411,7 +411,7 @@ export function OrderModal() {
             </div>
             {selectedPharmacy && (
               <p className="text-[11px] font-bold text-gray-500 mt-1.5 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" style={{ color: settings.primary_color }} />
+                <CheckCircle2 className="w-3.5 h-3.5" style={{ color: themeColors.priceColor }} />
                 سيتم تنفيذ الطلب من صيدلية {selectedPharmacy.name}
               </p>
             )}
@@ -440,7 +440,7 @@ export function OrderModal() {
             <label className="block text-sm font-medium text-gray-700 mb-1.5">عنوان التوصيل</label>
             <div className="relative">
               <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="العنوان بالتفصيل" className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: settings.primary_color }} />
+              <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="العنوان بالتفصيل" className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: themeColors.priceColor }} />
             </div>
           </div>
 
@@ -461,12 +461,12 @@ export function OrderModal() {
                       ? 'shadow-md'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
-                  style={paymentMethod === m.id ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}0a` } : {}}
+                  style={paymentMethod === m.id ? { borderColor: themeColors.priceColor, backgroundColor: `${themeColors.priceColor}0a` } : {}}
                 >
                   <div className="flex items-center gap-2">
                     <span
                       className="w-9 h-9 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${settings.primary_color}14`, color: settings.primary_color }}
+                      style={{ backgroundColor: `${themeColors.priceColor}14`, color: themeColors.priceColor }}
                     >
                       {METHOD_ICONS[m.id]}
                     </span>
@@ -478,7 +478,7 @@ export function OrderModal() {
                   {paymentMethod === m.id && (
                     <span
                       className="absolute top-2 left-2 w-4 h-4 rounded-full flex items-center justify-center text-white"
-                      style={{ backgroundColor: settings.primary_color }}
+                      style={{ backgroundColor: themeColors.priceColor }}
                     >
                       <CheckCheck className="w-3 h-3" />
                     </span>
@@ -499,7 +499,7 @@ export function OrderModal() {
                       type="button"
                       onClick={handleCopyNumber}
                       className="px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 text-white hover:brightness-110 active:scale-95 transition-all"
-                      style={{ backgroundColor: settings.primary_color }}
+                      style={{ backgroundColor: themeColors.priceColor }}
                     >
                       {copied ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                       {copied ? 'تم النسخ' : 'نسخ الرقم'}
@@ -521,7 +521,7 @@ export function OrderModal() {
               صورة إثبات التحويل (سكرين شوت) *
             </label>
             {screenshot ? (
-              <div className="relative rounded-2xl overflow-hidden border-2 max-h-56 bg-slate-900 flex items-center justify-center" style={{ borderColor: settings.primary_color }}>
+              <div className="relative rounded-2xl overflow-hidden border-2 max-h-56 bg-slate-900 flex items-center justify-center" style={{ borderColor: themeColors.priceColor }}>
                 <img src={screenshot} alt="إثبات التحويل" className="max-h-56 w-auto object-contain mx-auto" />
                 <button
                   type="button"
@@ -536,7 +536,7 @@ export function OrderModal() {
                 <label className="flex flex-col items-center justify-center p-5 border-2 border-dashed border-gray-300 hover:border-teal-500 rounded-2xl bg-gray-50 hover:bg-teal-50/40 transition-all cursor-pointer group text-center space-y-2">
                   <div
                     className="w-11 h-11 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md"
-                    style={{ backgroundColor: `${settings.primary_color}15`, color: settings.primary_color }}
+                    style={{ backgroundColor: `${themeColors.priceColor}15`, color: themeColors.priceColor }}
                   >
                     <Camera className="w-5 h-5" />
                   </div>
@@ -564,7 +564,7 @@ export function OrderModal() {
                   placeholder="https://example.com/screenshot.jpg"
                   dir="ltr"
                   className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
-                  style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                  style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                 />
                 <button
                   type="button"
@@ -575,7 +575,7 @@ export function OrderModal() {
                     }
                   }}
                   className="px-4 py-2.5 rounded-xl text-white text-xs font-bold"
-                  style={{ backgroundColor: settings.primary_color }}
+                  style={{ backgroundColor: themeColors.priceColor }}
                 >
                   استخدام الرابط
                 </button>
@@ -586,7 +586,7 @@ export function OrderModal() {
           {/* Note */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">ملاحظات (اختياري)</label>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="أي تفاصيل إضافية..." className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: settings.primary_color }} />
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="أي تفاصيل إضافية..." className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: themeColors.priceColor }} />
           </div>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2">
@@ -612,7 +612,7 @@ export function OrderModal() {
             })()}
             <div className="flex items-center justify-between pt-2 border-t border-gray-100">
               <span className="text-sm text-gray-500">الإجمالي</span>
-              <span className="font-extrabold text-lg" style={{ color: settings.primary_color }}>
+              <span className="font-extrabold text-lg" style={{ color: themeColors.priceColor }}>
                 {(() => {
                   const subtotal = finalPrice * quantity;
                   const freeThreshold = parseFloat(paymentConfig.freeDeliveryThreshold) || 0;
@@ -633,7 +633,7 @@ export function OrderModal() {
             type="submit"
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 shadow-lg"
-            style={{ backgroundColor: settings.primary_color, boxShadow: `0 8px 20px -6px ${settings.primary_color}88` }}
+            style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-5 h-5" /> تأكيد الطلب</>}
           </button>

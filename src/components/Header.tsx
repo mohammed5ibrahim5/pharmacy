@@ -280,8 +280,8 @@ export function Header() {
             <div className="hidden md:flex flex-1 max-w-2xl relative" ref={searchRef}>
               <form onSubmit={handleSearchSubmit} className="w-full relative group">
                 <div
-                  className="relative flex items-center rounded-full border p-1 transition-all shadow-inner bg-black/5 hover:bg-black/[0.08]"
-                  style={{ borderColor: `${themeColors.headerText}22` }}
+                  className="relative flex items-center rounded-full border p-1 transition-all shadow-inner"
+                  style={{ backgroundColor: themeColors.headerSearchBg, borderColor: `${themeColors.headerText}22` }}
                 >
                   <input
                     type="text"
@@ -290,7 +290,7 @@ export function Header() {
                     onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
                     placeholder="ابحث باسم الدواء، المادة الفعالة، أو امسح الباركود..."
                     className="w-full pr-5 pl-24 py-2.5 bg-transparent text-xs sm:text-sm font-bold placeholder:font-medium focus:outline-none"
-                    style={{ color: themeColors.headerText }}
+                    style={{ color: themeColors.headerSearchText }}
                   />
 
                   <button
@@ -307,15 +307,15 @@ export function Header() {
                     style={{ borderColor: `${themeColors.headerText}22` }}
                   >
                     {headerConfig.showVoiceSearch && (
-                      <button
-                        type="button"
-                        onClick={handleVoiceSearch}
-                        className={`p-1.5 rounded-full hover:bg-black/10 transition-colors ${
-                          isListening ? 'text-red-500 animate-bounce' : 'opacity-60 hover:opacity-100'
-                        }`}
-                        style={{ color: themeColors.headerText }}
-                        title="بحث بالصوت"
-                      >
+                  <button
+                    type="button"
+                    onClick={handleVoiceSearch}
+                    className={`p-1.5 rounded-full transition-colors ${
+                      isListening ? 'text-red-500 animate-bounce' : 'opacity-60 hover:opacity-100'
+                    }`}
+                    style={{ color: themeColors.headerSearchText }}
+                    title="بحث بالصوت"
+                  >
                         <Mic className="w-4 h-4" />
                       </button>
                     )}
@@ -422,7 +422,7 @@ export function Header() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-extrabold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-md hover:brightness-110"
-                  style={{ backgroundColor: '#0d9488', boxShadow: '0 4px 14px -2px #0d948888' }}
+                  style={{ backgroundColor: themeColors.whatsappBtnBg, boxShadow: `0 4px 14px -2px ${themeColors.whatsappBtnBg}88` }}
                 >
                   <Send className="w-4 h-4" />
                   واتساب
@@ -657,7 +657,7 @@ export function Header() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 p-3 w-full rounded-2xl text-xs font-extrabold text-white"
-                style={{ backgroundColor: '#0d9488' }}
+                style={{ backgroundColor: themeColors.whatsappBtnBg }}
               >
                 <Send className="w-4 h-4" />
                 تواصل معنا مباشر عبر واتساب

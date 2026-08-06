@@ -16,7 +16,7 @@ function finalPrice(p: Product): number {
 }
 
 export function PriceCompareModal({ product, onClose }: Props) {
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const { openOrder } = useOrder();
   const [sameName, setSameName] = useState<Product[]>([]);
   const [alternatives, setAlternatives] = useState<Product[]>([]);
@@ -78,12 +78,12 @@ export function PriceCompareModal({ product, onClose }: Props) {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-black text-gray-900 truncate">{p.name}</p>
           <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5 truncate">
-            <Store className="w-3 h-3 shrink-0" style={{ color: settings.primary_color }} />
+            <Store className="w-3 h-3 shrink-0" style={{ color: themeColors.priceColor }} />
             <span className="truncate">{p.pharmacy?.name || 'جميع الصيدليات'}</span>
           </p>
         </div>
         <div className="text-left shrink-0">
-          <p className="text-base font-black" style={{ color: settings.primary_color }}>
+          <p className="text-base font-black" style={{ color: themeColors.priceColor }}>
             {fp.toFixed(2)} <span className="text-[10px] font-bold text-gray-400">ج.م</span>
           </p>
           {p.discounts?.some((d) => d.is_active) && (
@@ -93,7 +93,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
         <button
           onClick={() => openOrder(p, p.pharmacy?.name)}
           className="shrink-0 px-3 py-1.5 rounded-xl text-white text-[11px] font-extrabold hover:brightness-110 active:scale-95 transition-all"
-          style={{ backgroundColor: settings.primary_color }}
+          style={{ backgroundColor: themeColors.priceColor }}
         >
           اطلب
         </button>
@@ -103,28 +103,29 @@ export function PriceCompareModal({ product, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto relative" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white/95 backdrop-blur-sm px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between z-10 rounded-t-3xl">
+      <div className="rounded-3xl w-full max-w-2xl max-h-[92vh] overflow-y-auto relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 backdrop-blur-sm px-5 sm:px-6 py-4 border-b border-gray-100 flex items-center justify-between z-10 rounded-t-3xl"
+          style={{ backgroundColor: themeColors.modalHeaderBg }}>
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
-              style={{ backgroundColor: `${settings.primary_color}12`, color: settings.primary_color }}
+              style={{ backgroundColor: `${themeColors.priceColor}12`, color: themeColors.priceColor }}
             >
               <Scale className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-black text-gray-900">قارن الأسعار</h2>
-              <p className="text-[11px] text-gray-500 font-bold truncate max-w-[220px] sm:max-w-sm">{product.name}</p>
+              <h2 className="text-base font-black" style={{ color: themeColors.modalHeaderText }}>قارن الأسعار</h2>
+              <p className="text-[11px] font-bold truncate max-w-[220px] sm:max-w-sm" style={{ color: themeColors.modalBodyText }}>{product.name}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center shrink-0">
-            <X className="w-5 h-5 text-gray-500" />
+          <button onClick={onClose} className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ color: themeColors.modalHeaderText }}>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-5 sm:p-6 space-y-6">
           {/* Current product */}
-          <div className="bg-white rounded-2xl border-2 p-4 flex items-center gap-3" style={{ borderColor: `${settings.primary_color}30` }}>
+          <div className="rounded-2xl border-2 p-4 flex items-center gap-3" style={{ borderColor: `${themeColors.priceColor}30`, backgroundColor: themeColors.cardBg }}>
             <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
               {product.image_url ? (
                 <img src={product.image_url} alt="" className="w-full h-full object-cover" />
@@ -137,7 +138,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
               <p className="text-[11px] text-gray-500 font-bold">{product.pharmacy?.name || 'جميع الصيدليات'}</p>
             </div>
             <div className="text-left shrink-0">
-              <p className="text-lg font-black" style={{ color: settings.primary_color }}>
+              <p className="text-lg font-black" style={{ color: themeColors.priceColor }}>
                 {currentFinal.toFixed(2)} <span className="text-[10px] font-bold text-gray-400">ج.م</span>
               </p>
               {product.discounts?.some((d) => d.is_active) && (
@@ -156,8 +157,8 @@ export function PriceCompareModal({ product, onClose }: Props) {
           ) : sameName.length > 0 ? (
             <section>
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${settings.primary_color}12` }}>
-                  <Store className="w-4 h-4" style={{ color: settings.primary_color }} />
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.priceColor}12` }}>
+                  <Store className="w-4 h-4" style={{ color: themeColors.priceColor }} />
                 </div>
                 <h3 className="text-sm font-black text-gray-900">نفس الدواء في صيدليات أخرى ({sameName.length})</h3>
                 {cheapestSame && (
@@ -188,8 +189,8 @@ export function PriceCompareModal({ product, onClose }: Props) {
           {!loading && alternatives.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${settings.accent_color}12` }}>
-                  <Sparkles className="w-4 h-4" style={{ color: settings.accent_color }} />
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.accentColor}12` }}>
+                  <Sparkles className="w-4 h-4" style={{ color: themeColors.accentColor }} />
                 </div>
                 <h3 className="text-sm font-black text-gray-900">بدائل بنفس المادة الفعالة ({alternatives.length})</h3>
                 {cheapestAlt && (

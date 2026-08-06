@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function ProductCard({ product, pharmacyName, onClick }: Props) {
-  const { settings, storeConfig, featuresConfig } = useSettings();
+  const { settings, themeColors, storeConfig, featuresConfig } = useSettings();
   const { openOrder } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { user } = useAuth();
@@ -40,7 +40,8 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
   return (
     <div
       onClick={handleClick}
-      className="group bg-white rounded-3xl border border-gray-200/80 overflow-hidden hover:shadow-2xl hover:-translate-y-1.5 hover:border-teal-300 transition-all duration-300 cursor-pointer flex flex-col justify-between"
+      className="group rounded-3xl border border-gray-200/80 overflow-hidden hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between"
+      style={{ backgroundColor: themeColors.cardBg, borderColor: `${themeColors.cardHoverBorder}33` }}
     >
       <div>
         {/* Product Image Box */}
@@ -55,11 +56,11 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
           ) : (
             <div
               className="w-full h-full rounded-2xl flex flex-col items-center justify-center gap-1.5 p-3 text-center"
-              style={{ background: `linear-gradient(135deg, ${settings.primary_color}10, ${settings.secondary_color}15)` }}
+              style={{ background: `linear-gradient(135deg, ${themeColors.priceColor}10, ${themeColors.sectionAltBg}15)` }}
             >
               <Pill
                 className="w-10 h-10"
-                style={{ color: settings.primary_color, opacity: 0.4 }}
+                style={{ color: themeColors.priceColor, opacity: 0.4 }}
               />
               <span className="text-[11px] font-bold text-gray-500 line-clamp-1">
                 {product.name}
@@ -70,8 +71,8 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
           {/* Badges Overlay */}
           {activeDiscount && (
             <div
-              className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold text-white shadow-md animate-pulse"
-              style={{ backgroundColor: settings.accent_color || '#d97706' }}
+              className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md animate-pulse"
+              style={{ backgroundColor: themeColors.discountBadgeBg, color: themeColors.discountBadgeText }}
             >
               خصم {activeDiscount.discount_percentage}%
             </div>
@@ -109,7 +110,7 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
               title="قارن الأسعار والبدائل"
               aria-label="قارن الأسعار والبدائل"
             >
-              <Scale className="w-[18px] h-[18px] text-teal-600" />
+              <Scale className="w-[18px] h-[18px]" style={{ color: themeColors.priceColor }} />
             </button>
           )}
 
@@ -137,9 +138,10 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
               }}
               className={`absolute bottom-2.5 right-2.5 w-9 h-9 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-300 active:scale-90 ${
                 alerted
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-white/90 backdrop-blur-sm border border-gray-100 hover:bg-white text-amber-600'
+                  ? 'text-white'
+                  : 'bg-white/90 backdrop-blur-sm border border-gray-100 hover:bg-white'
               }`}
+              style={alerted ? { backgroundColor: themeColors.priceColor } : { color: themeColors.accentColor }}
               title={alerted ? 'تم الاشتراك — سنخبرك عند التوفر' : 'نبهني عند توفر الدواء'}
               aria-label="نبهني عند توفر الدواء"
             >
@@ -173,7 +175,10 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
               e.stopPropagation();
               openOrder(product, pharmacyName);
             }}
-            className="absolute bottom-2.5 left-2.5 w-9 h-9 rounded-2xl bg-white shadow-lg text-teal-700 hover:bg-teal-600 hover:text-white flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+            className="absolute bottom-2.5 left-2.5 w-9 h-9 rounded-2xl bg-white shadow-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+            style={{ color: themeColors.priceColor }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = themeColors.priceColor; e.currentTarget.style.color = '#ffffff'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = themeColors.priceColor; }}
             title={storeConfig.purchasesEnabled ? 'اطلب الدواء الآن' : 'تواصل مع الصيدلية'}
           >
             {storeConfig.purchasesEnabled ? (
@@ -186,38 +191,42 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
 
         {/* Info */}
         <div className="p-4 space-y-2">
-          <h3 className="font-extrabold text-gray-900 text-sm leading-snug line-clamp-2 group-hover:text-teal-700 transition-colors min-h-[2.4rem]">
+          <h3 className="font-extrabold text-sm leading-snug line-clamp-2 transition-colors min-h-[2.4rem]"
+            style={{ color: themeColors.cardText }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = themeColors.priceColor)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = themeColors.cardText)}
+          >
             {product.name}
           </h3>
 
           {product.for_all_pharmacies ? (
-            <p className="text-[11px] font-semibold text-teal-700 flex items-center gap-1 truncate">
-              <Store className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+            <p className="text-[11px] font-semibold flex items-center gap-1 truncate" style={{ color: themeColors.priceColor }}>
+              <Store className="w-3.5 h-3.5 shrink-0" style={{ color: themeColors.priceColor }} />
               <span className="truncate">متوفر في جميع الصيدليات</span>
             </p>
           ) : (
             pharmacyName && (
-              <p className="text-[11px] font-semibold text-gray-500 flex items-center gap-1 truncate">
-                <Truck className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+              <p className="text-[11px] font-semibold flex items-center gap-1 truncate" style={{ color: themeColors.cardMutedText }}>
+                <Truck className="w-3.5 h-3.5 shrink-0" style={{ color: themeColors.priceColor }} />
                 <span className="truncate">{pharmacyName}</span>
               </p>
             )
           )}
 
           {product.description && (
-            <p className="text-[11px] text-gray-500 line-clamp-1 font-medium">{product.description}</p>
+            <p className="text-[11px] line-clamp-1 font-medium" style={{ color: themeColors.cardMutedText }}>{product.description}</p>
           )}
 
           {(product.form || product.dosage) && (
-            <p className="text-[11px] font-bold text-gray-500 flex items-center gap-1 truncate">
-              <FlaskConical className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+            <p className="text-[11px] font-bold flex items-center gap-1 truncate" style={{ color: themeColors.cardMutedText }}>
+              <FlaskConical className="w-3.5 h-3.5 shrink-0" style={{ color: themeColors.priceColor }} />
               <span className="truncate">{[product.form, product.dosage].filter(Boolean).join(' • ')}</span>
             </p>
           )}
 
           {product.manufacturer && (
-            <p className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
-              <Factory className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <p className="text-[11px] flex items-center gap-1 truncate" style={{ color: themeColors.cardMutedText }}>
+              <Factory className="w-3.5 h-3.5 shrink-0" style={{ color: themeColors.cardMutedText }} />
               <span className="truncate">{product.manufacturer}</span>
             </p>
           )}
@@ -229,29 +238,31 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
         <div className="flex items-end justify-between pt-3 border-t border-gray-100">
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="font-black text-xl text-teal-700">
+              <span className="font-black text-xl" style={{ color: themeColors.priceColor }}>
                 {finalPrice.toFixed(2)}
               </span>
-              <span className="text-xs font-bold text-gray-500">ج.م</span>
+              <span className="text-xs font-bold" style={{ color: themeColors.cardMutedText }}>ج.م</span>
             </div>
             {activeDiscount && (
-              <span className="text-xs text-gray-400 line-through font-medium">
+              <span className="text-xs line-through font-medium" style={{ color: themeColors.cardMutedText }}>
                 {product.price.toFixed(2)} ج.م
               </span>
             )}
           </div>
           <div className="flex items-center gap-1.5">
             {typeof product.stock_quantity === 'number' && product.stock_quantity > 0 && product.stock_quantity <= 5 && (
-              <span className="flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg">
+              <span className="flex items-center gap-1 text-[10px] font-extrabold border px-2 py-0.5 rounded-lg"
+                style={{ color: themeColors.accentColor, backgroundColor: `${themeColors.accentColor}15`, borderColor: `${themeColors.accentColor}30` }}>
                 <AlertTriangle className="w-3 h-3" />
                 كمية محدودة
               </span>
             )}
-            <div className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg">
+            <div className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg"
+              style={{ color: themeColors.cardMutedText, backgroundColor: `${themeColors.cardMutedText}15` }}>
               {product.is_available ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+                <CheckCircle2 className="w-3.5 h-3.5" style={{ color: themeColors.inStockColor }} />
               ) : (
-                <Tag className="w-3.5 h-3.5" />
+                <Tag className="w-3.5 h-3.5" style={{ color: themeColors.outOfStockColor }} />
               )}
               <span>{product.unit}</span>
             </div>

@@ -32,24 +32,25 @@ export function HomeHealthTips() {
   const { themeColors } = useSettings();
 
   return (
-    <section className="py-12 bg-gradient-to-b from-white to-slate-50/70 border-y border-gray-100">
+    <section className="py-12 border-y border-gray-100" style={{ backgroundColor: themeColors.sectionAltBg }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <span
             className="text-xs font-extrabold px-3.5 py-1 rounded-full"
-            style={{ backgroundColor: `${themeColors.primaryColor}15`, color: themeColors.primaryColor }}
+            style={{ backgroundColor: `${themeColors.badgePillBg}15`, color: themeColors.badgePillText }}
           >
             من قلب الصيدلية
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">نصائح صحية من الصيدلي</h2>
-          <p className="text-sm text-slate-500 mt-2 font-bold">إرشادات بسيطة تحمي صحتك وصحة عائلتك</p>
+          <h2 className="text-2xl sm:text-3xl font-black mt-2" style={{ color: themeColors.sectionHeadingText }}>نصائح صحية من الصيدلي</h2>
+          <p className="text-sm mt-2 font-bold" style={{ color: themeColors.sectionSubheadingText }}>إرشادات بسيطة تحمي صحتك وصحة عائلتك</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {TIPS.map((tip, i) => (
             <div
               key={i}
-              className="group relative bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 overflow-hidden"
+              className="group relative rounded-3xl border border-slate-200/80 p-6 shadow-2xs hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300 overflow-hidden"
+              style={{ backgroundColor: themeColors.cardBg }}
             >
               <div
                 className="absolute top-0 right-0 left-0 h-1 opacity-70 group-hover:opacity-100 transition-opacity"
@@ -64,8 +65,8 @@ export function HomeHealthTips() {
               <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: tip.color }}>
                 نصيحة الصيدلي
               </span>
-              <h3 className="font-extrabold text-slate-900 text-base mt-1 mb-2">{tip.title}</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">{tip.desc}</p>
+              <h3 className="font-extrabold text-base mt-1 mb-2" style={{ color: themeColors.cardText }}>{tip.title}</h3>
+              <p className="text-xs leading-relaxed font-medium" style={{ color: themeColors.cardMutedText }}>{tip.desc}</p>
             </div>
           ))}
         </div>

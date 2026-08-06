@@ -48,22 +48,22 @@ export function FeaturedProducts({ products, loading }: Props) {
   ];
 
   return (
-    <section className="py-12 relative overflow-hidden">
+    <section className="py-12 relative overflow-hidden" style={{ backgroundColor: themeColors.sectionBg }}>
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
             <span
               className="text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider border"
               style={{
-                backgroundColor: `${themeColors.primaryColor}15`,
-                color: themeColors.primaryColor,
-                borderColor: `${themeColors.primaryColor}30`
+                backgroundColor: `${themeColors.badgePillBg}15`,
+                color: themeColors.badgePillText,
+                borderColor: `${themeColors.badgePillBg}30`
               }}
             >
               أحدث المنتجات والعروض
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">منتجاتنا المميزة</h2>
-            <p className="text-sm text-slate-500 mt-1.5 font-bold">اختر من بين أحدث الواصل والخصومات المتاحة</p>
+            <h2 className="text-2xl sm:text-3xl font-black mt-2" style={{ color: themeColors.sectionHeadingText }}>منتجاتنا المميزة</h2>
+            <p className="text-sm mt-1.5 font-bold" style={{ color: themeColors.sectionSubheadingText }}>اختر من بين أحدث الواصل والخصومات المتاحة</p>
           </div>
 
           <button

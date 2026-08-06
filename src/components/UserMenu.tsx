@@ -27,7 +27,7 @@ import { translateError } from '@/lib/errorMessages';
 
 export function UserMenu() {
   const { user, profile, signOut, setAuthModalOpen, loading, refreshProfile } = useCustomer();
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const { navigate } = useRouter();
   const { favoriteCount } = useFavorites();
   const [open, setOpen] = useState(false);
@@ -189,11 +189,11 @@ export function UserMenu() {
       <button
         onClick={() => setAuthModalOpen(true)}
         className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold transition-all hover:scale-[1.03] active:scale-95 shadow-md border border-teal-200/80 bg-white hover:bg-teal-50/50"
-        style={{ color: settings.primary_color }}
+        style={{ color: themeColors.priceColor }}
       >
         <div
           className="w-7 h-7 rounded-xl flex items-center justify-center text-white shadow-sm"
-          style={{ backgroundColor: settings.primary_color }}
+          style={{ backgroundColor: themeColors.priceColor }}
         >
           <UserCircle2 className="w-4 h-4" />
         </div>
@@ -223,7 +223,7 @@ export function UserMenu() {
         ) : (
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-inner"
-            style={{ backgroundColor: settings.primary_color }}
+            style={{ backgroundColor: themeColors.priceColor }}
           >
             {initial}
           </div>
@@ -245,7 +245,7 @@ export function UserMenu() {
           {/* Profile header card */}
           <div
             className="p-4 text-white relative overflow-hidden"
-            style={{ background: `linear-gradient(135deg, ${settings.primary_color}, ${settings.secondary_color})` }}
+            style={{ background: `linear-gradient(135deg, ${themeColors.priceColor}, ${themeColors.priceColor})` }}
           >
             <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/10 blur-xl pointer-events-none" />
             <div className="relative flex items-center gap-3">
@@ -265,7 +265,7 @@ export function UserMenu() {
                   className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow bg-white"
                   title="تغيير الصورة"
                 >
-                  <Camera className="w-3.5 h-3.5" style={{ color: settings.primary_color }} />
+                  <Camera className="w-3.5 h-3.5" style={{ color: themeColors.priceColor }} />
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                 </label>
               </div>
@@ -299,7 +299,7 @@ export function UserMenu() {
                       <button
                         onClick={handleAvatarLink}
                         className="px-2 py-1 rounded-lg text-[10px] font-bold text-white"
-                        style={{ backgroundColor: settings.primary_color }}
+                        style={{ backgroundColor: themeColors.priceColor }}
                       >
                         استخدام
                       </button>

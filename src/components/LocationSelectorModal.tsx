@@ -26,7 +26,7 @@ export function LocationSelectorModal({
   currentLocation,
   onSelectLocation,
 }: LocationSelectorModalProps) {
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const [search, setSearch] = useState('');
   const [detecting, setDetecting] = useState(false);
   const [selectedGov, setSelectedGov] = useState('القاهرة');
@@ -66,13 +66,14 @@ export function LocationSelectorModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in" onClick={onClose}>
       <div
-        className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative border border-gray-100 flex flex-col max-h-[85vh]"
+        className="rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative border border-gray-100 flex flex-col max-h-[85vh]"
+        style={{ backgroundColor: themeColors.modalBodyBg }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
           className="p-5 text-white relative flex items-center justify-between"
-          style={{ background: `linear-gradient(135deg, ${settings.primary_color}, ${settings.secondary_color})` }}
+          style={{ background: `linear-gradient(135deg, ${themeColors.modalHeaderBg}, ${themeColors.priceColor})` }}
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
@@ -112,7 +113,7 @@ export function LocationSelectorModal({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="ابحث عن المحافظة أو المنطقة..."
               className="w-full pr-10 pl-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
-              style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+              style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
             />
           </div>
 
@@ -127,7 +128,7 @@ export function LocationSelectorModal({
                     ? 'text-white shadow-md'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
-                style={selectedGov === g.name ? { backgroundColor: settings.primary_color } : {}}
+                style={selectedGov === g.name ? { backgroundColor: themeColors.priceColor } : {}}
               >
                 {g.name}
               </button>

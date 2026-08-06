@@ -7,7 +7,7 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, Monitor, Tablet, Smartphone, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, BellOff, BadgeCheck, Pill
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, BellOff, BadgeCheck, Pill, Home
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
@@ -2473,6 +2473,7 @@ function SettingsTab() {
     emoji,
     tagline,
     colors: {
+      ...DEFAULT_THEME_COLORS,
       headerBg: '#ffffff',
       headerText: '#0f172a',
       headerNavBg: secondary,
@@ -2511,6 +2512,7 @@ function SettingsTab() {
     emoji,
     tagline,
     colors: {
+      ...DEFAULT_THEME_COLORS,
       headerBg: surfaceBg,
       headerText: lightText,
       headerNavBg: deepBg,
@@ -2536,18 +2538,8 @@ function SettingsTab() {
     name: string,
     emoji: string,
     tagline: string,
-    c: {
-      headerBg: string; headerText: string;
-      headerNavBg: string; headerNavText: string;
-      heroBgStart: string; heroBgMiddle: string; heroBgEnd: string;
-      heroText: string;
-      heroBtnBg: string; heroBtnText: string;
-      primaryColor: string; secondaryColor: string; accentColor: string;
-      statsCardBg: string; statsCardText: string;
-      pharmacyHoverBorder: string;
-      footerBg: string; footerText: string;
-    }
-  ): ColorPreset => ({ name, emoji, tagline, colors: c });
+    c: Partial<ThemeColors>
+  ): ColorPreset => ({ name, emoji, tagline, colors: { ...DEFAULT_THEME_COLORS, ...c } });
 
   const colorPresets: ColorPreset[] = [
     buildPreset('أخضر طبي', '🌿', 'هوية طبية هادئة ومتوازنة', '#0d9488', '#0f766e', '#f59e0b', '#f0fdfa'),
@@ -3174,6 +3166,140 @@ function SettingsTab() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <ColorField label="خلفية الفوتر" value={colors.footerBg} onChange={(v) => setColors({ ...colors, footerBg: v })} />
                   <ColorField label="نصوص الفوتر" value={colors.footerText} onChange={(v) => setColors({ ...colors, footerText: v })} />
+                </div>
+              </ColorGroup>
+
+              <ColorGroup
+                num="8"
+                title="شريط الإعلان العلوي"
+                location="فوق الهيدر مباشرة"
+                hint="الشريط المارّ أعلى الموقع الذي يعرض إعلان الخصومات أو التوصيل — الخلفية ولون النص قابلة للتغيير."
+                visual={<AnnouncementVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية شريط الإعلان" value={colors.announcementBg} onChange={(v) => setColors({ ...colors, announcementBg: v })} />
+                  <ColorField label="نص شريط الإعلان" value={colors.announcementText} onChange={(v) => setColors({ ...colors, announcementText: v })} />
+                </div>
+              </ColorGroup>
+
+              <ColorGroup
+                num="9"
+                title="خلفيات الأقسام والعناوين"
+                location="كل أقسام الصفحة الرئيسية"
+                hint="خلفية الأقسام العادية والبديلة وعناوينها ونصوصها الفرعية — استخدم خلفيتين متناوبتين (أبيض/رمادي فاتح) للفصل البصري بين الأقسام."
+                visual={<SectionVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية الأقسام العادية" value={colors.sectionBg} onChange={(v) => setColors({ ...colors, sectionBg: v })} />
+                  <ColorField label="خلفية الأقسام البديلة" value={colors.sectionAltBg} onChange={(v) => setColors({ ...colors, sectionAltBg: v })} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="لون عناوين الأقسام" value={colors.sectionHeadingText} onChange={(v) => setColors({ ...colors, sectionHeadingText: v })} />
+                  <ColorField label="لون النصوص الفرعية" value={colors.sectionSubheadingText} onChange={(v) => setColors({ ...colors, sectionSubheadingText: v })} />
+                </div>
+              </ColorGroup>
+
+              <ColorGroup
+                num="10"
+                title="الشارات والتسميات"
+                location="وسومات الأقسام والخصومات"
+                hint="الشارات الدائرية والتسميات الصغيرة المنتشرة في الأقسام — لون الخلفية ولون النص/الرقم."
+                visual={<BadgeVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية الشارات" value={colors.badgePillBg} onChange={(v) => setColors({ ...colors, badgePillBg: v })} />
+                  <ColorField label="نص الشارات" value={colors.badgePillText} onChange={(v) => setColors({ ...colors, badgePillText: v })} />
+                </div>
+              </ColorGroup>
+
+              <ColorGroup
+                num="11"
+                title="كروت المنتجات"
+                location="كل بطاقات المنتجات"
+                hint="خلفية الكارت ونصوصه والأسعار وإطار التحديد عند مرور المؤشر — قلب واجهة المتجر."
+                visual={<ProductCardVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية كارت المنتج" value={colors.cardBg} onChange={(v) => setColors({ ...colors, cardBg: v })} />
+                  <ColorField label="لون إطار التحديد (Hover)" value={colors.cardHoverBorder} onChange={(v) => setColors({ ...colors, cardHoverBorder: v })} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <ColorField label="اسم المنتج" value={colors.cardText} onChange={(v) => setColors({ ...colors, cardText: v })} />
+                  <ColorField label="وصف المنتج" value={colors.cardMutedText} onChange={(v) => setColors({ ...colors, cardMutedText: v })} />
+                  <ColorField label="لون السعر" value={colors.priceColor} onChange={(v) => setColors({ ...colors, priceColor: v })} />
+                </div>
+              </ColorGroup>
+
+              <ColorGroup
+                num="12"
+                title="الخصومات وحالة التوفر"
+                location="شارات المنتجات"
+                hint="شارة نسبة الخصم وألوان حالة التوفر (متوفر/غير متوفر) ولون نجوم التقييم."
+                visual={<ProductStatusVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية شارة الخصم" value={colors.discountBadgeBg} onChange={(v) => setColors({ ...colors, discountBadgeBg: v })} />
+                  <ColorField label="نص شارة الخصم" value={colors.discountBadgeText} onChange={(v) => setColors({ ...colors, discountBadgeText: v })} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <ColorField label="لون متوفر" value={colors.inStockColor} onChange={(v) => setColors({ ...colors, inStockColor: v })} />
+                  <ColorField label="لون غير متوفر" value={colors.outOfStockColor} onChange={(v) => setColors({ ...colors, outOfStockColor: v })} />
+                  <ColorField label="لون التقييم (النجوم)" value={colors.ratingColor} onChange={(v) => setColors({ ...colors, ratingColor: v })} />
+                </div>
+              </ColorGroup>
+
+              <ColorGroup
+                num="13"
+                title="صفحة الصيدلية والتبويبات"
+                location="صفحات الصيدليات"
+                hint="رأس صفحة الصيدلية والتبويبات النشطة وحقول البحث داخل الصفحة — الخلفيات والنصوص."
+                visual={<PharmacyHeaderVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية رأس الصيدلية" value={colors.pharmacyHeaderBg} onChange={(v) => setColors({ ...colors, pharmacyHeaderBg: v })} />
+                  <ColorField label="نص رأس الصيدلية" value={colors.pharmacyHeaderText} onChange={(v) => setColors({ ...colors, pharmacyHeaderText: v })} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية التبويب النشط" value={colors.tabActiveBg} onChange={(v) => setColors({ ...colors, tabActiveBg: v })} />
+                  <ColorField label="نص التبويب النشط" value={colors.tabActiveText} onChange={(v) => setColors({ ...colors, tabActiveText: v })} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية حقول البحث" value={colors.pageSearchBg} onChange={(v) => setColors({ ...colors, pageSearchBg: v })} />
+                  <ColorField label="نص حقول البحث" value={colors.pageSearchText} onChange={(v) => setColors({ ...colors, pageSearchText: v })} />
+                </div>
+              </ColorGroup>
+
+              <ColorGroup
+                num="14"
+                title="النوافذ المنبثقة (المودالات)"
+                location="تسجيل الدخول، الطلب، الروشتة"
+                hint="كل النوافذ المنبثقة في الموقع — رأس النافذة وخلفية الجسم والنصوص."
+                visual={<ModalVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية رأس النافذة" value={colors.modalHeaderBg} onChange={(v) => setColors({ ...colors, modalHeaderBg: v })} />
+                  <ColorField label="نص رأس النافذة" value={colors.modalHeaderText} onChange={(v) => setColors({ ...colors, modalHeaderText: v })} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <ColorField label="خلفية جسم النافذة" value={colors.modalBodyBg} onChange={(v) => setColors({ ...colors, modalBodyBg: v })} />
+                  <ColorField label="نص جسم النافذة" value={colors.modalBodyText} onChange={(v) => setColors({ ...colors, modalBodyText: v })} />
+                </div>
+              </ColorGroup>
+
+              <ColorGroup
+                num="15"
+                title="زر واتساب والشريط السفلي"
+                location="موبايل فقط"
+                hint="زر واتساب العائم في كل الصفحات وألوان الشريط السفلي للتنقل في الموبايل."
+                visual={<BottomNavVisual colors={colors} />}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-1 gap-3">
+                  <ColorField label="لون زر واتساب" value={colors.whatsappBtnBg} onChange={(v) => setColors({ ...colors, whatsappBtnBg: v })} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <ColorField label="خلفية الشريط السفلي" value={colors.bottomNavBg} onChange={(v) => setColors({ ...colors, bottomNavBg: v })} />
+                  <ColorField label="أيقونات الشريط" value={colors.bottomNavText} onChange={(v) => setColors({ ...colors, bottomNavText: v })} />
+                  <ColorField label="لون العنصر النشط" value={colors.bottomNavActiveText} onChange={(v) => setColors({ ...colors, bottomNavActiveText: v })} />
                 </div>
               </ColorGroup>
             </div>
@@ -4422,7 +4548,7 @@ function HeaderVisual({ colors }: { colors: ThemeColors }) {
       <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: colors.headerBg, color: colors.headerText }}>
         <span className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[9px] font-black shrink-0" style={{ backgroundColor: colors.primaryColor }}>+</span>
         <span className="text-[10px] font-black shrink-0" style={{ color: colors.headerText }}>صيدليتي</span>
-        <div className="flex-1 h-6 rounded-full border flex items-center px-2 gap-1 text-[8px] min-w-0" style={{ borderColor: `${colors.headerText}2e`, color: colors.headerText }}>
+        <div className="flex-1 h-6 rounded-full border flex items-center px-2 gap-1 text-[8px] min-w-0" style={{ backgroundColor: colors.headerSearchBg, color: colors.headerSearchText }}>
           <Search className="w-2.5 h-2.5 shrink-0 opacity-60" />
           <span className="truncate opacity-70">ابحث عن دوائك...</span>
         </div>
@@ -4538,6 +4664,170 @@ function FooterVisual({ colors }: { colors: ThemeColors }) {
             <Twitter className="w-3 h-3" />
           </span>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AnnouncementVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-300/60 shadow-sm">
+      <div className="flex items-center justify-center gap-2 px-3 py-2" style={{ backgroundColor: colors.announcementBg, color: colors.announcementText }}>
+        <Megaphone className="w-3 h-3 shrink-0" />
+        <span className="text-[9px] font-black truncate">توصيل مجاني للطلبات فوق 500 ج.م — استخدم كود WELCOME10</span>
+      </div>
+    </div>
+  );
+}
+
+function SectionVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-300/60 shadow-sm">
+      <div className="px-3 py-2.5 space-y-2" style={{ backgroundColor: colors.sectionAltBg }}>
+        <div className="flex items-center gap-2">
+          <span className="w-5 h-5 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${colors.priceColor}15`, color: colors.priceColor }}>
+            <Sparkles className="w-3 h-3" />
+          </span>
+          <div>
+            <p className="text-[10px] font-black leading-none" style={{ color: colors.sectionHeadingText }}>أحدث المنتجات</p>
+            <p className="text-[7px] font-bold mt-0.5" style={{ color: colors.sectionSubheadingText }}>وصول حديث لأفضل الأدوية</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-lg p-1.5 border border-gray-100" style={{ backgroundColor: colors.sectionBg }}>
+              <div className="h-4 rounded bg-gray-200/70 mb-1" />
+              <div className="h-1.5 w-3/4 rounded bg-gray-200/70" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BadgeVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="flex items-center justify-center gap-2 p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
+      <span className="px-2.5 py-1 rounded-full text-[9px] font-black" style={{ backgroundColor: colors.badgePillBg, color: colors.badgePillText }}>خيار شائع</span>
+      <span className="px-2.5 py-1 rounded-full text-[9px] font-black" style={{ backgroundColor: colors.badgePillBg, color: colors.badgePillText }}>12+</span>
+      <span className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black" style={{ backgroundColor: colors.badgePillBg, color: colors.badgePillText }}>%</span>
+    </div>
+  );
+}
+
+function ProductCardVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl border border-gray-200 shadow-sm p-2.5 max-w-[170px] mx-auto" style={{ backgroundColor: colors.cardBg, borderColor: colors.cardHoverBorder }}>
+      <div className="h-12 rounded-lg flex items-center justify-center mb-1.5" style={{ background: `linear-gradient(135deg, ${colors.priceColor}12, ${colors.sectionAltBg})` }}>
+        <Pill className="w-6 h-6" style={{ color: colors.priceColor, opacity: 0.5 }} />
+      </div>
+      <p className="text-[9px] font-black truncate" style={{ color: colors.cardText }}>بنادول إكسترا 24 قرص</p>
+      <p className="text-[7px] font-bold truncate mt-0.5" style={{ color: colors.cardMutedText }}>صيدلية المعادي</p>
+      <div className="flex items-center justify-between mt-1.5">
+        <p className="text-[10px] font-black" style={{ color: colors.priceColor }}>48.50 <span className="text-[6px] font-bold" style={{ color: colors.cardMutedText }}>ج.م</span></p>
+        <span className="w-5 h-5 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: colors.priceColor }}>
+          <Plus className="w-3 h-3" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ProductStatusVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-2.5 shadow-sm flex items-center gap-2.5">
+      <span className="px-2 py-1 rounded-full text-[9px] font-black text-white" style={{ backgroundColor: colors.discountBadgeBg }}>
+        -20%
+      </span>
+      <span className="px-2 py-1 rounded-full text-[9px] font-black border" style={{ color: colors.inStockColor, borderColor: `${colors.inStockColor}40`, backgroundColor: `${colors.inStockColor}10` }}>
+        متوفر
+      </span>
+      <span className="px-2 py-1 rounded-full text-[9px] font-black border" style={{ color: colors.outOfStockColor, borderColor: `${colors.outOfStockColor}40`, backgroundColor: `${colors.outOfStockColor}10` }}>
+        غير متوفر
+      </span>
+      <span className="flex items-center gap-0.5 mr-auto">
+        <Star className="w-3 h-3 fill-current" style={{ color: colors.ratingColor }} />
+        <span className="text-[9px] font-black" style={{ color: colors.ratingColor }}>4.8</span>
+      </span>
+    </div>
+  );
+}
+
+function PharmacyHeaderVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-300/60 shadow-sm">
+      <div className="px-3 py-2.5 flex items-center gap-2.5" style={{ backgroundColor: colors.pharmacyHeaderBg, color: colors.pharmacyHeaderText }}>
+        <span className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: colors.tabActiveBg }}>
+          ص
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[9px] font-black truncate" style={{ color: colors.pharmacyHeaderText }}>صيدلية المعادي</p>
+          <div className="flex items-center gap-0.5 mt-0.5">
+            <Star className="w-2 h-2 fill-current" style={{ color: colors.ratingColor }} />
+            <span className="text-[7px] font-bold" style={{ color: colors.pharmacyHeaderText }}>4.8 (120)</span>
+          </div>
+        </div>
+        <span className="px-2 py-1 rounded-full text-white text-[7px] font-black shrink-0" style={{ backgroundColor: colors.tabActiveBg }}>مفتوح الآن</span>
+      </div>
+      <div className="px-3 py-2 flex items-center gap-1.5 overflow-hidden border-t" style={{ borderColor: `${colors.pharmacyHeaderBg}99`, backgroundColor: colors.sectionBg }}>
+        <span className="px-2 py-1 rounded-lg text-[7px] font-black text-white shrink-0" style={{ backgroundColor: colors.tabActiveBg }}>الكل</span>
+        <span className="px-2 py-1 rounded-lg text-[7px] font-black shrink-0" style={{ backgroundColor: colors.cardBg, color: colors.cardMutedText, border: '1px solid #e2e8f0' }}>مسكنات</span>
+        <span className="px-2 py-1 rounded-lg text-[7px] font-black shrink-0" style={{ backgroundColor: colors.cardBg, color: colors.cardMutedText, border: '1px solid #e2e8f0' }}>فيتامينات</span>
+        <div className="flex-1 flex items-center gap-1 px-2 py-1 rounded-lg min-w-0" style={{ backgroundColor: colors.pageSearchBg, color: colors.pageSearchText }}>
+          <Search className="w-2 h-2 shrink-0 opacity-60" />
+          <span className="text-[7px] truncate opacity-70">ابحث داخل الصيدلية...</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ModalVisual({ colors }: { colors: ThemeColors }) {
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-300/60 shadow-sm max-w-[220px] mx-auto">
+      <div className="flex items-center justify-between px-3 py-2" style={{ backgroundColor: colors.modalHeaderBg, color: colors.modalHeaderText }}>
+        <span className="text-[9px] font-black">إنشاء حساب جديد</span>
+        <X className="w-2.5 h-2.5 opacity-70" />
+      </div>
+      <div className="px-3 py-2.5 space-y-1.5" style={{ backgroundColor: colors.modalBodyBg }}>
+        <div className="h-4 rounded-lg border border-gray-200" style={{ backgroundColor: colors.pageSearchBg }} />
+        <div className="h-4 rounded-lg border border-gray-200" style={{ backgroundColor: colors.pageSearchBg }} />
+        <div className="flex items-center justify-center pt-1">
+          <span className="px-3 py-1.5 rounded-lg text-[8px] font-black text-white" style={{ backgroundColor: colors.priceColor }}>
+            تسجيل الدخول
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BottomNavVisual({ colors }: { colors: ThemeColors }) {
+  const items = [
+    { icon: <Home className="w-3 h-3" />, active: true },
+    { icon: <Search className="w-3 h-3" />, active: false },
+    { icon: <ShoppingCart className="w-3 h-3" />, active: false },
+    { icon: <User className="w-3 h-3" />, active: false },
+  ];
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-300/60 shadow-sm">
+      <div className="flex items-center justify-center px-3 pt-2 pb-1">
+        <span className="w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-sm" style={{ backgroundColor: colors.whatsappBtnBg }}>
+          <Phone className="w-3.5 h-3.5" />
+        </span>
+      </div>
+      <div className="flex items-center justify-around px-2 py-2 border-t" style={{ backgroundColor: colors.bottomNavBg }}>
+        {items.map((item, i) => (
+          <span
+            key={i}
+            className="flex flex-col items-center gap-0.5"
+            style={item.active ? { color: colors.bottomNavActiveText } : { color: colors.bottomNavText }}
+          >
+            {item.icon}
+            <span className="text-[5px] font-black">عنصر</span>
+          </span>
+        ))}
       </div>
     </div>
   );

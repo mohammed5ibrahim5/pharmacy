@@ -23,14 +23,14 @@ import { AdminLoginPage } from '@/pages/AdminLoginPage';
 import { Loader2, Cross } from 'lucide-react';
 
 function SiteLoading() {
-  const { loading, settings } = useSettings();
+  const { loading, themeColors } = useSettings();
   if (!loading) return null;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
       <div
         className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl animate-pulse"
-        style={{ backgroundColor: settings.primary_color }}
+        style={{ backgroundColor: themeColors.priceColor }}
       >
         <Cross className="w-9 h-9 text-white" strokeWidth={2.5} />
       </div>

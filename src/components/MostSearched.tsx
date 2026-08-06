@@ -45,21 +45,21 @@ export function MostSearched({ products }: Props) {
   if (history.length === 0 && matchedProducts.length === 0) return null;
 
   return (
-    <section className="py-12">
+    <section className="py-12" style={{ backgroundColor: themeColors.sectionBg }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between mb-8">
           <div>
             <span
               className="inline-flex items-center gap-1.5 text-xs font-extrabold px-3.5 py-1 rounded-full"
-              style={{ backgroundColor: `${themeColors.accentColor}15`, color: themeColors.accentColor }}
+              style={{ backgroundColor: `${themeColors.badgePillBg}15`, color: themeColors.badgePillText }}
             >
               <TrendingUp className="w-4 h-4" />
               الأكثر بحثاً
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black mt-2 tracking-tight" style={{ color: themeColors.sectionHeadingText }}>
               عمليات بحثك الأخيرة
             </h2>
-            <p className="text-sm text-slate-500 mt-1.5 font-bold">تابع من حيث توقفت أو أعد البحث بضغطة واحدة</p>
+            <p className="text-sm mt-1.5 font-bold" style={{ color: themeColors.sectionSubheadingText }}>تابع من حيث توقفت أو أعد البحث بضغطة واحدة</p>
           </div>
           {history.length > 0 && (
             <button
@@ -79,7 +79,8 @@ export function MostSearched({ products }: Props) {
               <button
                 key={`${term}-${i}`}
                 onClick={() => navigate({ name: 'search', query: term })}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-gray-200 text-xs font-extrabold text-slate-700 hover:shadow-md hover:-translate-y-0.5 transition-all"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 text-xs font-extrabold hover:shadow-md hover:-translate-y-0.5 transition-all"
+                style={{ backgroundColor: themeColors.cardBg, color: themeColors.cardText }}
               >
                 <Search className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
                 {term}
@@ -93,7 +94,7 @@ export function MostSearched({ products }: Props) {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Flame className="w-4 h-4" style={{ color: themeColors.accentColor }} />
-              <h3 className="text-sm font-extrabold text-slate-800">منتجات ننصح بها بناءً على بحثك</h3>
+              <h3 className="text-sm font-extrabold" style={{ color: themeColors.sectionHeadingText }}>منتجات ننصح بها بناءً على بحثك</h3>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {matchedProducts.map((product) => (
@@ -116,9 +117,9 @@ export function MostSearched({ products }: Props) {
         )}
 
         {matchedProducts.length === 0 && (
-          <div className="text-center py-10 bg-white rounded-3xl border border-gray-100">
+          <div className="text-center py-10 rounded-3xl border border-gray-100" style={{ backgroundColor: themeColors.cardBg }}>
             <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm font-bold text-slate-500">لا توجد منتجات مطابقة لبحثك الأخير حالياً</p>
+            <p className="text-sm font-bold" style={{ color: themeColors.cardMutedText }}>لا توجد منتجات مطابقة لبحثك الأخير حالياً</p>
           </div>
         )}
       </div>

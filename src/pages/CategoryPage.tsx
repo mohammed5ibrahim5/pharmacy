@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function CategoryPage({ slug }: Props) {
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const { navigate } = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState<Category | null>(null);
@@ -67,16 +67,17 @@ return (
       </button>
 
       {/* Header hero */}
-      <div className="relative rounded-3xl bg-gradient-to-l from-teal-50 via-teal-50/40 to-slate-50 p-8 mb-8 overflow-hidden border border-teal-100/60 shadow-2xs">
-        <div className="absolute inset-0 bg-[radial-gradient(#0d9488_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-10" />
-        <div className="absolute -top-16 -left-16 w-48 h-48 rounded-full opacity-[0.1] blur-3xl" style={{ backgroundColor: settings.primary_color }} />
+      <div className="relative rounded-3xl p-8 mb-8 overflow-hidden border shadow-2xs"
+        style={{ background: `linear-gradient(135deg, ${themeColors.pharmacyHeaderBg}, ${themeColors.sectionBg})`, borderColor: `${themeColors.priceColor}20` }}>
+        <div className="absolute inset-0 bg-[radial-gradient(transparent_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-10" />
+        <div className="absolute -top-16 -left-16 w-48 h-48 rounded-full opacity-[0.1] blur-3xl" style={{ backgroundColor: themeColors.priceColor }} />
         <div className="relative flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg bg-white border border-teal-100">
-            <Pill className="w-8 h-8 text-teal-600" />
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg border" style={{ backgroundColor: themeColors.cardBg, borderColor: `${themeColors.priceColor}20` }}>
+            <Pill className="w-8 h-8" style={{ color: themeColors.priceColor }} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900">{category?.name || 'الفئة'}</h1>
-            <p className="text-teal-800 font-bold text-xs mt-1 flex items-center gap-1.5">
+            <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.sectionHeadingText }}>{category?.name || 'الفئة'}</h1>
+            <p className="font-bold text-xs mt-1 flex items-center gap-1.5" style={{ color: themeColors.priceColor }}>
               <Package className="w-4 h-4" />
               {products.length} منتج متاح حالياً
             </p>

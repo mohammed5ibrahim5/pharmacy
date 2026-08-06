@@ -55,16 +55,17 @@ export function MobileBottomNav() {
 
   return (
     <div className="lg:hidden fixed bottom-0 inset-x-0 z-40">
-      <div className="backdrop-blur-xl bg-white/95 border-t border-gray-200 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-2 pb-[env(safe-area-inset-bottom)]">
+      <div className="backdrop-blur-xl border-t border-gray-200 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-2 pb-[env(safe-area-inset-bottom)]"
+        style={{ backgroundColor: themeColors.bottomNavBg }}>
         <div className="flex items-center justify-between gap-1 max-w-lg mx-auto">
           {items.map((item) => (
             <button
               key={item.id}
               onClick={item.onClick}
               className={`flex flex-col items-center justify-center gap-0.5 py-2.5 px-3 rounded-xl min-w-[4rem] transition-colors ${
-                item.active ? 'text-white' : 'text-slate-500 hover:text-slate-800'
+                item.active ? 'text-white' : ''
               }`}
-              style={item.active ? { backgroundColor: themeColors.primaryColor } : {}}
+              style={item.active ? { backgroundColor: themeColors.bottomNavActiveText } : { color: themeColors.bottomNavText }}
             >
               {item.icon}
               <span className="text-[10px] font-extrabold">{item.label}</span>
@@ -73,7 +74,8 @@ export function MobileBottomNav() {
 
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex flex-col items-center justify-center gap-0.5 py-2.5 px-3 rounded-xl min-w-[4rem] text-slate-500 hover:text-slate-800 transition-colors"
+            className="flex flex-col items-center justify-center gap-0.5 py-2.5 px-3 rounded-xl min-w-[4rem] transition-colors"
+            style={{ color: themeColors.bottomNavText }}
           >
             <ArrowUp className="w-5 h-5" />
             <span className="text-[10px] font-extrabold">الأعلى</span>
@@ -86,7 +88,8 @@ export function MobileBottomNav() {
               href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent('مرحباً، أحتاج مساعدة من صيدليتي')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-11 h-11 rounded-2xl bg-[#25d366] text-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+              className="w-11 h-11 rounded-2xl text-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+              style={{ backgroundColor: themeColors.whatsappBtnBg }}
               title="تواصل معنا واتساب"
               aria-label="تواصل معنا واتساب"
             >

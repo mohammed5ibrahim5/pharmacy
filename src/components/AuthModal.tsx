@@ -11,7 +11,7 @@ interface Props {
 
 export function AuthModal({ open, onClose }: Props) {
   const { signIn, signUp } = useCustomer();
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -69,13 +69,14 @@ export function AuthModal({ open, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="bg-white rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto relative"
+        className="rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto relative"
+        style={{ backgroundColor: themeColors.modalBodyBg }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with gradient */}
         <div
           className="p-6 pb-8 relative overflow-hidden"
-          style={{ background: `linear-gradient(135deg, ${settings.primary_color}, ${settings.secondary_color})` }}
+          style={{ background: `linear-gradient(135deg, ${themeColors.modalHeaderBg}, ${themeColors.priceColor})` }}
         >
           <button
             onClick={onClose}
@@ -129,7 +130,7 @@ export function AuthModal({ open, onClose }: Props) {
                   <div className="relative">
                     <div
                       className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center border-4 bg-gray-100"
-                      style={{ borderColor: `${settings.primary_color}33` }}
+                      style={{ borderColor: `${themeColors.priceColor}33` }}
                     >
                       {avatar ? (
                         <img src={avatar} alt="" className="w-full h-full object-cover" />
@@ -139,7 +140,7 @@ export function AuthModal({ open, onClose }: Props) {
                     </div>
                     <label
                       className="absolute bottom-0 left-0 w-9 h-9 rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform shadow-lg"
-                      style={{ backgroundColor: settings.primary_color }}
+                      style={{ backgroundColor: themeColors.priceColor }}
                     >
                       <Camera className="w-4 h-4 text-white" />
                       <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
@@ -163,7 +164,7 @@ export function AuthModal({ open, onClose }: Props) {
                           placeholder="https://..."
                           dir="ltr"
                           className="flex-1 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2"
-                          style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                          style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                         />
                         <button
                           type="button"
@@ -175,7 +176,7 @@ export function AuthModal({ open, onClose }: Props) {
                             }
                           }}
                           className="px-3 py-1.5 rounded-lg text-white text-[11px] font-bold"
-                          style={{ backgroundColor: settings.primary_color }}
+                          style={{ backgroundColor: themeColors.priceColor }}
                         >
                           استخدام
                         </button>
@@ -194,7 +195,7 @@ export function AuthModal({ open, onClose }: Props) {
                       onChange={(e) => setName(e.target.value)}
                       required
                       className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
-                      style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                      style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                       placeholder="اسمك الكامل"
                     />
                   </div>
@@ -211,7 +212,7 @@ export function AuthModal({ open, onClose }: Props) {
                       required
                       dir="ltr"
                       className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
-                      style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                      style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                       placeholder="01XXXXXXXXX"
                     />
                   </div>
@@ -231,7 +232,7 @@ export function AuthModal({ open, onClose }: Props) {
                     required
                     dir="ltr"
                     className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
-                    style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                    style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                     placeholder="you@example.com"
                   />
                 </div>
@@ -249,7 +250,7 @@ export function AuthModal({ open, onClose }: Props) {
                     minLength={6}
                     dir="ltr"
                     className="w-full pr-11 pl-11 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
-                    style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                    style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                     placeholder="••••••••"
                   />
                   <button
@@ -266,7 +267,7 @@ export function AuthModal({ open, onClose }: Props) {
                 type="submit"
                 disabled={loading}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 shadow-lg"
-                style={{ backgroundColor: settings.primary_color, boxShadow: `0 8px 20px -6px ${settings.primary_color}88` }}
+                style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : mode === 'login' ? 'تسجيل الدخول' : 'إنشاء الحساب'}
               </button>
@@ -279,7 +280,7 @@ export function AuthModal({ open, onClose }: Props) {
               <button
                 onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}
                 className="mr-1 font-semibold hover:underline"
-                style={{ color: settings.primary_color }}
+                style={{ color: themeColors.priceColor }}
               >
                 {mode === 'login' ? 'إنشاء حساب' : 'تسجيل الدخول'}
               </button>

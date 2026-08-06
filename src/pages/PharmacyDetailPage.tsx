@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function PharmacyDetailPage({ id }: Props) {
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const { navigate } = useRouter();
   const { location } = useGeolocation();
   const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null);
@@ -110,7 +110,7 @@ export function PharmacyDetailPage({ id }: Props) {
         ) : (
           <div
             className="w-full h-full"
-            style={{ background: `linear-gradient(135deg, ${settings.primary_color}, ${settings.secondary_color})` }}
+            style={{ background: `linear-gradient(135deg, ${themeColors.pharmacyHeaderBg}, ${themeColors.priceColor})` }}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/10 to-slate-900/30" />
@@ -136,8 +136,8 @@ export function PharmacyDetailPage({ id }: Props) {
             <div className="flex flex-col sm:flex-row sm:items-center gap-5">
               {/* Logo */}
               <div
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex items-center justify-center shrink-0 ring-4 ring-white shadow-xl overflow-hidden"
-                style={{ backgroundColor: settings.primary_color }}
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl flex items-center justify-center shrink-0 ring-4 shadow-xl overflow-hidden"
+                style={{ backgroundColor: themeColors.pharmacyHeaderBg }}
               >
                 {pharmacy.logo_url ? (
                   <img src={pharmacy.logo_url} alt={pharmacy.name} className="w-full h-full object-cover" />
@@ -150,7 +150,7 @@ export function PharmacyDetailPage({ id }: Props) {
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <h1 className="text-2xl sm:text-3xl font-black text-slate-900">{pharmacy.name}</h1>
                   {pharmacy.is_24h && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold text-white shadow" style={{ backgroundColor: settings.accent_color }}>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold text-white shadow" style={{ backgroundColor: themeColors.tabActiveBg }}>
                       <Clock className="w-3 h-3" /> 24 ساعة
                     </span>
                   )}
@@ -170,7 +170,7 @@ export function PharmacyDetailPage({ id }: Props) {
                   {pharmacyWithDistance?.distance != null && (
                     <span
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
-                      style={{ backgroundColor: `${settings.accent_color}15`, color: settings.accent_color }}
+                      style={{ backgroundColor: `${themeColors.accentColor}15`, color: themeColors.accentColor }}
                     >
                       <Navigation2 className="w-3.5 h-3.5" />
                       على بُعد {formatDistance(pharmacyWithDistance.distance)}
@@ -185,7 +185,7 @@ export function PharmacyDetailPage({ id }: Props) {
                   <a
                     href={`tel:${pharmacy.phone}`}
                     className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-white text-sm font-bold transition-all hover:scale-[1.03] active:scale-95 shadow-lg"
-                    style={{ backgroundColor: settings.primary_color, boxShadow: `0 8px 20px -6px ${settings.primary_color}88` }}
+                    style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
                   >
                     <Phone className="w-4 h-4" />
                     اتصال
@@ -196,7 +196,8 @@ export function PharmacyDetailPage({ id }: Props) {
                     href={`https://wa.me/${pharmacy.whatsapp}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-all hover:scale-[1.03] active:scale-95 shadow-lg shadow-emerald-500/20"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-white text-sm font-bold transition-all hover:scale-[1.03] active:scale-95 shadow-lg"
+                    style={{ backgroundColor: themeColors.whatsappBtnBg }}
                   >
                     <MessageCircle className="w-4 h-4" />
                     واتساب
@@ -218,51 +219,51 @@ export function PharmacyDetailPage({ id }: Props) {
 
         {/* Info cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6 mb-8">
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 hover:shadow-lg hover:shadow-slate-900/5 transition-all">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${settings.primary_color}12` }}>
-              <Clock className="w-5 h-5" style={{ color: settings.primary_color }} />
+          <div className="rounded-2xl border border-gray-100 p-4 flex items-center gap-3 transition-all" style={{ backgroundColor: themeColors.cardBg }}>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColors.priceColor}12` }}>
+              <Clock className="w-5 h-5" style={{ color: themeColors.priceColor }} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-gray-400 font-medium">ساعات العمل</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{pharmacy.opening_hours || 'غير محدد'}</p>
+              <p className="text-xs font-medium" style={{ color: themeColors.cardMutedText }}>ساعات العمل</p>
+              <p className="text-sm font-bold truncate" style={{ color: themeColors.cardText }}>{pharmacy.opening_hours || 'غير محدد'}</p>
             </div>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 hover:shadow-lg hover:shadow-slate-900/5 transition-all">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${settings.accent_color}12` }}>
-              <Truck className="w-5 h-5" style={{ color: settings.accent_color }} />
+          <div className="rounded-2xl border border-gray-100 p-4 flex items-center gap-3 transition-all" style={{ backgroundColor: themeColors.cardBg }}>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColors.accentColor}12` }}>
+              <Truck className="w-5 h-5" style={{ color: themeColors.accentColor }} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-gray-400 font-medium">التوصيل</p>
-              <p className="text-sm font-bold text-gray-900 truncate">
+              <p className="text-xs font-medium" style={{ color: themeColors.cardMutedText }}>التوصيل</p>
+              <p className="text-sm font-bold truncate" style={{ color: themeColors.cardText }}>
                 {pharmacy.delivery_available ? `متاح - ${pharmacy.delivery_fee} ج.م` : 'غير متاح'}
               </p>
             </div>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 hover:shadow-lg hover:shadow-slate-900/5 transition-all">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${settings.secondary_color}12` }}>
-              <Mail className="w-5 h-5" style={{ color: settings.secondary_color }} />
+          <div className="rounded-2xl border border-gray-100 p-4 flex items-center gap-3 transition-all" style={{ backgroundColor: themeColors.cardBg }}>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColors.sectionHeadingText}12` }}>
+              <Mail className="w-5 h-5" style={{ color: themeColors.sectionHeadingText }} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-gray-400 font-medium">البريد الإلكتروني</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{pharmacy.email || 'غير متاح'}</p>
+              <p className="text-xs font-medium" style={{ color: themeColors.cardMutedText }}>البريد الإلكتروني</p>
+              <p className="text-sm font-bold truncate" style={{ color: themeColors.cardText }}>{pharmacy.email || 'غير متاح'}</p>
             </div>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 hover:shadow-lg hover:shadow-slate-900/5 transition-all">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#f1f5f9' }}>
-              <MapPin className="w-5 h-5 text-gray-500" />
+          <div className="rounded-2xl border border-gray-100 p-4 flex items-center gap-3 transition-all" style={{ backgroundColor: themeColors.cardBg }}>
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: themeColors.pageSearchBg }}>
+              <MapPin className="w-5 h-5" style={{ color: themeColors.pageSearchText }} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-gray-400 font-medium">العنوان</p>
-              <p className="text-sm font-bold text-gray-900 truncate">{pharmacy.address}</p>
+              <p className="text-xs font-medium" style={{ color: themeColors.cardMutedText }}>العنوان</p>
+              <p className="text-sm font-bold truncate" style={{ color: themeColors.cardText }}>{pharmacy.address}</p>
             </div>
           </div>
         </div>
 
         {/* Description */}
         {pharmacy.description && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-1 h-full" style={{ backgroundColor: settings.primary_color }} />
-            <p className="text-gray-600 leading-relaxed">{pharmacy.description}</p>
+          <div className="rounded-2xl border border-gray-100 p-5 mb-8 relative overflow-hidden" style={{ backgroundColor: themeColors.cardBg }}>
+            <div className="absolute top-0 right-0 w-1 h-full" style={{ backgroundColor: themeColors.priceColor }} />
+            <p className="leading-relaxed" style={{ color: themeColors.cardMutedText }}>{pharmacy.description}</p>
           </div>
         )}
 
@@ -270,8 +271,8 @@ export function PharmacyDetailPage({ id }: Props) {
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between mb-5">
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-gray-900">المنتجات المتاحة</h2>
-              <p className="text-sm text-gray-500 font-medium mt-0.5">{filteredProducts.length} منتج في صيدلية {pharmacy.name}</p>
+              <h2 className="text-xl sm:text-2xl font-black" style={{ color: themeColors.sectionHeadingText }}>المنتجات المتاحة</h2>
+              <p className="text-sm font-medium mt-0.5" style={{ color: themeColors.sectionSubheadingText }}>{filteredProducts.length} منتج في صيدلية {pharmacy.name}</p>
             </div>
             <div className="relative w-full sm:max-w-xs">
               <input
@@ -279,10 +280,10 @@ export function PharmacyDetailPage({ id }: Props) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="ابحث داخل الصيدلية..."
-                className="w-full pr-10 pl-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-transparent focus:ring-2 text-sm"
-                style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                className="w-full pr-10 pl-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-transparent focus:ring-2 text-sm"
+                style={{ backgroundColor: themeColors.pageSearchBg, color: themeColors.pageSearchText, ['--tw-ring-color' as string]: themeColors.priceColor }}
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: themeColors.pageSearchText }} />
             </div>
           </div>
 
@@ -292,9 +293,11 @@ export function PharmacyDetailPage({ id }: Props) {
               <button
                 onClick={() => setActiveCategory(null)}
                 className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
-                  !activeCategory ? 'text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  !activeCategory ? 'text-white shadow-md' : 'border border-gray-200 hover:bg-gray-50'
                 }`}
-                style={!activeCategory ? { backgroundColor: settings.primary_color, boxShadow: `0 6px 14px -6px ${settings.primary_color}88` } : {}}
+                style={!activeCategory
+                  ? { backgroundColor: themeColors.tabActiveBg, boxShadow: `0 6px 14px -6px ${themeColors.tabActiveBg}88` }
+                  : { backgroundColor: themeColors.cardBg, color: themeColors.cardMutedText }}
               >
                 الكل
               </button>
@@ -303,9 +306,11 @@ export function PharmacyDetailPage({ id }: Props) {
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
                   className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
-                    activeCategory === cat.id ? 'text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    activeCategory === cat.id ? 'text-white shadow-md' : 'border border-gray-200 hover:bg-gray-50'
                   }`}
-                  style={activeCategory === cat.id ? { backgroundColor: settings.primary_color, boxShadow: `0 6px 14px -6px ${settings.primary_color}88` } : {}}
+                  style={activeCategory === cat.id
+                    ? { backgroundColor: themeColors.tabActiveBg, boxShadow: `0 6px 14px -6px ${themeColors.tabActiveBg}88` }
+                    : { backgroundColor: themeColors.cardBg, color: themeColors.cardMutedText }}
                 >
                   {cat.name}
                 </button>

@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const { user } = useCustomer();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,20 +55,21 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
   };
 
   return (
-    <div className="mt-10 bg-white rounded-3xl border border-gray-100 p-5 sm:p-7">
+    <div className="mt-10 rounded-3xl border border-gray-100 p-5 sm:p-7" style={{ backgroundColor: themeColors.cardBg }}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-2">
-            <MessageSquareQuote className="w-5 h-5" style={{ color: settings.primary_color }} />
+          <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2" style={{ color: themeColors.cardText }}>
+            <MessageSquareQuote className="w-5 h-5" style={{ color: themeColors.priceColor }} />
             تقييمات العملاء
           </h2>
-          <p className="text-xs text-gray-400 font-medium mt-1">آراء حقيقية من عملاء صيدلية {pharmacyName}</p>
+          <p className="text-xs font-medium mt-1" style={{ color: themeColors.cardMutedText }}>آراء حقيقية من عملاء صيدلية {pharmacyName}</p>
         </div>
         {reviews.length > 0 && (
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 px-4 py-2 rounded-2xl">
-            <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
-            <span className="font-black text-amber-700">{average.toFixed(1)}</span>
-            <span className="text-xs text-amber-600 font-bold">({reviews.length} تقييم)</span>
+          <div className="flex items-center gap-2 border px-4 py-2 rounded-2xl"
+            style={{ backgroundColor: `${themeColors.ratingColor}18`, borderColor: `${themeColors.ratingColor}30` }}>
+            <Star className="w-5 h-5 fill-current" style={{ color: themeColors.ratingColor }} />
+            <span className="font-black" style={{ color: themeColors.ratingColor }}>{average.toFixed(1)}</span>
+            <span className="text-xs font-bold" style={{ color: themeColors.ratingColor }}>({reviews.length} تقييم)</span>
           </div>
         )}
       </div>
@@ -78,64 +79,65 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
           {[...Array(2)].map((_, i) => <div key={i} className="h-20 bg-gray-50 rounded-2xl animate-pulse" />)}
         </div>
       ) : reviews.length === 0 ? (
-        <div className="text-center py-10 bg-slate-50/70 rounded-2xl border border-dashed border-gray-200">
-          <Star className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-          <p className="text-sm font-bold text-slate-500">لا توجد تقييمات بعد — كن أول من يقيّم هذه الصيدلية</p>
+          <div className="text-center py-10 rounded-2xl border border-dashed border-gray-200" style={{ backgroundColor: themeColors.sectionAltBg }}>
+          <Star className="w-8 h-8 mx-auto mb-2" style={{ color: themeColors.cardMutedText }} />
+          <p className="text-sm font-bold" style={{ color: themeColors.cardMutedText }}>لا توجد تقييمات بعد — كن أول من يقيّم هذه الصيدلية</p>
         </div>
       ) : (
         <div className="space-y-3">
           {reviews.map((review) => (
-            <div key={review.id} className="bg-slate-50/70 rounded-2xl border border-gray-100 p-4">
+            <div key={review.id} className="rounded-2xl border border-gray-100 p-4" style={{ backgroundColor: themeColors.sectionAltBg }}>
               <div className="flex items-center justify-between gap-3 mb-1.5">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: settings.primary_color }}>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: themeColors.priceColor }}>
                     {review.customer_name.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-sm font-extrabold text-gray-800">{review.customer_name}</p>
-                    <p className="text-[10px] text-gray-400">{new Date(review.created_at).toLocaleDateString('ar-EG')}</p>
+                    <p className="text-sm font-extrabold" style={{ color: themeColors.cardText }}>{review.customer_name}</p>
+                    <p className="text-[10px]" style={{ color: themeColors.cardMutedText }}>{new Date(review.created_at).toLocaleDateString('ar-EG')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      className={`w-4 h-4 ${star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`}
+                      className="w-4 h-4"
+                      style={{ color: star <= review.rating ? themeColors.ratingColor : themeColors.cardMutedText, fill: star <= review.rating ? themeColors.ratingColor : 'transparent' }}
                     />
                   ))}
                 </div>
               </div>
               {review.comment && (
-                <p className="text-sm text-gray-600 leading-relaxed font-medium mt-2">{review.comment}</p>
+                <p className="text-sm leading-relaxed font-medium mt-2" style={{ color: themeColors.cardText }}>{review.comment}</p>
               )}
               {(review.delivery_rating || review.product_quality_rating || review.value_rating) && (
                 <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 pt-2.5 border-t border-gray-100">
                   {typeof review.delivery_rating === 'number' && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                    <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
                       التوصيل
                       <span className="flex items-center gap-0.5" dir="ltr">
                         {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} className={`w-3 h-3 ${s <= review.delivery_rating! ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                          <Star key={s} className="w-3 h-3" style={{ color: s <= review.delivery_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.delivery_rating! ? themeColors.ratingColor : 'transparent' }} />
                         ))}
                       </span>
                     </span>
                   )}
                   {typeof review.product_quality_rating === 'number' && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                    <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
                       الجودة
                       <span className="flex items-center gap-0.5" dir="ltr">
                         {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} className={`w-3 h-3 ${s <= review.product_quality_rating! ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                          <Star key={s} className="w-3 h-3" style={{ color: s <= review.product_quality_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.product_quality_rating! ? themeColors.ratingColor : 'transparent' }} />
                         ))}
                       </span>
                     </span>
                   )}
                   {typeof review.value_rating === 'number' && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500">
+                    <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
                       القيمة
                       <span className="flex items-center gap-0.5" dir="ltr">
                         {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} className={`w-3 h-3 ${s <= review.value_rating! ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                          <Star key={s} className="w-3 h-3" style={{ color: s <= review.value_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.value_rating! ? themeColors.ratingColor : 'transparent' }} />
                         ))}
                       </span>
                     </span>
@@ -152,8 +154,8 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
         {user ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-extrabold text-gray-800 flex items-center gap-1.5">
-                <PencilLine className="w-4 h-4" style={{ color: settings.primary_color }} />
+              <p className="text-sm font-extrabold flex items-center gap-1.5" style={{ color: themeColors.cardText }}>
+                <PencilLine className="w-4 h-4" style={{ color: themeColors.priceColor }} />
                 أضف تقييمك
               </p>
               <div className="flex items-center gap-1">
@@ -166,7 +168,8 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
                     aria-label={`${star} نجوم`}
                   >
                     <Star
-                      className={`w-6 h-6 ${star <= rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`}
+                      className="w-6 h-6"
+                      style={{ color: star <= rating ? themeColors.ratingColor : themeColors.cardMutedText, fill: star <= rating ? themeColors.ratingColor : 'transparent' }}
                     />
                   </button>
                 ))}
@@ -177,25 +180,25 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
               onChange={(e) => setComment(e.target.value)}
               rows={3}
               placeholder="شارك تجربتك مع هذه الصيدلية (اختياري)..."
-              className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 resize-none"
-              style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+              className="w-full p-3.5 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 resize-none"
+              style={{ backgroundColor: themeColors.pageSearchBg, color: themeColors.pageSearchText, ['--tw-ring-color' as string]: themeColors.priceColor }}
             />
             <button
               onClick={handleSubmit}
               disabled={submitting}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white text-xs font-bold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60 shadow-md"
-              style={{ backgroundColor: settings.primary_color }}
+              style={{ backgroundColor: themeColors.priceColor }}
             >
               <Send className="w-4 h-4" />
               {submitting ? 'جاري النشر...' : 'نشر التقييم'}
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3 bg-slate-50 rounded-2xl border border-gray-100 p-4">
-            <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 shrink-0">
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-100 p-4" style={{ backgroundColor: themeColors.sectionAltBg }}>
+            <div className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center shrink-0" style={{ backgroundColor: themeColors.cardBg, color: themeColors.cardMutedText }}>
               <UserRound className="w-5 h-5" />
             </div>
-            <p className="text-xs font-bold text-gray-600">
+            <p className="text-xs font-bold" style={{ color: themeColors.cardText }}>
               سجّل الدخول لتتمكن من إضافة تقييمك لهذه الصيدلية
             </p>
           </div>

@@ -43,13 +43,14 @@ export function WelcomePopup() {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in" onClick={() => setOpen(false)}>
       <div
-        className="bg-white rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl relative animate-fade-up border border-gray-100"
+        className="rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl relative animate-fade-up border border-gray-100"
+        style={{ backgroundColor: themeColors.modalBodyBg }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header gradient */}
         <div
           className="relative p-6 text-center text-white overflow-hidden"
-          style={{ background: `linear-gradient(135deg, ${settings.primary_color}, ${settings.secondary_color})` }}
+          style={{ background: `linear-gradient(135deg, ${themeColors.modalHeaderBg}, ${themeColors.priceColor})` }}
         >
           <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.2)_1px,transparent_1px)] [background-size:18px_18px] opacity-60" />
           <button
@@ -113,7 +114,7 @@ export function WelcomePopup() {
               navigate({ name: 'search', query: '' });
             }}
             className="mt-5 w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white text-sm font-black shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{ backgroundColor: settings.primary_color, boxShadow: `0 12px 28px -8px ${settings.primary_color}99` }}
+            style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 12px 28px -8px ${themeColors.priceColor}99` }}
           >
             <ShoppingBag className="w-4 h-4" />
             ابدأ التسوق الآن

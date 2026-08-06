@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productName, onClose, onSubmitted }: Props) {
-  const { settings } = useSettings();
+  const { settings, themeColors } = useSettings();
   const { user, profile } = useCustomer();
   const [rating, setRating] = useState(5);
   const [deliveryRating, setDeliveryRating] = useState(5);
@@ -62,11 +62,11 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl">
+      <div className="rounded-3xl w-full max-w-md max-h-[92vh] overflow-y-auto" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 rounded-t-3xl" style={{ backgroundColor: themeColors.modalHeaderBg }}>
           <div className="flex items-center gap-2">
-            <MessageSquareQuote className="w-5 h-5" style={{ color: settings.primary_color }} />
-            <h2 className="font-black text-gray-900">قيّم طلبك</h2>
+            <MessageSquareQuote className="w-5 h-5" style={{ color: themeColors.priceColor }} />
+            <h2 className="font-black" style={{ color: themeColors.modalHeaderText }}>قيّم طلبك</h2>
           </div>
           <button onClick={onClose} className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center">
             <X className="w-5 h-5 text-gray-500" />
@@ -86,7 +86,7 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
               <button
                 onClick={onClose}
                 className="px-6 py-2.5 rounded-2xl text-white text-xs font-bold hover:brightness-110 active:scale-95 transition-all"
-                style={{ backgroundColor: settings.primary_color }}
+                style={{ backgroundColor: themeColors.priceColor }}
               >
                 إغلاق
               </button>
@@ -129,7 +129,7 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
                   rows={3}
                   placeholder="شارك تجربتك مع هذا الطلب..."
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 resize-none"
-                  style={{ ['--tw-ring-color' as string]: settings.primary_color }}
+                  style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                 />
               </div>
 
@@ -137,7 +137,7 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
                 onClick={handleSubmit}
                 disabled={submitting}
                 className="w-full py-3 rounded-2xl text-white text-sm font-black flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all disabled:opacity-60 shadow-md"
-                style={{ backgroundColor: settings.primary_color }}
+                style={{ backgroundColor: themeColors.priceColor }}
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 {submitting ? 'جاري النشر...' : 'نشر التقييم'}
