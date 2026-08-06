@@ -2093,6 +2093,23 @@ function SettingsTab() {
     },
   });
 
+  const buildMonoPreset = (
+    name: string,
+    emoji: string,
+    tagline: string,
+    c: {
+      headerBg: string; headerText: string;
+      headerNavBg: string; headerNavText: string;
+      heroBgStart: string; heroBgMiddle: string; heroBgEnd: string;
+      heroText: string;
+      heroBtnBg: string; heroBtnText: string;
+      primaryColor: string; secondaryColor: string; accentColor: string;
+      statsCardBg: string; statsCardText: string;
+      pharmacyHoverBorder: string;
+      footerBg: string; footerText: string;
+    }
+  ): ColorPreset => ({ name, emoji, tagline, colors: c });
+
   const colorPresets: ColorPreset[] = [
     buildPreset('أخضر طبي', '🌿', 'هوية طبية هادئة ومتوازنة', '#0d9488', '#0f766e', '#f59e0b', '#f0fdfa'),
     buildPreset('أزرق ثقة', '🩺', 'موثوقية ونقاء', '#2563eb', '#1e40af', '#f59e0b', '#eff6ff'),
@@ -2114,6 +2131,120 @@ function SettingsTab() {
     buildDarkPreset('فحمي أنيق', '🖤', 'رقي أحادي اللون', '#94a3b8', '#475569', '#38bdf8', '#0b0f14', '#161c24', '#0b0f14', '#1a212b', '#f1f5f9'),
     buildDarkPreset('نيلي فحمي', '🔷', 'عمق نيلي احترافي', '#6366f1', '#4338ca', '#22d3ee', '#0e0f1f', '#191b34', '#0e0f1f', '#20224a', '#e0e7ff'),
     buildDarkPreset('توتي ليلي', '🍇', 'جرأة وسحر داكن', '#e879f9', '#a21caf', '#fbbf24', '#23071f', '#330b2d', '#23071f', '#3d0f35', '#fae8ff'),
+  ];
+
+  // ===== قوالب الأبيض والأسود (أحادية اللون) — كل جزء له درجته الخاصة =====
+  const monoPresets: ColorPreset[] = [
+    buildMonoPreset('فضي نقي', '◽', 'بياض نظيف بلمسات فضية راقية', {
+      headerBg: '#ffffff', headerText: '#111827',
+      headerNavBg: '#f3f4f6', headerNavText: '#111827',
+      heroBgStart: '#fbfbfb', heroBgMiddle: '#f6f6f7', heroBgEnd: '#ececee',
+      heroText: '#111827',
+      heroBtnBg: '#18181b', heroBtnText: '#fafafa',
+      primaryColor: '#374151', secondaryColor: '#6b7280', accentColor: '#9ca3af',
+      statsCardBg: '#ffffff', statsCardText: '#111827',
+      pharmacyHoverBorder: '#18181b',
+      footerBg: '#111827', footerText: '#d1d5db',
+    }),
+    buildMonoPreset('لؤلؤي', '⚪', 'لؤلؤ أبيض وهمسة رمادية ناعمة', {
+      headerBg: '#fcfcfd', headerText: '#18181b',
+      headerNavBg: '#e7e7ea', headerNavText: '#18181b',
+      heroBgStart: '#ffffff', heroBgMiddle: '#fafafa', heroBgEnd: '#e9e9ec',
+      heroText: '#18181b',
+      heroBtnBg: '#27272a', heroBtnText: '#fafafa',
+      primaryColor: '#3f3f46', secondaryColor: '#71717a', accentColor: '#c7c7cc',
+      statsCardBg: '#ffffff', statsCardText: '#18181b',
+      pharmacyHoverBorder: '#18181b',
+      footerBg: '#1c1c1f', footerText: '#d4d4d8',
+    }),
+    buildMonoPreset('بلاتين', '⬜', 'فضة مصقولة بتباين أنيق', {
+      headerBg: '#f7f7f8', headerText: '#161617',
+      headerNavBg: '#e4e4e7', headerNavText: '#161617',
+      heroBgStart: '#fafafa', heroBgMiddle: '#f1f1f3', heroBgEnd: '#dcdcdf',
+      heroText: '#161617',
+      heroBtnBg: '#52525b', heroBtnText: '#ffffff',
+      primaryColor: '#3f3f46', secondaryColor: '#a1a1aa', accentColor: '#d4d4d8',
+      statsCardBg: '#ffffff', statsCardText: '#161617',
+      pharmacyHoverBorder: '#161617',
+      footerBg: '#161617', footerText: '#d4d4d8',
+    }),
+    buildMonoPreset('جرافيت', '⬛', 'رمادي عميق بجاذبية مصنعية', {
+      headerBg: '#27272a', headerText: '#f4f4f5',
+      headerNavBg: '#18181b', headerNavText: '#ffffff',
+      heroBgStart: '#fafafa', heroBgMiddle: '#f4f4f5', heroBgEnd: '#e4e4e7',
+      heroText: '#18181b',
+      heroBtnBg: '#18181b', heroBtnText: '#fafafa',
+      primaryColor: '#27272a', secondaryColor: '#52525b', accentColor: '#a1a1aa',
+      statsCardBg: '#ffffff', statsCardText: '#18181b',
+      pharmacyHoverBorder: '#18181b',
+      footerBg: '#18181b', footerText: '#c7c7cc',
+    }),
+    buildMonoPreset('فولاذ', '🥈', 'صلب فاتح بتدرجات رمادية مهندسة', {
+      headerBg: '#f8fafc', headerText: '#0f172a',
+      headerNavBg: '#e2e8f0', headerNavText: '#0f172a',
+      heroBgStart: '#f8fafc', heroBgMiddle: '#f1f5f9', heroBgEnd: '#dbe1e8',
+      heroText: '#0f172a',
+      heroBtnBg: '#334155', heroBtnText: '#f8fafc',
+      primaryColor: '#475569', secondaryColor: '#64748b', accentColor: '#94a3b8',
+      statsCardBg: '#ffffff', statsCardText: '#0f172a',
+      pharmacyHoverBorder: '#334155',
+      footerBg: '#0f172a', footerText: '#cbd5e1',
+    }),
+    buildMonoPreset('أردواز داكن', '🌑', 'أردواز ليلي بتباين هادئ', {
+      headerBg: '#1e293b', headerText: '#f1f5f9',
+      headerNavBg: '#0f172a', headerNavText: '#ffffff',
+      heroBgStart: '#0f172a', heroBgMiddle: '#1e293b', heroBgEnd: '#334155',
+      heroText: '#f1f5f9',
+      heroBtnBg: '#cbd5e1', heroBtnText: '#0f172a',
+      primaryColor: '#e2e8f0', secondaryColor: '#94a3b8', accentColor: '#64748b',
+      statsCardBg: '#1e293b', statsCardText: '#f1f5f9',
+      pharmacyHoverBorder: '#e2e8f0',
+      footerBg: '#0f172a', footerText: '#94a3b8',
+    }),
+    buildMonoPreset('سواد ملكي', '🖤', 'أسود فاخر بكلاسيكية دائمة', {
+      headerBg: '#0a0a0a', headerText: '#fafafa',
+      headerNavBg: '#000000', headerNavText: '#ffffff',
+      heroBgStart: '#0a0a0a', heroBgMiddle: '#161616', heroBgEnd: '#262626',
+      heroText: '#fafafa',
+      heroBtnBg: '#ffffff', heroBtnText: '#0a0a0a',
+      primaryColor: '#fafafa', secondaryColor: '#d4d4d4', accentColor: '#a3a3a3',
+      statsCardBg: '#1a1a1a', statsCardText: '#fafafa',
+      pharmacyHoverBorder: '#ffffff',
+      footerBg: '#000000', footerText: '#a3a3a3',
+    }),
+    buildMonoPreset('كربون', '🧱', 'كربوني بلمعات فضية حادة', {
+      headerBg: '#111111', headerText: '#ededed',
+      headerNavBg: '#000000', headerNavText: '#ffffff',
+      heroBgStart: '#161616', heroBgMiddle: '#1f1f1f', heroBgEnd: '#333333',
+      heroText: '#ededed',
+      heroBtnBg: '#d4d4d4', heroBtnText: '#0a0a0a',
+      primaryColor: '#a3a3a3', secondaryColor: '#737373', accentColor: '#e5e5e5',
+      statsCardBg: '#1c1c1c', statsCardText: '#ededed',
+      pharmacyHoverBorder: '#e5e5e5',
+      footerBg: '#000000', footerText: '#a3a3a3',
+    }),
+    buildMonoPreset('عاجي دافئ', '🤍', 'عاجي بنعومة ترحيبية', {
+      headerBg: '#fdfbf7', headerText: '#292524',
+      headerNavBg: '#f3ece0', headerNavText: '#292524',
+      heroBgStart: '#fefcf8', heroBgMiddle: '#f8f3ea', heroBgEnd: '#e7dfcf',
+      heroText: '#292524',
+      heroBtnBg: '#44403c', heroBtnText: '#fafaf9',
+      primaryColor: '#57534e', secondaryColor: '#78716c', accentColor: '#a8a29e',
+      statsCardBg: '#ffffff', statsCardText: '#292524',
+      pharmacyHoverBorder: '#44403c',
+      footerBg: '#292524', footerText: '#d6d3d1',
+    }),
+    buildMonoPreset('تدرج رمادي', '🌀', 'كامل المشهد بدرجات رمادية متناغمة', {
+      headerBg: '#f9fafb', headerText: '#111827',
+      headerNavBg: '#4b5563', headerNavText: '#f9fafb',
+      heroBgStart: '#e5e7eb', heroBgMiddle: '#d1d5db', heroBgEnd: '#b6bcc6',
+      heroText: '#111827',
+      heroBtnBg: '#111827', heroBtnText: '#f9fafb',
+      primaryColor: '#1f2937', secondaryColor: '#6b7280', accentColor: '#9ca3af',
+      statsCardBg: '#ffffff', statsCardText: '#111827',
+      pharmacyHoverBorder: '#4b5563',
+      footerBg: '#111827', footerText: '#d1d5db',
+    }),
   ];
 
   return (
@@ -2505,7 +2636,7 @@ function SettingsTab() {
                       <Palette className="w-4 h-4" />
                     </span>
                     قوالب تصميم احترافية جاهزة
-                    <span className="px-2 py-0.5 rounded-full bg-gray-900 text-white text-[10px] font-bold">20</span>
+                    <span className="px-2 py-0.5 rounded-full bg-gray-900 text-white text-[10px] font-bold">30</span>
                   </h4>
                   <p className="text-xs text-gray-500 mt-1.5">
                     اختر قالباً لتطبيق هوية لونية متكاملة واحترافية على الموقع بالكامل بضغطة واحدة.
@@ -2524,6 +2655,7 @@ function SettingsTab() {
                 {[
                   { emoji: '☀️', label: 'قوالب فاتحة', list: colorPresets.slice(0, 10) },
                   { emoji: '🌙', label: 'قوالب داكنة', list: colorPresets.slice(10) },
+                  { emoji: '⚫', label: 'قوالب أبيض وأسود', list: monoPresets },
                 ].map((group) => (
                   <div key={group.label}>
                     <div className="flex items-center gap-2 mb-2">
