@@ -1,9 +1,10 @@
-import { MapPin, Star, Phone, Clock, Truck, MessageCircle, ArrowLeft, Navigation, ShieldCheck, Car, CheckCircle2, Heart } from 'lucide-react';
+import { MapPin, Star, Phone, Clock, Truck, MessageCircle, ArrowLeft, Navigation, ShieldCheck, Car, CheckCircle2, Heart, Navigation2 } from 'lucide-react';
 import type { Pharmacy } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { formatDistance } from '@/lib/distance';
+import { getDirectionsUrl } from '@/lib/directions';
 
 interface Props {
   pharmacy: Pharmacy & { distance?: number };
@@ -218,6 +219,22 @@ export function PharmacyCard({ pharmacy }: Props) {
               <MessageCircle className="w-4 h-4" />
             </a>
           )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <a
+            href={getDirectionsUrl({ latitude: pharmacy.latitude, longitude: pharmacy.longitude })}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="w-9 h-9 rounded-xl bg-sky-50 border flex items-center justify-center transition-all text-sky-700 shadow-2xs active:scale-95"
+            style={{
+              borderColor: `${themeColors.primaryColor}33`,
+            }}
+            title="الاتجاهات إلى الصيدلية"
+          >
+            <Navigation2 className="w-4 h-4" />
+          </a>
         </div>
 
         <button

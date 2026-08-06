@@ -6,6 +6,7 @@ import { useRouter } from '@/context/RouterContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { ProductCard } from '@/components/ProductCard';
 import { formatDistance, getPharmacyWithDistance } from '@/lib/distance';
+import { getDirectionsUrl } from '@/lib/directions';
 import type { Pharmacy, Product, Category } from '@/types';
 
 interface Props {
@@ -200,6 +201,15 @@ export function PharmacyDetailPage({ id }: Props) {
                     واتساب
                   </a>
                 )}
+                <a
+                  href={getDirectionsUrl({ latitude: pharmacy.latitude, longitude: pharmacy.longitude })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 transition-all hover:scale-[1.03] active:scale-95 shadow-lg"
+                >
+                  <Navigation2 className="w-4 h-4" />
+                  الاتجاهات
+                </a>
               </div>
             </div>
           </div>

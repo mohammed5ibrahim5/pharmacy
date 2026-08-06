@@ -7,7 +7,7 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, Monitor, Tablet, Smartphone, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard, Ban
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard, Ban, Navigation, ExternalLink
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, type ThemeColors } from '@/context/SettingsContext';
@@ -1134,6 +1134,32 @@ function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy | nul
     website_url: pharmacy?.website_url || '', pharmacy_type: pharmacy?.pharmacy_type || 'حديثة',
   });
   const [saving, setSaving] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState('');
+
+  const handleDetectLocation = () => {
+    if (!('geolocation' in navigator)) {
+      setLocationError('المتصفح لا يدعم تحديد الموقع الجغرافي');
+      return;
+    }
+    setLocating(true);
+    setLocationError('');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm((f) => ({
+          ...f,
+          latitude: position.coords.latitude.toFixed(6),
+          longitude: position.coords.longitude.toFixed(6),
+        }));
+        setLocating(false);
+      },
+      () => {
+        setLocating(false);
+        setLocationError('تعذر تحديد الموقع، تأكد من منح الإذن وأعد المحاولة');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -1164,6 +1190,38 @@ function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy | nul
           <Field label="خط العرض (Latitude) *"><input value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} className={inputClass} dir="ltr" placeholder="30.0444" /></Field>
           <Field label="خط الطول (Longitude) *"><input value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} className={inputClass} dir="ltr" placeholder="31.2357" /></Field>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleDetectLocation}
+            disabled={locating}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-xs font-bold transition-all hover:brightness-105 active:scale-95 disabled:opacity-60"
+            style={{ backgroundColor: settings.primary_color }}
+          >
+            <Navigation className={`w-4 h-4 ${locating ? 'animate-spin' : ''}`} />
+            {locating ? 'جاري تحديد الموقع...' : 'تحديد موقع الصيدلية تلقائياً (GPS)'}
+          </button>
+          {locationError && <span className="text-xs font-bold text-red-500">{locationError}</span>}
+        </div>
+        {form.latitude && form.longitude && (
+          <div className="rounded-2xl overflow-hidden border border-gray-200 relative">
+            <iframe
+              title="معاينة موقع الصيدلية على الخريطة"
+              src={`https://www.google.com/maps?q=${form.latitude},${form.longitude}&z=15&output=embed`}
+              className="w-full h-52"
+              loading="lazy"
+              style={{ border: 0 }}
+            />
+            <a
+              href={`https://www.google.com/maps?q=${form.latitude},${form.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/95 shadow text-xs font-bold text-gray-700 hover:bg-white"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> فتح في خرائط جوجل
+            </a>
+          </div>
+        )}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Field label="التقييم"><input value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} className={inputClass} dir="ltr" type="number" step="0.1" min="0" max="5" /></Field>
           <Field label="رسوم التوصيل"><input value={form.delivery_fee} onChange={(e) => setForm({ ...form, delivery_fee: e.target.value })} className={inputClass} dir="ltr" type="number" /></Field>
