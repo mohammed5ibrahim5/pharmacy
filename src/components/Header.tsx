@@ -24,6 +24,7 @@ import { useRouter } from '@/context/RouterContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { UserMenu } from '@/components/UserMenu';
+import { NotificationsBell } from '@/components/NotificationsBell';
 import { AuthModal } from '@/components/AuthModal';
 import { BarcodeScannerModal } from '@/components/BarcodeScannerModal';
 import { LocationSelectorModal } from '@/components/LocationSelectorModal';
@@ -429,6 +430,8 @@ export function Header() {
                   <Barcode className="w-5 h-5" />
                 </button>
               )}
+
+              <NotificationsBell />
 
               <UserMenu />
 

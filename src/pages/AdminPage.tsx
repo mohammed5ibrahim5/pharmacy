@@ -29,6 +29,7 @@ import {
   type Prescription,
   deletePrescription,
 } from '@/lib/prescriptions';
+import { insertNotification } from '@/lib/notifications';
 import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig } from '@/types';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'settings';
@@ -205,12 +206,24 @@ function PrescriptionsTab() {
 
   const filtered = filter === 'all' ? list : list.filter((r) => r.status === filter);
 
-  const updateStatus = async (id: string, status: (typeof PRESCRIPTION_STATUSES)[number]) => {
-    const { error } = await supabase.from('prescriptions').update({ status }).eq('id', id);
+  const updateStatus = async (rx: Prescription, status: (typeof PRESCRIPTION_STATUSES)[number]) => {
+    const { error } = await supabase.from('prescriptions').update({ status }).eq('id', rx.id);
     if (error) {
       showToast(translateError(error.message).ar);
     } else {
       showToast('تم تحديث حالة الروشتة بنجاح');
+      if (rx.customer_id) {
+        try {
+          await insertNotification({
+            customerId: rx.customer_id,
+            type: 'prescription',
+            title: 'تحديث حالة الروشتة',
+            body: `حالة روشتك الآن: ${PRESCRIPTION_STATUS_META[status].label}`,
+          });
+        } catch {
+          // notification failure shouldn't block the status update
+        }
+      }
       fetchRx();
     }
   };
@@ -353,7 +366,7 @@ function PrescriptionsTab() {
                         return (
                           <button
                             key={s}
-                            onClick={() => updateStatus(rx.id, s)}
+                            onClick={() => updateStatus(rx, s)}
                             className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border transition-all active:scale-95 ${
                               active ? `${m.className} shadow-sm scale-105` : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'
                             }`}

@@ -36,6 +36,12 @@ DROP POLICY IF EXISTS "customer_delete_own" ON customers;
 CREATE POLICY "customer_delete_own" ON customers FOR DELETE
   TO authenticated USING (auth.uid() = user_id);
 
+-- Public update policy (fixes avatar/phone not saving - the app uses custom auth, not Supabase Auth)
+DROP POLICY IF EXISTS "customer_public_update" ON customers;
+CREATE POLICY "customer_public_update" ON customers FOR UPDATE
+  TO anon, authenticated
+  USING (true) WITH CHECK (true);
+
 -- ============ 2) Orders table ============
 CREATE TABLE IF NOT EXISTS orders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -328,6 +334,41 @@ DROP POLICY IF EXISTS "newsletter_subscribers_public_delete" ON newsletter_subsc
 CREATE POLICY "newsletter_subscribers_public_delete" ON newsletter_subscribers FOR DELETE
   TO anon, authenticated
   USING (true);
+
+-- ============ 11) Notifications (in-app alerts for customers) ============
+CREATE TABLE IF NOT EXISTS notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id uuid REFERENCES customers(id) ON DELETE CASCADE,
+  type text NOT NULL DEFAULT 'general',
+  title text NOT NULL,
+  body text,
+  read boolean NOT NULL DEFAULT false,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "notifications_public_select" ON notifications;
+CREATE POLICY "notifications_public_select" ON notifications FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "notifications_public_insert" ON notifications;
+CREATE POLICY "notifications_public_insert" ON notifications FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "notifications_public_update" ON notifications;
+CREATE POLICY "notifications_public_update" ON notifications FOR UPDATE
+  TO anon, authenticated
+  USING (true) WITH CHECK (true);
+
+-- Enable realtime for live delivery of notifications
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ============ Important note ============
 -- After running, wait a second then reload the page to refresh schema cache.
