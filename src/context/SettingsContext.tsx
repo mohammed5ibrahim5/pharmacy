@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { SiteSettings, HeaderConfig, FooterConfig } from '@/types';
+import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig } from '@/types';
 import type { PaymentConfig } from '@/lib/orders';
 
 export interface ThemeColors {
@@ -83,6 +83,39 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
 export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
   vodafoneCash: '',
   instapay: '',
+  deliveryFee: '25',
+  freeDeliveryThreshold: '300',
+  showCashOnDelivery: true,
+  cashOnDeliveryFee: '10',
+  shippingNote: 'التوصيل داخل المعادي خلال 30 دقيقة، وفي باقي المناطق خلال 24 ساعة',
+};
+
+export const DEFAULT_HERO_CONFIG: HeroConfig = {
+  showSearch: true,
+  showTrending: true,
+  showStats: true,
+  showPrescriptionButton: true,
+  showLocationButton: true,
+  searchPlaceholder: 'ابحث عن اسم الدواء، المادة الفعالة، أو المنتج...',
+  prescriptionButtonText: 'ارفع روشتتك للصيدلي فوراً',
+  locationButtonText: 'حدد موقعك لأقرب صيدلية',
+  locationSetText: 'تم تحديد موقعك - أقرب الصيدليات أولاً',
+  trendingLabel: 'الأكثر بحثاً:',
+  trendingKeywords: [
+    'بنادول اكسترا',
+    'كونجستال',
+    'أوميجا 3 بلس',
+    'سي ريتارد',
+    'أوجمنتين 1 جم',
+    'سيتامول',
+    'كمامات طبية',
+  ],
+  stats: [
+    { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store' },
+    { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package' },
+    { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users' },
+    { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck' },
+  ],
 };
 
 interface SettingsContextType {
@@ -91,6 +124,7 @@ interface SettingsContextType {
   headerConfig: HeaderConfig;
   footerConfig: FooterConfig;
   paymentConfig: PaymentConfig;
+  heroConfig: HeroConfig;
   loading: boolean;
   refresh: () => Promise<void>;
 }
@@ -129,6 +163,7 @@ const SettingsContext = createContext<SettingsContextType>({
   headerConfig: DEFAULT_HEADER_CONFIG,
   footerConfig: DEFAULT_FOOTER_CONFIG,
   paymentConfig: DEFAULT_PAYMENT_CONFIG,
+  heroConfig: DEFAULT_HERO_CONFIG,
   loading: true,
   refresh: async () => {},
 });
@@ -139,6 +174,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(DEFAULT_HEADER_CONFIG);
   const [footerConfig, setFooterConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(DEFAULT_PAYMENT_CONFIG);
+  const [heroConfig, setHeroConfig] = useState<HeroConfig>(DEFAULT_HERO_CONFIG);
   const [loading, setLoading] = useState(true);
 
   const fetchSettings = async () => {
@@ -155,6 +191,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     let header = { ...DEFAULT_HEADER_CONFIG };
     let footer = { ...DEFAULT_FOOTER_CONFIG };
     let payment = { ...DEFAULT_PAYMENT_CONFIG };
+    let hero = { ...DEFAULT_HERO_CONFIG };
     if (siteSettings.features_json) {
       try {
         const parsed = JSON.parse(siteSettings.features_json);
@@ -170,6 +207,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (parsed && parsed.paymentConfig) {
           payment = { ...DEFAULT_PAYMENT_CONFIG, ...parsed.paymentConfig };
         }
+        if (parsed && parsed.heroConfig) {
+          hero = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
+        }
       } catch (e) {
         console.error('Error parsing features_json for themeColors:', e);
       }
@@ -184,6 +224,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setHeaderConfig(header);
     setFooterConfig(footer);
     setPaymentConfig(payment);
+    setHeroConfig(hero);
     setLoading(false);
   };
 
@@ -228,6 +269,7 @@ return (
         headerConfig,
         footerConfig,
         paymentConfig,
+        heroConfig,
         loading,
         refresh: fetchSettings,
       }}

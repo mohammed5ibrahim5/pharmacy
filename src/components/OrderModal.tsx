@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
-  Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark, Link2,
+  Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark, Link2, Truck,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -476,11 +476,44 @@ export function OrderModal() {
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="أي تفاصيل إضافية..." className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: settings.primary_color }} />
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-            <span className="text-sm text-gray-500">الإجمالي</span>
-            <span className="font-extrabold text-lg" style={{ color: settings.primary_color }}>
-              {(finalPrice * quantity).toFixed(2)} ج.م
-            </span>
+          <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">سعر المنتج × {quantity}</span>
+              <span className="font-bold text-gray-800">{(finalPrice * quantity).toFixed(2)} ج.م</span>
+            </div>
+            {(() => {
+              const subtotal = finalPrice * quantity;
+              const freeThreshold = parseFloat(paymentConfig.freeDeliveryThreshold) || 0;
+              const fee = parseFloat(paymentConfig.deliveryFee) || 0;
+              const deliveryFree = freeThreshold > 0 && subtotal >= freeThreshold;
+              return (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500 flex items-center gap-1">
+                    <Truck className="w-3.5 h-3.5" /> رسوم التوصيل
+                  </span>
+                  <span className={`font-bold ${deliveryFree ? 'text-teal-600' : 'text-gray-800'}`}>
+                    {deliveryFree ? 'مجاني' : `${fee.toFixed(0)} ج.م`}
+                  </span>
+                </div>
+              );
+            })()}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+              <span className="text-sm text-gray-500">الإجمالي</span>
+              <span className="font-extrabold text-lg" style={{ color: settings.primary_color }}>
+                {(() => {
+                  const subtotal = finalPrice * quantity;
+                  const freeThreshold = parseFloat(paymentConfig.freeDeliveryThreshold) || 0;
+                  const fee = (freeThreshold > 0 && subtotal >= freeThreshold) ? 0 : (parseFloat(paymentConfig.deliveryFee) || 0);
+                  return (subtotal + fee).toFixed(2);
+                })()} ج.م
+              </span>
+            </div>
+            {paymentConfig.shippingNote && (
+              <p className="text-[11px] text-gray-400 leading-relaxed flex items-start gap-1 pt-1">
+                <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                {paymentConfig.shippingNote}
+              </p>
+            )}
           </div>
 
           <button

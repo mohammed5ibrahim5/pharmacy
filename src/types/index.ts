@@ -140,6 +140,49 @@ export interface PharmacyWithDistance extends Pharmacy {
   distance?: number;
 }
 
+export interface Coupon {
+  id: string;
+  code: string;
+  discount_type: 'percent' | 'fixed';
+  value: number;
+  min_order: number;
+  max_discount: number | null;
+  usage_limit: number | null;
+  used_count: number;
+  expires_at: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
+export interface HeroStat {
+  id: string;
+  value: string;
+  sub: string;
+  desc: string;
+  icon: string;
+}
+
+export interface HeroConfig {
+  showSearch: boolean;
+  showTrending: boolean;
+  showStats: boolean;
+  showPrescriptionButton: boolean;
+  showLocationButton: boolean;
+  searchPlaceholder: string;
+  prescriptionButtonText: string;
+  locationButtonText: string;
+  locationSetText: string;
+  trendingLabel: string;
+  trendingKeywords: string[];
+  stats: HeroStat[];
+}
+
 export interface HomepageSection {
   id: string;
   section_key: string;

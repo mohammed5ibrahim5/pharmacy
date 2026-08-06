@@ -31,11 +31,21 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number]['id'];
 export interface PaymentConfig {
   vodafoneCash: string;
   instapay: string;
+  deliveryFee: string;
+  freeDeliveryThreshold: string;
+  showCashOnDelivery: boolean;
+  cashOnDeliveryFee: string;
+  shippingNote: string;
 }
 
 export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
   vodafoneCash: '',
   instapay: '',
+  deliveryFee: '25',
+  freeDeliveryThreshold: '300',
+  showCashOnDelivery: true,
+  cashOnDeliveryFee: '10',
+  shippingNote: 'التوصيل داخل المعادي خلال 30 دقيقة، وفي باقي المناطق خلال 24 ساعة',
 };
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {

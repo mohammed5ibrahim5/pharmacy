@@ -7,10 +7,10 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, Monitor, Tablet, Smartphone, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, type ThemeColors } from '@/context/SettingsContext';
+import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_PAYMENT_CONFIG, type ThemeColors } from '@/context/SettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { translateError } from '@/lib/errorMessages';
 import {
@@ -29,9 +29,9 @@ import {
   type Prescription,
   deletePrescription,
 } from '@/lib/prescriptions';
-import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig } from '@/types';
+import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig } from '@/types';
 
-type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'settings';
+type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'settings';
 
 export function AdminPage() {
   const { settings } = useSettings();
@@ -47,6 +47,9 @@ export function AdminPage() {
     { id: 'products', label: 'المنتجات', icon: <Package className="w-5 h-5" /> },
     { id: 'categories', label: 'الفئات', icon: <List className="w-5 h-5" /> },
     { id: 'discounts', label: 'الخصومات', icon: <TrendingDown className="w-5 h-5" /> },
+    { id: 'coupons', label: 'أكواد الخصم', icon: <Ticket className="w-5 h-5" /> },
+    { id: 'customers', label: 'العملاء', icon: <Users className="w-5 h-5" /> },
+    { id: 'subscribers', label: 'المشتركون بالنشرة', icon: <Inbox className="w-5 h-5" /> },
     { id: 'settings', label: 'إعدادات الموقع', icon: <Settings className="w-5 h-5" /> },
   ];
 
@@ -151,6 +154,9 @@ export function AdminPage() {
           {activeTab === 'products' && <ProductsTab />}
           {activeTab === 'categories' && <CategoriesTab />}
           {activeTab === 'discounts' && <DiscountsTab />}
+          {activeTab === 'coupons' && <CouponsTab />}
+          {activeTab === 'customers' && <CustomersTab />}
+          {activeTab === 'subscribers' && <SubscribersTab />}
           {activeTab === 'settings' && <SettingsTab />}
         </div>
       </main>
@@ -699,34 +705,76 @@ function OrdersTab() {
 // ============================================
 function DashboardTab() {
   const { settings } = useSettings();
-  const [stats, setStats] = useState({ pharmacies: 0, products: 0, categories: 0, discounts: 0 });
+  const [stats, setStats] = useState({ pharmacies: 0, products: 0, categories: 0, discounts: 0, coupons: 0, customers: 0, orders: 0, revenue: 0 });
   const [recentPharmacies, setRecentPharmacies] = useState<Pharmacy[]>([]);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+  const [topProducts, setTopProducts] = useState<{ name: string; count: number; revenue: number }[]>([]);
+  const [weekChart, setWeekChart] = useState<{ day: string; count: number }[]>([]);
 
   useEffect(() => {
     const fetch = async () => {
-      const [p, pr, c, d] = await Promise.all([
+      const [p, pr, c, d, cp, cu, orders] = await Promise.all([
         supabase.from('pharmacies').select('*', { count: 'exact', head: true }),
         supabase.from('products').select('*', { count: 'exact', head: true }),
         supabase.from('categories').select('*', { count: 'exact', head: true }),
         supabase.from('discounts').select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('coupons').select('*', { count: 'exact', head: true }),
+        supabase.from('customers').select('*', { count: 'exact', head: true }),
+        supabase.from('orders').select('product_id, total_price, status, created_at, product:products(name)').order('created_at', { ascending: false }).limit(500),
       ]);
-      setStats({ pharmacies: p.count || 0, products: pr.count || 0, categories: c.count || 0, discounts: d.count || 0 });
+      const ordersData = (orders.data || []) as { product_id: string; total_price: number; status: string; created_at: string; product?: { name: string }[] }[];
+      const active = ordersData.filter((o) => o.status !== 'cancelled');
+      const revenue = active.reduce((sum, o) => sum + (o.total_price || 0), 0);
+      setStats({
+        pharmacies: p.count || 0,
+        products: pr.count || 0,
+        categories: c.count || 0,
+        discounts: d.count || 0,
+        coupons: cp.count || 0,
+        customers: cu.count || 0,
+        orders: ordersData.length,
+        revenue,
+      });
 
       const { data: recentP } = await supabase.from('pharmacies').select('*').order('created_at', { ascending: false }).limit(3);
       setRecentPharmacies((recentP || []) as Pharmacy[]);
       const { data: recentPr } = await supabase.from('products').select('*, pharmacy:pharmacies(name)').order('created_at', { ascending: false }).limit(5);
       setRecentProducts((recentPr || []) as Product[]);
+
+      const byProduct: Record<string, { name: string; count: number; revenue: number }> = {};
+      active.forEach((o) => {
+        if (!byProduct[o.product_id]) byProduct[o.product_id] = { name: (o.product && o.product[0]?.name) || 'منتج محذوف', count: 0, revenue: 0 };
+        byProduct[o.product_id].count += 1;
+        byProduct[o.product_id].revenue += o.total_price || 0;
+      });
+      setTopProducts(Object.values(byProduct).sort((a, b) => b.count - a.count).slice(0, 5));
+
+      const days: { day: string; count: number }[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const start = new Date(d); start.setHours(0, 0, 0, 0);
+        const end = new Date(d); end.setHours(23, 59, 59, 999);
+        const count = ordersData.filter((o) => { const t = new Date(o.created_at).getTime(); return t >= start.getTime() && t <= end.getTime(); }).length;
+        days.push({ day: d.toLocaleDateString('ar-EG', { weekday: 'short' }), count });
+      }
+      setWeekChart(days);
     };
     fetch();
   }, []);
 
   const cards = [
+    { label: 'إجمالي المبيعات', value: `${stats.revenue.toFixed(0)} ج.م`, icon: <Wallet />, color: settings.primary_color },
+    { label: 'الطلبات', value: stats.orders, icon: <ShoppingCart />, color: settings.secondary_color },
     { label: 'الصيدليات', value: stats.pharmacies, icon: <Store />, color: settings.primary_color },
     { label: 'المنتجات', value: stats.products, icon: <Package />, color: settings.secondary_color },
     { label: 'الفئات', value: stats.categories, icon: <List />, color: settings.accent_color },
     { label: 'الخصومات النشطة', value: stats.discounts, icon: <TrendingDown />, color: '#ef4444' },
+    { label: 'أكواد الخصم', value: stats.coupons, icon: <Ticket />, color: '#8b5cf6' },
+    { label: 'العملاء', value: stats.customers, icon: <Users />, color: '#0ea5e9' },
   ];
+
+  const maxWeek = Math.max(1, ...weekChart.map((d) => d.count));
 
   return (
     <div className="space-y-6">
@@ -750,6 +798,54 @@ function DashboardTab() {
             <p className="text-sm text-gray-500">{card.label}</p>
           </div>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Last 7 days chart */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="w-5 h-5 text-gray-400" />
+            <h3 className="font-bold text-gray-900">الطلبات آخر 7 أيام</h3>
+          </div>
+          <div className="flex items-end gap-3 h-40">
+            {weekChart.map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                <span className="text-[11px] font-bold text-gray-600">{d.count}</span>
+                <div
+                  className="w-full rounded-t-lg transition-all"
+                  style={{
+                    height: `${Math.max(6, (d.count / maxWeek) * 100)}%`,
+                    backgroundColor: i === weekChart.length - 1 ? settings.primary_color : `${settings.primary_color}40`
+                  }}
+                />
+                <span className="text-[10px] text-gray-400">{d.day}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Top products */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Package className="w-5 h-5 text-gray-400" />
+            <h3 className="font-bold text-gray-900">الأعلى مبيعاً</h3>
+          </div>
+          {topProducts.length === 0 ? (
+            <p className="text-sm text-gray-400 py-8 text-center">لا توجد طلبات بعد لعرض الأعلى مبيعاً</p>
+          ) : (
+            <div className="space-y-3">
+              {topProducts.map((p, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-black" style={{ backgroundColor: `${settings.primary_color}15`, color: settings.primary_color }}>{i + 1}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
+                    <p className="text-[11px] text-gray-400">{p.count} طلب • {p.revenue.toFixed(0)} ج.م</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1401,8 +1497,357 @@ function DiscountForm({ discount, products, pharmacies, onClose, onSaved }: { di
 }
 
 // ============================================
-// Settings Tab
+// Coupons Tab
 // ============================================
+function CouponsTab() {
+  const { settings } = useSettings();
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Coupon | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2200);
+  };
+
+  const fetchCoupons = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from('coupons').select('*').order('created_at', { ascending: false });
+    setCoupons((data || []) as Coupon[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchCoupons();
+  }, [fetchCoupons]);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('حذف هذا الكود؟')) return;
+    await supabase.from('coupons').delete().eq('id', id);
+    showToast('تم حذف الكود');
+    fetchCoupons();
+  };
+
+  const toggleActive = async (c: Coupon) => {
+    await supabase.from('coupons').update({ is_active: !c.is_active }).eq('id', c.id);
+    fetchCoupons();
+  };
+
+  const handleCopy = (code: string) => {
+    navigator.clipboard?.writeText(code);
+    showToast('تم نسخ الكود');
+  };
+
+  const isExpired = (c: Coupon) => !!c.expires_at && new Date(c.expires_at) < new Date();
+  const reachedLimit = (c: Coupon) => !!c.usage_limit && c.used_count >= c.usage_limit;
+  const unavailable = (c: Coupon) => !c.is_active || isExpired(c) || reachedLimit(c);
+
+  return (
+    <div>
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl animate-fade-in">
+          {toast}
+        </div>
+      )}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-sm text-gray-500">إنشاء أكواد خصم يمكن للعملاء استخدامها عند الطلب</h2>
+        </div>
+        <button onClick={() => { setEditing(null); setShowForm(true); }} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-medium" style={{ backgroundColor: settings.primary_color }}><Plus className="w-4 h-4" /> إضافة كود خصم</button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-16 bg-white rounded-xl animate-pulse" />)}</div>
+      ) : coupons.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-100"><Ticket className="w-12 h-12 mx-auto text-gray-200 mb-3" /><p className="text-gray-500">لا توجد أكواد خصم حالياً</p></div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {coupons.map((c) => {
+            const expired = isExpired(c);
+            const limitReached = reachedLimit(c);
+            const off = unavailable(c);
+            return (
+              <div key={c.id} className={`bg-white rounded-xl border p-4 ${off ? 'border-gray-200 opacity-70' : 'border-gray-100'}`}>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${settings.primary_color}15` }}>
+                      <Ticket className="w-5 h-5" style={{ color: settings.primary_color }} />
+                    </div>
+                    <div>
+                      <button onClick={() => handleCopy(c.code)} title="نسخ الكود" className="flex items-center gap-1.5 font-black text-lg tracking-wider" style={{ color: settings.primary_color }} dir="ltr">
+                        {c.code}
+                        <Copy className="w-3.5 h-3.5 opacity-50" />
+                      </button>
+                      <p className="text-xs text-gray-400">{c.discount_type === 'percent' ? `خصم ${c.value}%` : `خصم ${c.value} ج.م`}</p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${off ? 'bg-gray-100 text-gray-500' : 'bg-green-100 text-green-700'}`}>
+                    {expired ? 'منتهي' : limitReached ? 'اكتمل الاستخدام' : !c.is_active ? 'متوقف' : 'نشط'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px] text-gray-500 mb-3">
+                  <div className="bg-gray-50 rounded-lg p-2"><p className="font-bold text-gray-700">الحد الأدنى</p><p>{c.min_order > 0 ? `${c.min_order} ج.م` : 'بدون'}</p></div>
+                  <div className="bg-gray-50 rounded-lg p-2"><p className="font-bold text-gray-700">الاستخدام</p><p dir="ltr">{c.used_count}{c.usage_limit ? ` / ${c.usage_limit}` : ''}</p></div>
+                  <div className="bg-gray-50 rounded-lg p-2"><p className="font-bold text-gray-700">أقصى خصم</p><p>{c.max_discount ? `${c.max_discount} ج.م` : 'بدون'}</p></div>
+                  <div className="bg-gray-50 rounded-lg p-2"><p className="font-bold text-gray-700">ينتهي</p><p>{c.expires_at ? new Date(c.expires_at).toLocaleDateString('ar-EG') : 'لا ينتهي'}</p></div>
+                </div>
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
+                  <button onClick={() => { setEditing(c); setShowForm(true); }} className="flex-1 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-600 flex items-center justify-center gap-1"><Edit2 className="w-3 h-3" /> تعديل</button>
+                  <button onClick={() => toggleActive(c)} className="flex-1 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-600 flex items-center justify-center gap-1">{c.is_active ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}{c.is_active ? 'إيقاف' : 'تفعيل'}</button>
+                  <button onClick={() => handleDelete(c.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {showForm && <CouponForm coupon={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchCoupons(); setShowForm(false); setEditing(null); showToast(editing ? 'تم تحديث الكود' : 'تم إضافة الكود'); }} />}
+    </div>
+  );
+}
+
+function CouponForm({ coupon, onClose, onSaved }: { coupon: Coupon | null; onClose: () => void; onSaved: () => void }) {
+  const { settings } = useSettings();
+  const [form, setForm] = useState({
+    code: coupon?.code || '',
+    discount_type: coupon?.discount_type || 'percent',
+    value: coupon?.value?.toString() || '10',
+    min_order: coupon?.min_order?.toString() || '0',
+    max_discount: coupon?.max_discount?.toString() || '',
+    usage_limit: coupon?.usage_limit?.toString() || '',
+    expires_at: coupon?.expires_at ? new Date(coupon.expires_at).toISOString().slice(0, 10) : '',
+    is_active: coupon?.is_active ?? true,
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!form.code.trim()) return;
+    setSaving(true);
+    const payload = {
+      code: form.code.trim().toUpperCase(),
+      discount_type: form.discount_type,
+      value: parseFloat(form.value) || 0,
+      min_order: parseFloat(form.min_order) || 0,
+      max_discount: form.max_discount ? parseFloat(form.max_discount) : null,
+      usage_limit: form.usage_limit ? parseInt(form.usage_limit) : null,
+      expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : null,
+      is_active: form.is_active,
+    };
+    if (coupon) { await supabase.from('coupons').update(payload).eq('id', coupon.id); } else { await supabase.from('coupons').insert(payload); }
+    setSaving(false); onSaved();
+  };
+
+  return (
+    <Modal onClose={onClose} title={coupon ? 'تعديل كود الخصم' : 'إضافة كود خصم جديد'}>
+      <div className="space-y-4">
+        <Field label="كود الخصم *"><input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} className={inputClass} dir="ltr" placeholder="مثال: SAVE15" /></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="نوع الخصم">
+            <select value={form.discount_type} onChange={(e) => setForm({ ...form, discount_type: e.target.value as 'percent' | 'fixed' })} className={inputClass}>
+              <option value="percent">نسبة %</option>
+              <option value="fixed">مبلغ ثابت</option>
+            </select>
+          </Field>
+          <Field label={form.discount_type === 'percent' ? 'نسبة الخصم % *' : 'قيمة الخصم (ج.م) *'}>
+            <input value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} className={inputClass} dir="ltr" type="number" min="0" />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="الحد الأدنى للطلب (ج.م)"><input value={form.min_order} onChange={(e) => setForm({ ...form, min_order: e.target.value })} className={inputClass} dir="ltr" type="number" min="0" /></Field>
+          <Field label="أقصى مبلغ للخصم (ج.م)"><input value={form.max_discount} onChange={(e) => setForm({ ...form, max_discount: e.target.value })} className={inputClass} dir="ltr" type="number" min="0" placeholder="اختياري" /></Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="حد الاستخدام"><input value={form.usage_limit} onChange={(e) => setForm({ ...form, usage_limit: e.target.value })} className={inputClass} dir="ltr" type="number" min="1" placeholder="اختياري" /></Field>
+          <Field label="تاريخ الانتهاء"><input type="date" value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })} className={inputClass} dir="ltr" /></Field>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm text-gray-700">الكود نشط</span></label>
+        <div className="flex gap-3 pt-4 border-t border-gray-100">
+          <button onClick={handleSave} disabled={saving || !form.code.trim()} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50" style={{ backgroundColor: settings.primary_color }}><Save className="w-4 h-4" />{saving ? 'جاري الحفظ...' : 'حفظ'}</button>
+          <button onClick={onClose} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">إلغاء</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ============================================
+// Customers Tab
+// ============================================
+interface CustomerRow {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  email: string;
+  created_at: string;
+  ordersCount: number;
+  totalSpent: number;
+}
+
+function CustomersTab() {
+  const { settings } = useSettings();
+  const [rows, setRows] = useState<CustomerRow[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data: customers } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+      const { data: orders } = await supabase.from('orders').select('customer_id, total_price, status');
+      const byCustomer: Record<string, { count: number; total: number }> = {};
+      (orders || []).forEach((o) => {
+        if (!byCustomer[o.customer_id]) byCustomer[o.customer_id] = { count: 0, total: 0 };
+        byCustomer[o.customer_id].count += 1;
+        if (o.status !== 'cancelled') byCustomer[o.customer_id].total += (o.total_price || 0);
+      });
+      setRows(((customers || []) as CustomerProfileLike[]).map((c) => ({
+        id: c.id,
+        full_name: c.full_name,
+        phone: c.phone,
+        email: c.email,
+        created_at: c.created_at,
+        ordersCount: byCustomer[c.id]?.count || 0,
+        totalSpent: byCustomer[c.id]?.total || 0,
+      })));
+      setLoading(false);
+    };
+    fetch();
+  }, []);
+
+  const filtered = rows.filter((r) =>
+    !search ||
+    (r.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (r.email || '').toLowerCase().includes(search.toLowerCase()) ||
+    (r.phone || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h2 className="text-sm text-gray-500">إجمالي العملاء: {rows.length}</h2>
+        <div className="relative w-full sm:w-72">
+          <Search className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ابحث بالاسم أو البريد أو الهاتف..." className={`${inputClass} pr-9`} />
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">{[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-white rounded-xl animate-pulse" />)}</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-100"><Users className="w-12 h-12 mx-auto text-gray-200 mb-3" /><p className="text-gray-500">{search ? 'لا توجد نتائج مطابقة' : 'لا يوجد عملاء بعد'}</p></div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-100 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-right text-xs text-gray-400">
+                <th className="p-3 font-medium">العميل</th>
+                <th className="p-3 font-medium">الهاتف</th>
+                <th className="p-3 font-medium">البريد</th>
+                <th className="p-3 font-medium">الطلبات</th>
+                <th className="p-3 font-medium">إجمالي المشتريات</th>
+                <th className="p-3 font-medium">تاريخ التسجيل</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => (
+                <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                  <td className="p-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ backgroundColor: settings.primary_color }}>
+                        {(r.full_name || r.email || '؟').charAt(0)}
+                      </div>
+                      <span className="font-medium text-gray-800">{r.full_name || 'بدون اسم'}</span>
+                    </div>
+                  </td>
+                  <td className="p-3 text-gray-600" dir="ltr">{r.phone || '-'}</td>
+                  <td className="p-3 text-gray-600" dir="ltr">{r.email}</td>
+                  <td className="p-3">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">{r.ordersCount}</span>
+                  </td>
+                  <td className="p-3 font-bold" style={{ color: settings.primary_color }}>{r.totalSpent.toFixed(0)} ج.م</td>
+                  <td className="p-3 text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString('ar-EG')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface CustomerProfileLike {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  email: string;
+  created_at: string;
+}
+
+// ============================================
+// Subscribers Tab
+// ============================================
+function SubscribersTab() {
+  const { settings } = useSettings();
+  const [list, setList] = useState<NewsletterSubscriber[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSubs = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from('newsletter_subscribers').select('*').order('created_at', { ascending: false });
+    setList((data || []) as NewsletterSubscriber[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchSubs();
+  }, [fetchSubs]);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('حذف هذا المشترك؟')) return;
+    await supabase.from('newsletter_subscribers').delete().eq('id', id);
+    fetchSubs();
+  };
+
+  const handleExport = () => {
+    const emails = list.map((s) => s.email).join('\n');
+    navigator.clipboard?.writeText(emails);
+  };
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <h2 className="text-sm text-gray-500">إجمالي المشتركين: {list.length}</h2>
+        <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50">
+          <Copy className="w-3.5 h-3.5" /> نسخ جميع الإيميلات
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-white rounded-xl animate-pulse" />)}</div>
+      ) : list.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-100"><Inbox className="w-12 h-12 mx-auto text-gray-200 mb-3" /><p className="text-gray-500">لا يوجد مشتركون بعد — المشتركون من صندوق النشرة في التذييل سيظهرون هنا</p></div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          {list.map((s, i) => (
+            <div key={s.id} className={`flex items-center gap-3 p-3.5 ${i !== 0 ? 'border-t border-gray-50' : ''}`}>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${settings.primary_color}15` }}>
+                <Mail className="w-4 h-4" style={{ color: settings.primary_color }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate" dir="ltr">{s.email}</p>
+                <p className="text-[11px] text-gray-400">اشترك في {new Date(s.created_at).toLocaleDateString('ar-EG')}</p>
+              </div>
+              <button onClick={() => handleDelete(s.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ============================================
 // Settings Tab
 // ============================================
@@ -1416,6 +1861,7 @@ function SettingsTab() {
   const settingsNav = [
     { id: 'identity', label: 'الهوية والواجهة', icon: <Cross className="w-4 h-4" /> },
     { id: 'header', label: 'الهيدر', icon: <Megaphone className="w-4 h-4" /> },
+    { id: 'hero', label: 'القسم الرئيسي (Hero)', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'colors', label: 'الألوان والقوالب', icon: <Palette className="w-4 h-4" /> },
     { id: 'payment', label: 'الدفع والشحن', icon: <Wallet className="w-4 h-4" /> },
     { id: 'content', label: 'المحتوى والأقسام', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -1478,13 +1924,28 @@ function SettingsTab() {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.paymentConfig) {
-          return { vodafoneCash: '', instapay: '', ...parsed.paymentConfig };
+          return { ...DEFAULT_PAYMENT_CONFIG, ...parsed.paymentConfig };
         }
       } catch (e) {
         console.error(e);
       }
     }
-    return { vodafoneCash: '', instapay: '' };
+    return { ...DEFAULT_PAYMENT_CONFIG };
+  });
+
+  // Initialize hero config state
+  const [heroCfg, setHeroCfg] = useState<HeroConfig>(() => {
+    if (settings.features_json) {
+      try {
+        const parsed = JSON.parse(settings.features_json);
+        if (parsed && parsed.heroConfig) {
+          return { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return { ...DEFAULT_HERO_CONFIG };
   });
 
   // Sync colors with site settings colors
@@ -1506,6 +1967,7 @@ function SettingsTab() {
       headerConfig: headerCfg,
       footerConfig: footerCfg,
       paymentConfig: paymentCfg,
+      heroConfig: heroCfg,
     });
 
     await supabase.from('site_settings').update({
@@ -1848,6 +2310,135 @@ function SettingsTab() {
         </div>
       )}
 
+      {settingsSubTab === 'hero' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl border border-gray-100 p-5">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${settings.primary_color}15`, color: settings.primary_color }}>
+                    <Sparkles className="w-4 h-4" />
+                  </span>
+                  لوحة التحكم الكاملة في القسم الرئيسي (Hero)
+                </h3>
+                <p className="text-xs text-gray-500 mt-1.5">
+                  تحكم في نصوص وأزرار وأرقام القسم الأول للرئيسية — ثم احفظ من الأسفل.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('هل أنت متأكد من إعادة تعيين إعدادات القسم الرئيسي إلى الافتراضي؟')) {
+                    setHeroCfg({ ...DEFAULT_HERO_CONFIG });
+                  }
+                }}
+                className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all"
+              >
+                إعادة تعيين الافتراضي
+              </button>
+            </div>
+          </div>
+
+          <SettingsSection title="أقسام الهيرو" icon={<LayoutDashboard className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+              مفاتيح إظهار/إخفاء لكل عنصر في القسم الرئيسي.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Toggle checked={heroCfg.showSearch} onChange={(v) => setHeroCfg({ ...heroCfg, showSearch: v })} label="صندوق البحث" hint="شريط البحث الرئيسي في الهيرو" />
+              <Toggle checked={heroCfg.showTrending} onChange={(v) => setHeroCfg({ ...heroCfg, showTrending: v })} label="الكلمات الأكثر بحثاً" hint="الأكثر بحثاً أسفل صندوق البحث" />
+              <Toggle checked={heroCfg.showStats} onChange={(v) => setHeroCfg({ ...heroCfg, showStats: v })} label="أرقام الإحصائيات" hint="البطاقات الأربعة (صيدلية شريكة، منتج متاح...) أسفل الهيرو" />
+              <Toggle checked={heroCfg.showPrescriptionButton} onChange={(v) => setHeroCfg({ ...heroCfg, showPrescriptionButton: v })} label="زر رفع الروشتة" hint="زر رفع الروشتة الطبية" />
+              <Toggle checked={heroCfg.showLocationButton} onChange={(v) => setHeroCfg({ ...heroCfg, showLocationButton: v })} label="زر تحديد الموقع" hint="زر تحديد الموقع لإيجاد أقرب الصيدليات" />
+            </div>
+          </SettingsSection>
+
+          <SettingsSection title="نصوص الهيرو" icon={<FileText className="w-5 h-5" />}>
+            <div className="space-y-4">
+              <Field label="نص البحث الافتراضي (Placeholder)">
+                <input value={heroCfg.searchPlaceholder} onChange={(e) => setHeroCfg({ ...heroCfg, searchPlaceholder: e.target.value })} className={inputClass} />
+              </Field>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="نص زر رفع الروشتة">
+                  <input value={heroCfg.prescriptionButtonText} onChange={(e) => setHeroCfg({ ...heroCfg, prescriptionButtonText: e.target.value })} className={inputClass} />
+                </Field>
+                <Field label="نص زر تحديد الموقع">
+                  <input value={heroCfg.locationButtonText} onChange={(e) => setHeroCfg({ ...heroCfg, locationButtonText: e.target.value })} className={inputClass} />
+                </Field>
+              </div>
+              <Field label="نص بعد تحديد الموقع">
+                <input value={heroCfg.locationSetText} onChange={(e) => setHeroCfg({ ...heroCfg, locationSetText: e.target.value })} className={inputClass} />
+              </Field>
+              <Field label="عنوان قائمة الأكثر بحثاً">
+                <input value={heroCfg.trendingLabel} onChange={(e) => setHeroCfg({ ...heroCfg, trendingLabel: e.target.value })} className={inputClass} />
+              </Field>
+              <Field label="كلمات الأكثر بحثاً (افصل بينها بفاصلة)">
+                <textarea
+                  value={heroCfg.trendingKeywords.join('، ')}
+                  onChange={(e) => setHeroCfg({ ...heroCfg, trendingKeywords: e.target.value.split(/[،,]/).map((s) => s.trim()).filter(Boolean) })}
+                  className={inputClass}
+                  rows={2}
+                />
+              </Field>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection title="أرقام الإحصائيات (البطاقات الأربعة)" icon={<Percent className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+              عدّل القيمة والعنوان والوصف لكل بطاقة. الأيقونة تُختار من: store, package, users, truck, pills.
+            </p>
+            <div className="space-y-4">
+              {heroCfg.stats.map((s, i) => (
+                <div key={s.id} className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-3 rounded-xl bg-gray-50/70 border border-gray-100">
+                  <input
+                    value={s.value}
+                    onChange={(e) => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.map((x) => (x.id === s.id ? { ...x, value: e.target.value } : x)) })}
+                    className={inputClass}
+                    placeholder="القيمة"
+                  />
+                  <input
+                    value={s.sub}
+                    onChange={(e) => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.map((x) => (x.id === s.id ? { ...x, sub: e.target.value } : x)) })}
+                    className={inputClass}
+                    placeholder="العنوان"
+                  />
+                  <input
+                    value={s.desc}
+                    onChange={(e) => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.map((x) => (x.id === s.id ? { ...x, desc: e.target.value } : x)) })}
+                    className={inputClass}
+                    placeholder="الوصف"
+                  />
+                  <select
+                    value={s.icon}
+                    onChange={(e) => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.map((x) => (x.id === s.id ? { ...x, icon: e.target.value } : x)) })}
+                    className={inputClass}
+                  >
+                    <option value="store">صيدلية</option>
+                    <option value="package">منتج</option>
+                    <option value="users">عميل</option>
+                    <option value="truck">توصيل</option>
+                    <option value="pills">أدوية</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.filter((x) => x.id !== s.id) })}
+                    className="flex items-center justify-center gap-1 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg border border-red-100"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> حذف
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setHeroCfg({ ...heroCfg, stats: [...heroCfg.stats, { id: `stat_${Date.now()}`, value: '0', sub: 'عنوان جديد', desc: 'وصف جديد', icon: 'store' }] })}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-gray-300 text-xs font-bold text-gray-500 hover:bg-gray-50"
+              >
+                <Plus className="w-4 h-4" /> إضافة بطاقة جديدة
+              </button>
+            </div>
+          </SettingsSection>
+        </div>
+      )}
+
       {settingsSubTab === 'colors' && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
           {/* RIGHT PANEL: COLOR CONTROLS */}
@@ -2080,6 +2671,65 @@ function SettingsTab() {
                 className={inputClass}
                 dir="ltr"
                 placeholder="مثال: @username أو رقم الهاتف"
+              />
+            </Field>
+          </SettingsSection>
+
+          <SettingsSection title="التوصيل والشحن" icon={<Truck className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              قيم تُعرض للعميل عند الطلب لتوضيح رسوم التوصيل والدفع عند الاستلام.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="رسوم التوصيل الافتراضية (ج.م)">
+                <input
+                  value={paymentCfg.deliveryFee}
+                  onChange={(e) => setPaymentCfg({ ...paymentCfg, deliveryFee: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
+                  type="number"
+                  min="0"
+                  placeholder="مثال: 25"
+                />
+              </Field>
+              <Field label="التوصيل المجاني للطلبات فوق (ج.م)">
+                <input
+                  value={paymentCfg.freeDeliveryThreshold}
+                  onChange={(e) => setPaymentCfg({ ...paymentCfg, freeDeliveryThreshold: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
+                  type="number"
+                  min="0"
+                  placeholder="مثال: 300"
+                />
+              </Field>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="رسوم الدفع عند الاستلام (ج.م)">
+                <input
+                  value={paymentCfg.cashOnDeliveryFee}
+                  onChange={(e) => setPaymentCfg({ ...paymentCfg, cashOnDeliveryFee: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
+                  type="number"
+                  min="0"
+                  placeholder="مثال: 10"
+                />
+              </Field>
+              <div className="flex items-end">
+                <Toggle
+                  checked={paymentCfg.showCashOnDelivery}
+                  onChange={(v) => setPaymentCfg({ ...paymentCfg, showCashOnDelivery: v })}
+                  label="إظهار الدفع عند الاستلام"
+                  hint="خيار الدفع كاش عند الاستلام للعميل"
+                />
+              </div>
+            </div>
+            <Field label="ملاحظة التوصيل الظاهرة للعميل">
+              <textarea
+                value={paymentCfg.shippingNote}
+                onChange={(e) => setPaymentCfg({ ...paymentCfg, shippingNote: e.target.value })}
+                className={inputClass}
+                rows={2}
               />
             </Field>
           </SettingsSection>

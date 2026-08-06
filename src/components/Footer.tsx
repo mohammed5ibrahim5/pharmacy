@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, MessageCircle, Cross, Heart, Shield, Truck, Clock, Send, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
+import { supabase } from '@/lib/supabase';
 
 function withAlpha(hex: string, alpha: number): string {
   if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
@@ -50,6 +51,7 @@ export function Footer() {
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
     if (newsletterEmail.trim()) {
+      supabase.from('newsletter_subscribers').insert({ email: newsletterEmail.trim().toLowerCase() }).then(() => {});
       setSubscribed(true);
       setTimeout(() => {
         setSubscribed(false);

@@ -268,5 +268,66 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS for_all_pharmacies boolean DEFAULT
 
 CREATE INDEX IF NOT EXISTS idx_products_all_pharmacies ON products(for_all_pharmacies);
 
+-- ============ 9) Coupons (discount codes) ============
+CREATE TABLE IF NOT EXISTS coupons (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  code text UNIQUE NOT NULL,
+  discount_type text NOT NULL DEFAULT 'percent' CHECK (discount_type IN ('percent', 'fixed')),
+  value numeric(10,2) NOT NULL DEFAULT 0,
+  min_order numeric(10,2) NOT NULL DEFAULT 0,
+  max_discount numeric(10,2),
+  usage_limit integer,
+  used_count integer NOT NULL DEFAULT 0,
+  expires_at timestamptz,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE coupons ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "coupons_public_select" ON coupons;
+CREATE POLICY "coupons_public_select" ON coupons FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "coupons_public_insert" ON coupons;
+CREATE POLICY "coupons_public_insert" ON coupons FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "coupons_public_update" ON coupons;
+CREATE POLICY "coupons_public_update" ON coupons FOR UPDATE
+  TO anon, authenticated
+  USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "coupons_public_delete" ON coupons;
+CREATE POLICY "coupons_public_delete" ON coupons FOR DELETE
+  TO anon, authenticated
+  USING (true);
+
+-- ============ 10) Newsletter subscribers ============
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email text UNIQUE NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "newsletter_subscribers_public_select" ON newsletter_subscribers;
+CREATE POLICY "newsletter_subscribers_public_select" ON newsletter_subscribers FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "newsletter_subscribers_public_insert" ON newsletter_subscribers;
+CREATE POLICY "newsletter_subscribers_public_insert" ON newsletter_subscribers FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "newsletter_subscribers_public_delete" ON newsletter_subscribers;
+CREATE POLICY "newsletter_subscribers_public_delete" ON newsletter_subscribers FOR DELETE
+  TO anon, authenticated
+  USING (true);
+
 -- ============ Important note ============
 -- After running, wait a second then reload the page to refresh schema cache.

@@ -55,10 +55,38 @@ const HERO_TRENDING = [
   'كمامات طبية',
 ];
 
+const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string }[] = [
+  { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store' },
+  { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package' },
+  { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users' },
+  { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck' },
+];
+
+function statIcon(key: string): React.ReactNode {
+  switch (key) {
+    case 'store': return <Store className="w-6 h-6" />;
+    case 'package': return <Package className="w-6 h-6" />;
+    case 'users': return <Users className="w-6 h-6" />;
+    case 'truck': return <Truck className="w-6 h-6" />;
+    case 'pills': return <Pill className="w-6 h-6" />;
+    default: return <Sparkles className="w-6 h-6" />;
+  }
+}
+
+function statIconColor(key: string, colors: typeof import('@/context/SettingsContext').DEFAULT_THEME_COLORS): string {
+  switch (key) {
+    case 'store': return colors.primaryColor;
+    case 'package': return colors.secondaryColor;
+    case 'users': return colors.accentColor;
+    case 'truck': return '#0d9488';
+    default: return colors.primaryColor;
+  }
+}
+
 type PharmacyTab = 'nearest' | 'highest_rated' | 'most_popular' | 'delivery' | '24h';
 
 export function HomePage() {
-  const { settings, themeColors } = useSettings();
+  const { settings, themeColors, heroConfig } = useSettings();
   const { navigate } = useRouter();
   const { location, requestLocation, loading, permissionDenied } = useGeolocation();
 
@@ -339,6 +367,7 @@ export function HomePage() {
             </p>
 
             {/* MAIN SEARCH FORM */}
+            {heroConfig.showSearch && (
             <div className="pt-2 animate-fade-up" style={{ animationDelay: '0.3s' }}>
               <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
                 <div
@@ -378,7 +407,7 @@ export function HomePage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="ابحث عن اسم الدواء، المادة الفعالة، أو المنتج..."
+                    placeholder={heroConfig.searchPlaceholder}
                     className="flex-1 min-w-0 px-3 py-3.5 text-slate-900 text-sm sm:text-base font-bold placeholder:font-normal placeholder:text-gray-400 focus:outline-none bg-transparent"
                   />
 
@@ -396,12 +425,13 @@ export function HomePage() {
                 </div>
               </form>
 
+              {heroConfig.showTrending && (
               <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-xs font-bold">
                 <span className="opacity-60 font-bold flex items-center gap-1" style={{ color: themeColors.heroText }}>
                   <Sparkles className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
-                  الأكثر بحثاً:
+                  {heroConfig.trendingLabel}
                 </span>
-                {HERO_TRENDING.map((item) => (
+                {(heroConfig.trendingKeywords.length > 0 ? heroConfig.trendingKeywords : HERO_TRENDING).map((item) => (
                   <button
                     key={item}
                     onClick={() => {
@@ -418,18 +448,24 @@ export function HomePage() {
                   </button>
                 ))}
               </div>
+              )}
             </div>
+            )}
 
             <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-2.5 text-xs font-black animate-fade-up" style={{ animationDelay: '0.4s' }}>
+              {heroConfig.showPrescriptionButton && (
               <button
                 onClick={() => setPrescriptionModalOpen(true)}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-white shadow-md hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
                 style={{ backgroundColor: themeColors.primaryColor }}
               >
                 <FileText className="w-4 h-4 shrink-0" />
-                <span className="truncate">ارفع روشتتك للصيدلي فوراً</span>
+                <span className="truncate">{heroConfig.prescriptionButtonText}</span>
               </button>
+              )}
 
+              {heroConfig.showLocationButton && (
+              <>
               {!location ? (
                 <button
                   onClick={requestLocation}
@@ -441,7 +477,7 @@ export function HomePage() {
                   }}
                 >
                   <Navigation className="w-4 h-4 animate-spin-slow shrink-0" />
-                  <span className="truncate">{loading ? 'جاري تحديد موقعك...' : permissionDenied ? 'حدد الموقع يدوياً' : 'حدد موقعك لأقرب صيدلية'}</span>
+                  <span className="truncate">{loading ? 'جاري تحديد موقعك...' : permissionDenied ? 'حدد الموقع يدوياً' : heroConfig.locationButtonText}</span>
                 </button>
               ) : (
                 <button
@@ -455,8 +491,10 @@ export function HomePage() {
                 >
                   <span className="w-2.5 h-2.5 rounded-full animate-ping shrink-0" style={{ backgroundColor: themeColors.primaryColor }} />
                   <MapPin className="w-4 h-4 shrink-0" style={{ color: themeColors.primaryColor }} />
-                  <span className="truncate">تم تحديد موقعك - أقرب الصيدليات أولاً</span>
+                  <span className="truncate">{heroConfig.locationSetText}</span>
                 </button>
+              )}
+              </>
               )}
             </div>
           </div>
@@ -464,6 +502,7 @@ export function HomePage() {
       </section>
 
       {/* ==================== STATS STRIP ==================== */}
+      {heroConfig.showStats && (
       <section className="relative z-20 -mt-14 sm:-mt-16 mb-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div
@@ -474,40 +513,7 @@ export function HomePage() {
               borderColor: `${themeColors.primaryColor}15`
             }}
           >
-            {[
-              {
-                icon: <Store className="w-6 h-6" />,
-                value: pharmacies.length > 0 ? `${pharmacies.length}` : '5+',
-                sub: 'صيدلية شريكة',
-                desc: 'معتمدة ومجاوِرة لك',
-                bg: `${themeColors.primaryColor}15`,
-                color: themeColors.primaryColor
-              },
-              {
-                icon: <Package className="w-6 h-6" />,
-                value: products.length > 0 ? `${products.length}+` : '8+',
-                sub: 'منتج متاح',
-                desc: 'تحديث يومي للأسعار',
-                bg: `${themeColors.secondaryColor}15`,
-                color: themeColors.secondaryColor
-              },
-              {
-                icon: <Users className="w-6 h-6" />,
-                value: '10k+',
-                sub: 'عميل سعيد',
-                desc: 'تقييم ممتاز 4.9⭐',
-                bg: `${themeColors.accentColor}15`,
-                color: themeColors.accentColor
-              },
-              {
-                icon: <Truck className="w-6 h-6" />,
-                value: '24/7',
-                sub: 'خدمة توصيل',
-                desc: 'شحن آمن وسريع',
-                bg: '#0d94881c',
-                color: '#0d9488'
-              },
-            ].map((stat, i) => (
+            {(heroConfig.stats.length > 0 ? heroConfig.stats : DEFAULT_HERO_STATS).map((stat, i) => (
               <div
                 key={i}
                 className="p-3 sm:p-4 text-right flex items-center gap-3.5 group hover:bg-black/[0.02] rounded-2xl transition-all"
@@ -515,12 +521,12 @@ export function HomePage() {
                 <div
                   className="w-14 h-14 rounded-2xl flex items-center justify-center border shadow-sm shrink-0 transition-transform group-hover:scale-110"
                   style={{
-                    backgroundColor: stat.bg,
-                    color: stat.color,
-                    borderColor: `${stat.color}33`
+                    backgroundColor: `${statIconColor(stat.icon, themeColors)}15`,
+                    color: statIconColor(stat.icon, themeColors),
+                    borderColor: `${statIconColor(stat.icon, themeColors)}33`
                   }}
                 >
-                  {stat.icon}
+                  {statIcon(stat.icon)}
                 </div>
                 <div>
                   <div className="flex items-baseline gap-1">
@@ -534,6 +540,7 @@ export function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ==================== CATEGORIES SECTION ==================== */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
