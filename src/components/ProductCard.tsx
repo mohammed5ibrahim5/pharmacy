@@ -1,4 +1,4 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, Phone, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, Flame, Plus, Minus } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, Flame, Plus, Minus } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -18,7 +18,7 @@ interface Props {
 
 export function ProductCard({ product, pharmacyName, onClick, popular = false }: Props) {
   const { t } = useLanguage();
-  const { themeColors, storeConfig, featuresConfig } = useSettings();
+  const { themeColors, featuresConfig } = useSettings();
   const { cart, openOrder, addToCart, updateCartQty } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { user } = useAuth();
@@ -30,7 +30,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
   const addTimer = useRef<number | null>(null);
   const heartTimer = useRef<number | null>(null);
   const isFav = isProductFavorite(product.id);
-  const cartEntry = storeConfig.purchasesEnabled ? cart.find((i) => i.product.id === product.id) : undefined;
+  const cartEntry = cart.find((i) => i.product.id === product.id);
 
   const activeDiscount = product.discounts?.find((d: Discount) => d.is_active);
   const finalPrice = activeDiscount
@@ -204,9 +204,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
             </div>
           )}
 
-          {/* Quick Add / Quantity Stepper / Contact Button */}
-          {storeConfig.purchasesEnabled ? (
-            cartEntry ? (
+          {/* Quick Add / Quantity Stepper */}
+          {cartEntry ? (
               <div
                 className="absolute bottom-2.5 start-2.5 flex items-center gap-0.5 rounded-xl bg-white shadow-lg border p-0.5 animate-fade-in"
                 style={{ borderColor: `${themeColors.priceColor}35` }}
@@ -268,23 +267,6 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                   <ShoppingCart className="w-[18px] h-[18px]" />
                 </button>
               </div>
-            )
-          ) : (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                openOrder(product, pharmacyName);
-              }}
-              className="absolute bottom-2.5 start-2.5 w-9 h-9 rounded-2xl bg-white shadow-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105"
-              style={{ color: themeColors.priceColor }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = themeColors.priceColor; e.currentTarget.style.color = '#ffffff'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = themeColors.priceColor; }}
-              title={t('تواصل مع الصيدلية')}
-              aria-label={t('تواصل مع الصيدلية')}
-            >
-              <Phone className="w-4 h-4" />
-            </button>
           )}
         </div>
 

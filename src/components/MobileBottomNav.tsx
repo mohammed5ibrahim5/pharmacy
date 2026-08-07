@@ -6,7 +6,7 @@ import { useOrder } from '@/context/OrderContext';
 import { useLanguage } from '@/context/LanguageContext';
 
 export function MobileBottomNav() {
-  const { settings, themeColors, storeConfig } = useSettings();
+  const { settings, themeColors } = useSettings();
   const { navigate, route } = useRouter();
   const { user, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
@@ -42,29 +42,25 @@ export function MobileBottomNav() {
         }
       },
     },
-    ...(storeConfig.purchasesEnabled
-      ? [
-          {
-            id: 'cart',
-            label: t('سلة التسوق'),
-            icon: (
-              <span className="relative">
-                <ShoppingCart className="w-5 h-5" />
-                {cartCount > 0 && (
-                  <span
-                    className="absolute -top-2 -start-2.5 min-w-4 h-4 px-0.5 rounded-full text-[9px] font-black text-white flex items-center justify-center"
-                    style={{ backgroundColor: themeColors.priceColor }}
-                  >
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </span>
-                )}
-              </span>
-            ),
-            active: false,
-            onClick: () => openCart('cart'),
-          },
-        ]
-      : []),
+    {
+      id: 'cart',
+      label: t('سلة التسوق'),
+      icon: (
+        <span className="relative">
+          <ShoppingCart className="w-5 h-5" />
+          {cartCount > 0 && (
+            <span
+              className="absolute -top-2 -start-2.5 min-w-4 h-4 px-0.5 rounded-full text-[9px] font-black text-white flex items-center justify-center"
+              style={{ backgroundColor: themeColors.priceColor }}
+            >
+              {cartCount > 99 ? '99+' : cartCount}
+            </span>
+          )}
+        </span>
+      ),
+      active: false,
+      onClick: () => openCart('cart'),
+    },
     {
       id: 'account',
       label: t('حسابي'),

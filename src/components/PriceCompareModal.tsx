@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Scale, Store, Sparkles, Pill, TrendingDown, CheckCircle2, ShoppingCart, Phone } from 'lucide-react';
+import { X, Scale, Store, Sparkles, Pill, TrendingDown, CheckCircle2, ShoppingCart } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -17,8 +17,8 @@ function finalPrice(p: Product): number {
 }
 
 export function PriceCompareModal({ product, onClose }: Props) {
-  const { themeColors, storeConfig } = useSettings();
-  const { openOrder, addToCart, openCart } = useOrder();
+  const { themeColors } = useSettings();
+  const { addToCart, openCart } = useOrder();
   const { t } = useLanguage();
   const [sameName, setSameName] = useState<Product[]>([]);
   const [alternatives, setAlternatives] = useState<Product[]>([]);
@@ -94,28 +94,15 @@ export function PriceCompareModal({ product, onClose }: Props) {
         </div>
         <button
           onClick={() => {
-            if (storeConfig.purchasesEnabled) {
-              addToCart(p, p.pharmacy?.name);
-              onClose();
-              openCart('cart');
-            } else {
-              openOrder(p, p.pharmacy?.name);
-            }
+            addToCart(p, p.pharmacy?.name);
+            onClose();
+            openCart('cart');
           }}
           className="shrink-0 px-3 py-1.5 rounded-xl text-white text-[11px] font-extrabold hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-1.5"
           style={{ backgroundColor: themeColors.priceColor }}
         >
-          {storeConfig.purchasesEnabled ? (
-            <>
-              <ShoppingCart className="w-3.5 h-3.5" />
-              {t('أضف للسلة')}
-            </>
-          ) : (
-            <>
-              <Phone className="w-3.5 h-3.5" />
-              {t('تواصل')}
-            </>
-          )}
+          <ShoppingCart className="w-3.5 h-3.5" />
+          {t('أضف للسلة')}
         </button>
       </div>
     );

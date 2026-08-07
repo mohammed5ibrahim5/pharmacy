@@ -39,7 +39,7 @@ function finalPriceOf(product: Product): number {
 }
 
 export function OrderModal() {
-  const { cart, cartOpen, cartStep, setCartStep, closeCart, updateCartQty, removeFromCart, clearCart, contactProduct, closeContact } = useOrder();
+  const { cart, cartOpen, cartStep, setCartStep, closeCart, updateCartQty, removeFromCart, clearCart } = useOrder();
   const { user, profile, setAuthModalOpen } = useCustomer();
   const { settings, themeColors, paymentConfig, storeConfig, loyaltyConfig } = useSettings();
   const { t, lang } = useLanguage();
@@ -56,7 +56,7 @@ export function OrderModal() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!cartOpen && !contactProduct) return;
+    if (!cartOpen) return;
     let cancelled = false;
     const loadPharmacies = async () => {
       const { data } = await supabase.from('pharmacies').select('*').order('name');
@@ -66,7 +66,7 @@ export function OrderModal() {
     return () => {
       cancelled = true;
     };
-  }, [cartOpen, contactProduct]);
+  }, [cartOpen]);
 
   useEffect(() => {
     if (!cartOpen) return;
@@ -123,111 +123,31 @@ export function OrderModal() {
   const methodNumber = paymentMethod === 'vodafone_cash' ? paymentConfig.vodafoneCash : paymentConfig.instapay;
   const hasMethodNumber = Boolean(methodNumber.trim());
 
-  // ============ Catalog mode (online purchases disabled): single-product contact ============
-  const contactProd = contactProduct?.product;
-  if (contactProduct && contactProd && !cartOpen) {
-    const pharmacy = contactProd.for_all_pharmacies
-      ? null
-      : pharmacies.find((p) => p.id === contactProd.pharmacy_id) || null;
-    const phone = pharmacy?.phone || settings.contact_phone || null;
-    const whatsapp = pharmacy?.whatsapp || settings.contact_whatsapp || null;
-    const contactName = pharmacy?.name || contactProduct.pharmacyName || settings.site_name;
-    const whatsappDigits = whatsapp ? whatsapp.replace(/\D/g, '') : null;
-    const activeDiscount = contactProd.discounts?.find((d) => d.is_active);
-    const fp = activeDiscount
-      ? contactProd.price * (1 - activeDiscount.discount_percentage / 100)
-      : contactProd.price;
-
-    return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeContact}>
-        <div className="rounded-3xl w-full max-w-md p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
-          <button onClick={closeContact} className="absolute top-4 end-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-
-          <div className="text-center mb-5">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ backgroundColor: `${themeColors.priceColor}12`, color: themeColors.priceColor }}
-            >
-              <Phone className="w-8 h-8" />
-            </div>
-            <h2 className="text-xl font-extrabold text-gray-900">{t('تواصل مع الصيدلية مباشرة')}</h2>
-            <p className="text-gray-500 text-sm mt-2 leading-relaxed">{t(storeConfig.contactMessage)}</p>
-          </div>
-
-          <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-3 mb-5">
-            {contactProd.image_url ? (
-              <img src={contactProd.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
-            ) : (
-              <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                <ShoppingBag className="w-6 h-6 text-gray-400" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 truncate">{contactProd.name}</p>
-              <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                <Store className="w-3.5 h-3.5 shrink-0" />
-                {contactName}
-              </p>
-              <p className="text-xs font-bold mt-0.5" style={{ color: themeColors.priceColor }}>
-                {t('{0} ج.م', [fp.toFixed(2)])}
-              </p>
-            </div>
-          </div>
-
-          {whatsappDigits ? (
-            <a
-              href={`https://wa.me/${whatsappDigits}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={closeContact}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg mb-3"
-              style={{ backgroundColor: '#25d366', boxShadow: '0 8px 20px -6px #25d36688' }}
-            >
-              <Send className="w-5 h-5" />
-              {t('مراسلة {0} واتساب', [contactName])}
-            </a>
-          ) : (
-            phone && (
-              <a
-                href={`tel:${phone}`}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg mb-3"
-                style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
-              >
-                <Phone className="w-5 h-5" />
-                {t('الاتصال بـ {0}', [contactName])}
-              </a>
-            )
-          )}
-
-          {phone && whatsappDigits && (
-            <a
-              href={`tel:${phone}`}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all hover:scale-[1.01] active:scale-95 border-2 mb-3"
-              style={{ borderColor: themeColors.priceColor, color: themeColors.priceColor }}
-            >
-              <Phone className="w-5 h-5" />
-              {t('الاتصال المباشر')}
-            </a>
-          )}
-
-          {!phone && !whatsappDigits && (
-            <div className="w-full py-3.5 rounded-xl mb-3 bg-amber-50 border border-amber-200 text-center">
-              <p className="text-xs font-bold text-amber-700">{t('لا يتوفر رقم تواصل مسجل حالياً، حاول لاحقاً.')}</p>
-            </div>
-          )}
-
-          <p className="text-[11px] text-gray-400 text-center leading-relaxed">
-            <Info className="w-3 h-3 inline -mt-0.5 me-1" />
-            {t('الطلب المباشر أونلاين متوقف حالياً، يمكنك الاتصال بالصيدلية لتأكيد توفر المنتج وطريقة الشراء.')}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (!cartOpen) return null;
+
+  const catalogMode = !storeConfig.purchasesEnabled;
+  const whatsappDigits = settings.contact_whatsapp ? settings.contact_whatsapp.replace(/\D/g, '') : null;
+  const contactPhone = settings.contact_phone || null;
+
+  const buildWhatsAppMessage = () => {
+    const lines: string[] = [];
+    lines.push(t('مرحباً، أود طلب هذه الأدوية من صيدليتكم:'));
+    groups.forEach((g) => {
+      const entries = cart.filter((e) =>
+        e.product.for_all_pharmacies ? g.key === '__all__' : e.product.pharmacy_id === g.key
+      );
+      if (entries.length === 0) return;
+      lines.push(`• ${g.label}`);
+      entries.forEach((entry) => {
+        lines.push(`    ${entry.product.name} × ${entry.quantity}`);
+      });
+    });
+    lines.push('');
+    lines.push(`${t('الاسم:')} ${profile?.full_name || ''}`);
+    lines.push(`${t('الهاتف:')} ${profile?.phone || ''}`);
+    if (note.trim()) lines.push(`${t('ملاحظات:')} ${note.trim()}`);
+    return lines.join('\n');
+  };
 
   const closeModal = () => {
     if (!loading) closeCart();
@@ -255,7 +175,9 @@ export function OrderModal() {
           </div>
           <h2 className="text-xl font-black text-gray-900 mb-2">{t('سلة التسوق فارغة')}</h2>
           <p className="text-sm text-gray-500 leading-relaxed mb-6">
-            {t('لم تضف أي منتجات بعد. تصفح الصيدليات وأضف أدويتك إلى سلة التسوق لتدفعها كلها في طلب واحد بتوصيلة واحدة.')}
+            {catalogMode
+              ? t('لم تضف أي منتجات بعد. أضف أدويتك إلى السلة ثم أرسل طلبك إلى الصيدلية واتساب.')
+              : t('لم تضف أي منتجات بعد. تصفح الصيدليات وأضف أدويتك إلى سلة التسوق لتدفعها كلها في طلب واحد بتوصيلة واحدة.')}
           </p>
           <button
             onClick={closeModal}
@@ -441,7 +363,7 @@ export function OrderModal() {
               <span className="text-[10px] font-bold text-gray-600">{t('السلة')}</span>
               <span className="h-px flex-1 bg-gray-200" />
               <span className="text-[10px] font-black text-gray-400 w-5 h-5 rounded-full border border-gray-200 flex items-center justify-center">2</span>
-              <span className="text-[10px] font-bold text-gray-400">{t('الدفع والتوصيل')}</span>
+              <span className="text-[10px] font-bold text-gray-400">{catalogMode ? t('إرسال الطلب') : t('الدفع والتوصيل')}</span>
             </div>
           </div>
 
@@ -567,21 +489,59 @@ export function OrderModal() {
                 {total.toFixed(2)} <span className="text-xs text-gray-400 font-medium">{t('ج.م')}</span>
               </span>
             </div>
-            <button
-              onClick={() => {
-                if (!user) {
-                  closeCart();
-                  setAuthModalOpen(true);
-                  return;
-                }
-                setCartStep('checkout');
-              }}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-black text-[15px] transition-all hover:brightness-105 active:scale-[0.99] shadow-lg"
-              style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
-            >
-              <Send className="w-5 h-5" />
-              {t('متابعة إتمام الطلب')}
-            </button>
+            {catalogMode ? (
+              <>
+                {whatsappDigits ? (
+                  <a
+                    href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(buildWhatsAppMessage())}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-black text-[15px] transition-all hover:brightness-105 active:scale-[0.99] shadow-lg"
+                    style={{ backgroundColor: '#25d366', boxShadow: '0 8px 20px -6px #25d36688' }}
+                  >
+                    <Send className="w-5 h-5" />
+                    {t('إرسال الطلب واتساب')}
+                  </a>
+                ) : contactPhone ? (
+                  <a
+                    href={`tel:${contactPhone}`}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-black text-[15px] transition-all hover:brightness-105 active:scale-[0.99] shadow-lg"
+                    style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
+                  >
+                    <Phone className="w-5 h-5" />
+                    {t('الاتصال المباشر')}
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gray-200 text-gray-400 font-black text-[15px] cursor-not-allowed"
+                  >
+                    {t('لا يتوفر رقم تواصل مسجل حالياً، حاول لاحقاً.')}
+                  </button>
+                )}
+                <p className="text-[11px] text-gray-400 text-center leading-relaxed mt-2.5 flex items-center justify-center gap-1">
+                  <Info className="w-3 h-3 shrink-0" />
+                  {t('بدون دفع مسبق — أرسل قائمتك للصيدلية وسيتواصل معك الصيدلي.')}
+                </p>
+              </>
+            ) : (
+              <button
+                onClick={() => {
+                  if (!user) {
+                    closeCart();
+                    setAuthModalOpen(true);
+                    return;
+                  }
+                  setCartStep('checkout');
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-black text-[15px] transition-all hover:brightness-105 active:scale-[0.99] shadow-lg"
+                style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
+              >
+                <Send className="w-5 h-5" />
+                {t('متابعة إتمام الطلب')}
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -91,7 +91,7 @@ const FALLBACK_CATEGORIES: { slug: string; name: string; name_en?: string | null
 
 export function Header() {
   const { navigate } = useRouter();
-  const { settings, themeColors, headerConfig, storeConfig, darkMode, toggleDarkMode } = useSettings();
+  const { settings, themeColors, headerConfig, darkMode, toggleDarkMode } = useSettings();
   const { t, lang, toggleLang } = useLanguage();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
@@ -531,29 +531,27 @@ export function Header() {
                 <Moon className={`absolute inset-0 m-auto w-5 h-5 transition-transform duration-300 ${darkMode ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
               </button>
 
-              {storeConfig.purchasesEnabled && (
-                <button
-                  onClick={() => openCart('cart')}
-                  className={`relative p-2.5 rounded-2xl border transition-colors ${cartBump ? 'animate-cart-bump' : ''}`}
-                  style={{
-                    backgroundColor: `${themeColors.headerText}08`,
-                    color: themeColors.headerText,
-                    borderColor: `${themeColors.headerText}15`
-                  }}
-                  title={t('سلة التسوق')}
-                  aria-label={t('سلة التسوق')}
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  {cartCount > 0 && (
-                    <span
-                      className="absolute -top-1.5 -left-1.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center border-2"
-                      style={{ backgroundColor: themeColors.priceColor, borderColor: themeColors.headerBg }}
-                    >
-                      {cartCount > 99 ? '99+' : cartCount}
-                    </span>
-                  )}
-                </button>
-              )}
+              <button
+                onClick={() => openCart('cart')}
+                className={`relative p-2.5 rounded-2xl border transition-colors ${cartBump ? 'animate-cart-bump' : ''}`}
+                style={{
+                  backgroundColor: `${themeColors.headerText}08`,
+                  color: themeColors.headerText,
+                  borderColor: `${themeColors.headerText}15`
+                }}
+                title={t('سلة التسوق')}
+                aria-label={t('سلة التسوق')}
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span
+                    className="absolute -top-1.5 -left-1.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center border-2"
+                    style={{ backgroundColor: themeColors.priceColor, borderColor: themeColors.headerBg }}
+                  >
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </button>
 
               <UserMenu />
 

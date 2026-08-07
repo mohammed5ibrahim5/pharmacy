@@ -93,4 +93,12 @@
   'بدائل بنفس المادة الفعالة ({0})': 'Alternatives with the same active ingredient ({0})',
   'البديل الأرخص {0} ج.م': 'Cheapest alternative {0} EGP',
   'بدائل تحتوي على نفس المادة الفعالة "{0}" — استشر الصيدلي قبل التبديل.': 'Alternatives containing the same active ingredient "{0}" — consult your pharmacist before switching.',
+  'مرحباً، أود طلب هذه الأدوية من صيدليتكم:': 'Hello, I would like to order these medications from your pharmacy:',
+  'الاسم:': 'Name:',
+  'الهاتف:': 'Phone:',
+  'ملاحظات:': 'Notes:',
+  'إرسال الطلب واتساب': 'Send order via WhatsApp',
+  'إرسال الطلب': 'Send order',
+  'بدون دفع مسبق — أرسل قائمتك للصيدلية وسيتواصل معك الصيدلي.': 'No upfront payment — send your list to the pharmacy and the pharmacist will contact you.',
+  'لم تضف أي منتجات بعد. أضف أدويتك إلى السلة ثم أرسل طلبك إلى الصيدلية واتساب.': "You haven't added any products yet. Add your medications to the cart, then send your order to the pharmacy via WhatsApp.",
 };

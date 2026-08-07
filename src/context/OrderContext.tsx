@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useSettings } from '@/context/SettingsContext';
 import type { Product } from '@/types';
 
 export interface CartItem {
@@ -9,11 +8,6 @@ export interface CartItem {
   quantity: number;
 }
 
-export interface ContactProduct {
-  product: Product;
-  pharmacyName?: string;
-}
-
 export type CartStep = 'cart' | 'checkout';
 
 interface OrderContextType {
@@ -21,7 +15,6 @@ interface OrderContextType {
   cartOpen: boolean;
   cartStep: CartStep;
   cartCount: number;
-  contactProduct: ContactProduct | null;
   addToCart: (product: Product, pharmacyName?: string, quantity?: number) => void;
   updateCartQty: (key: string, quantity: number) => void;
   removeFromCart: (key: string) => void;
@@ -30,7 +23,6 @@ interface OrderContextType {
   closeCart: () => void;
   setCartStep: (step: CartStep) => void;
   openOrder: (product: Product, pharmacyName?: string) => void;
-  closeContact: () => void;
 }
 
 const CART_STORAGE_KEY = 'pharmacy_cart_v2';
@@ -49,7 +41,6 @@ const OrderContext = createContext<OrderContextType>({
   cartOpen: false,
   cartStep: 'cart',
   cartCount: 0,
-  contactProduct: null,
   addToCart: () => {},
   updateCartQty: () => {},
   removeFromCart: () => {},
@@ -58,15 +49,12 @@ const OrderContext = createContext<OrderContextType>({
   closeCart: () => {},
   setCartStep: () => {},
   openOrder: () => {},
-  closeContact: () => {},
 });
 
 export function OrderProvider({ children }: { children: ReactNode }) {
-  const { storeConfig } = useSettings();
   const [cart, setCart] = useState<CartItem[]>(() => loadCart());
   const [cartOpen, setCartOpen] = useState(false);
   const [cartStep, setCartStep] = useState<CartStep>('cart');
-  const [contactProduct, setContactProduct] = useState<ContactProduct | null>(null);
 
   useEffect(() => {
     try {
@@ -110,15 +98,9 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   const closeCart = () => setCartOpen(false);
 
-  const closeContact = () => setContactProduct(null);
-
   const openOrder = (product: Product, pharmacyName?: string) => {
-    if (storeConfig.purchasesEnabled) {
-      addToCart(product, pharmacyName);
-      openCart('cart');
-    } else {
-      setContactProduct({ product, pharmacyName });
-    }
+    addToCart(product, pharmacyName);
+    openCart('cart');
   };
 
   const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
@@ -130,7 +112,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         cartOpen,
         cartStep,
         cartCount,
-        contactProduct,
         addToCart,
         updateCartQty,
         removeFromCart,
@@ -139,7 +120,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         closeCart,
         setCartStep,
         openOrder,
-        closeContact,
       }}
     >
       {children}
