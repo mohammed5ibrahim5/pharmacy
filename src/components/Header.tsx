@@ -299,7 +299,7 @@ export function Header() {
               >
                 <Cross className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
                 <span
-                  className="absolute -top-1 -end-1 w-3.5 h-3.5 rounded-full border-2 animate-pulse"
+                  className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 animate-pulse"
                   style={{
                     backgroundColor: themeColors.accentColor,
                     borderColor: themeColors.headerBg
@@ -329,13 +329,13 @@ export function Header() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
                     placeholder={t('ابحث باسم الدواء، المادة الفعالة، أو امسح الباركود...')}
-                    className="w-full ps-5 pe-24 py-2.5 bg-transparent text-xs sm:text-sm font-bold placeholder:font-medium focus:outline-none"
+                    className="w-full pr-5 pl-24 py-2.5 bg-transparent text-xs sm:text-sm font-bold placeholder:font-medium focus:outline-none"
                     style={{ color: themeColors.headerSearchText }}
                   />
 
                   <button
                     type="submit"
-                    className="absolute end-1 top-1/2 -translate-y-1/2 w-8.5 h-8.5 rounded-full flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95 shadow-md hover:brightness-110"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-8.5 h-8.5 rounded-full flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95 shadow-md hover:brightness-110"
                     style={{ backgroundColor: themeColors.primaryColor }}
                     title={t('بحث')}
                   >
@@ -343,7 +343,7 @@ export function Header() {
                   </button>
 
                   <div
-                    className="absolute start-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 border-s ps-2"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 border-r pr-2"
                     style={{ borderColor: `${themeColors.headerText}22` }}
                   >
                     {headerConfig.showVoiceSearch && (
@@ -546,7 +546,7 @@ export function Header() {
                   <ShoppingCart className="w-5 h-5" />
                   {cartCount > 0 && (
                     <span
-                      className="absolute -top-1.5 -start-1.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center border-2"
+                      className="absolute -top-1.5 -left-1.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center border-2"
                       style={{ backgroundColor: themeColors.priceColor, borderColor: themeColors.headerBg }}
                     >
                       {cartCount > 99 ? '99+' : cartCount}
@@ -699,7 +699,7 @@ export function Header() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('ابحث باسم الدواء أو المنتج...')}
-                  className="w-full ps-11 pe-20 py-3 rounded-2xl text-xs font-medium focus:outline-none border"
+                  className="w-full pr-11 pl-20 py-3 rounded-2xl text-xs font-medium focus:outline-none border"
                   style={{
                     backgroundColor: `${themeColors.headerText}05`,
                     borderColor: `${themeColors.headerText}15`,
@@ -708,7 +708,7 @@ export function Header() {
                 />
                 <button
                   type="submit"
-                  className="absolute end-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl flex items-center justify-center text-white"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl flex items-center justify-center text-white"
                   style={{ backgroundColor: themeColors.primaryColor }}
                 >
                   <Search className="w-4 h-4" />
@@ -720,7 +720,7 @@ export function Header() {
                       setMenuOpen(false);
                       setBarcodeModalOpen(true);
                     }}
-                    className="absolute start-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-xs font-bold flex items-center gap-1 border"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-xs font-bold flex items-center gap-1 border"
                     style={{
                       backgroundColor: `${themeColors.primaryColor}20`,
                       color: themeColors.primaryColor,
