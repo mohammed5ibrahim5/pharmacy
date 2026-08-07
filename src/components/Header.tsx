@@ -329,7 +329,7 @@ export function Header() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
                     placeholder={t('ابحث باسم الدواء، المادة الفعالة، أو امسح الباركود...')}
-                    className="w-full pr-5 pl-24 py-2.5 bg-transparent text-xs sm:text-sm font-bold placeholder:font-medium focus:outline-none"
+                    className={`w-full pr-5 ${lang === 'en' ? 'pl-36' : 'pl-24'} py-2.5 bg-transparent text-xs sm:text-sm font-bold placeholder:font-medium focus:outline-none`}
                     style={{ color: themeColors.headerSearchText }}
                   />
 
