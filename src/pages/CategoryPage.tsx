@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Pill, Package, ChevronLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Pill, Package } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function CategoryPage({ slug }: Props) {
-  const { settings, themeColors } = useSettings();
+  const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState<Category | null>(null);

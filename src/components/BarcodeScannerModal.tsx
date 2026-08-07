@@ -18,7 +18,7 @@ const SAMPLE_BARCODES = [
 ];
 
 export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerModalProps) {
-  const { settings, themeColors } = useSettings();
+  const { themeColors } = useSettings();
   const [cameraActive, setCameraActive] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [error, setError] = useState<string | null>(null);

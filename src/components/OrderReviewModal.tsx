@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Star, Send, MessageSquareQuote, CheckCircle2, Loader2 } from 'lucide-react';
+import { X, Star, Send, MessageSquareQuote, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productName, onClose, onSubmitted }: Props) {
-  const { settings, themeColors } = useSettings();
+  const { themeColors } = useSettings();
   const { user, profile } = useCustomer();
   const [rating, setRating] = useState(5);
   const [deliveryRating, setDeliveryRating] = useState(5);
@@ -22,7 +22,6 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
   const [valueRating, setValueRating] = useState(5);
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
 
   const starRow = (current: number, set: (n: number) => void, size?: string) => (
     <div className="flex items-center gap-0.5" dir="ltr">
@@ -57,7 +56,7 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
       value_rating: valueRating,
     });
     setSubmitting(false);
-    setDone(true);
+    onSubmitted();
   };
 
   return (
@@ -74,25 +73,7 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
         </div>
 
         <div className="p-5">
-          {done ? (
-            <div className="text-center py-6">
-              <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-8 h-8 text-teal-600" />
-              </div>
-              <h3 className="font-black text-gray-900 mb-1">شكراً لتقييمك!</h3>
-              <p className="text-xs text-gray-500 leading-relaxed mb-5">
-                سيساعد تقييمك في تحسين جودة الخدمة من {pharmacyName}.
-              </p>
-              <button
-                onClick={onClose}
-                className="px-6 py-2.5 rounded-2xl text-white text-xs font-bold hover:brightness-110 active:scale-95 transition-all"
-                style={{ backgroundColor: themeColors.priceColor }}
-              >
-                إغلاق
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
+          <div className="space-y-4">
               <div className="bg-gray-50 rounded-2xl p-3.5">
                 <p className="text-sm font-black text-gray-800 mb-0.5">{productName}</p>
                 <p className="text-[11px] text-gray-400">من صيدلية {pharmacyName}</p>
@@ -142,8 +123,7 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 {submitting ? 'جاري النشر...' : 'نشر التقييم'}
               </button>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

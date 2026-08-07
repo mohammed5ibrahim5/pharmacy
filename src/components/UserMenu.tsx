@@ -27,7 +27,7 @@ import { translateError } from '@/lib/errorMessages';
 
 export function UserMenu() {
   const { user, profile, signOut, setAuthModalOpen, loading, refreshProfile } = useCustomer();
-  const { settings, themeColors } = useSettings();
+  const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { favoriteCount } = useFavorites();
   const [open, setOpen] = useState(false);

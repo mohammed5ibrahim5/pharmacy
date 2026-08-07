@@ -240,21 +240,27 @@ export function OrderModal() {
             <X className="w-5 h-5 text-gray-500" />
           </button>
           <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ backgroundColor: `${themeColors.priceColor}12`, color: themeColors.priceColor }}
+            className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5 relative"
+            style={{ backgroundColor: `${themeColors.priceColor}10`, color: themeColors.priceColor }}
           >
-            <ShoppingCart className="w-8 h-8" />
+            <ShoppingCart className="w-9 h-9" />
+            <span
+              className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-white shadow flex items-center justify-center"
+              style={{ color: themeColors.accentColor }}
+            >
+              <Plus className="w-3 h-3" strokeWidth={3} />
+            </span>
           </div>
-          <h2 className="text-xl font-extrabold text-gray-900 mb-2">سلتك فارغة</h2>
-          <p className="text-gray-500 text-sm leading-relaxed mb-6">
-            أضف منتجات من الصيدليات المتاحة وستظهر هنا في سلة موحدة يمكنك دفعها في طلب واحد.
+          <h2 className="text-xl font-black text-gray-900 mb-2">سلة التسوق فارغة</h2>
+          <p className="text-sm text-gray-500 leading-relaxed mb-6">
+            لم تضف أي منتجات بعد. تصفح الصيدليات وأضف أدويتك إلى سلة التسوق لتدفعها كلها في طلب واحد بتوصيلة واحدة.
           </p>
           <button
             onClick={closeModal}
-            className="w-full py-3 rounded-xl text-white font-bold"
-            style={{ backgroundColor: themeColors.priceColor }}
+            className="w-full py-3.5 rounded-2xl text-white font-black transition-all hover:brightness-105 active:scale-[0.99] shadow-lg"
+            style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
           >
-            تصفح المنتجات
+            ابدأ التسوق
           </button>
         </div>
       </div>
@@ -407,154 +413,175 @@ export function OrderModal() {
   if (cartStep === 'cart') {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-        <div className="rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
-          <button onClick={closeModal} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-
-          <div className="flex items-center gap-3 mb-5">
-            <div
-              className="w-11 h-11 rounded-2xl flex items-center justify-center"
-              style={{ backgroundColor: `${themeColors.priceColor}14`, color: themeColors.priceColor }}
-            >
-              <ShoppingCart className="w-5 h-5" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-extrabold text-gray-900">سلة الطلب الموحدة</h2>
-              <p className="text-xs text-gray-500">
-                {cart.reduce((s, i) => s + i.quantity, 0)} منتج من {groups.length} {groups.length === 1 ? 'صيدلية' : 'صيدليات'} في توصيلة واحدة
-              </p>
-            </div>
-          </div>
-
-          {groups.map((g) => (
-            <div key={g.key} className="mb-4 rounded-2xl border border-gray-100 bg-gray-50/60 overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100" style={{ backgroundColor: `${themeColors.priceColor}08` }}>
-                <Store className="w-4 h-4 shrink-0" style={{ color: themeColors.priceColor }} />
-                <p className="text-sm font-extrabold text-gray-800 flex-1 truncate">{g.label}</p>
-                <p className="text-[11px] font-bold text-gray-500 shrink-0">
-                  {g.subtotal.toFixed(2)} ج.م
+        <div className="rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
+          {/* Header */}
+          <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0" style={{ backgroundColor: themeColors.modalHeaderBg }}>
+            <div className="flex items-start gap-3">
+              <div
+                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: `${themeColors.priceColor}14`, color: themeColors.priceColor }}
+              >
+                <ShoppingCart className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-black text-gray-900">سلة التسوق</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {cart.reduce((s, i) => s + i.quantity, 0)} منتج من {groups.length} {groups.length === 1 ? 'صيدلية' : 'صيدليات'} · توصيلة واحدة
                 </p>
               </div>
-              <div className="divide-y divide-gray-100">
-                {cart
-                  .filter((e) => (e.product.for_all_pharmacies ? g.key === '__all__' : e.product.pharmacy_id === g.key))
-                  .map((entry) => {
-                    const price = finalPriceOf(entry.product);
-                    return (
-                      <div key={entry.key} className="flex items-center gap-3 p-3">
-                        {entry.product.image_url ? (
-                          <img src={entry.product.image_url} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
-                        ) : (
-                          <div className="w-14 h-14 rounded-xl bg-gray-200 flex items-center justify-center shrink-0">
-                            <ShoppingBag className="w-6 h-6 text-gray-400" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-gray-900 truncate">{entry.product.name}</p>
-                          <p className="text-xs text-gray-500 truncate">{entry.product.unit || 'قطعة'}</p>
-                          <p className="text-sm font-extrabold mt-0.5" style={{ color: themeColors.priceColor }}>
-                            {price.toFixed(2)} <span className="text-[10px] text-gray-400 font-medium">ج.م</span>
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-2 shrink-0">
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              onClick={() => updateCartQty(entry.key, entry.quantity - 1)}
-                              className="w-7 h-7 rounded-lg border border-gray-200 bg-white flex items-center justify-center font-bold text-gray-600 hover:bg-gray-50 transition-colors"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="w-8 text-center font-bold text-sm">{entry.quantity}</span>
-                            <button
-                              onClick={() => updateCartQty(entry.key, entry.quantity + 1)}
-                              className="w-7 h-7 rounded-lg border border-gray-200 bg-white flex items-center justify-center font-bold text-gray-600 hover:bg-gray-50 transition-colors"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                          <button
-                            onClick={() => removeFromCart(entry.key)}
-                            className="text-[10px] font-bold text-red-400 hover:text-red-600 flex items-center gap-0.5 transition-colors"
-                          >
-                            <Trash2 className="w-3 h-3" /> إزالة
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-              {g.key !== '__all__' && g.pharmacy?.delivery_available !== false && (
-                <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-[11px] text-gray-500 flex items-center gap-1">
-                    <Truck className="w-3 h-3" /> رسوم توصيل من هذه الصيدلية
-                  </span>
-                  <span className={`text-[11px] font-bold ${groupFee(g) === 0 ? 'text-teal-600' : 'text-gray-700'}`}>
-                    {groupFee(g) === 0 ? (deliveryFreeGlobal ? 'مجاني' : 'بدون رسوم') : `${groupFee(g).toFixed(0)} ج.م`}
-                  </span>
-                </div>
-              )}
+              <button onClick={closeModal} className="w-8 h-8 rounded-xl hover:bg-gray-100 flex items-center justify-center shrink-0">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
-          ))}
 
-          <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2 mb-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">المجموع الفرعي</span>
-              <span className="font-bold text-gray-800">{subtotal.toFixed(2)} ج.م</span>
+            {/* Step indicator */}
+            <div className="flex items-center gap-2 mt-4">
+              <span className="text-[10px] font-black text-white px-2.5 py-1 rounded-full" style={{ backgroundColor: themeColors.priceColor }}>1</span>
+              <span className="text-[10px] font-bold text-gray-600">السلة</span>
+              <span className="h-px flex-1 bg-gray-200" />
+              <span className="text-[10px] font-black text-gray-400 w-5 h-5 rounded-full border border-gray-200 flex items-center justify-center">2</span>
+              <span className="text-[10px] font-bold text-gray-400">الدفع والتوصيل</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500 flex items-center gap-1">
-                <Truck className="w-3.5 h-3.5" /> رسوم التوصيل
-              </span>
-              <span className={`font-bold ${totalDelivery === 0 ? 'text-teal-600' : 'text-gray-800'}`}>
-                {totalDelivery === 0 ? (freeThreshold > 0 && subtotal >= freeThreshold ? 'مجاني' : 'بدون رسوم') : `${totalDelivery.toFixed(0)} ج.م`}
-              </span>
-            </div>
-            {freeThreshold > 0 && subtotal < freeThreshold && (
-              <p className="text-[11px] text-teal-600 font-bold">
-                أضف {(freeThreshold - subtotal).toFixed(2)} ج.م ليصبح التوصيل مجانياً!
-              </p>
-            )}
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <span className="text-sm text-gray-500">الإجمالي</span>
-              <span className="font-extrabold text-lg" style={{ color: themeColors.priceColor }}>
-                {total.toFixed(2)} ج.م
-              </span>
-            </div>
-            {paymentConfig.shippingNote && (
-              <p className="text-[11px] text-gray-400 leading-relaxed flex items-start gap-1 pt-1">
-                <Info className="w-3 h-3 mt-0.5 shrink-0" />
-                {paymentConfig.shippingNote}
-              </p>
-            )}
           </div>
 
-          {error && (
-            <div className="mb-4 rounded-2xl border border-red-200 bg-gradient-to-bl from-red-50 to-orange-50 p-4 animate-fade-in">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                </div>
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {error && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-3.5 flex items-start gap-2.5 animate-fade-in">
+                <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
                 <p className="font-bold text-sm text-red-700">{error}</p>
               </div>
-            </div>
-          )}
+            )}
 
-          <button
-            onClick={() => {
-              if (!user) {
-                closeCart();
-                setAuthModalOpen(true);
-                return;
-              }
-              setCartStep('checkout');
-            }}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg"
-            style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
-          >
-            <Send className="w-5 h-5" />
-            متابعة إتمام الطلب
-          </button>
+            {groups.map((g) => (
+              <div key={g.key} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+                <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-b border-gray-100" style={{ backgroundColor: `${themeColors.priceColor}08` }}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: themeColors.cardBg }}>
+                    <Store className="w-4 h-4" style={{ color: themeColors.priceColor }} />
+                  </div>
+                  <p className="text-[13px] font-extrabold text-gray-800 flex-1 truncate">{g.label}</p>
+                  {g.key !== '__all__' && g.pharmacy?.delivery_available !== false && (
+                    <span
+                      className={`text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${groupFee(g) === 0 ? 'bg-teal-50 text-teal-700' : 'bg-gray-100 text-gray-600'}`}
+                    >
+                      {groupFee(g) === 0 ? 'توصيل مجاني' : `توصيل ${groupFee(g).toFixed(0)} ج.م`}
+                    </span>
+                  )}
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {cart
+                    .filter((e) => (e.product.for_all_pharmacies ? g.key === '__all__' : e.product.pharmacy_id === g.key))
+                    .map((entry) => {
+                      const price = finalPriceOf(entry.product);
+                      return (
+                        <div key={entry.key} className="flex items-center gap-3 p-3">
+                          {entry.product.image_url ? (
+                            <img src={entry.product.image_url} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                          ) : (
+                            <div className="w-14 h-14 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                              <ShoppingBag className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-bold text-gray-900 truncate">{entry.product.name}</p>
+                            <p className="text-[11px] text-gray-500 truncate mt-0.5">{entry.product.unit || 'قطعة'} · {price.toFixed(2)} ج.م</p>
+                            <p className="text-sm font-extrabold mt-1" style={{ color: themeColors.priceColor }}>
+                              {(price * entry.quantity).toFixed(2)} <span className="text-[10px] text-gray-400 font-medium">ج.م</span>
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1.5 shrink-0">
+                            <div className="flex items-center gap-0.5 rounded-xl border border-gray-200 bg-white p-0.5 shadow-sm">
+                              <button
+                                onClick={() => updateCartQty(entry.key, entry.quantity - 1)}
+                                className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
+                                aria-label="إنقاص الكمية"
+                              >
+                                <Minus className="w-3.5 h-3.5" />
+                              </button>
+                              <span className="w-7 text-center font-bold text-sm text-gray-800">{entry.quantity}</span>
+                              <button
+                                onClick={() => updateCartQty(entry.key, entry.quantity + 1)}
+                                className="w-7 h-7 rounded-lg flex items-center justify-center text-white transition-all active:scale-90"
+                                style={{ backgroundColor: themeColors.priceColor }}
+                                aria-label="زيادة الكمية"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <button
+                              onClick={() => removeFromCart(entry.key)}
+                              className="text-[10px] font-bold text-gray-400 hover:text-red-500 flex items-center gap-0.5 transition-colors"
+                            >
+                              <Trash2 className="w-3 h-3" /> إزالة
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            ))}
+
+            {/* Summary */}
+            <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2.5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">المجموع الفرعي</span>
+                <span className="font-bold text-gray-800">{subtotal.toFixed(2)} ج.م</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500 flex items-center gap-1">
+                  <Truck className="w-3.5 h-3.5" /> رسوم التوصيل
+                </span>
+                <span className={`font-bold ${totalDelivery === 0 ? 'text-teal-600' : 'text-gray-800'}`}>
+                  {totalDelivery === 0 ? (deliveryFreeGlobal ? 'مجاني' : 'بدون رسوم') : `${totalDelivery.toFixed(0)} ج.م`}
+                </span>
+              </div>
+              {freeThreshold > 0 && subtotal < freeThreshold && (
+                <div>
+                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mb-1.5">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, (subtotal / freeThreshold) * 100)}%`, backgroundColor: themeColors.priceColor }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-teal-600 font-bold">
+                    أضف {(freeThreshold - subtotal).toFixed(2)} ج.م ليصبح التوصيل مجانياً!
+                  </p>
+                </div>
+              )}
+              {paymentConfig.shippingNote && (
+                <p className="text-[11px] text-gray-400 leading-relaxed flex items-start gap-1 pt-1 border-t border-gray-100">
+                  <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                  {paymentConfig.shippingNote}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 pt-3 border-t border-gray-100 shrink-0" style={{ backgroundColor: themeColors.modalHeaderBg }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold text-gray-500">الإجمالي</span>
+              <span className="font-black text-xl" style={{ color: themeColors.priceColor }}>
+                {total.toFixed(2)} <span className="text-xs text-gray-400 font-medium">ج.م</span>
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                if (!user) {
+                  closeCart();
+                  setAuthModalOpen(true);
+                  return;
+                }
+                setCartStep('checkout');
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-black text-[15px] transition-all hover:brightness-105 active:scale-[0.99] shadow-lg"
+              style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
+            >
+              <Send className="w-5 h-5" />
+              متابعة إتمام الطلب
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -568,17 +595,30 @@ export function OrderModal() {
           <X className="w-5 h-5 text-gray-500" />
         </button>
 
-        <div className="flex items-center gap-3 mb-5">
-          <button
-            onClick={() => setCartStep('cart')}
-            className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
-            title="العودة للسلة"
-          >
-            <X className="w-4 h-4 rotate-45" />
-          </button>
-          <div className="flex-1">
-            <h2 className="text-xl font-extrabold text-gray-900">إتمام الطلب</h2>
-            <p className="text-xs text-gray-500">طلب موحّد من {groups.length} {groups.length === 1 ? 'صيدلية' : 'صيدليات'}</p>
+        <div className="mb-5">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCartStep('cart')}
+              className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors shrink-0"
+              title="العودة للسلة"
+            >
+              <X className="w-4 h-4 rotate-45" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-black text-gray-900">إتمام الطلب</h2>
+              <p className="text-xs text-gray-500 mt-0.5">طلب من {groups.length} {groups.length === 1 ? 'صيدلية' : 'صيدليات'} في توصيلة واحدة</p>
+            </div>
+          </div>
+
+          {/* Step indicator */}
+          <div className="flex items-center gap-2 mt-4">
+            <span className="text-[10px] font-black text-white w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: themeColors.priceColor }}>
+              <CheckCheck className="w-3 h-3" />
+            </span>
+            <span className="text-[10px] font-bold text-gray-600">السلة</span>
+            <span className="h-px flex-1 bg-gray-200" />
+            <span className="text-[10px] font-black text-white w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: themeColors.priceColor }}>2</span>
+            <span className="text-[10px] font-bold text-gray-600">الدفع والتوصيل</span>
           </div>
         </div>
 
@@ -805,7 +845,7 @@ export function OrderModal() {
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 shadow-lg"
             style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-5 h-5" /> تأكيد الطلب الموحّد</>}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-5 h-5" /> تأكيد الطلب</>}
           </button>
 
           <p className="text-[11px] text-gray-400 text-center leading-relaxed">

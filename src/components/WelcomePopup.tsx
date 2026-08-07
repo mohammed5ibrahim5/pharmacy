@@ -8,7 +8,7 @@ const STORAGE_KEY = 'pharmacy_welcome_popup_seen';
 const OFFER_CODE = 'WELCOME10';
 
 export function WelcomePopup() {
-  const { settings, themeColors, storeConfig } = useSettings();
+  const { themeColors, storeConfig } = useSettings();
   const { navigate } = useRouter();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);

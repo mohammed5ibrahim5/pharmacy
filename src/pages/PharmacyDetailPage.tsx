@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function PharmacyDetailPage({ id }: Props) {
-  const { settings, themeColors } = useSettings();
+  const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { location } = useGeolocation();
   const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Scale, Store, ArrowDown, Sparkles, Pill, TrendingDown, CheckCircle2, ShoppingCart, Phone } from 'lucide-react';
+import { X, Scale, Store, Sparkles, Pill, TrendingDown, CheckCircle2, ShoppingCart, Phone } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -16,7 +16,7 @@ function finalPrice(p: Product): number {
 }
 
 export function PriceCompareModal({ product, onClose }: Props) {
-  const { settings, themeColors, storeConfig } = useSettings();
+  const { themeColors, storeConfig } = useSettings();
   const { openOrder, addToCart, openCart } = useOrder();
   const [sameName, setSameName] = useState<Product[]>([]);
   const [alternatives, setAlternatives] = useState<Product[]>([]);
@@ -52,7 +52,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
       setLoading(false);
     };
     fetch();
-  }, [product.id]);
+  }, [product.id, product.name, product.active_ingredient, product.for_all_pharmacies]);
 
   const currentFinal = finalPrice(product);
   const cheapestSame = [...sameName].sort((a, b) => finalPrice(a) - finalPrice(b))[0];

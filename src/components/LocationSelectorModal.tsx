@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { MapPin, Navigation, X, Check, Search, Compass, Building2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Navigation, X, Check, Search, Building2 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 
 interface LocationSelectorModalProps {
@@ -26,7 +26,7 @@ export function LocationSelectorModal({
   currentLocation,
   onSelectLocation,
 }: LocationSelectorModalProps) {
-  const { settings, themeColors } = useSettings();
+  const { themeColors } = useSettings();
   const [search, setSearch] = useState('');
   const [detecting, setDetecting] = useState(false);
   const [selectedGov, setSelectedGov] = useState('القاهرة');
@@ -37,7 +37,7 @@ export function LocationSelectorModal({
     setDetecting(true);
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        () => {
           setDetecting(false);
           // Auto select a smart nearby location string based on coordinates demo
           const locationName = '📍 موقعي الحقيقي (القاهرة - حي المعادي)';
@@ -119,7 +119,7 @@ export function LocationSelectorModal({
 
           {/* Governorate Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {EGYPT_GOVERNORATES.map((g) => (
+            {filteredGovs.map((g) => (
               <button
                 key={g.name}
                 onClick={() => setSelectedGov(g.name)}

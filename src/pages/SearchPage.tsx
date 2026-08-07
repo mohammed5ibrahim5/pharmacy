@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, MapPin, Pill, ArrowLeft, Navigation, Package, Store, Sparkles } from 'lucide-react';
+import { Search, Pill, ArrowLeft, Navigation, Package } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function SearchPage({ query }: Props) {
-  const { settings, themeColors } = useSettings();
+  const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { location } = useGeolocation();
   const [products, setProducts] = useState<Product[]>([]);

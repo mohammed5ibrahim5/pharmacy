@@ -9,7 +9,6 @@ import {
   Barcode,
   FileText,
   Mic,
-  Clock,
   ChevronDown,
   Pill,
   Heart,
@@ -19,7 +18,6 @@ import {
   Stethoscope,
   Sparkles,
   Droplet,
-  TrendingUp,
   Zap,
   PhoneCall,
   Flame,
@@ -39,6 +37,20 @@ import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
 import { useOrder } from '@/context/OrderContext';
 import { supabase } from '@/lib/supabase';
 import type { Product, Category } from '@/types';
+
+interface SpeechRecognitionLike {
+  lang: string;
+  interimResults: boolean;
+  start: () => void;
+  onresult: (event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
+  onerror: () => void;
+  onend: () => void;
+}
+
+type SpeechRecognitionWindow = typeof window & {
+  SpeechRecognition?: new () => SpeechRecognitionLike;
+  webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+};
 
 const UNIFIED_TRENDING = [
   'بنادول اكسترا',
@@ -172,15 +184,16 @@ export function Header() {
 
   const handleVoiceSearch = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const srWindow = window as SpeechRecognitionWindow;
+      const SpeechRecognitionCtor = srWindow.SpeechRecognition || srWindow.webkitSpeechRecognition;
+      if (!SpeechRecognitionCtor) return;
+      const recognition = new SpeechRecognitionCtor();
       recognition.lang = 'ar-EG';
       recognition.interimResults = false;
       setIsListening(true);
       recognition.start();
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setSearchQuery(transcript);
         setIsListening(false);
@@ -486,8 +499,8 @@ export function Header() {
                     color: themeColors.headerText,
                     borderColor: `${themeColors.headerText}15`
                   }}
-                  title="السلة الموحدة"
-                  aria-label="السلة الموحدة"
+                  title="سلة التسوق"
+                  aria-label="سلة التسوق"
                 >
                   <ShoppingCart className="w-5 h-5" />
                   {cartCount > 0 && (

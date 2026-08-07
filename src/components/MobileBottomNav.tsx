@@ -44,7 +44,7 @@ export function MobileBottomNav() {
       ? [
           {
             id: 'cart',
-            label: 'السلة',
+            label: 'سلة التسوق',
             icon: (
               <span className="relative">
                 <ShoppingCart className="w-5 h-5" />

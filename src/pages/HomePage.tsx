@@ -51,6 +51,20 @@ import { Reveal } from '@/components/Reveal';
 import { CountUp, parseStatValue } from '@/components/CountUp';
 import type { Pharmacy, Product, Category } from '@/types';
 
+interface SpeechRecognitionLike {
+  lang: string;
+  interimResults: boolean;
+  start: () => void;
+  onresult: (event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
+  onerror: () => void;
+  onend: () => void;
+}
+
+type SpeechRecognitionWindow = typeof window & {
+  SpeechRecognition?: new () => SpeechRecognitionLike;
+  webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+};
+
 const CATEGORY_ICONS: Record<string, { icon: React.ReactNode; color: string; count: string }> = {
   painkillers: { icon: <Pill className="w-7 h-7" />, color: '#0d9488', count: '45+ دواء' },
   antibiotics: { icon: <Shield className="w-7 h-7" />, color: '#2563eb', count: '30+ منتج' },
@@ -311,15 +325,16 @@ export function HomePage() {
 
   const handleVoiceSearch = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const srWindow = window as SpeechRecognitionWindow;
+      const SpeechRecognitionCtor = srWindow.SpeechRecognition || srWindow.webkitSpeechRecognition;
+      if (!SpeechRecognitionCtor) return;
+      const recognition = new SpeechRecognitionCtor();
       recognition.lang = 'ar-EG';
       recognition.interimResults = false;
       setIsListening(true);
       recognition.start();
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setSearchQuery(transcript);
         setIsListening(false);

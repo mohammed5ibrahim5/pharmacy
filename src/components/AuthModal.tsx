@@ -11,7 +11,7 @@ interface Props {
 
 export function AuthModal({ open, onClose }: Props) {
   const { signIn, signUp } = useCustomer();
-  const { settings, themeColors } = useSettings();
+  const { themeColors } = useSettings();
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

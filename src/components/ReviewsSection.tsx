@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
-  const { settings, themeColors } = useSettings();
+  const { themeColors } = useSettings();
   const { user } = useCustomer();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
