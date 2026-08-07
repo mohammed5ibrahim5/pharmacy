@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { RouterProvider, useRouter } from '@/context/RouterContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -18,9 +18,10 @@ import { SearchPage } from '@/pages/SearchPage';
 import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
 import { CategoryPage } from '@/pages/CategoryPage';
 import { AccountPage } from '@/pages/AccountPage';
-import { AdminPage } from '@/pages/AdminPage';
-import { AdminLoginPage } from '@/pages/AdminLoginPage';
 import { Loader2, Cross } from 'lucide-react';
+
+const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage').then((m) => ({ default: m.AdminLoginPage })));
 
 function SiteLoading() {
   const { loading, themeColors } = useSettings();
@@ -50,11 +51,17 @@ function AdminRoute() {
     );
   }
 
-  if (!user) {
-    return <AdminLoginPage />;
-  }
-
-  return <AdminPage />;
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        </div>
+      }
+    >
+      {user ? <AdminPage /> : <AdminLoginPage />}
+    </Suspense>
+  );
 }
 
 function SiteContent() {

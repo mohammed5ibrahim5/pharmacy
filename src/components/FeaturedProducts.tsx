@@ -9,11 +9,12 @@ import type { Product } from '@/types';
 interface Props {
   products: Product[];
   loading?: boolean;
+  popularProductIds?: string[];
 }
 
 type ProductTab = 'discounts' | 'newest' | 'all';
 
-export function FeaturedProducts({ products, loading }: Props) {
+export function FeaturedProducts({ products, loading, popularProductIds = [] }: Props) {
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const [activeTab, setActiveTab] = useState<ProductTab>('discounts');
@@ -146,7 +147,7 @@ export function FeaturedProducts({ products, loading }: Props) {
         {loading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-slate-100 rounded-3xl h-72 animate-pulse" />
+              <div key={i} className="skeleton rounded-3xl h-72" />
             ))}
           </div>
         ) : displayed.length > 0 ? (
@@ -156,6 +157,7 @@ export function FeaturedProducts({ products, loading }: Props) {
                 key={product.id}
                 product={product}
                 pharmacyName={product.pharmacy?.name}
+                popular={popularProductIds.includes(product.id)}
                 onClick={product.for_all_pharmacies ? undefined : () => navigate({ name: 'pharmacy', id: product.pharmacy_id })}
               />
             ))}

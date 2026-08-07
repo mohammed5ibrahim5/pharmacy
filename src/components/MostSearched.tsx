@@ -8,9 +8,10 @@ import type { Product } from '@/types';
 
 interface Props {
   products: Product[];
+  popularProductIds?: string[];
 }
 
-export function MostSearched({ products }: Props) {
+export function MostSearched({ products, popularProductIds = [] }: Props) {
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const [, setVersion] = useState(0);
@@ -102,6 +103,7 @@ export function MostSearched({ products }: Props) {
                   key={`${product.id}:${product.pharmacy_id}`}
                   product={product}
                   pharmacyName={product.pharmacy?.name}
+                  popular={popularProductIds.includes(product.id)}
                   onClick={product.for_all_pharmacies ? undefined : () => navigate({ name: 'pharmacy', id: product.pharmacy_id })}
                 />
               ))}

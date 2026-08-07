@@ -45,6 +45,8 @@ import { HomeHealthTips } from '@/components/HomeHealthTips';
 import { HomeFAQ } from '@/components/HomeFAQ';
 import { PharmacyMap } from '@/components/PharmacyMap';
 import { MostSearched } from '@/components/MostSearched';
+import { Reveal } from '@/components/Reveal';
+import { CountUp, parseStatValue } from '@/components/CountUp';
 import type { Pharmacy, Product, Category } from '@/types';
 
 const CATEGORY_ICONS: Record<string, { icon: React.ReactNode; color: string; count: string }> = {
@@ -127,6 +129,7 @@ export function HomePage() {
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
   const [pharmacyCount, setPharmacyCount] = useState(0);
   const [productCount, setProductCount] = useState(0);
+  const [popularProductIds, setPopularProductIds] = useState<string[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   // Manual section membership from admin (pharmacy_sections)
@@ -169,7 +172,7 @@ export function HomePage() {
         supabase.from('pharmacies').select('*').eq('is_active', true),
         supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').eq('is_available', true).limit(20),
         supabase.from('categories').select('*').order('name'),
-        supabase.from('orders').select('pharmacy_id'),
+        supabase.from('orders').select('pharmacy_id, product_id, status'),
         supabase.from('pharmacy_sections').select('pharmacy_id, section_key'),
         supabase.from('pharmacies').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('products').select('id', { count: 'exact', head: true }).eq('is_available', true),
@@ -179,6 +182,18 @@ export function HomePage() {
       setCategories(catRes.data || []);
       setPharmacyCount(pharmCountRes.count || 0);
       setProductCount(prodCountRes.count || 0);
+
+      const popularity = new Map<string, number>();
+      (ordersRes.data || []).forEach((o) => {
+        if (o.status === 'cancelled' || !o.product_id) return;
+        popularity.set(o.product_id, (popularity.get(o.product_id) || 0) + 1);
+      });
+      setPopularProductIds(
+        Array.from(popularity.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([id]) => id)
+      );
 
       const counts: Record<string, number> = {};
       (ordersRes.data || []).forEach((order) => {
@@ -582,7 +597,14 @@ export function HomePage() {
                 </div>
                 <div>
                   <div className="flex items-baseline gap-1">
-                    <p className="text-xl sm:text-2xl font-black">{statDisplayValue(stat, pharmacyCount, productCount)}</p>
+                    {(() => {
+                      const parsed = parseStatValue(statDisplayValue(stat, pharmacyCount, productCount));
+                      return (
+                        <p className="text-xl sm:text-2xl font-black tabular-nums">
+                          <CountUp target={parsed.target} suffix={parsed.suffix} />
+                        </p>
+                      );
+                    })()}
                     <span className="text-xs font-bold opacity-80">{stat.sub}</span>
                   </div>
                   <p className="text-[11px] opacity-60 mt-0.5 font-bold">{stat.desc}</p>
@@ -595,6 +617,7 @@ export function HomePage() {
       )}
 
       {/* ==================== CATEGORIES SECTION ==================== */}
+      <Reveal>
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
@@ -620,6 +643,13 @@ export function HomePage() {
           </button>
         </div>
 
+        {loadingData && categories.length === 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="skeleton rounded-3xl h-[6.5rem]" />
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
           {categories.map((cat) => {
             const config = CATEGORY_ICONS[cat.slug] || {
@@ -652,9 +682,12 @@ export function HomePage() {
             );
           })}
         </div>
+        )}
       </section>
+      </Reveal>
 
       {/* ==================== PHARMACIES ==================== */}
+      <Reveal>
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
@@ -743,7 +776,7 @@ export function HomePage() {
         ) : loadingData ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-slate-100 rounded-3xl h-72 animate-pulse" />
+              <div key={i} className="skeleton rounded-3xl h-72" />
             ))}
           </div>
         ) : displayedPharmacies.length > 0 ? (
@@ -759,21 +792,23 @@ export function HomePage() {
           </div>
         )}
       </section>
+      </Reveal>
 
       {/* ==================== PHARMACIES MAP ==================== */}
       <PharmacyMap pharmacies={sortedPharmacies} loading={loadingData} />
 
       {/* ==================== FEATURED DISCOUNTED PRODUCTS ==================== */}
       {/* ==================== FEATURED PRODUCTS ==================== */}
-      <FeaturedProducts products={products} loading={loadingData} />
+      <Reveal><FeaturedProducts products={products} loading={loadingData} popularProductIds={popularProductIds} /></Reveal>
 
       {/* ==================== MOST SEARCHED ==================== */}
-      <MostSearched products={products} />
+      <Reveal><MostSearched products={products} popularProductIds={popularProductIds} /></Reveal>
 
       {/* ==================== HOW IT WORKS ==================== */}
-      <HomeHowItWorks />
+      <Reveal><HomeHowItWorks /></Reveal>
 
       {/* ==================== WHY US SECTION ==================== */}
+      <Reveal>
       <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <span
@@ -811,18 +846,20 @@ export function HomePage() {
           ))}
         </div>
       </section>
+      </Reveal>
 
       {/* ==================== TESTIMONIALS ==================== */}
-      <HomeTestimonials />
+      <Reveal><HomeTestimonials /></Reveal>
 
       {/* ==================== HEALTH TIPS ==================== */}
-      <HomeHealthTips />
+      <Reveal><HomeHealthTips /></Reveal>
 
       {/* ==================== FAQ ==================== */}
-      <HomeFAQ />
+      <Reveal><HomeFAQ /></Reveal>
 
       {/* ==================== EMERGENCY CTA BANNER ==================== */}
       {storeConfig.purchasesEnabled && (
+      <Reveal>
       <section className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           className="rounded-[2rem] relative overflow-hidden text-center text-white"
@@ -891,6 +928,7 @@ export function HomePage() {
           </div>
         </div>
       </section>
+      </Reveal>
       )}
 
       {/* MODALS */}

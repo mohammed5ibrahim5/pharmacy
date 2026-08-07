@@ -47,6 +47,8 @@ export function PharmacyCard({ pharmacy }: Props) {
             <img
               src={pharmacy.cover_url}
               alt=""
+              loading="lazy"
+              decoding="async"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-90"
             />
@@ -114,7 +116,7 @@ export function PharmacyCard({ pharmacy }: Props) {
               style={{ backgroundColor: themeColors.primaryColor }}
             >
               {pharmacy.logo_url ? (
-                <img src={pharmacy.logo_url} alt={pharmacy.name} className="w-full h-full object-cover" />
+                <img src={pharmacy.logo_url} alt={pharmacy.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-white font-black text-2xl">{pharmacy.name.charAt(0)}</span>
               )}

@@ -1,4 +1,4 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, Plus, Heart, Store, Phone, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, X } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, Plus, Heart, Store, Phone, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, X, Flame } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -12,9 +12,10 @@ interface Props {
   product: Product;
   pharmacyName?: string;
   onClick?: () => void;
+  popular?: boolean;
 }
 
-export function ProductCard({ product, pharmacyName, onClick }: Props) {
+export function ProductCard({ product, pharmacyName, onClick, popular = false }: Props) {
   const { settings, themeColors, storeConfig, featuresConfig } = useSettings();
   const { openOrder } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
@@ -50,6 +51,8 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
             <img
               src={product.image_url}
               alt={product.name}
+              loading="lazy"
+              decoding="async"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               className="max-h-36 w-auto object-contain group-hover:scale-110 transition-transform duration-500"
             />
@@ -75,6 +78,17 @@ export function ProductCard({ product, pharmacyName, onClick }: Props) {
               style={{ backgroundColor: themeColors.discountBadgeBg, color: themeColors.discountBadgeText }}
             >
               خصم {activeDiscount.discount_percentage}%
+            </div>
+          )}
+
+          {/* Most-requested Badge */}
+          {popular && (
+            <div
+              className="absolute top-10 right-2.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md inline-flex items-center gap-1"
+              style={{ backgroundColor: themeColors.accentColor, color: '#ffffff' }}
+            >
+              <Flame className="w-3 h-3" fill="currentColor" />
+              الأكثر طلباً
             </div>
           )}
 
