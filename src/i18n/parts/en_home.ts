@@ -182,4 +182,8 @@
   'ارفع رشتك لصيدلي فورا': 'Upload your prescription to a pharmacist instantly',
   'ارفع روشتتك لصيدلي فوراً': 'Upload your prescription to a pharmacist instantly',
   'ارفع روشتتك لصيدلي فورا': 'Upload your prescription to a pharmacist instantly',
+  'ارفع روشتتك للصيدلي فوراً': 'Upload your prescription to the pharmacist instantly',
+  'ارفع روشتتك للصيدلي فورا': 'Upload your prescription to the pharmacist instantly',
+  'ارفع رشتك للصيدلي فوراً': 'Upload your prescription to the pharmacist instantly',
+  'ارفع رشتك للصيدلي فورا': 'Upload your prescription to the pharmacist instantly',
 };
