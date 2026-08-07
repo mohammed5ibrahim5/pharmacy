@@ -85,7 +85,7 @@ export function MobileBottomNav() {
             <button
               key={item.id}
               onClick={item.onClick}
-              className={`flex flex-col items-center justify-center gap-0.5 py-2.5 px-3 rounded-xl min-w-[4rem] transition-colors ${
+              className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl flex-1 min-w-0 transition-colors ${
                 item.active ? 'text-white' : ''
               }`}
               style={item.active ? { backgroundColor: themeColors.bottomNavActiveText } : { color: themeColors.bottomNavText }}
@@ -97,7 +97,7 @@ export function MobileBottomNav() {
 
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex flex-col items-center justify-center gap-0.5 py-2.5 px-3 rounded-xl min-w-[4rem] transition-colors"
+            className="flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl flex-1 min-w-0 transition-colors"
             style={{ color: themeColors.bottomNavText }}
           >
             <ArrowUp className="w-5 h-5" />

@@ -284,14 +284,14 @@ export function Header() {
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20 gap-3 sm:gap-6">
+          <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20 gap-2 sm:gap-6">
             {/* Logo */}
             <button
               onClick={() => navigate({ name: 'home' })}
-              className="flex items-center gap-3 shrink-0 group text-start"
+              className="flex items-center gap-2 sm:gap-3 shrink-0 group text-start min-w-0"
             >
               <div
-                className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-105"
+                className="relative w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-105 shrink-0"
                 style={{
                   backgroundColor: themeColors.primaryColor,
                   boxShadow: `0 8px 24px -4px ${themeColors.primaryColor}66`,
@@ -306,8 +306,8 @@ export function Header() {
                   }}
                 />
               </div>
-              <div>
-                <h1 className="text-lg sm:text-xl font-black leading-tight" style={{ color: themeColors.headerText }}>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-black leading-tight truncate" style={{ color: themeColors.headerText }}>
                   {t(settings.site_name)}
                 </h1>
                 <p className="text-[10px] sm:text-xs font-bold hidden sm:block opacity-80" style={{ color: themeColors.primaryColor }}>
@@ -469,25 +469,10 @@ export function Header() {
                 </a>
               )}
 
-              {headerConfig.showPrescriptionBar && (
-                <button
-                  onClick={() => setPrescriptionModalOpen(true)}
-                  className="flex md:hidden p-2.5 rounded-2xl border hover:brightness-115 transition-colors"
-                  style={{
-                    backgroundColor: `${headerConfig.prescriptionBarColor}15`,
-                    color: headerConfig.prescriptionBarColor,
-                    borderColor: `${headerConfig.prescriptionBarColor}33`
-                  }}
-                  title={t('رفع روشتة')}
-                >
-                  <FileText className="w-5 h-5" />
-                </button>
-              )}
-
               {headerConfig.showBarcode && (
                 <button
                   onClick={() => setBarcodeModalOpen(true)}
-                  className="flex md:hidden p-2.5 rounded-2xl border transition-colors"
+                  className="flex md:hidden p-2 md:p-2.5 rounded-2xl border transition-colors"
                   style={{
                     backgroundColor: `${themeColors.headerText}08`,
                     color: themeColors.headerText,
@@ -503,7 +488,7 @@ export function Header() {
 
               <button
                 onClick={toggleLang}
-                className="relative flex items-center gap-1.5 p-2.5 rounded-2xl border transition-all duration-300 active:scale-90"
+                className="hidden md:flex relative items-center gap-1.5 p-2 md:p-2.5 rounded-2xl border transition-all duration-300 active:scale-90"
                 style={{
                   backgroundColor: `${themeColors.headerText}08`,
                   color: themeColors.headerText,
@@ -518,7 +503,7 @@ export function Header() {
 
               <button
                 onClick={toggleDarkMode}
-                className="relative p-2.5 rounded-2xl border transition-all duration-300 active:scale-90"
+                className="hidden md:flex relative p-2 md:p-2.5 rounded-2xl border transition-all duration-300 active:scale-90"
                 style={{
                   backgroundColor: `${themeColors.headerText}08`,
                   color: themeColors.headerText,
@@ -533,7 +518,7 @@ export function Header() {
 
               <button
                 onClick={() => openCart('cart')}
-                className={`relative p-2.5 rounded-2xl border transition-colors ${cartBump ? 'animate-cart-bump' : ''}`}
+                className={`relative p-2 md:p-2.5 rounded-2xl border transition-colors ${cartBump ? 'animate-cart-bump' : ''}`}
                 style={{
                   backgroundColor: `${themeColors.headerText}08`,
                   color: themeColors.headerText,
@@ -557,7 +542,7 @@ export function Header() {
 
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="md:hidden p-2.5 rounded-2xl border transition-colors"
+                className="md:hidden p-2 md:p-2.5 rounded-2xl border transition-colors"
                 style={{
                   backgroundColor: `${themeColors.headerText}08`,
                   color: themeColors.headerText,
@@ -573,7 +558,7 @@ export function Header() {
           {/* TRENDING QUICK SEARCH TAGS — secondary "suggestions" strip */}
           {headerConfig.showTrendingTags && (
             <div
-              className="flex items-center gap-2 py-2 px-4 lg:px-0 overflow-x-auto scrollbar-none"
+              className="flex items-center gap-2 py-1.5 px-4 lg:px-0 overflow-x-auto scrollbar-none"
               style={{
                 backgroundColor: `${themeColors.accentColor}0a`,
                 borderBottom: `1px solid ${themeColors.accentColor}22`
@@ -610,7 +595,7 @@ export function Header() {
         {/* 3. CATEGORY QUICK NAVIGATION BAR */}
         {headerConfig.showCategoryPills && (
           <div
-            className="py-2 overflow-x-auto scrollbar-none transition-all duration-300"
+            className="py-1.5 overflow-x-auto scrollbar-none transition-all duration-300"
             style={{
               backgroundColor: themeColors.headerNavBg,
               color: themeColors.headerNavText
@@ -758,6 +743,33 @@ export function Header() {
                 {t('تواصل معنا مباشر عبر واتساب')}
               </a>
             )}
+
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
+              <button
+                onClick={toggleLang}
+                className="flex items-center justify-center gap-2 p-3 rounded-2xl border text-xs font-bold"
+                style={{
+                  backgroundColor: `${themeColors.headerText}05`,
+                  borderColor: `${themeColors.headerText}10`,
+                  color: themeColors.headerText
+                }}
+              >
+                <Languages className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
+                {lang === 'ar' ? t('English') : t('العربية')}
+              </button>
+              <button
+                onClick={toggleDarkMode}
+                className="flex items-center justify-center gap-2 p-3 rounded-2xl border text-xs font-bold"
+                style={{
+                  backgroundColor: `${themeColors.headerText}05`,
+                  borderColor: `${themeColors.headerText}10`,
+                  color: themeColors.headerText
+                }}
+              >
+                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {darkMode ? t('الوضع الفاتح') : t('الوضع الليلي')}
+              </button>
+            </div>
           </div>
         )}
       </header>

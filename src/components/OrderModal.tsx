@@ -417,8 +417,8 @@ export function OrderModal() {
   // ============ Cart step ============
   if (cartStep === 'cart') {
     return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-        <div className="rounded-3xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
+      <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+        <div className="rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg h-[92vh] sm:h-auto sm:max-h-[92vh] flex flex-col overflow-hidden relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0" style={{ backgroundColor: themeColors.modalHeaderBg }}>
             <div className="flex items-start gap-3">
@@ -631,7 +631,7 @@ export function OrderModal() {
           </div>
 
           {/* Footer */}
-          <div className="p-4 pt-3 border-t border-gray-100 shrink-0" style={{ backgroundColor: themeColors.modalHeaderBg }}>
+          <div className="p-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-gray-100 shrink-0" style={{ backgroundColor: themeColors.modalHeaderBg }}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-gray-500">{t('الإجمالي')}</span>
               <span className="font-black text-xl" style={{ color: themeColors.priceColor }}>
@@ -734,8 +734,8 @@ export function OrderModal() {
 
   // ============ Checkout step ============
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
-      <div className="rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+      <div className="rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg h-[92vh] sm:h-auto sm:max-h-[92vh] overflow-y-auto p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
         <button onClick={closeModal} className="absolute top-4 end-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
           <X className="w-5 h-5 text-gray-500" />
         </button>
