@@ -2524,7 +2524,8 @@ function SettingsTab() {
             ...s,
             auto: s.auto === undefined ? s.id === 'pharmacies' || s.id === 'products' : s.auto,
             autoSource: s.autoSource || (s.id === 'products' ? 'products' : 'pharmacies'),
-            visible: s.visible === undefined ? true : s.visible,
+            showOnline: s.showOnline === undefined ? s.visible !== false : s.showOnline,
+            showOffline: s.showOffline === undefined ? s.visible !== false : s.showOffline,
           }));
           return merged;
         }
@@ -3164,18 +3165,26 @@ function SettingsTab() {
 
           <SettingsSection title="أرقام الإحصائيات (البطاقات)" icon={<Percent className="w-5 h-5" />}>
             <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-              لكل بطاقة: فعّل «إظهار البطاقة في الموقع» لعرضها أو أوقفه لإخفائها. اختر «قيمة تلقائية من بيانات الموقع» لعدّها من الصيدليات/المنتجات الفعلية في الموقع، أو اكتب القيمة يدوياً.
+              لكل بطاقة حدّد متى تظهر: عند تفعيل «الطلب عبر الموقع» (أونلاين شغّال)، وعند إيقافه (أوفلاين). فعّلهما معاً للظهور في الحالتين، أو أوقفهما معاً لإخفاء البطاقة تماماً.
+              اختر «قيمة تلقائية من بيانات الموقع» لعدّها من الصيدليات/المنتجات الفعلية في الموقع، أو اكتب القيمة يدوياً.
               الأيقونة تُختار من: store, package, users, truck, pills.
             </p>
             <div className="space-y-4">
               {heroCfg.stats.map((s) => (
                 <div key={s.id} className="rounded-xl bg-gray-50/70 border border-gray-100 p-4 space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <Toggle
-                      checked={s.visible !== false}
-                      onChange={(v) => updateHeroStat(s.id, { visible: v })}
-                      label="إظهار البطاقة في الموقع"
-                    />
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Toggle
+                        checked={s.showOnline !== false}
+                        onChange={(v) => updateHeroStat(s.id, { showOnline: v })}
+                        label="الظهور عند تفعيل الطلب عبر الموقع"
+                      />
+                      <Toggle
+                        checked={s.showOffline !== false}
+                        onChange={(v) => updateHeroStat(s.id, { showOffline: v })}
+                        label="الظهور عند إيقاف الطلب عبر الموقع"
+                      />
+                    </div>
                     <div className="flex items-center gap-2">
                       <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer">
                         <input
@@ -3254,7 +3263,7 @@ function SettingsTab() {
               ))}
               <button
                 type="button"
-                onClick={() => setHeroCfg({ ...heroCfg, stats: [...heroCfg.stats, { id: `stat_${Date.now()}`, value: '0', sub: 'عنوان جديد', desc: 'وصف جديد', icon: 'store', auto: false, visible: true }] })}
+                onClick={() => setHeroCfg({ ...heroCfg, stats: [...heroCfg.stats, { id: `stat_${Date.now()}`, value: '0', sub: 'عنوان جديد', desc: 'وصف جديد', icon: 'store', auto: false, showOnline: true, showOffline: true }] })}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-gray-300 text-xs font-bold text-gray-500 hover:bg-gray-50"
               >
                 <Plus className="w-4 h-4" /> إضافة بطاقة جديدة

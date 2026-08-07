@@ -226,6 +226,8 @@ export interface HeroStat {
   auto?: boolean;
   autoSource?: 'pharmacies' | 'products';
   visible?: boolean;
+  showOnline?: boolean;
+  showOffline?: boolean;
 }
 
 export interface HeroConfig {

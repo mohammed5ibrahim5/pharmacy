@@ -89,11 +89,11 @@ const HERO_TRENDING = [
   'كمامات طبية',
 ];
 
-const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string; auto?: boolean; autoSource?: 'pharmacies' | 'products'; visible?: boolean }[] = [
-  { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true },
-  { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true, autoSource: 'products', visible: true },
-  { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: false, visible: true },
-  { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck', auto: false, visible: true },
+const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string; auto?: boolean; autoSource?: 'pharmacies' | 'products'; visible?: boolean; showOnline?: boolean; showOffline?: boolean }[] = [
+  { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true, showOnline: true, showOffline: true },
+  { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true, autoSource: 'products', visible: true, showOnline: true, showOffline: true },
+  { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: false, visible: true, showOnline: true, showOffline: true },
+  { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck', auto: false, visible: true, showOnline: true, showOffline: true },
 ];
 
 function statIcon(key: string): React.ReactNode {
@@ -602,20 +602,32 @@ export function HomePage() {
       </section>
 
       {/* ==================== STATS STRIP ==================== */}
-      {heroConfig.showStats && (
-      <section className="relative z-20 -mt-14 sm:-mt-16 mb-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div
-            className="rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border p-4 sm:p-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 transition-all duration-300"
-            style={{
-              backgroundColor: themeColors.statsCardBg,
-              color: themeColors.statsCardText,
-              borderColor: `${themeColors.primaryColor}15`
-            }}
-          >
-            {(heroConfig.stats.length > 0 ? heroConfig.stats : DEFAULT_HERO_STATS)
-              .filter((stat) => stat.visible !== false)
-              .map((stat, i) => (
+      {(() => {
+        const visibleStats = (heroConfig.stats.length > 0 ? heroConfig.stats : DEFAULT_HERO_STATS).filter((stat) =>
+          storeConfig.purchasesEnabled ? stat.showOnline !== false : stat.showOffline !== false
+        );
+        const count = visibleStats.length;
+        const gridClass =
+          count === 1
+            ? 'grid-cols-1 max-w-md mx-auto'
+            : count === 2
+            ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto'
+            : count === 3
+            ? 'grid-cols-2 sm:grid-cols-3 max-w-4xl mx-auto'
+            : 'grid-cols-2 lg:grid-cols-4';
+        if (!heroConfig.showStats || count === 0) return null;
+        return (
+        <section className="relative z-20 -mt-14 sm:-mt-16 mb-8">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div
+              className={`rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border p-4 sm:p-6 grid ${gridClass} gap-3 sm:gap-4 transition-all duration-300`}
+              style={{
+                backgroundColor: themeColors.statsCardBg,
+                color: themeColors.statsCardText,
+                borderColor: `${themeColors.primaryColor}15`
+              }}
+            >
+              {visibleStats.map((stat, i) => (
               <div
                 key={i}
                 className="p-3 sm:p-4 text-start flex items-center gap-3.5 group hover:bg-black/[0.02] rounded-2xl transition-all"
@@ -646,10 +658,11 @@ export function HomePage() {
                 </div>
               </div>
             ))}
+            </div>
           </div>
-        </div>
-      </section>
-      )}
+        </section>
+        );
+      })()}
 
       {/* ==================== CATEGORIES SECTION ==================== */}
       <Reveal>
