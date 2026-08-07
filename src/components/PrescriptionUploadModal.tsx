@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FileText, Camera, X, Check, Phone, MessageSquare, AlertCircle, Send, Loader2, Link2, ShieldCheck, UserCheck } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { uploadPrescriptionImage, insertPrescription } from '@/lib/prescriptions';
 import { translateError } from '@/lib/errorMessages';
 
@@ -13,6 +14,7 @@ interface PrescriptionUploadModalProps {
 export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadModalProps) {
   const { settings, themeColors } = useSettings();
   const { profile, user } = useCustomer();
+  const { t } = useLanguage();
   const [image, setImage] = useState<string | null>(null);
   const [linkMode, setLinkMode] = useState(false);
   const [linkValue, setLinkValue] = useState('');
@@ -28,7 +30,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        setError('حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.');
+        setError(t('حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.'));
         return;
       }
       setError(null);
@@ -41,11 +43,11 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!image) {
-      setError('يرجى اختيار صورة الروشتة أو تصويرها بالكامل.');
+      setError(t('يرجى اختيار صورة الروشتة أو تصويرها بالكامل.'));
       return;
     }
     if (!phone.trim()) {
-      setError('يرجى أدخال رقم الهاتف للتواصل وحجز الروشتة.');
+      setError(t('يرجى أدخال رقم الهاتف للتواصل وحجز الروشتة.'));
       return;
     }
 
@@ -63,7 +65,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
       // Notify the pharmacy via WhatsApp (text summary)
       if (settings.contact_whatsapp) {
         const text = encodeURIComponent(
-          `مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: ${phone}\nالملاحظات: ${notes || 'لا يوجد'}`
+          t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [phone, notes || t('لا يوجد')])
         );
         window.open(`https://wa.me/${settings.contact_whatsapp}?text=${text}`, '_blank');
       }
@@ -75,7 +77,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
       }, 1400);
     } catch (err) {
       const msg = translateError((err as { message?: string })?.message || '').ar;
-      setError(msg || 'فشل رفع الروشتة، برجاء المحاولة مرة أخرى.');
+      setError(msg || t('فشل رفع الروشتة، برجاء المحاولة مرة أخرى.'));
     } finally {
       setUploading(false);
     }
@@ -98,8 +100,8 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
               <FileText className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-extrabold text-lg leading-tight">رفع روشتة طبية أو صورة الدواء</h3>
-              <p className="text-xs text-white/80">صوّر الروشتة وسيراجعها صيدلي حقيقي مرخّص قبل التنفيذ</p>
+              <h3 className="font-extrabold text-lg leading-tight">{t('رفع روشتة طبية أو صورة الدواء')}</h3>
+              <p className="text-xs text-white/80">{t('صوّر الروشتة وسيراجعها صيدلي حقيقي مرخّص قبل التنفيذ')}</p>
             </div>
           </div>
           <button
@@ -117,8 +119,8 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
               <div className="w-16 h-16 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mx-auto shadow-lg animate-bounce">
                 <Check className="w-10 h-10" />
               </div>
-              <h4 className="text-lg font-extrabold text-gray-900">تم إرسال الروشتة بنجاح!</h4>
-              <p className="text-xs text-gray-600">صيدلي حقيقي مرخّص يراجعها الآن، وسيتواصل معك على الرقم المسجل لتأكيد الصرف والجرعات.</p>
+              <h4 className="text-lg font-extrabold text-gray-900">{t('تم إرسال الروشتة بنجاح!')}</h4>
+              <p className="text-xs text-gray-600">{t('صيدلي حقيقي مرخّص يراجعها الآن، وسيتواصل معك على الرقم المسجل لتأكيد الصرف والجرعات.')}</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -126,13 +128,13 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
               <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-3.5 space-y-2.5">
                 <div className="flex items-center gap-2 text-teal-800">
                   <ShieldCheck className="w-4 h-4 shrink-0" />
-                  <p className="text-[11px] font-extrabold">لن يُصرف أي دواء قبل مراجعة صيدلي حقيقي مرخّص لروشتك</p>
+                  <p className="text-[11px] font-extrabold">{t('لن يُصرف أي دواء قبل مراجعة صيدلي حقيقي مرخّص لروشتك')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {[
-                    { icon: <Camera className="w-3.5 h-3.5" />, text: 'صوّر الروشتة أو ارفع صورة لها' },
-                    { icon: <UserCheck className="w-3.5 h-3.5" />, text: 'يراجعها صيدلي حقيقي ويتحقق من الجرعات' },
-                    { icon: <Phone className="w-3.5 h-3.5" />, text: 'نتصل بك للتأكيد قبل التنفيذ' },
+                    { icon: <Camera className="w-3.5 h-3.5" />, text: t('صوّر الروشتة أو ارفع صورة لها') },
+                    { icon: <UserCheck className="w-3.5 h-3.5" />, text: t('يراجعها صيدلي حقيقي ويتحقق من الجرعات') },
+                    { icon: <Phone className="w-3.5 h-3.5" />, text: t('نتصل بك للتأكيد قبل التنفيذ') },
                   ].map((step, i, arr) => (
                     <div key={i} className="flex items-center gap-2">
                       <div className="flex items-center gap-1.5 rounded-xl bg-white border border-teal-100 px-2.5 py-1.5 text-teal-700">
@@ -147,10 +149,10 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
 
               {/* Image Preview or Upload Area */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-700">صورة الروشتة / الدواء *</label>
+                <label className="block text-xs font-bold text-gray-700">{t('صورة الروشتة / الدواء *')}</label>
                 {image ? (
                   <div className="relative rounded-2xl overflow-hidden border-2 border-teal-500 max-h-56 bg-slate-900 flex items-center justify-center">
-                    <img src={image} alt="روشتة" className="max-h-56 w-auto object-contain" />
+                    <img src={image} alt={t('روشتة')} className="max-h-56 w-auto object-contain" />
                     <button
                       type="button"
                       onClick={() => setImage(null)}
@@ -169,8 +171,8 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                         <Camera className="w-6 h-6" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-gray-800">اضغط هنا لالتقاط صورة أو رفع الروشتة</p>
-                        <p className="text-[11px] text-gray-500 mt-0.5">يدعم صور JPG, PNG حتى 5MB</p>
+                        <p className="text-xs font-bold text-gray-800">{t('اضغط هنا لالتقاط صورة أو رفع الروشتة')}</p>
+                        <p className="text-[11px] text-gray-500 mt-0.5">{t('يدعم صور JPG, PNG حتى 5MB')}</p>
                       </div>
                       <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                     </label>
@@ -181,7 +183,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                         className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-gray-200 text-[11px] font-bold text-gray-500 hover:bg-gray-50 transition-colors"
                       >
                         <Link2 className="w-3.5 h-3.5" />
-                        أو ألصق رابط صورة الروشتة
+                        {t('أو ألصق رابط صورة الروشتة')}
                       </button>
                     ) : (
                       <div className="flex gap-2">
@@ -205,7 +207,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                           className="px-4 py-2.5 rounded-xl text-white text-xs font-bold shrink-0"
                           style={{ backgroundColor: themeColors.priceColor }}
                         >
-                          استخدام الرابط
+                          {t('استخدام الرابط')}
                         </button>
                       </div>
                     )}
@@ -215,7 +217,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
 
               {/* Phone input */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-gray-700">رقم الهاتف للتواصل *</label>
+                <label className="block text-xs font-bold text-gray-700">{t('رقم الهاتف للتواصل *')}</label>
                 <div className="relative">
                   <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
@@ -233,14 +235,14 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
 
               {/* Notes */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-gray-700">ملاحظات إضافية للصيدلي (اختياري)</label>
+                <label className="block text-xs font-bold text-gray-700">{t('ملاحظات إضافية للصيدلي (اختياري)')}</label>
                 <div className="relative">
                   <MessageSquare className="absolute right-3 top-3 w-4 h-4 text-gray-400" />
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
-                    placeholder="اكتب أية ملاحظات بخصوص الجرعات أو البدائل المتاحة..."
+                    placeholder={t('اكتب أية ملاحظات بخصوص الجرعات أو البدائل المتاحة...')}
                     className="w-full pr-10 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 resize-none"
                     style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                   />
@@ -263,12 +265,12 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                 {uploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    جاري رفع الروشتة لإرسالها للصيدلي...
+                    {t('جاري رفع الروشتة لإرسالها للصيدلي...')}
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    إرسال الروشتة لمراجعة صيدلي حقيقي
+                    {t('إرسال الروشتة لمراجعة صيدلي حقيقي')}
                   </>
                 )}
               </button>

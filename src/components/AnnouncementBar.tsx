@@ -1,6 +1,7 @@
 import { Megaphone, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 function withAlpha(hex: string, alpha: number): string {
   if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
@@ -14,6 +15,7 @@ function withAlpha(hex: string, alpha: number): string {
 
 export function AnnouncementBar() {
   const { settings, themeColors } = useSettings();
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -49,13 +51,13 @@ export function AnnouncementBar() {
         >
           <Megaphone className="w-4 h-4" />
         </span>
-        <span className="font-medium">{settings.announcement_text}</span>
+        <span className="font-medium">{t(settings.announcement_text)}</span>
       </div>
       <button
         onClick={dismiss}
         className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
         style={{ color: themeColors.announcementText }}
-        aria-label="إغلاق"
+        aria-label={t('إغلاق')}
       >
         <X className="w-4 h-4" />
       </button>

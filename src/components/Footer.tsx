@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Phone, Mail, MapPin, Facebook, Instagram, Twitter, MessageCircle, Cross, Heart, Shield, Truck, Clock, Send, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 
 function withAlpha(hex: string, alpha: number): string {
@@ -25,6 +26,7 @@ function isDarkColor(hex: string): boolean {
 export function Footer() {
   const { settings, themeColors, footerConfig } = useSettings();
   const { navigate } = useRouter();
+  const { t } = useLanguage();
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -133,8 +135,8 @@ export function Footer() {
                 <Sparkles className="w-6 h-6" style={{ color: newsletterText }} />
               </div>
               <div>
-                <h4 className="text-lg font-black" style={{ color: newsletterText }}>{footerConfig.newsletterTitle}</h4>
-                <p className="text-xs mt-0.5 font-medium" style={{ color: newsletterFaint }}>{footerConfig.newsletterSubtitle}</p>
+                <h4 className="text-lg font-black" style={{ color: newsletterText }}>{t(footerConfig.newsletterTitle)}</h4>
+                <p className="text-xs mt-0.5 font-medium" style={{ color: newsletterFaint }}>{t(footerConfig.newsletterSubtitle)}</p>
               </div>
             </div>
 
@@ -142,7 +144,7 @@ export function Footer() {
               {subscribed ? (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold w-full backdrop-blur-sm" style={{ backgroundColor: newsletterInputBg, color: newsletterText, border: `1px solid ${newsletterFaint}` }}>
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  {footerConfig.newsletterSuccessText}
+                  {t(footerConfig.newsletterSuccessText)}
                 </div>
               ) : (
                 <>
@@ -150,9 +152,9 @@ export function Footer() {
                     type="email"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
-                    placeholder={footerConfig.newsletterInputPlaceholder}
+                    placeholder={t(footerConfig.newsletterInputPlaceholder)}
                     required
-                    aria-label="البريد الإلكتروني"
+                    aria-label={t('البريد الإلكتروني')}
                     className="flex-1 min-w-0 px-4 py-2.5 rounded-2xl text-xs focus:outline-none backdrop-blur-sm placeholder:opacity-70"
                     style={{ backgroundColor: newsletterInputBg, border: `1px solid ${newsletterFaint}`, color: newsletterText }}
                   />
@@ -162,7 +164,7 @@ export function Footer() {
                     style={{ backgroundColor: newsletterBtnBg, color: newsletterBtnText }}
                   >
                     <Send className="w-3.5 h-3.5" />
-                    {footerConfig.newsletterButtonText}
+                    {t(footerConfig.newsletterButtonText)}
                   </button>
                 </>
               )}
@@ -183,14 +185,14 @@ export function Footer() {
               </div>
               <div>
                 <h3 className="text-xl font-black" style={{ color: dark ? '#ffffff' : '#0f172a' }}>
-                  {settings.site_name}
+                  {t(settings.site_name)}
                 </h3>
-                <p className="text-xs font-medium" style={{ color: muted }}>{footerConfig.footerTagline}</p>
+                <p className="text-xs font-medium" style={{ color: muted }}>{t(footerConfig.footerTagline)}</p>
               </div>
             </div>
 
             <p className="text-xs leading-relaxed font-medium" style={{ color: muted }}>
-              {settings.site_description || settings.site_tagline}
+              {t(settings.site_description || settings.site_tagline)}
             </p>
 
             {footerConfig.showTrustBadges && (
@@ -200,21 +202,21 @@ export function Footer() {
                   style={{ backgroundColor: chipBg, borderColor: withAlpha(primary, 0.25), color: footerText }}
                 >
                   <Shield className="w-3.5 h-3.5" style={{ color: primary }} />
-                  {footerConfig.trustBadge1}
+                  {t(footerConfig.trustBadge1)}
                 </span>
                 <span
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border"
                   style={{ backgroundColor: chipBg, borderColor: withAlpha(primary, 0.25), color: footerText }}
                 >
                   <Truck className="w-3.5 h-3.5" style={{ color: primary }} />
-                  {footerConfig.trustBadge2}
+                  {t(footerConfig.trustBadge2)}
                 </span>
                 <span
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border"
                   style={{ backgroundColor: chipBg, borderColor: withAlpha(primary, 0.25), color: footerText }}
                 >
                   <Clock className="w-3.5 h-3.5" style={{ color: primary }} />
-                  {footerConfig.trustBadge3}
+                  {t(footerConfig.trustBadge3)}
                 </span>
               </div>
             )}
@@ -223,7 +225,7 @@ export function Footer() {
           {/* Quick Links */}
           {footerConfig.showQuickLinks && (
             <div>
-              {sectionTitle(footerConfig.quickLinksTitle)}
+              {sectionTitle(t(footerConfig.quickLinksTitle))}
               <ul className="space-y-3 text-xs font-semibold">
                 {quickLinks.map((link, i) => (
                   <li key={i}>
@@ -238,7 +240,7 @@ export function Footer() {
                         className="w-1.5 h-1.5 rounded-full transition-all duration-200 group-hover:w-3.5"
                         style={{ backgroundColor: primary }}
                       />
-                      {link.label}
+                      {t(link.label)}
                     </button>
                   </li>
                 ))}
@@ -249,7 +251,7 @@ export function Footer() {
           {/* Contact */}
           {footerConfig.showContactSection && (
             <div>
-              {sectionTitle(footerConfig.contactTitle)}
+              {sectionTitle(t(footerConfig.contactTitle))}
               <ul className="space-y-3.5 text-xs font-semibold">
               {settings.contact_address && (
                 <li className="flex items-start gap-3">
@@ -259,7 +261,7 @@ export function Footer() {
                   >
                     <MapPin className="w-4 h-4" />
                   </span>
-                  <span className="pt-1.5 leading-relaxed" style={{ color: muted }}>{settings.contact_address}</span>
+                  <span className="pt-1.5 leading-relaxed" style={{ color: muted }}>{t(settings.contact_address)}</span>
                 </li>
               )}
               {settings.contact_phone && (
@@ -329,14 +331,14 @@ export function Footer() {
           {/* Social */}
           {footerConfig.showSocialSection && (
             <div>
-              {sectionTitle(footerConfig.socialTitle)}
+              {sectionTitle(t(footerConfig.socialTitle))}
               <div className="flex gap-2.5 mb-5">
                 {settings.facebook_url && (
                   <a
                     href={settings.facebook_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="فيسبوك"
+                    aria-label={t('فيسبوك')}
                     className="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:-translate-y-1 border"
                     style={{ backgroundColor: chipBg, borderColor: border, color: primary }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = '#1877f2', e.currentTarget.style.borderColor = 'transparent', e.currentTarget.style.color = '#ffffff')}
@@ -350,7 +352,7 @@ export function Footer() {
                     href={settings.instagram_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="إنستغرام"
+                    aria-label={t('إنستغرام')}
                     className="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:-translate-y-1 border"
                     style={{ backgroundColor: chipBg, borderColor: border, color: primary }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'linear-gradient(45deg,#f09433,#dc2743,#bc1888)', e.currentTarget.style.borderColor = 'transparent', e.currentTarget.style.color = '#ffffff')}
@@ -364,7 +366,7 @@ export function Footer() {
                     href={settings.twitter_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="تويتر"
+                    aria-label={t('تويتر')}
                     className="w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:-translate-y-1 border"
                     style={{ backgroundColor: chipBg, borderColor: border, color: primary }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = '#0f172a', e.currentTarget.style.borderColor = 'transparent', e.currentTarget.style.color = '#ffffff')}
@@ -375,7 +377,7 @@ export function Footer() {
                 )}
               </div>
               <p className="text-xs font-medium leading-relaxed" style={{ color: faint }}>
-                {footerConfig.socialText}
+                {t(footerConfig.socialText)}
               </p>
             </div>
           )}
@@ -390,12 +392,12 @@ export function Footer() {
             <p className="flex items-center gap-1.5">
               <Heart className="w-4 h-4" style={{ color: primary }} fill={primary} />
               <span>
-                {settings.footer_text} © {new Date().getFullYear()} {settings.site_name} - جميع الحقوق محفوظة
+                {t(settings.footer_text)} © {new Date().getFullYear()} {t(settings.site_name)} - {t('جميع الحقوق محفوظة')}
               </span>
             </p>
           )}
           {footerConfig.showBottomNotice && (
-            <p className="text-[11px]">{footerConfig.bottomNoticeText}</p>
+            <p className="text-[11px]">{t(footerConfig.bottomNoticeText)}</p>
           )}
         </div>
       </div>

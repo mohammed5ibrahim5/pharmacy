@@ -5,12 +5,14 @@ import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { ProductCard } from '@/components/ProductCard';
 import type { Product, Category } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Props {
   slug: string;
 }
 
 export function CategoryPage({ slug }: Props) {
+  const { t } = useLanguage();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -63,7 +65,7 @@ return (
         className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-        العودة للرئيسية
+        {t('العودة للرئيسية')}
       </button>
 
       {/* Header hero */}
@@ -76,10 +78,10 @@ return (
             <Pill className="w-8 h-8" style={{ color: themeColors.priceColor }} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.sectionHeadingText }}>{category?.name || 'الفئة'}</h1>
+            <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.sectionHeadingText }}>{category?.name || t('الفئة')}</h1>
             <p className="font-bold text-xs mt-1 flex items-center gap-1.5" style={{ color: themeColors.priceColor }}>
               <Package className="w-4 h-4" />
-              {products.length} منتج متاح حالياً
+              {t('{0} منتج متاح حالياً', [products.length])}
             </p>
           </div>
         </div>
@@ -88,8 +90,8 @@ return (
       {products.length === 0 ? (
         <div className="text-center py-20">
           <Pill className="w-16 h-16 mx-auto text-gray-200 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">لا توجد منتجات</h3>
-          <p className="text-gray-500">لا توجد منتجات في هذه الفئة حالياً</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('لا توجد منتجات')}</h3>
+          <p className="text-gray-500">{t('لا توجد منتجات في هذه الفئة حالياً')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

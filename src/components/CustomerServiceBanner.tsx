@@ -1,8 +1,10 @@
 import { PhoneCall, MessageCircle, Mail, ShieldCheck, Clock } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function CustomerServiceBanner() {
   const { settings, themeColors } = useSettings();
+  const { t } = useLanguage();
   const hasContact = settings.contact_phone || settings.contact_whatsapp || settings.contact_email;
   if (!hasContact) return null;
 
@@ -28,11 +30,11 @@ export function CustomerServiceBanner() {
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[10px] font-black mb-2">
                 <ShieldCheck className="w-3 h-3" />
-                خدمة العملاء
+                {t('خدمة العملاء')}
               </div>
-              <h2 className="text-xl sm:text-2xl font-black leading-snug">عندك مشكلة في طلبك؟</h2>
+              <h2 className="text-xl sm:text-2xl font-black leading-snug">{t('عندك مشكلة في طلبك؟')}</h2>
               <p className="text-xs sm:text-sm text-white/75 font-bold leading-relaxed mt-1.5">
-                فريقنا جاهز لمساعدتك في أي استفسار أو مشكلة — اتصل بنا أو راسلنا واتساب وسنرد عليك بأسرع وقت.
+                {t('فريقنا جاهز لمساعدتك في أي استفسار أو مشكلة — اتصل بنا أو راسلنا واتساب وسنرد عليك بأسرع وقت.')}
               </p>
             </div>
           </div>
@@ -56,7 +58,7 @@ export function CustomerServiceBanner() {
                 style={{ backgroundColor: '#25d366', color: '#fff' }}
               >
                 <MessageCircle className="w-4 h-4" />
-                واتساب مباشر
+                {t('واتساب مباشر')}
               </a>
             )}
             {settings.contact_email && (
@@ -65,15 +67,15 @@ export function CustomerServiceBanner() {
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-lg border border-white/30 bg-white/10 backdrop-blur-sm"
               >
                 <Mail className="w-4 h-4" />
-                البريد الإلكتروني
+                {t('البريد الإلكتروني')}
               </a>
             )}
           </div>
 
           <div className="hidden lg:flex flex-col items-center gap-1.5 text-white/60 shrink-0">
             <Clock className="w-5 h-5" />
-            <span className="text-[10px] font-black">متاحون للرد</span>
-            <span className="text-[10px] font-bold">على مدار اليوم</span>
+            <span className="text-[10px] font-black">{t('متاحون للرد')}</span>
+            <span className="text-[10px] font-bold">{t('على مدار اليوم')}</span>
           </div>
         </div>
       </div>

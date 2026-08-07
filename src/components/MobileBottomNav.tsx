@@ -3,33 +3,35 @@ import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useOrder } from '@/context/OrderContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function MobileBottomNav() {
   const { settings, themeColors, storeConfig } = useSettings();
   const { navigate, route } = useRouter();
   const { user, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
+  const { t } = useLanguage();
 
   const whatsappDigits = settings.contact_whatsapp ? settings.contact_whatsapp.replace(/\D/g, '') : null;
 
   const items: { id: string; label: string; icon: React.ReactNode; active: boolean; onClick: () => void }[] = [
     {
       id: 'home',
-      label: 'الرئيسية',
+      label: t('الرئيسية'),
       icon: <Home className="w-5 h-5" />,
       active: route.name === 'home',
       onClick: () => navigate({ name: 'home' }),
     },
     {
       id: 'search',
-      label: 'بحث',
+      label: t('بحث'),
       icon: <Search className="w-5 h-5" />,
       active: route.name === 'search' || route.name === 'category',
       onClick: () => navigate({ name: 'search', query: '' }),
     },
     {
       id: 'favorites',
-      label: 'المفضلة',
+      label: t('المفضلة'),
       icon: <Heart className="w-5 h-5" />,
       active: false,
       onClick: () => {
@@ -44,7 +46,7 @@ export function MobileBottomNav() {
       ? [
           {
             id: 'cart',
-            label: 'سلة التسوق',
+            label: t('سلة التسوق'),
             icon: (
               <span className="relative">
                 <ShoppingCart className="w-5 h-5" />
@@ -65,7 +67,7 @@ export function MobileBottomNav() {
       : []),
     {
       id: 'account',
-      label: 'حسابي',
+      label: t('حسابي'),
       icon: <User className="w-5 h-5" />,
       active: route.name === 'account',
       onClick: () => {
@@ -103,20 +105,20 @@ export function MobileBottomNav() {
             style={{ color: themeColors.bottomNavText }}
           >
             <ArrowUp className="w-5 h-5" />
-            <span className="text-[10px] font-extrabold">الأعلى</span>
+            <span className="text-[10px] font-extrabold">{t('الأعلى')}</span>
           </button>
         </div>
 
         {whatsappDigits && (
           <div className="absolute -top-12 right-4">
             <a
-              href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent('مرحباً، أحتاج مساعدة من صيدليتي')}`}
+              href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(t('مرحباً، أحتاج مساعدة من صيدليتي'))}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-11 h-11 rounded-2xl text-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
               style={{ backgroundColor: themeColors.whatsappBtnBg }}
-              title="تواصل معنا واتساب"
-              aria-label="تواصل معنا واتساب"
+              title={t('تواصل معنا واتساب')}
+              aria-label={t('تواصل معنا واتساب')}
             >
               <MessageCircle className="w-5 h-5" />
             </a>

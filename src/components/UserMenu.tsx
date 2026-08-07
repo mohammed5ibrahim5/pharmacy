@@ -22,6 +22,7 @@ import { useCustomer } from '@/context/CustomerContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useFavorites } from '@/context/FavoritesContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { translateError } from '@/lib/errorMessages';
 
@@ -30,6 +31,7 @@ export function UserMenu() {
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { favoriteCount } = useFavorites();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -118,7 +120,7 @@ export function UserMenu() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     if (file.size > 2 * 1024 * 1024) {
-      setError('حجم الصورة يجب أن يكون أقل من 2MB');
+      setError(t('حجم الصورة يجب أن يكون أقل من 2MB'));
       return;
     }
     setError(null);
@@ -131,9 +133,9 @@ export function UserMenu() {
         .update({ avatar_url: avatarUrl })
         .eq('id', user.id);
       if (err) {
-        setError(translateError(err.message).ar);
+        setError(t(translateError(err.message).ar));
       } else {
-        setSuccess('تم تحديث الصورة بنجاح');
+        setSuccess(t('تم تحديث الصورة بنجاح'));
         setTimeout(() => setSuccess(null), 2000);
         await refreshProfile();
       }
@@ -150,9 +152,9 @@ export function UserMenu() {
       .update({ avatar_url: avatarLinkValue.trim() })
       .eq('id', user.id);
     if (err) {
-      setError(translateError(err.message).ar);
+      setError(t(translateError(err.message).ar));
     } else {
-      setSuccess('تم تحديث الصورة بنجاح');
+      setSuccess(t('تم تحديث الصورة بنجاح'));
       setTimeout(() => setSuccess(null), 2000);
       setAvatarLinkMode(false);
       setAvatarLinkValue('');
@@ -170,10 +172,10 @@ export function UserMenu() {
       .eq('id', user.id);
     setSaving(false);
     if (err) {
-      setError(translateError(err.message).ar);
+      setError(t(translateError(err.message).ar));
       return;
     }
-    setSuccess('تم حفظ رقم الهاتف');
+    setSuccess(t('تم حفظ رقم الهاتف'));
     setTimeout(() => setSuccess(null), 2000);
     await refreshProfile();
     setEditing(false);
@@ -198,15 +200,15 @@ export function UserMenu() {
           <UserCircle2 className="w-4 h-4" />
         </div>
         <div className="text-right leading-tight hidden sm:block">
-          <span className="block font-bold">دخول / حساب</span>
-          <span className="text-[10px] text-gray-500 font-normal">إدارة طلباتك وروشتاتك</span>
+          <span className="block font-bold">{t('دخول / حساب')}</span>
+          <span className="text-[10px] text-gray-500 font-normal">{t('إدارة طلباتك وروشتاتك')}</span>
         </div>
-        <span className="sm:hidden font-bold">دخول</span>
+        <span className="sm:hidden font-bold">{t('دخول')}</span>
       </button>
     );
   }
 
-  const initial = (profile?.full_name || user.email || 'عميل').charAt(0).toUpperCase();
+  const initial = (profile?.full_name || user.email || t('عميل')).charAt(0).toUpperCase();
 
   return (
     <div className="relative" ref={ref}>
@@ -217,7 +219,7 @@ export function UserMenu() {
         {profile?.avatar_url ? (
           <img
             src={profile.avatar_url}
-            alt={profile.full_name || 'صورة'}
+            alt={profile.full_name || t('صورة')}
             className="w-9 h-9 rounded-xl object-cover border border-teal-200"
           />
         ) : (
@@ -231,11 +233,11 @@ export function UserMenu() {
         <div className="hidden sm:block text-right leading-tight">
           <div className="flex items-center gap-1">
             <span className="text-xs font-extrabold text-gray-900 max-w-[90px] truncate">
-              {profile?.full_name || 'عميل متميز'}
+              {profile?.full_name || t('عميل متميز')}
             </span>
             <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400" />
           </div>
-          <p className="text-[10px] text-teal-600 font-medium">حسابي والخدمات</p>
+          <p className="text-[10px] text-teal-600 font-medium">{t('حسابي والخدمات')}</p>
         </div>
         <ChevronDown className={`w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -263,7 +265,7 @@ export function UserMenu() {
                 )}
                 <label
                   className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow bg-white"
-                  title="تغيير الصورة"
+                  title={t('تغيير الصورة')}
                 >
                   <Camera className="w-3.5 h-3.5" style={{ color: themeColors.priceColor }} />
                   <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
@@ -271,13 +273,13 @@ export function UserMenu() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <p className="font-extrabold text-sm truncate">{profile?.full_name || 'عميل صيدليتي'}</p>
+                  <p className="font-extrabold text-sm truncate">{profile?.full_name || t('عميل صيدليتي')}</p>
                   <ShieldCheck className="w-4 h-4 text-teal-300 shrink-0" />
                 </div>
                 <p className="text-[11px] text-white/80 truncate" dir="ltr">{user.email}</p>
                 <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-[10px] font-bold text-amber-200">
                   <Sparkles className="w-3 h-3" />
-                  نقاط المكافآت: 120 نقطة
+                  {t('نقاط المكافآت: 120 نقطة')}
                 </div>
                 <div className="mt-1 flex items-center gap-2">
                   {!avatarLinkMode ? (
@@ -285,7 +287,7 @@ export function UserMenu() {
                       onClick={() => setAvatarLinkMode(true)}
                       className="flex items-center gap-1 text-[10px] font-bold text-white/70 hover:text-white transition-colors"
                     >
-                      <Link2 className="w-3 h-3" /> أو ألصق رابط صورة
+                      <Link2 className="w-3 h-3" /> {t('أو ألصق رابط صورة')}
                     </button>
                   ) : (
                     <div className="flex gap-1.5 w-full">
@@ -301,7 +303,7 @@ export function UserMenu() {
                         className="px-2 py-1 rounded-lg text-[10px] font-bold text-white"
                         style={{ backgroundColor: themeColors.priceColor }}
                       >
-                        استخدام
+                        {t('استخدام')}
                       </button>
                     </div>
                   )}
@@ -352,8 +354,8 @@ export function UserMenu() {
                   </div>
                 ) : (
                   <button onClick={() => setEditing(true)} className="text-xs text-gray-700 flex items-center justify-between flex-1" dir="ltr">
-                    <span>{profile?.phone || 'إضافة رقم هاتف'}</span>
-                    <span className="text-[10px] text-teal-600 font-bold underline ml-2">تعديل</span>
+                    <span>{profile?.phone || t('إضافة رقم هاتف')}</span>
+                    <span className="text-[10px] text-teal-600 font-bold underline ml-2">{t('تعديل')}</span>
                   </button>
                 )}
               </div>
@@ -370,9 +372,9 @@ export function UserMenu() {
               >
                 <div className="flex items-center gap-2.5">
                   <PackageCheck className="w-4 h-4 text-teal-600" />
-                  <span>طلباتي ومتابعة الشحنات</span>
+                  <span>{t('طلباتي ومتابعة الشحنات')}</span>
                 </div>
-                <span className="bg-teal-100 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-full">{activeOrders} نشطة</span>
+                <span className="bg-teal-100 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-full">{t('{0} نشطة', [activeOrders])}</span>
               </button>
 
               <button
@@ -384,9 +386,9 @@ export function UserMenu() {
               >
                 <div className="flex items-center gap-2.5">
                   <FileText className="w-4 h-4 text-blue-600" />
-                  <span>الروشتات المحفوظة</span>
+                  <span>{t('الروشتات المحفوظة')}</span>
                 </div>
-                <span className="text-gray-400 text-[10px]">{prescriptionsCount > 0 ? `${prescriptionsCount} محفوظة` : 'إضافة'}</span>
+                <span className="text-gray-400 text-[10px]">{prescriptionsCount > 0 ? t('{0} محفوظة', [prescriptionsCount]) : t('إضافة')}</span>
               </button>
 
               <button
@@ -398,9 +400,9 @@ export function UserMenu() {
               >
                 <div className="flex items-center gap-2.5">
                   <MapPin className="w-4 h-4 text-rose-500" />
-                  <span>العناوين المسجلة</span>
+                  <span>{t('العناوين المسجلة')}</span>
                 </div>
-                <span className="text-gray-400 text-[10px] truncate max-w-[70px]">{savedAddresses[0] || 'إضافة'}</span>
+                <span className="text-gray-400 text-[10px] truncate max-w-[70px]">{savedAddresses[0] || t('إضافة')}</span>
               </button>
 
               <button
@@ -412,7 +414,7 @@ export function UserMenu() {
               >
                 <div className="flex items-center gap-2.5">
                   <Heart className="w-4 h-4 text-pink-500" />
-                  <span>المفضلة</span>
+                  <span>{t('المفضلة')}</span>
                 </div>
                 <span className="bg-pink-50 text-pink-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{favoriteCount}</span>
               </button>
@@ -425,7 +427,7 @@ export function UserMenu() {
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 text-xs font-bold transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                تسجيل الخروج
+                {t('تسجيل الخروج')}
               </button>
             </div>
           </div>

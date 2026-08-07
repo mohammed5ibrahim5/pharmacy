@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { BadgePercent, Sparkles, Package, ChevronLeft, Clock, Flame } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useRouter } from '@/context/RouterContext';
 import { ProductCard } from '@/components/ProductCard';
 import { useCountdown } from '@/hooks/useCountdown';
@@ -16,6 +17,7 @@ type ProductTab = 'discounts' | 'newest' | 'all';
 
 export function FeaturedProducts({ products, loading, popularProductIds = [] }: Props) {
   const { themeColors } = useSettings();
+  const { t } = useLanguage();
   const { navigate } = useRouter();
   const [activeTab, setActiveTab] = useState<ProductTab>('discounts');
 
@@ -61,17 +63,17 @@ export function FeaturedProducts({ products, loading, popularProductIds = [] }: 
                 borderColor: `${themeColors.badgePillBg}30`
               }}
             >
-              أحدث المنتجات والعروض
+              {t('أحدث المنتجات والعروض')}
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black mt-2" style={{ color: themeColors.sectionHeadingText }}>منتجاتنا المميزة</h2>
-            <p className="text-sm mt-1.5 font-bold" style={{ color: themeColors.sectionSubheadingText }}>اختر من بين أحدث الواصل والخصومات المتاحة</p>
+            <h2 className="text-2xl sm:text-3xl font-black mt-2" style={{ color: themeColors.sectionHeadingText }}>{t('منتجاتنا المميزة')}</h2>
+            <p className="text-sm mt-1.5 font-bold" style={{ color: themeColors.sectionSubheadingText }}>{t('اختر من بين أحدث الواصل والخصومات المتاحة')}</p>
           </div>
 
           <button
             onClick={() => navigate({ name: 'search', query: '' })}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-extrabold text-gray-800 hover:bg-slate-50 transition-all shadow-2xs group self-start sm:self-auto"
           >
-            <span>عرض جميع المنتجات</span>
+            <span>{t('عرض جميع المنتجات')}</span>
             <ChevronLeft className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:-translate-x-1" />
           </button>
         </div>
@@ -89,10 +91,10 @@ export function FeaturedProducts({ products, loading, popularProductIds = [] }: 
               </div>
               <div>
                 <p className="font-black text-lg sm:text-xl flex items-center gap-2">
-                  عرض العصر! خصومات تنتهي قريباً
+                  {t('عرض العصر! خصومات تنتهي قريباً')}
                   <BadgePercent className="w-5 h-5" />
                 </p>
-                <p className="text-xs text-white/80 font-bold mt-0.5">اغتنم الخصم قبل انتهاء الوقت المحدد</p>
+                <p className="text-xs text-white/80 font-bold mt-0.5">{t('اغتنم الخصم قبل انتهاء الوقت المحدد')}</p>
               </div>
             </div>
             <div className="relative flex items-center gap-2" dir="ltr">
@@ -106,7 +108,7 @@ export function FeaturedProducts({ products, loading, popularProductIds = [] }: 
                 <div key={unit.label} className="flex items-center gap-2">
                   <div className="bg-black/25 backdrop-blur border border-white/20 rounded-xl px-2.5 py-1.5 text-center min-w-[3.4rem]">
                     <p className="text-xl font-black tabular-nums leading-none">{String(unit.value).padStart(2, '0')}</p>
-                    <p className="text-[10px] text-white/70 font-bold mt-0.5">{unit.label}</p>
+                    <p className="text-[10px] text-white/70 font-bold mt-0.5">{t(unit.label)}</p>
                   </div>
                   {i < 3 && <span className="text-white/60 font-black text-lg">:</span>}
                 </div>
@@ -131,7 +133,7 @@ export function FeaturedProducts({ products, loading, popularProductIds = [] }: 
                 style={isActive ? { backgroundColor: themeColors.primaryColor, boxShadow: `0 8px 18px -6px ${themeColors.primaryColor}77` } : {}}
               >
                 {tab.icon}
-                {tab.label}
+                {t(tab.label)}
                 <span
                   className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
                     isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
@@ -165,7 +167,7 @@ export function FeaturedProducts({ products, loading, popularProductIds = [] }: 
         ) : (
           <div className="py-16 text-center bg-white rounded-3xl border border-gray-200">
             <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-slate-500 text-sm font-extrabold">لا توجد منتجات بهذا التصنيف حالياً</p>
+            <p className="text-slate-500 text-sm font-extrabold">{t('لا توجد منتجات بهذا التصنيف حالياً')}</p>
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MapPin, Navigation, X, Check, Search, Building2 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface LocationSelectorModalProps {
   open: boolean;
@@ -27,6 +28,7 @@ export function LocationSelectorModal({
   onSelectLocation,
 }: LocationSelectorModalProps) {
   const { themeColors } = useSettings();
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [detecting, setDetecting] = useState(false);
   const [detectError, setDetectError] = useState('');
@@ -37,7 +39,7 @@ export function LocationSelectorModal({
   const handleDetectLocation = () => {
     setDetectError('');
     if (!('geolocation' in navigator)) {
-      setDetectError('متصفحك لا يدعم تحديد الموقع — اختر منطقتك يدوياً من الأسفل');
+      setDetectError(t('متصفحك لا يدعم تحديد الموقع — اختر منطقتك يدوياً من الأسفل'));
       return;
     }
     setDetecting(true);
@@ -53,9 +55,9 @@ export function LocationSelectorModal({
       (err) => {
         setDetecting(false);
         if (err.code === err.PERMISSION_DENIED) {
-          setDetectError('رفضت صلاحية تحديد الموقع — اختر منطقتك يدوياً من الأسفل');
+          setDetectError(t('رفضت صلاحية تحديد الموقع — اختر منطقتك يدوياً من الأسفل'));
         } else {
-          setDetectError('لم نتمكن من تحديد موقعك — اختر منطقتك يدوياً من الأسفل');
+          setDetectError(t('لم نتمكن من تحديد موقعك — اختر منطقتك يدوياً من الأسفل'));
         }
       },
       { timeout: 5000 }
@@ -83,8 +85,8 @@ export function LocationSelectorModal({
               <MapPin className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-extrabold text-lg leading-tight">اختر عنوان التسليم والتوصيل</h3>
-              <p className="text-xs text-white/80">لتحديد أقرب الصيدليات المتاحة حولك فوراً</p>
+              <h3 className="font-extrabold text-lg leading-tight">{t('اختر عنوان التسليم والتوصيل')}</h3>
+              <p className="text-xs text-white/80">{t('لتحديد أقرب الصيدليات المتاحة حولك فوراً')}</p>
             </div>
           </div>
           <button
@@ -104,7 +106,7 @@ export function LocationSelectorModal({
             className="w-full flex items-center justify-center gap-2.5 p-3.5 rounded-2xl border-2 border-dashed border-teal-500 bg-teal-50/60 text-teal-800 font-bold text-xs hover:bg-teal-100/80 transition-all shadow-sm active:scale-98"
           >
             <Navigation className={`w-4 h-4 text-teal-600 ${detecting ? 'animate-spin' : 'animate-bounce'}`} />
-            {detecting ? 'جاري تحديد موقعك الجغرافي...' : 'استخدام موقعي الحالي الجغرافي (GPS)'}
+            {detecting ? t('جاري تحديد موقعك الجغرافي...') : t('استخدام موقعي الحالي الجغرافي (GPS)')}
           </button>
 
           {detectError && (
@@ -118,7 +120,7 @@ export function LocationSelectorModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="ابحث عن المحافظة أو المنطقة..."
+              placeholder={t('ابحث عن المحافظة أو المنطقة...')}
               className="w-full pr-10 pl-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
               style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
             />
@@ -146,7 +148,7 @@ export function LocationSelectorModal({
           <div className="space-y-2 pt-2">
             <h4 className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-gray-400" />
-              المناطق والأحياء المتاحة في {selectedGov}:
+              {t('المناطق والأحياء المتاحة في {0}:', [selectedGov])}
             </h4>
             <div className="grid grid-cols-2 gap-2">
               {EGYPT_GOVERNORATES.find((g) => g.name === selectedGov)?.areas.map((area) => {

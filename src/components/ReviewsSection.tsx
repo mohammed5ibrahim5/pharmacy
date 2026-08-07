@@ -3,6 +3,7 @@ import { Star, MessageSquareQuote, Send, UserRound, PencilLine } from 'lucide-re
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
+import { useLanguage } from '@/context/LanguageContext';
 import type { Review } from '@/types';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
+  const { t } = useLanguage();
   const { themeColors } = useSettings();
   const { user } = useCustomer();
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -60,16 +62,16 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
         <div>
           <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2" style={{ color: themeColors.cardText }}>
             <MessageSquareQuote className="w-5 h-5" style={{ color: themeColors.priceColor }} />
-            تقييمات العملاء
+            {t('تقييمات العملاء')}
           </h2>
-          <p className="text-xs font-medium mt-1" style={{ color: themeColors.cardMutedText }}>آراء حقيقية من عملاء صيدلية {pharmacyName}</p>
+          <p className="text-xs font-medium mt-1" style={{ color: themeColors.cardMutedText }}>{t('آراء حقيقية من عملاء صيدلية {0}', [pharmacyName])}</p>
         </div>
         {reviews.length > 0 && (
           <div className="flex items-center gap-2 border px-4 py-2 rounded-2xl"
             style={{ backgroundColor: `${themeColors.ratingColor}18`, borderColor: `${themeColors.ratingColor}30` }}>
             <Star className="w-5 h-5 fill-current" style={{ color: themeColors.ratingColor }} />
             <span className="font-black" style={{ color: themeColors.ratingColor }}>{average.toFixed(1)}</span>
-            <span className="text-xs font-bold" style={{ color: themeColors.ratingColor }}>({reviews.length} تقييم)</span>
+            <span className="text-xs font-bold" style={{ color: themeColors.ratingColor }}>({t('{0} تقييم', [reviews.length])})</span>
           </div>
         )}
       </div>
@@ -81,7 +83,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
       ) : reviews.length === 0 ? (
           <div className="text-center py-10 rounded-2xl border border-dashed border-gray-200" style={{ backgroundColor: themeColors.sectionAltBg }}>
           <Star className="w-8 h-8 mx-auto mb-2" style={{ color: themeColors.cardMutedText }} />
-          <p className="text-sm font-bold" style={{ color: themeColors.cardMutedText }}>لا توجد تقييمات بعد — كن أول من يقيّم هذه الصيدلية</p>
+          <p className="text-sm font-bold" style={{ color: themeColors.cardMutedText }}>{t('لا توجد تقييمات بعد — كن أول من يقيّم هذه الصيدلية')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -114,7 +116,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
                 <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 pt-2.5 border-t border-gray-100">
                   {typeof review.delivery_rating === 'number' && (
                     <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
-                      التوصيل
+                      {t('التوصيل')}
                       <span className="flex items-center gap-0.5" dir="ltr">
                         {[1, 2, 3, 4, 5].map((s) => (
                           <Star key={s} className="w-3 h-3" style={{ color: s <= review.delivery_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.delivery_rating! ? themeColors.ratingColor : 'transparent' }} />
@@ -124,7 +126,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
                   )}
                   {typeof review.product_quality_rating === 'number' && (
                     <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
-                      الجودة
+                      {t('الجودة')}
                       <span className="flex items-center gap-0.5" dir="ltr">
                         {[1, 2, 3, 4, 5].map((s) => (
                           <Star key={s} className="w-3 h-3" style={{ color: s <= review.product_quality_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.product_quality_rating! ? themeColors.ratingColor : 'transparent' }} />
@@ -134,7 +136,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
                   )}
                   {typeof review.value_rating === 'number' && (
                     <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
-                      القيمة
+                      {t('القيمة')}
                       <span className="flex items-center gap-0.5" dir="ltr">
                         {[1, 2, 3, 4, 5].map((s) => (
                           <Star key={s} className="w-3 h-3" style={{ color: s <= review.value_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.value_rating! ? themeColors.ratingColor : 'transparent' }} />
@@ -156,7 +158,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-extrabold flex items-center gap-1.5" style={{ color: themeColors.cardText }}>
                 <PencilLine className="w-4 h-4" style={{ color: themeColors.priceColor }} />
-                أضف تقييمك
+                {t('أضف تقييمك')}
               </p>
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -165,7 +167,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
                     type="button"
                     onClick={() => setRating(star)}
                     className="transition-transform hover:scale-125 active:scale-95"
-                    aria-label={`${star} نجوم`}
+                    aria-label={t('{0} نجوم', [star])}
                   >
                     <Star
                       className="w-6 h-6"
@@ -179,7 +181,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={3}
-              placeholder="شارك تجربتك مع هذه الصيدلية (اختياري)..."
+              placeholder={t('شارك تجربتك مع هذه الصيدلية (اختياري)...')}
               className="w-full p-3.5 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 resize-none"
               style={{ backgroundColor: themeColors.pageSearchBg, color: themeColors.pageSearchText, ['--tw-ring-color' as string]: themeColors.priceColor }}
             />
@@ -190,7 +192,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
               style={{ backgroundColor: themeColors.priceColor }}
             >
               <Send className="w-4 h-4" />
-              {submitting ? 'جاري النشر...' : 'نشر التقييم'}
+              {submitting ? t('جاري النشر...') : t('نشر التقييم')}
             </button>
           </div>
         ) : (
@@ -199,7 +201,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
               <UserRound className="w-5 h-5" />
             </div>
             <p className="text-xs font-bold" style={{ color: themeColors.cardText }}>
-              سجّل الدخول لتتمكن من إضافة تقييمك لهذه الصيدلية
+              {t('سجّل الدخول لتتمكن من إضافة تقييمك لهذه الصيدلية')}
             </p>
           </div>
         )}

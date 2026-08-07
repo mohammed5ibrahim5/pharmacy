@@ -3,6 +3,7 @@ import { X, Star, Send, MessageSquareQuote, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Props {
   orderId: string;
@@ -16,6 +17,7 @@ interface Props {
 export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productName, onClose, onSubmitted }: Props) {
   const { themeColors } = useSettings();
   const { user, profile } = useCustomer();
+  const { t } = useLanguage();
   const [rating, setRating] = useState(5);
   const [deliveryRating, setDeliveryRating] = useState(5);
   const [qualityRating, setQualityRating] = useState(5);
@@ -31,7 +33,7 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
           type="button"
           onClick={() => set(star)}
           className="transition-transform hover:scale-125 active:scale-95"
-          aria-label={`${star} نجوم`}
+          aria-label={t('{0} نجوم', [star])}
         >
           <Star
             className={`${size || 'w-6 h-6'} ${star <= current ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`}
@@ -65,7 +67,7 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 rounded-t-3xl" style={{ backgroundColor: themeColors.modalHeaderBg }}>
           <div className="flex items-center gap-2">
             <MessageSquareQuote className="w-5 h-5" style={{ color: themeColors.priceColor }} />
-            <h2 className="font-black" style={{ color: themeColors.modalHeaderText }}>قيّم طلبك</h2>
+            <h2 className="font-black" style={{ color: themeColors.modalHeaderText }}>{t('قيّم طلبك')}</h2>
           </div>
           <button onClick={onClose} className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center">
             <X className="w-5 h-5 text-gray-500" />
@@ -76,39 +78,39 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
           <div className="space-y-4">
               <div className="bg-gray-50 rounded-2xl p-3.5">
                 <p className="text-sm font-black text-gray-800 mb-0.5">{productName}</p>
-                <p className="text-[11px] text-gray-400">من صيدلية {pharmacyName}</p>
+                <p className="text-[11px] text-gray-400">{t('من صيدلية {0}', [pharmacyName])}</p>
               </div>
 
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-extrabold text-gray-800">تقييمك العام</p>
-                  <p className="text-[10px] text-gray-400">رأيك في التجربة كاملة</p>
+                  <p className="text-sm font-extrabold text-gray-800">{t('تقييمك العام')}</p>
+                  <p className="text-[10px] text-gray-400">{t('رأيك في التجربة كاملة')}</p>
                 </div>
                 {starRow(rating, setRating)}
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-gray-50 rounded-2xl p-3 text-center">
-                  <p className="text-[10px] font-bold text-gray-500 mb-1.5">سرعة التوصيل</p>
+                  <p className="text-[10px] font-bold text-gray-500 mb-1.5">{t('سرعة التوصيل')}</p>
                   {starRow(deliveryRating, setDeliveryRating, 'w-4 h-4')}
                 </div>
                 <div className="bg-gray-50 rounded-2xl p-3 text-center">
-                  <p className="text-[10px] font-bold text-gray-500 mb-1.5">جودة المنتج</p>
+                  <p className="text-[10px] font-bold text-gray-500 mb-1.5">{t('جودة المنتج')}</p>
                   {starRow(qualityRating, setQualityRating, 'w-4 h-4')}
                 </div>
                 <div className="bg-gray-50 rounded-2xl p-3 text-center">
-                  <p className="text-[10px] font-bold text-gray-500 mb-1.5">القيمة مقابل السعر</p>
+                  <p className="text-[10px] font-bold text-gray-500 mb-1.5">{t('القيمة مقابل السعر')}</p>
                   {starRow(valueRating, setValueRating, 'w-4 h-4')}
                 </div>
               </div>
 
               <div>
-                <p className="text-xs font-bold text-gray-600 mb-1.5">تعليقك (اختياري)</p>
+                <p className="text-xs font-bold text-gray-600 mb-1.5">{t('تعليقك (اختياري)')}</p>
                 <textarea
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={3}
-                  placeholder="شارك تجربتك مع هذا الطلب..."
+                  placeholder={t('شارك تجربتك مع هذا الطلب...')}
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 resize-none"
                   style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                 />
@@ -121,7 +123,7 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
                 style={{ backgroundColor: themeColors.priceColor }}
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {submitting ? 'جاري النشر...' : 'نشر التقييم'}
+                {submitting ? t('جاري النشر...') : t('نشر التقييم')}
               </button>
           </div>
         </div>

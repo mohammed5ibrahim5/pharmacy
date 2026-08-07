@@ -9,12 +9,14 @@ import { PharmacyCard } from '@/components/PharmacyCard';
 import { getPharmacyWithDistance, sortPharmaciesByDistance } from '@/lib/distance';
 import { trackSearch } from '@/lib/searchHistory';
 import type { Product, Pharmacy } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Props {
   query: string;
 }
 
 export function SearchPage({ query }: Props) {
+  const { t } = useLanguage();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { location } = useGeolocation();
@@ -64,7 +66,7 @@ return (
         className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-        العودة للرئيسية
+        {t('العودة للرئيسية')}
       </button>
 
       {/* Header hero */}
@@ -77,9 +79,10 @@ return (
             <Search className="w-8 h-8" style={{ color: themeColors.priceColor }} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.sectionHeadingText }}>نتائج البحث</h1>
+            <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.sectionHeadingText }}>{t('نتائج البحث')}</h1>
             <p className="mt-1 text-xs" style={{ color: themeColors.sectionSubheadingText }}>
-              البحث عن: <span className="font-bold" style={{ color: themeColors.priceColor }}>"{query}"</span>
+              {t('البحث عن:')}{' '}
+              <span className="font-bold" style={{ color: themeColors.priceColor }}>"{query}"</span>
             </p>
           </div>
         </div>
@@ -101,8 +104,8 @@ return (
           >
             <Pill className="w-10 h-10" style={{ color: themeColors.priceColor, opacity: 0.5 }} />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">لا توجد نتائج</h3>
-          <p className="text-gray-500">لم نجد أي منتج أو صيدلية تطابق "{query}"</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('لا توجد نتائج')}</h3>
+          <p className="text-gray-500">{t('لم نجد أي منتج أو صيدلية تطابق "{0}"', [query])}</p>
         </div>
       ) : (
         <div className="space-y-10">
@@ -114,7 +117,7 @@ return (
                   <Navigation className="w-4 h-4" style={{ color: themeColors.accentColor }} />
                 </div>
                 <h2 className="text-lg font-bold" style={{ color: themeColors.sectionHeadingText }}>
-                  {location ? 'أقرب صيدليات بها هذا المنتج' : 'صيدليات بها هذا المنتج'}
+                  {location ? t('أقرب صيدليات بها هذا المنتج') : t('صيدليات بها هذا المنتج')}
                 </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -132,7 +135,7 @@ return (
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${themeColors.priceColor}12` }}>
                   <Package className="w-4 h-4" style={{ color: themeColors.priceColor }} />
                 </div>
-                <h2 className="text-lg font-bold" style={{ color: themeColors.sectionHeadingText }}>المنتجات ({products.length})</h2>
+                <h2 className="text-lg font-bold" style={{ color: themeColors.sectionHeadingText }}>{t('المنتجات ({0})', [products.length])}</h2>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {products.map((product) => (

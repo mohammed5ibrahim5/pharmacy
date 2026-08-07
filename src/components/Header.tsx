@@ -25,10 +25,12 @@ import {
   ShoppingCart,
   Moon,
   Sun,
+  Languages,
   type LucideIcon
 } from 'lucide-react';
 import { useRouter } from '@/context/RouterContext';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { UserMenu } from '@/components/UserMenu';
 import { NotificationsBell } from '@/components/NotificationsBell';
@@ -90,6 +92,7 @@ const FALLBACK_CATEGORIES: { slug: string; name: string }[] = [
 export function Header() {
   const { navigate } = useRouter();
   const { settings, themeColors, headerConfig, storeConfig, darkMode, toggleDarkMode } = useSettings();
+  const { t, lang, toggleLang } = useLanguage();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
   const { setUserLocation: setGeoLocation } = useGeolocation();
@@ -105,7 +108,7 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [userLocation, setUserLocation] = useState<string>(() => {
-    return localStorage.getItem('user_delivery_location') || 'القاهرة - المعادي';
+    return localStorage.getItem('user_delivery_location') || t('القاهرة - المعادي');
   });
   const [cartBump, setCartBump] = useState(false);
   const firstCartRender = useRef(true);
@@ -211,7 +214,7 @@ export function Header() {
       recognition.onerror = () => setIsListening(false);
       recognition.onend = () => setIsListening(false);
     } else {
-      alert('البحث الصوتي غير مدعوم في متصفحك الحالي.');
+      alert(t('البحث الصوتي غير مدعوم في متصفحك الحالي.'));
     }
   };
 
@@ -234,7 +237,7 @@ export function Header() {
               style={{ color: headerConfig.topBarTextColor }}
             >
               <MapPin className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
-              <span>التوصيل إلى: <strong className="text-white font-bold">{userLocation}</strong></span>
+              <span>{t('التوصيل إلى:')} <strong className="text-white font-bold">{t(userLocation)}</strong></span>
               <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
           )}
@@ -243,7 +246,7 @@ export function Header() {
             {headerConfig.showServiceBar && (
               <span className="flex items-center gap-1.5 font-bold" style={{ color: themeColors.accentColor }}>
                 <Zap className="w-3.5 h-3.5 animate-pulse" />
-                {headerConfig.serviceText}
+                {t(headerConfig.serviceText)}
               </span>
             )}
 
@@ -254,7 +257,7 @@ export function Header() {
                 style={{ backgroundColor: headerConfig.prescriptionBarColor }}
               >
                 <FileText className="w-3.5 h-3.5" />
-                رفع روشتة طبية
+                {t('رفع روشتة طبية')}
               </button>
             )}
 
@@ -305,10 +308,10 @@ export function Header() {
               </div>
               <div>
                 <h1 className="text-lg sm:text-xl font-black leading-tight" style={{ color: themeColors.headerText }}>
-                  {settings.site_name}
+                  {t(settings.site_name)}
                 </h1>
                 <p className="text-[10px] sm:text-xs font-bold hidden sm:block opacity-80" style={{ color: themeColors.primaryColor }}>
-                  {settings.site_tagline}
+                  {t(settings.site_tagline)}
                 </p>
               </div>
             </button>
@@ -325,7 +328,7 @@ export function Header() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
-                    placeholder="ابحث باسم الدواء، المادة الفعالة، أو امسح الباركود..."
+                    placeholder={t('ابحث باسم الدواء، المادة الفعالة، أو امسح الباركود...')}
                     className="w-full pr-5 pl-24 py-2.5 bg-transparent text-xs sm:text-sm font-bold placeholder:font-medium focus:outline-none"
                     style={{ color: themeColors.headerSearchText }}
                   />
@@ -334,7 +337,7 @@ export function Header() {
                     type="submit"
                     className="absolute right-1 top-1/2 -translate-y-1/2 w-8.5 h-8.5 rounded-full flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95 shadow-md hover:brightness-110"
                     style={{ backgroundColor: themeColors.primaryColor }}
-                    title="بحث"
+                    title={t('بحث')}
                   >
                     <Search className="w-4 h-4" />
                   </button>
@@ -351,7 +354,7 @@ export function Header() {
                       isListening ? 'text-red-500 animate-bounce' : 'opacity-70 hover:opacity-100'
                     }`}
                     style={{ color: themeColors.accent2Color }}
-                    title="بحث بالصوت"
+                    title={t('بحث بالصوت')}
                   >
                         <Mic className="w-4 h-4" />
                       </button>
@@ -367,10 +370,10 @@ export function Header() {
                           color: themeColors.accent2Color,
                           borderColor: `${themeColors.accent2Color}33`
                         }}
-                        title="ماسح باركود وتصوير المنتج"
+                        title={t('ماسح باركود وتصوير المنتج')}
                       >
                         <Barcode className="w-4 h-4" />
-                        <span className="text-[10px] hidden lg:inline">باركود</span>
+                        <span className="text-[10px] hidden lg:inline">{t('باركود')}</span>
                       </button>
                     )}
                   </div>
@@ -394,8 +397,8 @@ export function Header() {
                       borderColor: `${themeColors.headerText}10`
                     }}
                   >
-                    <span>نتائج وتلميحات البحث الحية:</span>
-                    <span className="text-[10px] font-bold" style={{ color: themeColors.primaryColor }}>اضغط للانتقال</span>
+                    <span>{t('نتائج وتلميحات البحث الحية:')}</span>
+                    <span className="text-[10px] font-bold" style={{ color: themeColors.primaryColor }}>{t('اضغط للانتقال')}</span>
                   </div>
                   {suggestions.length > 0 ? (
 <div className="divide-y max-h-72 overflow-y-auto">
@@ -432,19 +435,19 @@ export function Header() {
                             </p>
                             {product.pharmacy && (
                               <p className="text-[10px] opacity-60 truncate" style={{ color: themeColors.headerText }}>
-                                صيدلية: {product.pharmacy.name}
+                                {t('صيدلية: {0}', [product.pharmacy.name])}
                               </p>
                             )}
                           </div>
                           <span className="text-xs font-black" style={{ color: themeColors.primaryColor }}>
-                            {product.price} ج.م
+                            {t('{0} ج.م', [product.price])}
                           </span>
                         </button>
                       ))}
                     </div>
                   ) : (
                     <div className="p-4 text-center text-xs opacity-60 space-y-1" style={{ color: themeColors.headerText }}>
-                      <p>اضغط إنتر أو زِر البحث لعرض جميع الأدوية المطابقة لـ "{searchQuery}"</p>
+                      <p>{t('اضغط إنتر أو زِر البحث لعرض جميع الأدوية المطابقة لـ "{0}"', [searchQuery])}</p>
                     </div>
                   )}
                 </div>
@@ -462,7 +465,7 @@ export function Header() {
                   style={{ backgroundColor: themeColors.whatsappBtnBg, boxShadow: `0 4px 14px -2px ${themeColors.whatsappBtnBg}88` }}
                 >
                   <Send className="w-4 h-4" />
-                  واتساب
+                  {t('واتساب')}
                 </a>
               )}
 
@@ -475,7 +478,7 @@ export function Header() {
                     color: headerConfig.prescriptionBarColor,
                     borderColor: `${headerConfig.prescriptionBarColor}33`
                   }}
-                  title="رفع روشتة"
+                  title={t('رفع روشتة')}
                 >
                   <FileText className="w-5 h-5" />
                 </button>
@@ -490,13 +493,28 @@ export function Header() {
                     color: themeColors.headerText,
                     borderColor: `${themeColors.headerText}15`
                   }}
-                  title="مسح باركود"
+                  title={t('مسح باركود')}
                 >
                   <Barcode className="w-5 h-5" />
                 </button>
               )}
 
               <NotificationsBell />
+
+              <button
+                onClick={toggleLang}
+                className="relative flex items-center gap-1.5 p-2.5 rounded-2xl border transition-all duration-300 active:scale-90"
+                style={{
+                  backgroundColor: `${themeColors.headerText}08`,
+                  color: themeColors.headerText,
+                  borderColor: `${themeColors.headerText}15`
+                }}
+                title={lang === 'ar' ? t('English') : t('العربية')}
+                aria-label={lang === 'ar' ? t('Switch to English') : t('التبديل إلى العربية')}
+              >
+                <Languages className="w-4 h-4" />
+                <span className="text-[11px] font-black hidden sm:inline">{lang === 'ar' ? 'EN' : t('عربي')}</span>
+              </button>
 
               <button
                 onClick={toggleDarkMode}
@@ -506,8 +524,8 @@ export function Header() {
                   color: themeColors.headerText,
                   borderColor: `${themeColors.headerText}15`
                 }}
-                title={darkMode ? 'الوضع الفاتح' : 'الوضع الليلي'}
-                aria-label={darkMode ? 'الوضع الفاتح' : 'الوضع الليلي'}
+                title={darkMode ? t('الوضع الفاتح') : t('الوضع الليلي')}
+                aria-label={darkMode ? t('الوضع الفاتح') : t('الوضع الليلي')}
               >
                 <Sun className={`w-5 h-5 transition-transform duration-300 ${darkMode ? 'rotate-0 scale-100' : '-rotate-90 scale-0'}`} />
                 <Moon className={`absolute inset-0 m-auto w-5 h-5 transition-transform duration-300 ${darkMode ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
@@ -522,8 +540,8 @@ export function Header() {
                     color: themeColors.headerText,
                     borderColor: `${themeColors.headerText}15`
                   }}
-                  title="سلة التسوق"
-                  aria-label="سلة التسوق"
+                  title={t('سلة التسوق')}
+                  aria-label={t('سلة التسوق')}
                 >
                   <ShoppingCart className="w-5 h-5" />
                   {cartCount > 0 && (
@@ -547,7 +565,7 @@ export function Header() {
                   color: themeColors.headerText,
                   borderColor: `${themeColors.headerText}15`
                 }}
-                aria-label="القائمة"
+                aria-label={t('القائمة')}
               >
                 {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
@@ -565,7 +583,7 @@ export function Header() {
             >
               <span className="font-bold flex items-center gap-1.5 shrink-0 text-[11px] whitespace-nowrap" style={{ color: themeColors.accentColor }}>
                 <Flame className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} fill="currentColor" />
-                الأكثر طلباً:
+                {t('الأكثر طلباً:')}
               </span>
               {UNIFIED_TRENDING.map((tag, i) => (
                 <button
@@ -606,7 +624,7 @@ export function Header() {
                 style={{ color: themeColors.accentColor }}
               >
                 <Zap className="w-3.5 h-3.5 animate-pulse" />
-                تصفح حسب الفئة
+                {t('تصفح حسب الفئة')}
               </span>
               <div className="w-px h-5 shrink-0" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
               {(categories.length > 0 ? categories : FALLBACK_CATEGORIES).map((cat) => {
@@ -636,7 +654,7 @@ export function Header() {
                     >
                       <Icon className="w-3.5 h-3.5" />
                     </span>
-                    <span className="text-xs font-extrabold whitespace-nowrap">{cat.name}</span>
+                    <span className="text-xs font-extrabold whitespace-nowrap">{t(cat.name)}</span>
                     <ArrowUpLeft className="w-3 h-3 opacity-0 group-hover:opacity-60 -mt-1 -mr-0.5 transition-opacity" />
                   </button>
                 );
@@ -669,7 +687,7 @@ export function Header() {
             >
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
-                <span>موقع التوصيل: {userLocation}</span>
+                <span>{t('موقع التوصيل: {0}', [userLocation])}</span>
               </div>
               <ChevronDown className="w-4 h-4 opacity-55" />
             </button>
@@ -680,7 +698,7 @@ export function Header() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ابحث باسم الدواء أو المنتج..."
+                  placeholder={t('ابحث باسم الدواء أو المنتج...')}
                   className="w-full pr-11 pl-20 py-3 rounded-2xl text-xs font-medium focus:outline-none border"
                   style={{
                     backgroundColor: `${themeColors.headerText}05`,
@@ -710,7 +728,7 @@ export function Header() {
                     }}
                   >
                     <Barcode className="w-4 h-4" />
-                    باركود
+                    {t('باركود')}
                   </button>
                 )}
               </div>
@@ -726,7 +744,7 @@ export function Header() {
                 style={{ backgroundColor: headerConfig.prescriptionBarColor }}
               >
                 <FileText className="w-4 h-4" />
-                رفع روشتة طبية أو صورة الدواء
+                {t('رفع روشتة طبية أو صورة الدواء')}
               </button>
             )}
 
@@ -739,7 +757,7 @@ export function Header() {
                 style={{ backgroundColor: themeColors.whatsappBtnBg }}
               >
                 <Send className="w-4 h-4" />
-                تواصل معنا مباشر عبر واتساب
+                {t('تواصل معنا مباشر عبر واتساب')}
               </a>
             )}
           </div>

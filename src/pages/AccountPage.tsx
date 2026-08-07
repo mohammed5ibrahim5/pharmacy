@@ -35,6 +35,7 @@ import { useFavorites } from '@/context/FavoritesContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useOrder } from '@/context/OrderContext';
+import { useLanguage } from '@/context/LanguageContext';
 import type { AccountTab } from '@/context/RouterContext';
 import type { Pharmacy, Product, LoyaltyTransaction, MedicationReminder } from '@/types';
 import { ProductCard } from '@/components/ProductCard';
@@ -138,11 +139,12 @@ const ORDER_TRACK_STEPS = [
 ];
 
 function OrderProgressTracker({ status, color }: { status: string; color: string }) {
+  const { t } = useLanguage();
   if (status === 'cancelled') {
     return (
       <div className="mt-4 rounded-2xl bg-red-50 border border-red-100 p-3 flex items-center gap-2">
         <XCircle className="w-4 h-4 text-red-500 shrink-0" />
-        <p className="text-xs font-bold text-red-600">تم إلغاء هذا الطلب</p>
+        <p className="text-xs font-bold text-red-600">{t('تم إلغاء هذا الطلب')}</p>
       </div>
     );
   }
@@ -164,7 +166,7 @@ function OrderProgressTracker({ status, color }: { status: string; color: string
                 >
                   {done ? <CheckCircle2 className="w-4 h-4" /> : step.icon}
                 </span>
-                <span className={`text-[9px] font-bold whitespace-nowrap ${done ? 'text-gray-900' : 'text-gray-400'}`}>{step.label}</span>
+                <span className={`text-[9px] font-bold whitespace-nowrap ${done ? 'text-gray-900' : 'text-gray-400'}`}>{t(step.label)}</span>
               </div>
               {i < ORDER_TRACK_STEPS.length - 1 && (
                 <div className={`flex-1 h-0.5 mx-1.5 mb-4 rounded-full ${i < current ? 'bg-teal-600' : 'bg-gray-200'}`} />
@@ -182,6 +184,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const { settings, themeColors, loyaltyConfig, featuresConfig } = useSettings();
   const { navigate } = useRouter();
   const { openOrder } = useOrder();
+  const { t } = useLanguage();
   const {
     favoriteProducts,
     favoritePharmacies,
@@ -229,13 +232,13 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const handleAddReminder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!remName.trim()) {
-      showToast('يرجى إدخال اسم الدواء.');
+      showToast(t('يرجى إدخال اسم الدواء.'));
       return;
     }
     const granted = await requestNotificationPermission();
     if (!granted) {
       setPermDenied(true);
-      showToast('قم بتفعيل إشعارات المتصفح لتذكير المواعيد');
+      showToast(t('قم بتفعيل إشعارات المتصفح لتذكير المواعيد'));
       return;
     }
     const rec: MedicationReminder = {
@@ -253,12 +256,12 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     setRemDose('');
     setRemNote('');
     setRemDaysSupply('');
-    showToast('تمت إضافة الدواء إلى ملفك الدوائي بنجاح');
+    showToast(t('تمت إضافة الدواء إلى ملفك الدوائي بنجاح'));
   };
 
   const handleRemoveReminder = (id: string) => {
     saveReminders(reminders.filter((r) => r.id !== id));
-    showToast('تم حذف التذكير');
+    showToast(t('تم حذف التذكير'));
   };
 
   const toggleReminderDay = (n: number) => {
@@ -395,11 +398,11 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const handleRxSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rxImage) {
-      showToast('يرجى اختيار صورة الروشتة أو تصويرها بالكامل.');
+      showToast(t('يرجى اختيار صورة الروشتة أو تصويرها بالكامل.'));
       return;
     }
     if (!rxPhone.trim()) {
-      showToast('يرجى إدخال رقم الهاتف للتواصل وحجز الروشتة.');
+      showToast(t('يرجى إدخال رقم الهاتف للتواصل وحجز الروشتة.'));
       return;
     }
     setRxUploading(true);
@@ -414,15 +417,15 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       await fetchPrescriptions();
       setRxImage(null);
       setRxNotes('');
-      showToast('تم حفظ وإرسال الروشتة للصيدلية بنجاح');
+      showToast(t('تم حفظ وإرسال الروشتة للصيدلية بنجاح'));
       if (settings.contact_whatsapp) {
         const text = encodeURIComponent(
-          `مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: ${rxPhone}\nالملاحظات: ${rxNotes || 'لا يوجد'}`
+          t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [rxPhone, rxNotes || t('لا يوجد')])
         );
         window.open(`https://wa.me/${settings.contact_whatsapp}?text=${text}`, '_blank');
       }
     } catch {
-      showToast('فشل رفع الروشتة، برجاء المحاولة مرة أخرى');
+      showToast(t('فشل رفع الروشتة، برجاء المحاولة مرة أخرى'));
     } finally {
       setRxUploading(false);
     }
@@ -436,7 +439,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const handleAddAddress = (e: React.FormEvent) => {
     e.preventDefault();
     if (!addrTitle.trim() || !addrText.trim()) {
-      showToast('يرجى إدخال اسم العنوان وتفاصيله.');
+      showToast(t('يرجى إدخال اسم العنوان وتفاصيله.'));
       return;
     }
     const rec: AddressRecord = {
@@ -448,7 +451,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     saveAddresses([rec, ...addresses]);
     setAddrTitle('');
     setAddrText('');
-    showToast('تم حفظ العنوان بنجاح');
+    showToast(t('تم حفظ العنوان بنجاح'));
   };
 
   const handleDeleteAddress = (id: string) => {
@@ -459,16 +462,16 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     try {
       await deletePrescription(rx.id, rx.image_url);
       await fetchPrescriptions();
-      showToast('تم حذف الروشتة');
+      showToast(t('تم حذف الروشتة'));
     } catch {
-      showToast('فشل حذف الروشتة');
+      showToast(t('فشل حذف الروشتة'));
     }
   };
 
   const handleResendPrescription = (rx: Prescription) => {
     if (!settings.contact_whatsapp) return;
     const text = encodeURIComponent(
-      `مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: ${rx.phone}\nالملاحظات: ${rx.notes || 'لا يوجد'}`
+      t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [rx.phone, rx.notes || t('لا يوجد')])
     );
     window.open(`https://wa.me/${settings.contact_whatsapp}?text=${text}`, '_blank');
   };
@@ -477,7 +480,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      showToast('حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.');
+      showToast(t('حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.'));
       return;
     }
     const reader = new FileReader();
@@ -500,31 +503,31 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
           >
             <User className="w-8 h-8" style={{ color: themeColors.primaryColor }} />
           </div>
-          <h1 className="text-xl font-black text-gray-900 mb-2">سجّل دخولك لمتابعة حسابك</h1>
+          <h1 className="text-xl font-black text-gray-900 mb-2">{t('سجّل دخولك لمتابعة حسابك')}</h1>
           <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-            تابع طلباتك وروشتاتك المحفوظة وعناوينك وأدويتك وصيدلياتك المفضلة من مكان واحد.
+            {t('تابع طلباتك وروشتاتك المحفوظة وعناوينك وأدويتك وصيدلياتك المفضلة من مكان واحد.')}
           </p>
           <button
             onClick={() => setAuthModalOpen(true)}
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-bold shadow-lg transition-all hover:scale-[1.01] active:scale-95"
             style={{ backgroundColor: themeColors.primaryColor, boxShadow: `0 8px 20px -6px ${themeColors.primaryColor}88` }}
           >
-            تسجيل الدخول / إنشاء حساب
+            {t('تسجيل الدخول / إنشاء حساب')}
           </button>
         </div>
       </div>
     );
   }
 
-  const initial = (profile?.full_name || user.email || 'عميل').charAt(0).toUpperCase();
+  const initial = (profile?.full_name || user.email || t('عميل')).charAt(0).toUpperCase();
 
   const tabs: { id: AccountTab; label: string; icon: React.ReactNode; count: number }[] = [
-    { id: 'orders', label: 'طلباتي ومتابعة الشحنات', icon: <PackageCheck className="w-4 h-4" />, count: activeOrdersCount },
-    { id: 'prescriptions', label: 'الروشتات المحفوظة', icon: <FileText className="w-4 h-4" />, count: prescriptions.length },
-    ...(loyaltyConfig.enabled ? [{ id: 'rewards' as AccountTab, label: 'نقاطي ومكافآتي', icon: <Sparkles className="w-4 h-4" />, count: loyaltyPoints }] : []),
-    ...(featuresConfig.reminders ? [{ id: 'reminders' as AccountTab, label: 'الملف الدوائي', icon: <Bell className="w-4 h-4" />, count: reminders.length }] : []),
-    { id: 'addresses', label: 'العناوين المسجلة', icon: <MapPin className="w-4 h-4" />, count: addresses.length },
-    { id: 'favorites', label: 'المفضلة', icon: <Heart className="w-4 h-4" />, count: productFavoritesCount + pharmacyFavoritesCount },
+    { id: 'orders', label: t('طلباتي ومتابعة الشحنات'), icon: <PackageCheck className="w-4 h-4" />, count: activeOrdersCount },
+    { id: 'prescriptions', label: t('الروشتات المحفوظة'), icon: <FileText className="w-4 h-4" />, count: prescriptions.length },
+    ...(loyaltyConfig.enabled ? [{ id: 'rewards' as AccountTab, label: t('نقاطي ومكافآتي'), icon: <Sparkles className="w-4 h-4" />, count: loyaltyPoints }] : []),
+    ...(featuresConfig.reminders ? [{ id: 'reminders' as AccountTab, label: t('الملف الدوائي'), icon: <Bell className="w-4 h-4" />, count: reminders.length }] : []),
+    { id: 'addresses', label: t('العناوين المسجلة'), icon: <MapPin className="w-4 h-4" />, count: addresses.length },
+    { id: 'favorites', label: t('المفضلة'), icon: <Heart className="w-4 h-4" />, count: productFavoritesCount + pharmacyFavoritesCount },
   ];
 
   return (
@@ -550,7 +553,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
           className="relative flex items-center gap-2 text-white/85 hover:text-white text-xs font-bold mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          العودة للرئيسية
+          {t('العودة للرئيسية')}
         </button>
 
         <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
@@ -568,14 +571,14 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
             )}
             <div>
               <div className="flex items-center gap-1.5">
-                <h1 className="text-xl sm:text-2xl font-black">{profile?.full_name || 'عميل صيدليتي'}</h1>
+                <h1 className="text-xl sm:text-2xl font-black">{profile?.full_name || t('عميل صيدليتي')}</h1>
                 <ShieldCheck className="w-5 h-5 text-teal-200" />
               </div>
               <p className="text-xs text-white/80 font-medium mt-0.5" dir="ltr">{user.email}</p>
               {loyaltyConfig.enabled && (
                 <div className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm text-[11px] font-bold text-amber-200">
                   <Sparkles className="w-3 h-3" />
-                  نقاط المكافآت: {loyaltyPoints} نقطة
+                  {t('نقاط المكافآت: {0} نقطة', [loyaltyPoints])}
                 </div>
               )}
             </div>
@@ -587,7 +590,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-bold transition-colors"
             >
               <LogOut className="w-4 h-4" />
-              تسجيل الخروج
+              {t('تسجيل الخروج')}
             </button>
           </div>
         </div>
@@ -596,10 +599,10 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       {/* ===== Quick stats ===== */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { icon: <PackageCheck className="w-5 h-5" />, value: `${orders.length}`, label: 'إجمالي الطلبات', color: themeColors.primaryColor },
-          { icon: <Truck className="w-5 h-5" />, value: `${activeOrdersCount}`, label: 'طلبات نشطة', color: themeColors.secondaryColor },
-          { icon: <FileText className="w-5 h-5" />, value: `${prescriptions.length}`, label: 'روشتات محفوظة', color: themeColors.accentColor },
-          { icon: <Heart className="w-5 h-5" />, value: `${productFavoritesCount + pharmacyFavoritesCount}`, label: 'عنصر مفضل', color: '#ec4899' },
+          { icon: <PackageCheck className="w-5 h-5" />, value: `${orders.length}`, label: t('إجمالي الطلبات'), color: themeColors.primaryColor },
+          { icon: <Truck className="w-5 h-5" />, value: `${activeOrdersCount}`, label: t('طلبات نشطة'), color: themeColors.secondaryColor },
+          { icon: <FileText className="w-5 h-5" />, value: `${prescriptions.length}`, label: t('روشتات محفوظة'), color: themeColors.accentColor },
+          { icon: <Heart className="w-5 h-5" />, value: `${productFavoritesCount + pharmacyFavoritesCount}`, label: t('عنصر مفضل'), color: '#ec4899' },
         ].map((stat, i) => (
           <div key={i} className="bg-white rounded-3xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow">
             <div
@@ -647,8 +650,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       {tab === 'orders' && (
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">طلباتي ومتابعة الشحنات</h2>
-            <span className="text-xs font-bold text-gray-500">{orders.length} طلب</span>
+            <h2 className="text-lg font-black text-gray-900">{t('طلباتي ومتابعة الشحنات')}</h2>
+            <span className="text-xs font-bold text-gray-500">{t('{0} طلب', [orders.length])}</span>
           </div>
 
           {ordersLoading ? (
@@ -665,15 +668,15 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               >
                 <PackageCheck className="w-8 h-8" style={{ color: themeColors.primaryColor }} />
               </div>
-              <h3 className="font-black text-gray-900 text-base mb-1">لا توجد طلبات بعد</h3>
-              <p className="text-sm text-gray-500 mb-5">ابدأ بطلب أدويتك وسيظهر هنا سجل طلباتك ومتابعة الشحنات.</p>
+              <h3 className="font-black text-gray-900 text-base mb-1">{t('لا توجد طلبات بعد')}</h3>
+              <p className="text-sm text-gray-500 mb-5">{t('ابدأ بطلب أدويتك وسيظهر هنا سجل طلباتك ومتابعة الشحنات.')}</p>
               <button
                 onClick={() => navigate({ name: 'home' })}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white text-sm font-bold shadow-md hover:scale-[1.02] active:scale-95 transition-all"
                 style={{ backgroundColor: themeColors.primaryColor }}
               >
                 <Search className="w-4 h-4" />
-                ابحث عن دوائك الآن
+                {t('ابحث عن دوائك الآن')}
               </button>
             </div>
           ) : (
@@ -694,15 +697,15 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="font-black text-gray-900">{product?.name || 'منتج'}</p>
+                          <p className="font-black text-gray-900">{product?.name || t('منتج')}</p>
                           <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                             <Store className="w-3.5 h-3.5" />
-                            {order.pharmacy?.name || 'صيدلية'}
+                            {order.pharmacy?.name || t('صيدلية')}
                           </p>
                         </div>
                         <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold border ${meta.className}`}>
                           {meta.icon}
-                          {meta.label}
+                          {t(meta.label)}
                         </span>
                       </div>
 
@@ -711,11 +714,11 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                       <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-xs text-gray-500">
                         <span className="flex items-center gap-1.5">
                           <Tag className="w-3.5 h-3.5" />
-                          الكمية: <strong className="text-gray-800">{order.quantity}</strong>
+                          {t('الكمية:')} <strong className="text-gray-800">{order.quantity}</strong>
                         </span>
                         <span className="flex items-center gap-1.5">
                           <MapPin className="w-3.5 h-3.5" />
-                          {order.address || 'عنوان التوصيل غير محدد'}
+                          {order.address || t('عنوان التوصيل غير محدد')}
                         </span>
                         {order.note && (
                           <span className="flex items-center gap-1.5">
@@ -726,9 +729,9 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                         {order.payment_method && (
                           <span className="flex items-center gap-1.5">
                             <Wallet className="w-3.5 h-3.5" />
-                            الدفع:
+                            {t('الدفع:')}
                             <strong className="text-gray-800">
-                              {order.payment_method === 'instapay' ? 'انستا باي' : order.payment_method === 'vodafone_cash' ? 'فودافون كاش' : order.payment_method}
+                              {order.payment_method === 'instapay' ? t('انستا باي') : order.payment_method === 'vodafone_cash' ? t('فودافون كاش') : order.payment_method}
                             </strong>
                             {order.payment_screenshot_url && (
                               <a
@@ -738,7 +741,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                                 className="text-[11px] font-extrabold px-2 py-0.5 rounded-full text-white hover:brightness-110 transition-all"
                                 style={{ backgroundColor: themeColors.primaryColor }}
                               >
-                                إثبات التحويل
+                                {t('إثبات التحويل')}
                               </a>
                             )}
                           </span>
@@ -753,7 +756,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                     <div className="sm:mr-auto flex sm:flex-col sm:items-end items-center gap-3 justify-between">
                       <div>
                         <p className="text-xl font-black text-gray-900">{Number(order.total_price).toFixed(2)}</p>
-                        <p className="text-[11px] font-bold text-gray-400">ج.م</p>
+                        <p className="text-[11px] font-bold text-gray-400">{t('ج.م')}</p>
                       </div>
                       <div className="flex items-center gap-2 sm:flex-col sm:items-end">
                         {order.status === 'delivered' && (
@@ -763,7 +766,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                             style={{ backgroundColor: themeColors.accentColor, color: '#ffffff' }}
                           >
                             <Star className="w-3.5 h-3.5 fill-white" />
-                            قيّم طلبك
+                            {t('قيّم طلبك')}
                           </button>
                         )}
                         {product && (
@@ -772,7 +775,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                             className="px-4 py-2 rounded-xl text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-95 transition-all"
                             style={{ backgroundColor: themeColors.primaryColor }}
                           >
-                            اطلب مرة أخرى
+                            {t('اطلب مرة أخرى')}
                           </button>
                         )}
                       </div>
@@ -789,12 +792,12 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
         <OrderReviewModal
           orderId={reviewOrder.id}
           pharmacyId={reviewOrder.pharmacy_id}
-          pharmacyName={reviewOrder.pharmacy?.name || 'الصيدلية'}
-          productName={reviewOrder.product?.name || 'منتج'}
+          pharmacyName={reviewOrder.pharmacy?.name || t('الصيدلية')}
+          productName={reviewOrder.product?.name || t('منتج')}
           onClose={() => setReviewOrder(null)}
           onSubmitted={() => {
             setReviewOrder(null);
-            showToast('شكراً لك! تم نشر تقييمك بنجاح');
+            showToast(t('شكراً لك! تم نشر تقييمك بنجاح'));
           }}
         />
       )}
@@ -803,8 +806,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       {tab === 'prescriptions' && (
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">الروشتات المحفوظة</h2>
-            <span className="text-xs font-bold text-gray-500">{prescriptions.length} روشتة</span>
+            <h2 className="text-lg font-black text-gray-900">{t('الروشتات المحفوظة')}</h2>
+            <span className="text-xs font-bold text-gray-500">{t('{0} روشتة', [prescriptions.length])}</span>
           </div>
 
           {/* Add new prescription */}
@@ -819,12 +822,12 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               >
                 <FileText className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
               </div>
-              <h3 className="font-black text-gray-900 text-sm">حفظ روشتة جديدة</h3>
+              <h3 className="font-black text-gray-900 text-sm">{t('حفظ روشتة جديدة')}</h3>
             </div>
 
             {rxImage ? (
               <div className="relative rounded-2xl overflow-hidden border-2 max-h-64 bg-slate-900 flex items-center justify-center" style={{ borderColor: themeColors.primaryColor }}>
-                <img src={rxImage} alt="روشتة" className="max-h-64 w-auto object-contain mx-auto" />
+                <img src={rxImage} alt={t('روشتة')} className="max-h-64 w-auto object-contain mx-auto" />
                 <button
                   type="button"
                   onClick={() => setRxImage(null)}
@@ -842,8 +845,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   <Camera className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-800">اضغط هنا لالتقاط صورة أو رفع الروشتة</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">يدعم صور JPG, PNG حتى 5MB</p>
+                  <p className="text-xs font-bold text-gray-800">{t('اضغط هنا لالتقاط صورة أو رفع الروشتة')}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5">{t('يدعم صور JPG, PNG حتى 5MB')}</p>
                 </div>
                 <input type="file" accept="image/*" className="hidden" onChange={handleRxImageUpload} />
               </label>
@@ -856,7 +859,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   type="tel"
                   value={rxPhone}
                   onChange={(e) => setRxPhone(e.target.value)}
-                  placeholder="رقم الهاتف للتواصل"
+                  placeholder={t('رقم الهاتف للتواصل')}
                   dir="ltr"
                   className="w-full pr-10 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
                   style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
@@ -866,7 +869,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 type="text"
                 value={rxNotes}
                 onChange={(e) => setRxNotes(e.target.value)}
-                placeholder="ملاحظات إضافية للصيدلي (اختياري)"
+                placeholder={t('ملاحظات إضافية للصيدلي (اختياري)')}
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
               />
@@ -881,12 +884,12 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               {rxUploading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  جاري رفع الروشتة...
+                  {t('جاري رفع الروشتة...')}
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  حفظ وإرسال الروشتة للصيدلية
+                  {t('حفظ وإرسال الروشتة للصيدلية')}
                 </>
               )}
             </button>
@@ -907,8 +910,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               >
                 <FileText className="w-8 h-8" style={{ color: themeColors.primaryColor }} />
               </div>
-              <h3 className="font-black text-gray-900 text-base mb-1">لا توجد روشتات محفوظة</h3>
-              <p className="text-sm text-gray-500">ارفع روشتتك أعلاه وسيتم حفظها هنا لسهولة الوصول إليها لاحقاً.</p>
+              <h3 className="font-black text-gray-900 text-base mb-1">{t('لا توجد روشتات محفوظة')}</h3>
+              <p className="text-sm text-gray-500">{t('ارفع روشتتك أعلاه وسيتم حفظها هنا لسهولة الوصول إليها لاحقاً.')}</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -917,7 +920,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 return (
                   <div key={rx.id} className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                     <div className="h-36 bg-slate-900 relative flex items-center justify-center">
-                      <img src={rx.image_url} alt="روشتة" className="max-h-36 w-auto object-contain" />
+                      <img src={rx.image_url} alt={t('روشتة')} className="max-h-36 w-auto object-contain" />
                       <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold border border-white/20">
                         <Clock className="w-3 h-3" />
                         {new Date(rx.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}
@@ -942,12 +945,12 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                           style={{ backgroundColor: themeColors.primaryColor }}
                         >
                           <Send className="w-3.5 h-3.5" />
-                          إرسال واتساب
+                          {t('إرسال واتساب')}
                         </button>
                         <button
                           onClick={() => handleDeletePrescription(rx)}
                           className="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors"
-                          title="حذف الروشتة"
+                          title={t('حذف الروشتة')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -965,8 +968,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       {tab === 'rewards' && (
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">نقاطي ومكافآتي</h2>
-            <span className="text-xs font-bold text-gray-500">{loyaltyPoints} نقطة متاحة</span>
+            <h2 className="text-lg font-black text-gray-900">{t('نقاطي ومكافآتي')}</h2>
+            <span className="text-xs font-bold text-gray-500">{t('{0} نقطة متاحة', [loyaltyPoints])}</span>
           </div>
 
           {/* Balance hero */}
@@ -983,15 +986,15 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <Sparkles className="w-8 h-8 text-white" />
               </div>
               <div className="flex-1">
-                <p className="text-xs font-bold text-amber-100 mb-1">رصيد نقاط المكافآت</p>
+                <p className="text-xs font-bold text-amber-100 mb-1">{t('رصيد نقاط المكافآت')}</p>
                 <p className="text-4xl font-black leading-none">{loyaltyPoints}</p>
                 <p className="text-xs font-bold text-amber-100 mt-1.5">
-                  أكمل {Math.max(0, loyaltyConfig.redeemThreshold - loyaltyPoints)} نقطة إضافية لتحصل على خصم {loyaltyConfig.redeemValue} ج.م على طلبك القادم
+                  {t('أكمل {0} نقطة إضافية لتحصل على خصم {1} ج.م على طلبك القادم', [Math.max(0, loyaltyConfig.redeemThreshold - loyaltyPoints), loyaltyConfig.redeemValue])}
                 </p>
               </div>
               <div className="sm:mr-auto bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20 text-center">
-                <p className="text-[10px] font-bold text-amber-100 mb-0.5">كل {loyaltyConfig.pointsPerPound} ج.م =</p>
-                <p className="text-lg font-black">1 نقطة</p>
+                <p className="text-[10px] font-bold text-amber-100 mb-0.5">{t('كل {0} ج.م =', [loyaltyConfig.pointsPerPound])}</p>
+                <p className="text-lg font-black">{t('1 نقطة')}</p>
               </div>
             </div>
           </div>
@@ -1003,8 +1006,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <PackageCheck className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-black text-gray-900">{loyaltyConfig.pointsPerOrder} نقاط لكل طلب</p>
-                <p className="text-xs text-gray-500 mt-0.5">احصل عليها تلقائياً بعد تأكيد أي طلب جديد</p>
+                <p className="text-sm font-black text-gray-900">{t('{0} نقاط لكل طلب', [loyaltyConfig.pointsPerOrder])}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{t('احصل عليها تلقائياً بعد تأكيد أي طلب جديد')}</p>
               </div>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
@@ -1012,20 +1015,20 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <Wallet className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-sm font-black text-gray-900">{loyaltyConfig.redeemThreshold} نقطة = خصم {loyaltyConfig.redeemValue} ج.م</p>
-                <p className="text-xs text-gray-500 mt-0.5">استبدل نقاطك بخصومات فورية عند الطلب</p>
+                <p className="text-sm font-black text-gray-900">{t('{0} نقطة = خصم {1} ج.م', [loyaltyConfig.redeemThreshold, loyaltyConfig.redeemValue])}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{t('استبدل نقاطك بخصومات فورية عند الطلب')}</p>
               </div>
             </div>
           </div>
 
           {/* History */}
           <div>
-            <h3 className="text-sm font-black text-gray-900 mb-3">سجل النقاط</h3>
+            <h3 className="text-sm font-black text-gray-900 mb-3">{t('سجل النقاط')}</h3>
             {loyaltyHistory.length === 0 ? (
               <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
                 <Sparkles className="w-10 h-10 mx-auto text-amber-300 mb-3" />
-                <h4 className="font-black text-gray-900 text-sm mb-1">لا توجد نقاط مكتسبة بعد</h4>
-                <p className="text-xs text-gray-500">اطلب أي منتج وسيتم إضافة {loyaltyConfig.pointsPerOrder} نقطة لرصيدك تلقائياً.</p>
+                <h4 className="font-black text-gray-900 text-sm mb-1">{t('لا توجد نقاط مكتسبة بعد')}</h4>
+                <p className="text-xs text-gray-500">{t('اطلب أي منتج وسيتم إضافة {0} نقطة لرصيدك تلقائياً.', [loyaltyConfig.pointsPerOrder])}</p>
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -1058,15 +1061,15 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       {tab === 'reminders' && (
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">الملف الدوائي</h2>
-            <span className="text-xs font-bold text-gray-500">{reminders.length} دواء في ملفك</span>
+            <h2 className="text-lg font-black text-gray-900">{t('الملف الدوائي')}</h2>
+            <span className="text-xs font-bold text-gray-500">{t('{0} دواء في ملفك', [reminders.length])}</span>
           </div>
 
           {permDenied && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
               <Bell className="w-5 h-5 text-amber-600 shrink-0" />
               <p className="text-xs font-bold text-amber-800">
-                الإشعارات معطلة في المتصفح. فعّل الإشعارات من إعدادات المتصفح لتستقبل تذكيرات مواعيد الأدوية وتنبيهات قرب النفاد.
+                {t('الإشعارات معطلة في المتصفح. فعّل الإشعارات من إعدادات المتصفح لتستقبل تذكيرات مواعيد الأدوية وتنبيهات قرب النفاد.')}
               </p>
             </div>
           )}
@@ -1077,32 +1080,32 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}>
                 <Plus className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-sm font-black text-gray-900">إضافة دواء لملفك الدوائي</h3>
+              <h3 className="text-sm font-black text-gray-900">{t('إضافة دواء لملفك الدوائي')}</h3>
             </div>
             <form onSubmit={handleAddReminder} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">اسم الدواء *</label>
+                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('اسم الدواء *')}</label>
                   <input
                     value={remName}
                     onChange={(e) => setRemName(e.target.value)}
-                    placeholder="مثال: بانادول أقراص"
+                    placeholder={t('مثال: بانادول أقراص')}
                     className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">الجرعة (اختياري)</label>
+                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('الجرعة (اختياري)')}</label>
                   <input
                     value={remDose}
                     onChange={(e) => setRemDose(e.target.value)}
-                    placeholder="مثال: قرص واحد"
+                    placeholder={t('مثال: قرص واحد')}
                     className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">موعد الجرعة *</label>
+                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('موعد الجرعة *')}</label>
                   <input
                     type="time"
                     value={remTime}
@@ -1112,7 +1115,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">أيام الأسبوع</label>
+                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('أيام الأسبوع')}</label>
                   <div className="flex flex-wrap gap-1.5">
                     {WEEKDAYS.map((d) => {
                       const active = remDays.includes(d.n);
@@ -1128,32 +1131,32 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                           }`}
                           style={active ? { backgroundColor: themeColors.primaryColor } : {}}
                         >
-                          {d.label}
+                          {t(d.label)}
                         </button>
                       );
                     })}
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">كم يوماً سيكفي الدواء؟</label>
+                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('كم يوماً سيكفي الدواء؟')}</label>
                   <input
                     type="number"
                     min="1"
                     value={remDaysSupply}
                     onChange={(e) => setRemDaysSupply(e.target.value)}
-                    placeholder="مثال: 15"
+                    placeholder={t('مثال: 15')}
                     dir="ltr"
                     className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
                   />
-                  <p className="text-[10px] text-gray-400 font-medium mt-1">سنذكّرك عندما يقترب الدواء من النفاد</p>
+                  <p className="text-[10px] text-gray-400 font-medium mt-1">{t('سنذكّرك عندما يقترب الدواء من النفاد')}</p>
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-600 mb-1.5 block">ملاحظة (اختياري)</label>
+                <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('ملاحظة (اختياري)')}</label>
                 <input
                   value={remNote}
                   onChange={(e) => setRemNote(e.target.value)}
-                  placeholder="مثال: بعد الأكل"
+                  placeholder={t('مثال: بعد الأكل')}
                   className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
                 />
               </div>
@@ -1163,19 +1166,19 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 style={{ backgroundColor: themeColors.primaryColor }}
               >
                 <Bell className="w-4 h-4" />
-                إضافة إلى الملف الدوائي
+                {t('إضافة إلى الملف الدوائي')}
               </button>
             </form>
           </div>
 
           {/* Medication list */}
           <div>
-            <h3 className="text-sm font-black text-gray-900 mb-3">أدويتك ({reminders.length})</h3>
+            <h3 className="text-sm font-black text-gray-900 mb-3">{t('أدويتك ({0})', [reminders.length])}</h3>
             {reminders.length === 0 ? (
               <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
                 <Bell className="w-10 h-10 mx-auto text-gray-300 mb-3" />
-                <h4 className="font-black text-gray-900 text-sm mb-1">لا توجد أدوية في ملفك</h4>
-                <p className="text-xs text-gray-500">أضف أدويتك الدورية وسنذكّرك بمواعيدها وعند اقترابها من النفاد.</p>
+                <h4 className="font-black text-gray-900 text-sm mb-1">{t('لا توجد أدوية في ملفك')}</h4>
+                <p className="text-xs text-gray-500">{t('أضف أدويتك الدورية وسنذكّرك بمواعيدها وعند اقترابها من النفاد.')}</p>
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -1198,20 +1201,20 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-black text-gray-900">{r.name}</p>
                             {dueSoon && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-600">استُحق موعده اليوم</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-600">{t('استُحق موعده اليوم')}</span>
                             )}
                             {runOut.status === 'out' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-600">انتهى الدواء</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-600">{t('انتهى الدواء')}</span>
                             )}
                             {runOut.status === 'soon' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-700">قرب النفاد ({runOut.daysLeft} يوم)</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-700">{t('قرب النفاد ({0} يوم)', [runOut.daysLeft!])}</span>
                             )}
                             {runOut.status === 'ok' && runOut.daysLeft != null && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-700">متبقي {runOut.daysLeft} يوم</span>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-700">{t('متبقي {0} يوم', [runOut.daysLeft])}</span>
                             )}
                           </div>
                           <p className="text-[11px] text-gray-500 font-bold mt-0.5">
-                            {r.dosage ? `${r.dosage} • ` : ''}يومياً في {r.time}
+                            {r.dosage ? `${r.dosage} • ` : ''}{t('يومياً في {0}', [r.time])}
                             {r.note ? ` • ${r.note}` : ''}
                           </p>
                           <div className="flex flex-wrap gap-1 mt-1.5">
@@ -1225,7 +1228,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                                 }`}
                                 style={r.days.includes(new Date().getDay()) && s === dayNames[new Date().getDay()] ? { backgroundColor: themeColors.primaryColor } : {}}
                               >
-                                {s}
+                                {t(s)}
                               </span>
                             ))}
                           </div>
@@ -1233,7 +1236,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                         <button
                           onClick={() => handleRemoveReminder(r.id)}
                           className="shrink-0 w-9 h-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-all active:scale-90"
-                          title="حذف الدواء من الملف"
+                          title={t('حذف الدواء من الملف')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1250,8 +1253,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       {tab === 'addresses' && (
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">العناوين المسجلة</h2>
-            <span className="text-xs font-bold text-gray-500">{addresses.length} عنوان</span>
+            <h2 className="text-lg font-black text-gray-900">{t('العناوين المسجلة')}</h2>
+            <span className="text-xs font-bold text-gray-500">{t('{0} عنوان', [addresses.length])}</span>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-4">
@@ -1264,14 +1267,14 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 >
                   <MapPin className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
                 </div>
-                <h3 className="font-black text-gray-900 text-sm">إضافة عنوان جديد</h3>
+                <h3 className="font-black text-gray-900 text-sm">{t('إضافة عنوان جديد')}</h3>
               </div>
 
               <input
                 type="text"
                 value={addrTitle}
                 onChange={(e) => setAddrTitle(e.target.value)}
-                placeholder="اسم العنوان (مثال: المنزل، العمل)"
+                placeholder={t('اسم العنوان (مثال: المنزل، العمل)')}
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
               />
@@ -1279,7 +1282,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 value={addrText}
                 onChange={(e) => setAddrText(e.target.value)}
                 rows={2}
-                placeholder="العنوان بالتفصيل (المنطقة، الشارع، رقم العمارة)"
+                placeholder={t('العنوان بالتفصيل (المنطقة، الشارع، رقم العمارة)')}
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 resize-none"
                 style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
               />
@@ -1287,7 +1290,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 type="tel"
                 value={addrPhone}
                 onChange={(e) => setAddrPhone(e.target.value)}
-                placeholder="رقم الهاتف (اختياري)"
+                placeholder={t('رقم الهاتف (اختياري)')}
                 dir="ltr"
                 className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
@@ -1299,7 +1302,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 style={{ backgroundColor: themeColors.primaryColor }}
               >
                 <Plus className="w-4 h-4" />
-                حفظ العنوان
+                {t('حفظ العنوان')}
               </button>
             </form>
 
@@ -1313,8 +1316,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   >
                     <MapPin className="w-8 h-8" style={{ color: themeColors.primaryColor }} />
                   </div>
-                  <h3 className="font-black text-gray-900 text-base mb-1">لا توجد عناوين مسجلة</h3>
-                  <p className="text-sm text-gray-500">أضف عناوينك المفضلة للتوصيل لتظهر هنا.</p>
+                  <h3 className="font-black text-gray-900 text-base mb-1">{t('لا توجد عناوين مسجلة')}</h3>
+                  <p className="text-sm text-gray-500">{t('أضف عناوينك المفضلة للتوصيل لتظهر هنا.')}</p>
                 </div>
               ) : (
                 addresses.map((addr) => (
@@ -1337,7 +1340,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                     <button
                       onClick={() => handleDeleteAddress(addr.id)}
                       className="w-8 h-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors shrink-0"
-                      title="حذف العنوان"
+                      title={t('حذف العنوان')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1353,9 +1356,9 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       {tab === 'favorites' && (
         <div className="space-y-6 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">مفضلتي</h2>
+            <h2 className="text-lg font-black text-gray-900">{t('مفضلتي')}</h2>
             <span className="text-xs font-bold text-gray-500">
-              {productFavoritesCount} دواء · {pharmacyFavoritesCount} صيدلية
+              {t('{0} دواء · {1} صيدلية', [productFavoritesCount, pharmacyFavoritesCount])}
             </span>
           </div>
 
@@ -1368,7 +1371,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               >
                 <Pill className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
               </div>
-              <h3 className="font-black text-gray-900 text-sm">الأدوية المفضلة</h3>
+              <h3 className="font-black text-gray-900 text-sm">{t('الأدوية المفضلة')}</h3>
               <span className="px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 text-[10px] font-extrabold">
                 {productFavoritesCount}
               </span>
@@ -1383,9 +1386,9 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
             ) : favProducts.length === 0 ? (
               <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
                 <Heart className="w-10 h-10 mx-auto text-pink-300 mb-3" />
-                <h4 className="font-black text-gray-900 text-sm mb-1">لا توجد أدوية مفضلة بعد</h4>
+                <h4 className="font-black text-gray-900 text-sm mb-1">{t('لا توجد أدوية مفضلة بعد')}</h4>
                 <p className="text-xs text-gray-500">
-                  اضغط على علامة القلب ♥ بجانب أي دواء لإضافته إلى مفضلتك هنا.
+                  {t('اضغط على علامة القلب ♥ بجانب أي دواء لإضافته إلى مفضلتك هنا.')}
                 </p>
               </div>
             ) : (
@@ -1411,7 +1414,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               >
                 <Store className="w-4 h-4" style={{ color: themeColors.secondaryColor }} />
               </div>
-              <h3 className="font-black text-gray-900 text-sm">الصيدليات المفضلة</h3>
+              <h3 className="font-black text-gray-900 text-sm">{t('الصيدليات المفضلة')}</h3>
               <span className="px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 text-[10px] font-extrabold">
                 {pharmacyFavoritesCount}
               </span>
@@ -1426,9 +1429,9 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
             ) : favPharmacies.length === 0 ? (
               <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
                 <Store className="w-10 h-10 mx-auto text-gray-300 mb-3" />
-                <h4 className="font-black text-gray-900 text-sm mb-1">لا توجد صيدليات مفضلة بعد</h4>
+                <h4 className="font-black text-gray-900 text-sm mb-1">{t('لا توجد صيدليات مفضلة بعد')}</h4>
                 <p className="text-xs text-gray-500">
-                  اضغط على علامة القلب ♥ بجانب أي صيدلية لإضافتها إلى مفضلتك هنا.
+                  {t('اضغط على علامة القلب ♥ بجانب أي صيدلية لإضافتها إلى مفضلتك هنا.')}
                 </p>
               </div>
             ) : (

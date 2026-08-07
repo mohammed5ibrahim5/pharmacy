@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import { RouterProvider, useRouter } from '@/context/RouterContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { CustomerProvider } from '@/context/CustomerContext';
@@ -102,28 +103,32 @@ function AppContent() {
 
   if (isAdmin) {
     return (
-      <AuthProvider>
-        <SettingsProvider>
-          <SiteLoading />
-          <AdminRoute />
-        </SettingsProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <SettingsProvider>
+            <SiteLoading />
+            <AdminRoute />
+          </SettingsProvider>
+        </AuthProvider>
+      </LanguageProvider>
     );
   }
 
   return (
-    <SettingsProvider>
-      <RouterProvider>
-        <SiteLoading />
-        <CustomerProvider>
-          <FavoritesProvider>
-            <OrderProvider>
-              <SiteContent />
-            </OrderProvider>
-          </FavoritesProvider>
-        </CustomerProvider>
-      </RouterProvider>
-    </SettingsProvider>
+    <LanguageProvider>
+      <SettingsProvider>
+        <RouterProvider>
+          <SiteLoading />
+          <CustomerProvider>
+            <FavoritesProvider>
+              <OrderProvider>
+                <SiteContent />
+              </OrderProvider>
+            </FavoritesProvider>
+          </CustomerProvider>
+        </RouterProvider>
+      </SettingsProvider>
+    </LanguageProvider>
   );
 }
 

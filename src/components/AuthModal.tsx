@@ -3,6 +3,7 @@ import { X, Mail, Lock, User, Eye, EyeOff, Loader2, AlertCircle, Cross, Phone, C
 import { useCustomer } from '@/context/CustomerContext';
 import { useSettings } from '@/context/SettingsContext';
 import { translateError } from '@/lib/errorMessages';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Props {
   open: boolean;
@@ -12,6 +13,7 @@ interface Props {
 export function AuthModal({ open, onClose }: Props) {
   const { signIn, signUp } = useCustomer();
   const { themeColors } = useSettings();
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,7 +32,7 @@ export function AuthModal({ open, onClose }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      setError('حجم الصورة يجب أن يكون أقل من 2MB');
+      setError(t('حجم الصورة يجب أن يكون أقل من 2MB'));
       return;
     }
     const reader = new FileReader();
@@ -42,8 +44,8 @@ export function AuthModal({ open, onClose }: Props) {
     e.preventDefault();
     setError(null);
     if (mode === 'signup') {
-      if (!name.trim()) { setError('يرجى إدخال الاسم'); return; }
-      if (!phone.trim()) { setError('يرجى إدخال رقم الهاتف'); return; }
+      if (!name.trim()) { setError(t('يرجى إدخال الاسم')); return; }
+      if (!phone.trim()) { setError(t('يرجى إدخال رقم الهاتف')); return; }
     }
     setLoading(true);
     try {
@@ -53,14 +55,14 @@ export function AuthModal({ open, onClose }: Props) {
           : await signUp(email, password, name.trim(), phone.trim(), avatar);
       if (res.error) {
         const msg = res.error.includes('Invalid login')
-          ? 'عذراً، بيانات الدخول غير صحيحة'
+          ? t('عذراً، بيانات الدخول غير صحيحة')
           : res.error;
         setError(msg);
         return;
       }
       onClose();
     } catch {
-      setError('حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى');
+      setError(t('حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى'));
     } finally {
       setLoading(false);
     }
@@ -81,7 +83,7 @@ export function AuthModal({ open, onClose }: Props) {
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white"
-            aria-label="إغلاق"
+            aria-label={t('إغلاق')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -91,10 +93,10 @@ export function AuthModal({ open, onClose }: Props) {
               <Cross className="w-8 h-8 text-white" strokeWidth={2.5} />
             </div>
             <h2 className="text-xl font-extrabold text-white">
-              {mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
+              {mode === 'login' ? t('تسجيل الدخول') : t('إنشاء حساب جديد')}
             </h2>
             <p className="text-white/80 text-sm mt-1">
-              {mode === 'login' ? 'أهلاً بعودتك! سجل دخولك للمتابعة' : 'انضم إلينا لتتمكن من طلب المنتجات'}
+              {mode === 'login' ? t('أهلاً بعودتك! سجل دخولك للمتابعة') : t('انضم إلينا لتتمكن من طلب المنتجات')}
             </p>
           </div>
         </div>
@@ -146,7 +148,7 @@ export function AuthModal({ open, onClose }: Props) {
                       <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                     </label>
                   </div>
-                  <p className="text-[11px] text-gray-400 mt-2">أضف صورة بروفيل (اختياري)</p>
+                  <p className="text-[11px] text-gray-400 mt-2">{t('أضف صورة بروفيل (اختياري)')}</p>
                   <div className="flex items-center gap-2 mt-2">
                     {!avatarLinkMode ? (
                       <button
@@ -154,7 +156,7 @@ export function AuthModal({ open, onClose }: Props) {
                         onClick={() => setAvatarLinkMode(true)}
                         className="flex items-center gap-1 text-[11px] font-bold text-gray-500 hover:text-gray-800 transition-colors"
                       >
-                        <Link2 className="w-3 h-3" /> أو ألصق رابط صورة
+                        <Link2 className="w-3 h-3" />{' '}{t('أو ألصق رابط صورة')}
                       </button>
                     ) : (
                       <div className="flex gap-1.5 w-full">
@@ -178,7 +180,7 @@ export function AuthModal({ open, onClose }: Props) {
                           className="px-3 py-1.5 rounded-lg text-white text-[11px] font-bold"
                           style={{ backgroundColor: themeColors.priceColor }}
                         >
-                          استخدام
+                          {t('استخدام')}
                         </button>
                       </div>
                     )}
@@ -186,7 +188,7 @@ export function AuthModal({ open, onClose }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">الاسم الكامل *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('الاسم الكامل *')}</label>
                   <div className="relative">
                     <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -196,13 +198,13 @@ export function AuthModal({ open, onClose }: Props) {
                       required
                       className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
                       style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
-                      placeholder="اسمك الكامل"
+                      placeholder={t('اسمك الكامل')}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">رقم الهاتف *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('رقم الهاتف *')}</label>
                   <div className="relative">
                     <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -222,7 +224,7 @@ export function AuthModal({ open, onClose }: Props) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">البريد الإلكتروني</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('البريد الإلكتروني')}</label>
                 <div className="relative">
                   <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -239,7 +241,7 @@ export function AuthModal({ open, onClose }: Props) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">كلمة المرور</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('كلمة المرور')}</label>
                 <div className="relative">
                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -269,20 +271,20 @@ export function AuthModal({ open, onClose }: Props) {
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 shadow-lg"
                 style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
               >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : mode === 'login' ? 'تسجيل الدخول' : 'إنشاء الحساب'}
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : mode === 'login' ? t('تسجيل الدخول') : t('إنشاء الحساب')}
               </button>
             </div>
           </form>
 
           <div className="mt-5 pt-5 border-t border-gray-100 text-center">
             <p className="text-sm text-gray-500">
-              {mode === 'login' ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟'}
+              {mode === 'login' ? t('ليس لديك حساب؟') : t('لديك حساب بالفعل؟')}
               <button
                 onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}
                 className="mr-1 font-semibold hover:underline"
                 style={{ color: themeColors.priceColor }}
               >
-                {mode === 'login' ? 'إنشاء حساب' : 'تسجيل الدخول'}
+                {mode === 'login' ? t('إنشاء حساب') : t('تسجيل الدخول')}
               </button>
             </p>
           </div>

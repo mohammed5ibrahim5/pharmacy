@@ -3,6 +3,7 @@ import { X, Scale, Store, Sparkles, Pill, TrendingDown, CheckCircle2, ShoppingCa
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
+import { useLanguage } from '@/context/LanguageContext';
 import type { Product } from '@/types';
 
 interface Props {
@@ -18,6 +19,7 @@ function finalPrice(p: Product): number {
 export function PriceCompareModal({ product, onClose }: Props) {
   const { themeColors, storeConfig } = useSettings();
   const { openOrder, addToCart, openCart } = useOrder();
+  const { t } = useLanguage();
   const [sameName, setSameName] = useState<Product[]>([]);
   const [alternatives, setAlternatives] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,12 +81,12 @@ export function PriceCompareModal({ product, onClose }: Props) {
           <p className="text-sm font-black text-gray-900 truncate">{p.name}</p>
           <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5 truncate">
             <Store className="w-3 h-3 shrink-0" style={{ color: themeColors.priceColor }} />
-            <span className="truncate">{p.pharmacy?.name || 'جميع الصيدليات'}</span>
+            <span className="truncate">{p.pharmacy?.name || t('جميع الصيدليات')}</span>
           </p>
         </div>
         <div className="text-left shrink-0">
           <p className="text-base font-black" style={{ color: themeColors.priceColor }}>
-            {fp.toFixed(2)} <span className="text-[10px] font-bold text-gray-400">ج.م</span>
+            {fp.toFixed(2)} <span className="text-[10px] font-bold text-gray-400">{t('ج.م')}</span>
           </p>
           {p.discounts?.some((d) => d.is_active) && (
             <p className="text-[10px] text-gray-400 line-through">{p.price.toFixed(2)}</p>
@@ -106,12 +108,12 @@ export function PriceCompareModal({ product, onClose }: Props) {
           {storeConfig.purchasesEnabled ? (
             <>
               <ShoppingCart className="w-3.5 h-3.5" />
-              أضف للسلة
+              {t('أضف للسلة')}
             </>
           ) : (
             <>
               <Phone className="w-3.5 h-3.5" />
-              تواصل
+              {t('تواصل')}
             </>
           )}
         </button>
@@ -132,7 +134,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
               <Scale className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-black" style={{ color: themeColors.modalHeaderText }}>قارن الأسعار</h2>
+              <h2 className="text-base font-black" style={{ color: themeColors.modalHeaderText }}>{t('قارن الأسعار')}</h2>
               <p className="text-[11px] font-bold truncate max-w-[220px] sm:max-w-sm" style={{ color: themeColors.modalBodyText }}>{product.name}</p>
             </div>
           </div>
@@ -153,11 +155,11 @@ export function PriceCompareModal({ product, onClose }: Props) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-black text-gray-900">السعر الحالي</p>
-              <p className="text-[11px] text-gray-500 font-bold">{product.pharmacy?.name || 'جميع الصيدليات'}</p>
+              <p className="text-[11px] text-gray-500 font-bold">{product.pharmacy?.name || t('جميع الصيدليات')}</p>
             </div>
             <div className="text-left shrink-0">
               <p className="text-lg font-black" style={{ color: themeColors.priceColor }}>
-                {currentFinal.toFixed(2)} <span className="text-[10px] font-bold text-gray-400">ج.م</span>
+                {currentFinal.toFixed(2)} <span className="text-[10px] font-bold text-gray-400">{t('ج.م')}</span>
               </p>
               {product.discounts?.some((d) => d.is_active) && (
                 <p className="text-[10px] text-gray-400 line-through">{product.price.toFixed(2)}</p>
@@ -178,11 +180,11 @@ export function PriceCompareModal({ product, onClose }: Props) {
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.priceColor}12` }}>
                   <Store className="w-4 h-4" style={{ color: themeColors.priceColor }} />
                 </div>
-                <h3 className="text-sm font-black text-gray-900">نفس الدواء في صيدليات أخرى ({sameName.length})</h3>
+                <h3 className="text-sm font-black text-gray-900">{t('نفس الدواء في صيدليات أخرى ({0})', [sameName.length])}</h3>
                 {cheapestSame && (
                   <span className="mr-auto flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 border border-teal-200 text-[10px] font-extrabold text-teal-700">
                     <TrendingDown className="w-3 h-3" />
-                    الأرخص {finalPrice(cheapestSame).toFixed(2)} ج.م
+                    {t('الأرخص {0} ج.م', [finalPrice(cheapestSame).toFixed(2)])}
                   </span>
                 )}
               </div>
@@ -197,7 +199,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
               <section>
                 <div className="flex items-center gap-2 mb-3">
                   <Store className="w-4 h-4 text-gray-400" />
-                  <h3 className="text-sm font-black text-gray-500">لا توجد صيدليات أخرى توفر نفس الدواء حالياً</h3>
+                  <h3 className="text-sm font-black text-gray-500">{t('لا توجد صيدليات أخرى توفر نفس الدواء حالياً')}</h3>
                 </div>
               </section>
             )
@@ -210,16 +212,16 @@ export function PriceCompareModal({ product, onClose }: Props) {
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.accentColor}12` }}>
                   <Sparkles className="w-4 h-4" style={{ color: themeColors.accentColor }} />
                 </div>
-                <h3 className="text-sm font-black text-gray-900">بدائل بنفس المادة الفعالة ({alternatives.length})</h3>
+                <h3 className="text-sm font-black text-gray-900">{t('بدائل بنفس المادة الفعالة ({0})', [alternatives.length])}</h3>
                 {cheapestAlt && (
                   <span className="mr-auto flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-extrabold text-amber-700">
                     <CheckCircle2 className="w-3 h-3" />
-                    البديل الأرخص {finalPrice(cheapestAlt).toFixed(2)} ج.م
+                    {t('البديل الأرخص {0} ج.م', [finalPrice(cheapestAlt).toFixed(2)])}
                   </span>
                 )}
               </div>
               <p className="text-[11px] text-gray-400 mb-3 font-bold">
-                بدائل تحتوي على نفس المادة الفعالة "{product.active_ingredient}" — استشر الصيدلي قبل التبديل.
+                {t('بدائل تحتوي على نفس المادة الفعالة "{0}" — استشر الصيدلي قبل التبديل.', [product.active_ingredient!])}
               </p>
               <div className="space-y-2">
                 {[...alternatives]

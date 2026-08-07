@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { loadLocalReminders, medicationRunOutInfo } from '@/lib/loyalty';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function ReminderScheduler() {
   const firedRef = useRef<Set<string>>(new Set());
   const { featuresConfig } = useSettings();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!featuresConfig.reminders) return;
@@ -25,8 +27,8 @@ export function ReminderScheduler() {
         const nowMin = now.getHours() * 60 + now.getMinutes();
         if (nowMin >= dueMin && nowMin <= dueMin + 2) {
           firedRef.current.add(key);
-          new Notification('تذكير بأخذ الدواء 💊', {
-            body: `${r.name}${r.dosage ? ` — ${r.dosage}` : ''}${r.note ? ` (${r.note})` : ''} في ${r.time}`,
+          new Notification(t('تذكير بأخذ الدواء 💊'), {
+            body: `${r.name}${r.dosage ? ` — ${r.dosage}` : ''}${r.note ? ` (${r.note})` : ''} ${t('في {0}', [r.time])}`,
             tag: key,
             silent: false,
           });
@@ -46,9 +48,9 @@ export function ReminderScheduler() {
         const outKey = `runout|${r.id}|${todayKey}`;
         if (firedRef.current.has(outKey)) return;
         firedRef.current.add(outKey);
-        const label = info.status === 'out' ? 'انتهى الدواء' : `اقترب النفاد — متبقي ${info.daysLeft} يوم`;
-        new Notification('تنبيه نفاد الدواء 💊', {
-          body: `${r.name} ${label}. أعد طلبه الآن من أقرب صيدلية.`,
+        const label = info.status === 'out' ? t('انتهى الدواء') : t('اقترب النفاد — متبقي {0} يوم', [info.daysLeft]);
+        new Notification(t('تنبيه نفاد الدواء 💊'), {
+          body: `${r.name} ${label}. ${t('أعد طلبه الآن من أقرب صيدلية.')}`,
           tag: outKey,
           silent: false,
         });
@@ -58,7 +60,7 @@ export function ReminderScheduler() {
     check();
     const interval = setInterval(check, 60 * 1000);
     return () => clearInterval(interval);
-  }, [featuresConfig.reminders]);
+  }, [featuresConfig.reminders, t]);
 
   return null;
 }

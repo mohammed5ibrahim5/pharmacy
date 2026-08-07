@@ -1,5 +1,6 @@
 import { FlaskConical, Snowflake, Pill, CalendarCheck, HeartPulse, Sparkles } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 const TIPS = [
   {
@@ -30,6 +31,7 @@ const TIPS = [
 
 export function HomeHealthTips() {
   const { themeColors } = useSettings();
+  const { t } = useLanguage();
 
   return (
     <section className="relative overflow-hidden py-12 border-y border-gray-100" style={{ backgroundColor: themeColors.sectionAltBg }}>
@@ -55,7 +57,7 @@ export function HomeHealthTips() {
             style={{ backgroundColor: `${themeColors.badgePillBg}15`, color: themeColors.badgePillText }}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            من قلب الصيدلية
+            {t('من قلب الصيدلية')}
           </span>
           <h2 className="text-2xl sm:text-3xl font-black mt-2 flex items-center justify-center gap-2.5" style={{ color: themeColors.sectionHeadingText }}>
             <span
@@ -64,9 +66,9 @@ export function HomeHealthTips() {
             >
               <HeartPulse className="w-5 h-5" />
             </span>
-            نصائح صحية من الصيدلي
+            {t('نصائح صحية من الصيدلي')}
           </h2>
-          <p className="text-sm mt-2 font-bold" style={{ color: themeColors.sectionSubheadingText }}>إرشادات بسيطة تحمي صحتك وصحة عائلتك</p>
+          <p className="text-sm mt-2 font-bold" style={{ color: themeColors.sectionSubheadingText }}>{t('إرشادات بسيطة تحمي صحتك وصحة عائلتك')}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -91,10 +93,10 @@ export function HomeHealthTips() {
                 {tip.icon}
               </div>
               <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: tip.color }}>
-                نصيحة الصيدلي
+                {t('نصيحة الصيدلي')}
               </span>
-              <h3 className="font-extrabold text-base mt-1 mb-2" style={{ color: themeColors.cardText }}>{tip.title}</h3>
-              <p className="text-xs leading-relaxed font-medium" style={{ color: themeColors.cardMutedText }}>{tip.desc}</p>
+              <h3 className="font-extrabold text-base mt-1 mb-2" style={{ color: themeColors.cardText }}>{t(tip.title)}</h3>
+              <p className="text-xs leading-relaxed font-medium" style={{ color: themeColors.cardMutedText }}>{t(tip.desc)}</p>
             </div>
           ))}
         </div>

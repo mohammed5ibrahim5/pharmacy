@@ -7,6 +7,7 @@ import { useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { addStockAlert, removeStockAlert } from '@/lib/loyalty';
 import { PriceCompareModal } from '@/components/PriceCompareModal';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Props {
   product: Product;
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function ProductCard({ product, pharmacyName, onClick, popular = false }: Props) {
+  const { t } = useLanguage();
   const { themeColors, storeConfig, featuresConfig } = useSettings();
   const { cart, openOrder, addToCart, updateCartQty } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
@@ -97,7 +99,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md animate-pulse whitespace-nowrap z-10"
               style={{ backgroundColor: themeColors.discountBadgeBg, color: themeColors.discountBadgeText }}
             >
-              خصم {activeDiscount.discount_percentage}%
+              {t('خصم {0}%', [activeDiscount.discount_percentage])}
             </div>
           )}
 
@@ -108,7 +110,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               style={{ backgroundColor: themeColors.accentColor, color: '#ffffff' }}
             >
               <Flame className="w-3 h-3" fill="currentColor" />
-              الأكثر طلباً
+              {t('الأكثر طلباً')}
             </div>
           )}
 
@@ -122,8 +124,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
             className={`absolute top-2.5 left-2.5 w-9 h-9 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 group-hover:scale-110 active:scale-90 ${
               isFav ? 'bg-pink-500 border-pink-400' : 'bg-white/90 backdrop-blur-sm border-gray-100 hover:bg-white'
             }`}
-            title={isFav ? 'إزالة من المفضلة' : 'أضف إلى المفضلة'}
-            aria-label={isFav ? 'إزالة من المفضلة' : 'أضف إلى المفضلة'}
+            title={isFav ? t('إزالة من المفضلة') : t('أضف إلى المفضلة')}
+            aria-label={isFav ? t('إزالة من المفضلة') : t('أضف إلى المفضلة')}
           >
             <Heart
               className={`w-[18px] h-[18px] transition-all ${
@@ -141,8 +143,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                 setCompareOpen(true);
               }}
               className="absolute top-2.5 left-12 w-9 h-9 rounded-2xl bg-white/90 backdrop-blur-sm border border-gray-100 shadow-lg hover:bg-white flex items-center justify-center transition-all duration-300 group-hover:scale-110 active:scale-90"
-              title="قارن الأسعار والبدائل"
-              aria-label="قارن الأسعار والبدائل"
+              title={t('قارن الأسعار والبدائل')}
+              aria-label={t('قارن الأسعار والبدائل')}
             >
               <Scale className="w-[18px] h-[18px]" style={{ color: themeColors.accent2Color }} />
             </button>
@@ -176,8 +178,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                   : 'bg-white/90 backdrop-blur-sm border border-gray-100 hover:bg-white'
               }`}
               style={alerted ? { backgroundColor: themeColors.priceColor } : { color: themeColors.accentColor }}
-              title={alerted ? 'تم الاشتراك — سنخبرك عند التوفر' : 'نبهني عند توفر الدواء'}
-              aria-label="نبهني عند توفر الدواء"
+              title={alerted ? t('تم الاشتراك — سنخبرك عند التوفر') : t('نبهني عند توفر الدواء')}
+              aria-label={t('نبهني عند توفر الدواء')}
             >
               {alerting ? (
                 <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -191,14 +193,14 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
 
           {!product.is_available && (
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center">
-              <span className="text-white font-bold text-xs px-3 py-1.5 rounded-full bg-slate-900/80 border border-white/20">غير متوفر حالياً</span>
+              <span className="text-white font-bold text-xs px-3 py-1.5 rounded-full bg-slate-900/80 border border-white/20">{t('غير متوفر حالياً')}</span>
             </div>
           )}
 
           {product.requires_prescription && (
             <div className="absolute bottom-2 right-2 bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 shadow">
               <AlertCircle className="w-3 h-3" />
-              بوصفة طبية
+              {t('بوصفة طبية')}
             </div>
           )}
 
@@ -215,8 +217,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                   onClick={() => updateCartQty(cartEntry.key, cartEntry.quantity - 1)}
                   className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-90"
                   style={{ color: themeColors.priceColor }}
-                  title="إنقاص الكمية"
-                  aria-label="إنقاص الكمية"
+                  title={t('إنقاص الكمية')}
+                  aria-label={t('إنقاص الكمية')}
                 >
                   <Minus className="w-3.5 h-3.5" strokeWidth={3} />
                 </button>
@@ -231,8 +233,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                   onClick={() => updateCartQty(cartEntry.key, cartEntry.quantity + 1)}
                   className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-90 hover:brightness-110 text-white"
                   style={{ backgroundColor: themeColors.priceColor }}
-                  title="زيادة الكمية"
-                  aria-label="زيادة الكمية"
+                  title={t('زيادة الكمية')}
+                  aria-label={t('زيادة الكمية')}
                 >
                   <Plus className="w-3.5 h-3.5" strokeWidth={3} />
                 </button>
@@ -260,8 +262,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                   style={{ color: themeColors.priceColor }}
                   onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = themeColors.priceColor; e.currentTarget.style.color = '#ffffff'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = themeColors.priceColor; }}
-                  title="أضف إلى السلة"
-                  aria-label="أضف إلى السلة"
+                  title={t('أضف إلى السلة')}
+                  aria-label={t('أضف إلى السلة')}
                 >
                   <ShoppingCart className="w-[18px] h-[18px]" />
                 </button>
@@ -278,8 +280,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               style={{ color: themeColors.priceColor }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = themeColors.priceColor; e.currentTarget.style.color = '#ffffff'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = themeColors.priceColor; }}
-              title="تواصل مع الصيدلية"
-              aria-label="تواصل مع الصيدلية"
+              title={t('تواصل مع الصيدلية')}
+              aria-label={t('تواصل مع الصيدلية')}
             >
               <Phone className="w-4 h-4" />
             </button>
@@ -306,14 +308,14 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               }}
             >
               <CheckCircle2 className="w-3 h-3" />
-              متاح الآن
+              {t('متاح الآن')}
             </p>
           )}
 
           {product.for_all_pharmacies ? (
             <p className="text-[11px] font-semibold flex items-center gap-1 truncate" style={{ color: themeColors.priceColor }}>
               <Store className="w-3.5 h-3.5 shrink-0" style={{ color: themeColors.priceColor }} />
-              <span className="truncate">متوفر في جميع الصيدليات</span>
+              <span className="truncate">{t('متوفر في جميع الصيدليات')}</span>
             </p>
           ) : (
             pharmacyName && (
@@ -352,11 +354,11 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               <span className="font-black text-xl" style={{ color: themeColors.priceColor }}>
                 {finalPrice.toFixed(2)}
               </span>
-              <span className="text-xs font-bold" style={{ color: themeColors.cardMutedText }}>ج.م</span>
+              <span className="text-xs font-bold" style={{ color: themeColors.cardMutedText }}>EGP</span>
             </div>
             {activeDiscount && (
               <span className="text-xs line-through font-medium" style={{ color: themeColors.cardMutedText }}>
-                {product.price.toFixed(2)} ج.م
+                {product.price.toFixed(2)} EGP
               </span>
             )}
           </div>
@@ -365,7 +367,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               <span className="flex items-center gap-1 text-[10px] font-extrabold border px-2 py-0.5 rounded-lg"
                 style={{ color: themeColors.accentColor, backgroundColor: `${themeColors.accentColor}15`, borderColor: `${themeColors.accentColor}30` }}>
                 <AlertTriangle className="w-3 h-3" />
-                كمية محدودة
+                {t('كمية محدودة')}
               </span>
             )}
             <div className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg"

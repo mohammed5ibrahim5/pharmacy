@@ -1,14 +1,16 @@
 import { Search, Store, ShoppingBag, Home } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 const STEP_ICONS = [<Search className="w-6 h-6" />, <Store className="w-6 h-6" />, <ShoppingBag className="w-6 h-6" />, <Home className="w-6 h-6" />];
 
 export function HomeHowItWorks() {
   const { themeColors, howItWorksConfig } = useSettings();
+  const { t } = useLanguage();
 
   if (!howItWorksConfig.enabled) return null;
 
-  const steps = howItWorksConfig.steps.length > 0 ? howItWorksConfig.steps : Array.from({ length: 4 }, (_, i) => ({ title: `خطوة ${i + 1}`, desc: '' }));
+  const steps = howItWorksConfig.steps.length > 0 ? howItWorksConfig.steps : Array.from({ length: 4 }, (_, i) => ({ title: t('خطوة {0}', [i + 1]), desc: '' }));
 
   return (
     <section className="py-12 bg-white border-y border-gray-100">
@@ -18,10 +20,10 @@ export function HomeHowItWorks() {
             className="text-xs font-extrabold px-3.5 py-1 rounded-full"
             style={{ backgroundColor: `${themeColors.primaryColor}15`, color: themeColors.primaryColor }}
           >
-            {howItWorksConfig.badge}
+            {t(howItWorksConfig.badge)}
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{howItWorksConfig.title}</h2>
-          {howItWorksConfig.subtitle && <p className="text-sm text-slate-500 mt-2 font-bold">{howItWorksConfig.subtitle}</p>}
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{t(howItWorksConfig.title)}</h2>
+          {howItWorksConfig.subtitle && <p className="text-sm text-slate-500 mt-2 font-bold">{t(howItWorksConfig.subtitle)}</p>}
         </div>
 
         <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -54,8 +56,8 @@ export function HomeHowItWorks() {
                   {i + 1}
                 </span>
               </div>
-              <h3 className="font-extrabold text-slate-900 text-base mb-1.5">{step.title}</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium max-w-[240px] mx-auto">{step.desc}</p>
+              <h3 className="font-extrabold text-slate-900 text-base mb-1.5">{t(step.title)}</h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium max-w-[240px] mx-auto">{t(step.desc)}</p>
             </div>
           ))}
         </div>

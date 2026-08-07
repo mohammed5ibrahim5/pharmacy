@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useRouter } from '@/context/RouterContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { PharmacyCard } from '@/components/PharmacyCard';
@@ -134,6 +135,7 @@ type PharmacyTab = 'nearest' | 'highest_rated' | 'most_popular' | 'delivery' | '
 
 export function HomePage() {
   const { settings, themeColors, heroConfig, storeConfig } = useSettings();
+  const { t } = useLanguage();
   const { navigate } = useRouter();
   const { location, requestLocation, loading, permissionDenied, setUserLocation } = useGeolocation();
 
@@ -348,7 +350,7 @@ export function HomePage() {
       recognition.onerror = () => setIsListening(false);
       recognition.onend = () => setIsListening(false);
     } else {
-      alert('البحث الصوتي غير مدعوم في هذا المتصفح.');
+      alert(t('البحث الصوتي غير مدعوم في هذا المتصفح.'));
     }
   };
 
@@ -392,8 +394,8 @@ export function HomePage() {
           >
             <Truck className="w-4 h-4 shrink-0" style={{ color: themeColors.accent2Color }} />
             <div className="leading-tight">
-              <p className="text-[11px] font-black" style={{ color: themeColors.heroText }}>توصيل فوري</p>
-              <p className="text-[9px] font-bold" style={{ color: themeColors.primaryColor }}>أقل من 30 دقيقة</p>
+              <p className="text-[11px] font-black" style={{ color: themeColors.heroText }}>{t('توصيل فوري')}</p>
+              <p className="text-[9px] font-bold" style={{ color: themeColors.primaryColor }}>{t('أقل من 30 دقيقة')}</p>
             </div>
           </div>
 
@@ -406,8 +408,8 @@ export function HomePage() {
           >
             <BadgePercent className="w-4 h-4 shrink-0" style={{ color: themeColors.accentColor }} />
             <div className="leading-tight">
-              <p className="text-[11px] font-black" style={{ color: themeColors.heroText }}>خصومات وتخفيضات</p>
-              <p className="text-[9px] font-bold" style={{ color: themeColors.accentColor }}>عروض تصل إلى 30%</p>
+              <p className="text-[11px] font-black" style={{ color: themeColors.heroText }}>{t('خصومات وتخفيضات')}</p>
+              <p className="text-[9px] font-bold" style={{ color: themeColors.accentColor }}>{t('عروض تصل إلى 30%')}</p>
             </div>
           </div>
 
@@ -420,7 +422,7 @@ export function HomePage() {
           >
             <BadgeCheck className="w-4 h-4 shrink-0" style={{ color: themeColors.accent2Color }} />
             <p className="text-[11px] font-black whitespace-nowrap" style={{ color: themeColors.heroText }}>
-              صيدليات معتمدة 100%
+              {t('صيدليات معتمدة 100%')}
             </p>
           </div>
         </div>
@@ -437,17 +439,17 @@ export function HomePage() {
               }}
             >
               <Zap className="w-4 h-4 animate-pulse" />
-              <span>المنصة الأولى للبحث عن الأدوية والصيدليات القريبة</span>
+              <span>{t('المنصة الأولى للبحث عن الأدوية والصيدليات القريبة')}</span>
             </div>
 
             {/* Main Title */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.2] tracking-tight animate-fade-up" style={{ color: themeColors.heroText, animationDelay: '0.1s' }}>
-              اعثر على <span className="text-transparent bg-clip-text bg-gradient-to-l" style={{ backgroundImage: `linear-gradient(to left, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}>دوائك في أقرب صيدلية</span>
+              {t('اعثر على')} <span className="text-transparent bg-clip-text bg-gradient-to-l" style={{ backgroundImage: `linear-gradient(to left, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}>{t('دوائك في أقرب صيدلية')}</span>
             </h1>
 
             {/* Subtitle */}
             <p className="text-sm sm:text-base lg:text-lg max-w-2xl mx-auto leading-relaxed font-bold animate-fade-up opacity-80" style={{ color: themeColors.heroText, animationDelay: '0.2s' }}>
-              ابحث عن الأدوية والمستلزمات الطبية، قارن الأقرب إليك، واطلب التوصيل المباشر لباب المنزل على مدار الساعة.
+              {t('ابحث عن الأدوية والمستلزمات الطبية، قارن الأقرب إليك، واطلب التوصيل المباشر لباب المنزل على مدار الساعة.')}
             </p>
 
             {/* MAIN SEARCH FORM */}
@@ -466,7 +468,7 @@ export function HomePage() {
                         isListening ? 'text-red-500 animate-bounce' : ''
                       }`}
                       style={{ color: isListening ? '#ef4444' : themeColors.accent2Color }}
-                      title="بحث بالصوت"
+                      title={t('بحث بالصوت')}
                     >
                       <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
@@ -480,10 +482,10 @@ export function HomePage() {
                         color: themeColors.accent2Color,
                         borderColor: `${themeColors.accent2Color}30`
                       }}
-                      title="مسح باركود وتصوير الدواء"
+                      title={t('مسح باركود وتصوير الدواء')}
                     >
                       <Barcode className="w-4 h-4" />
-                      <span className="hidden sm:inline">باركود</span>
+                      <span className="hidden sm:inline">{t('باركود')}</span>
                     </button>
                   </div>
 
@@ -491,7 +493,7 @@ export function HomePage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={heroConfig.searchPlaceholder}
+                    placeholder={t(heroConfig.searchPlaceholder)}
                     className="flex-1 min-w-0 px-3 py-3.5 text-slate-900 text-sm sm:text-base font-bold placeholder:font-normal placeholder:text-gray-400 focus:outline-none bg-transparent"
                   />
 
@@ -505,7 +507,7 @@ export function HomePage() {
                     }}
                   >
                     <Search className="w-5 h-5" />
-                    <span className="hidden sm:inline">بحث</span>
+                    <span className="hidden sm:inline">{t('بحث')}</span>
                   </button>
                 </div>
               </form>
@@ -514,7 +516,7 @@ export function HomePage() {
               <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-xs font-bold">
                 <span className="opacity-60 font-bold flex items-center gap-1" style={{ color: themeColors.heroText }}>
                   <Sparkles className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
-                  {heroConfig.trendingLabel}
+                  {t(heroConfig.trendingLabel)}
                 </span>
                 {(heroConfig.trendingKeywords.length > 0 ? heroConfig.trendingKeywords : HERO_TRENDING).map((item) => (
                   <button
@@ -546,7 +548,7 @@ export function HomePage() {
                 style={{ backgroundColor: themeColors.primaryColor }}
               >
                 <FileText className="w-4 h-4 shrink-0" />
-                <span className="truncate">{heroConfig.prescriptionButtonText}</span>
+                <span className="truncate">{t(heroConfig.prescriptionButtonText)}</span>
               </button>
               )}
 
@@ -566,7 +568,7 @@ export function HomePage() {
                   }}
                 >
                   <Navigation className="w-4 h-4 animate-spin-slow shrink-0" />
-                  <span className="truncate">{loading ? 'جاري تحديد موقعك...' : permissionDenied ? 'حدد الموقع يدوياً' : heroConfig.locationButtonText}</span>
+                  <span className="truncate">{loading ? t('جاري تحديد موقعك...') : permissionDenied ? t('حدد الموقع يدوياً') : t(heroConfig.locationButtonText)}</span>
                 </button>
               ) : (
                 <button
@@ -580,7 +582,7 @@ export function HomePage() {
                 >
                   <span className="w-2.5 h-2.5 rounded-full animate-ping shrink-0" style={{ backgroundColor: themeColors.primaryColor }} />
                   <MapPin className="w-4 h-4 shrink-0" style={{ color: themeColors.primaryColor }} />
-                  <span className="truncate">{heroConfig.locationSetText}</span>
+                  <span className="truncate">{t(heroConfig.locationSetText)}</span>
                 </button>
               )}
               </>
@@ -590,7 +592,7 @@ export function HomePage() {
             {heroConfig.showPrescriptionButton && (
               <p className="text-[11px] font-bold opacity-70 flex items-center justify-center gap-1.5 animate-fade-up" style={{ color: themeColors.heroText, animationDelay: '0.45s' }}>
                 <ShieldCheck className="w-3.5 h-3.5 shrink-0" style={{ color: themeColors.primaryColor }} />
-                صوّر الروشتة من هاتفك — يراجعها صيدلي حقيقي مرخّص قبل صرف أي دواء
+                {t('صوّر الروشتة من هاتفك — يراجعها صيدلي حقيقي مرخّص قبل صرف أي دواء')}
               </p>
             )}
           </div>
@@ -636,9 +638,9 @@ export function HomePage() {
                         </p>
                       );
                     })()}
-                    <span className="text-xs font-bold opacity-80">{stat.sub}</span>
+                    <span className="text-xs font-bold opacity-80">{t(stat.sub)}</span>
                   </div>
-                  <p className="text-[11px] opacity-60 mt-0.5 font-bold">{stat.desc}</p>
+                  <p className="text-[11px] opacity-60 mt-0.5 font-bold">{t(stat.desc)}</p>
                 </div>
               </div>
             ))}
@@ -660,16 +662,16 @@ export function HomePage() {
               }}
             >
               <ShoppingBag className="w-3.5 h-3.5" />
-              تصفح الأقسام والمجموعات
+              {t('تصفح الأقسام والمجموعات')}
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">تسوق حسب الفئة</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{t('تسوق حسب الفئة')}</h2>
           </div>
 
           <button
             onClick={() => navigate({ name: 'search', query: '' })}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-extrabold text-gray-800 hover:bg-slate-50 transition-all shadow-2xs group"
           >
-            <span>عرض جميع الأقسام</span>
+            <span>{t('عرض جميع الأقسام')}</span>
             <ChevronLeft className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:-translate-x-1" />
           </button>
         </div>
@@ -724,17 +726,17 @@ export function HomePage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              الصيدليات المتاحة بجوارك
+              {t('الصيدليات المتاحة بجوارك')}
             </h2>
             <p className="text-sm text-slate-500 mt-1.5 font-bold">
-              تصفح الصيدليات حسب تصنيف احتياجك
+              {t('تصفح الصيدليات حسب تصنيف احتياجك')}
             </p>
           </div>
           <span
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white border border-gray-200 text-xs font-extrabold text-slate-700 shadow-sm self-start sm:self-auto"
           >
             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColors.primaryColor }} />
-            {pharmacies.length} صيدلية معتمدة
+            {t('{0} صيدلية معتمدة', [pharmacies.length])}
           </span>
         </div>
 
@@ -759,7 +761,7 @@ export function HomePage() {
                 }`}
                 style={isActive ? { backgroundColor: themeColors.primaryColor, boxShadow: `0 8px 18px -6px ${themeColors.primaryColor}77` } : {}}
               >
-                {tab.label}
+                {t(tab.label)}
               </button>
             );
           })}
@@ -774,9 +776,9 @@ export function HomePage() {
             >
               <Navigation className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-black text-slate-900 mb-1.5">حدّد موقعك لعرض أقرب الصيدليات</h3>
+            <h3 className="text-lg font-black text-slate-900 mb-1.5">{t('حدّد موقعك لعرض أقرب الصيدليات')}</h3>
             <p className="text-sm text-slate-500 font-bold mb-6 max-w-md mx-auto leading-relaxed">
-              عشان نشوفلك أقرب صيدلية لجوّاك، حدد موقعك الحالي أو اختر منطقتك يدوياً.
+              {t('عشان نشوفلك أقرب صيدلية لجوّاك، حدد موقعك الحالي أو اختر منطقتك يدوياً.')}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
@@ -789,7 +791,7 @@ export function HomePage() {
                 style={{ backgroundColor: themeColors.primaryColor }}
               >
                 <Navigation className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                {loading ? 'جاري تحديد موقعك...' : 'تحديد موقعي الآن'}
+                {loading ? t('جاري تحديد موقعك...') : t('تحديد موقعي الآن')}
               </button>
               <button
                 onClick={() => setLocationModalOpen(true)}
@@ -797,11 +799,11 @@ export function HomePage() {
                 style={{ color: themeColors.primaryColor, borderColor: `${themeColors.primaryColor}40` }}
               >
                 <MapPin className="w-4 h-4" />
-                اختيار المنطقة يدوياً
+                {t('اختيار المنطقة يدوياً')}
               </button>
             </div>
             {permissionDenied && (
-              <p className="text-[11px] font-bold text-amber-600 mt-4">متصفحك رفض طلب الموقع، اختار منطقتك يدوياً بدلاً من ذلك.</p>
+              <p className="text-[11px] font-bold text-amber-600 mt-4">{t('متصفحك رفض طلب الموقع، اختار منطقتك يدوياً بدلاً من ذلك.')}</p>
             )}
           </div>
         ) : loadingData ? (
@@ -818,8 +820,8 @@ export function HomePage() {
           </div>
         ) : (
           <div className="py-16 text-center bg-white rounded-3xl border border-gray-200">
-            <p className="text-slate-500 text-sm font-extrabold">{PHARMACY_SECTIONS_META[activePharmacyTab as PharmacySectionKey]?.emptyLabel ?? 'غير متاح حالياً'}</p>
-            <p className="text-slate-400 text-xs font-bold mt-2">رجّع لك في وقتٍ تاني، أو جرّب تصنيف تاني</p>
+            <p className="text-slate-500 text-sm font-extrabold">{t(PHARMACY_SECTIONS_META[activePharmacyTab as PharmacySectionKey]?.emptyLabel ?? 'غير متاح حالياً')}</p>
+            <p className="text-slate-400 text-xs font-bold mt-2">{t('رجّع لك في وقتٍ تاني، أو جرّب تصنيف تاني')}</p>
           </div>
         )}
       </section>
@@ -849,9 +851,9 @@ export function HomePage() {
               color: themeColors.primaryColor
             }}
           >
-            مميزات منصتنا
+            {t('مميزات منصتنا')}
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">لماذا نعتبر اختيارك الأول؟</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{t('لماذا نعتبر اختيارك الأول؟')}</h2>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -871,8 +873,8 @@ export function HomePage() {
               >
                 {feature.icon}
               </div>
-              <h3 className="font-extrabold text-slate-900 text-base mb-1.5">{feature.title}</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">{feature.desc}</p>
+              <h3 className="font-extrabold text-slate-900 text-base mb-1.5">{t(feature.title)}</h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium">{t(feature.desc)}</p>
             </div>
           ))}
         </div>
@@ -917,7 +919,7 @@ export function HomePage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/15 border border-white/25 text-white text-[11px] sm:text-xs font-bold mb-6 backdrop-blur-sm">
               <Zap className="w-3.5 h-3.5" fill="currentColor" />
-              خدمة طوارئ دوائية على مدار الساعة
+              {t('خدمة طوارئ دوائية على مدار الساعة')}
             </div>
 
             <div className="w-16 h-16 rounded-3xl bg-white/20 border border-white/30 flex items-center justify-center mx-auto mb-5 backdrop-blur-sm animate-float shadow-lg">
@@ -925,10 +927,10 @@ export function HomePage() {
             </div>
 
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-3">
-              مش لاقي دواك؟ احنا نجيبهولك!
+              {t('مش لاقي دواك؟ احنا نجيبهولك!')}
             </h2>
             <p className="text-white/85 mb-8 max-w-xl mx-auto text-xs sm:text-sm font-bold leading-relaxed">
-              فريق الصيدلية والمساعد الذكي جاهزون لإيجاد دوائك وتوصيله إليك أينما كنت
+              {t('فريق الصيدلية والمساعد الذكي جاهزون لإيجاد دوائك وتوصيله إليك أينما كنت')}
             </p>
 
             <div className="flex flex-wrap justify-center gap-3">
@@ -937,14 +939,14 @@ export function HomePage() {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-slate-900 font-black text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-lg"
               >
                 <FileText className="w-4 h-4 text-slate-700" />
-                صوّر روشتك الآن
+                {t('صوّر روشتك الآن')}
               </button>
               <button
                 onClick={() => setBarcodeModalOpen(true)}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-white font-black text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-lg border border-white/40 bg-white/10 backdrop-blur-sm"
               >
                 <Barcode className="w-4 h-4" />
-                امسحلي صندوق الدواء
+                {t('امسحلي صندوق الدواء')}
               </button>
               {settings.contact_whatsapp && (
                 <a
@@ -955,13 +957,13 @@ export function HomePage() {
                   style={{ backgroundColor: `${themeColors.secondaryColor}cc` }}
                 >
                   <Send className="w-4 h-4" />
-                  تواصل واتساب
+                  {t('تواصل واتساب')}
                 </a>
               )}
             </div>
             <p className="text-[11px] text-white/70 font-bold flex items-center justify-center gap-1.5 mt-5">
               <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-              تصوير الروشتة مجاني وسرّي — يراجعها صيدلي حقيقي قبل صرف أي دواء
+              {t('تصوير الروشتة مجاني وسرّي — يراجعها صيدلي حقيقي قبل صرف أي دواء')}
             </p>
           </div>
         </div>

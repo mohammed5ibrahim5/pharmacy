@@ -5,12 +5,14 @@ import { useRouter } from '@/context/RouterContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { formatDistance } from '@/lib/distance';
 import { getDirectionsUrl } from '@/lib/directions';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Props {
   pharmacy: Pharmacy & { distance?: number };
 }
 
 export function PharmacyCard({ pharmacy }: Props) {
+  const { t } = useLanguage();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { isPharmacyFavorite, togglePharmacyFavorite } = useFavorites();
@@ -64,7 +66,7 @@ export function PharmacyCard({ pharmacy }: Props) {
                 style={{ backgroundColor: themeColors.priceColor, borderColor: `${themeColors.priceColor}55` }}>
                 <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                 <Truck className="w-3.5 h-3.5" />
-                <span>توصيل سريع</span>
+                <span>{t('توصيل سريع')}</span>
               </div>
             )}
           </div>
@@ -96,8 +98,8 @@ export function PharmacyCard({ pharmacy }: Props) {
                 ? 'bg-pink-500 border-pink-400'
                 : 'bg-white/90 backdrop-blur-md border-white/40 hover:bg-white'
             }`}
-            title={isFav ? 'إزالة من الصيدليات المفضلة' : 'أضف الصيدلية إلى المفضلة'}
-            aria-label={isFav ? 'إزالة من الصيدليات المفضلة' : 'أضف الصيدلية إلى المفضلة'}
+            title={isFav ? t('إزالة من الصيدليات المفضلة') : t('أضف الصيدلية إلى المفضلة')}
+            aria-label={isFav ? t('إزالة من الصيدليات المفضلة') : t('أضف الصيدلية إلى المفضلة')}
           >
             <Heart
               className={`w-5 h-5 transition-all ${
@@ -135,10 +137,10 @@ export function PharmacyCard({ pharmacy }: Props) {
                 <span
                   className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-sm"
                   style={{ backgroundColor: themeColors.inStockColor }}
-                  title="صيدلية مرخصة ومعتمدة"
+                  title={t('صيدلية مرخصة ومعتمدة')}
                 >
                   <BadgeCheck className="w-3 h-3" />
-                  مرخصة
+                  {t('مرخصة')}
                 </span>
               </div>
 
@@ -167,7 +169,7 @@ export function PharmacyCard({ pharmacy }: Props) {
                 }}
               >
                 <Clock className="w-3 h-3" />
-                متاحة 24/7 طوارئ
+                {t('متاحة 24/7 طوارئ')}
               </span>
             )}
             {pharmacy.accept_insurance && (
@@ -180,7 +182,7 @@ export function PharmacyCard({ pharmacy }: Props) {
                 }}
               >
                 <ShieldCheck className="w-3 h-3" />
-                قبول التأمين الصحي
+                {t('قبول التأمين الصحي')}
               </span>
             )}
             {pharmacy.has_parking && (
@@ -193,7 +195,7 @@ export function PharmacyCard({ pharmacy }: Props) {
                 }}
               >
                 <Car className="w-3 h-3" />
-                موقف سيارات
+                {t('موقف سيارات')}
               </span>
             )}
           </div>
@@ -211,7 +213,7 @@ export function PharmacyCard({ pharmacy }: Props) {
               style={{
                 borderColor: `${themeColors.primaryColor}33`,
               }}
-              title="اتصال سريع بالصيدلية"
+              title={t('اتصال سريع بالصيدلية')}
             >
               <Phone className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
             </a>
@@ -228,7 +230,7 @@ export function PharmacyCard({ pharmacy }: Props) {
                 color: themeColors.priceColor,
                 borderColor: `${themeColors.primaryColor}33`,
               }}
-              title="تواصل مباشر عبر واتساب"
+              title={t('تواصل مباشر عبر واتساب')}
             >
               <MessageCircle className="w-4 h-4" />
             </a>
@@ -245,7 +247,7 @@ export function PharmacyCard({ pharmacy }: Props) {
             style={{
               borderColor: `${themeColors.primaryColor}33`,
             }}
-            title="الاتجاهات إلى الصيدلية"
+            title={t('الاتجاهات إلى الصيدلية')}
           >
             <Navigation2 className="w-4 h-4" />
           </a>
@@ -259,7 +261,7 @@ export function PharmacyCard({ pharmacy }: Props) {
             backgroundColor: themeColors.primaryColor,
           }}
         >
-          <span>تصفح الأدوية</span>
+          <span>{t('تصفح الأدوية')}</span>
           <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
         </button>
       </div>

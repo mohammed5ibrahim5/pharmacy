@@ -4,17 +4,18 @@ import { useCustomer } from '@/context/CustomerContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { supabase } from '@/lib/supabase';
+import { useLanguage, type TranslateArgs } from '@/context/LanguageContext';
 import { fetchNotifications, markNotificationsRead, type AppNotification } from '@/lib/notifications';
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, t: (str: string, args?: TranslateArgs) => string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'الآن';
-  if (mins < 60) return `منذ ${mins} دقيقة`;
+  if (mins < 1) return t('الآن');
+  if (mins < 60) return t('منذ {0} دقيقة', [mins]);
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `منذ ${hours} ساعة`;
+  if (hours < 24) return t('منذ {0} ساعة', [hours]);
   const days = Math.floor(hours / 24);
-  return `منذ ${days} يوم`;
+  return t('منذ {0} يوم', [days]);
 }
 
 function typeIcon(type: string) {
@@ -27,6 +28,7 @@ export function NotificationsBell() {
   const { user } = useCustomer();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
   const ref = useRef<HTMLDivElement>(null);
@@ -96,7 +98,7 @@ export function NotificationsBell() {
           color: themeColors.headerText,
           borderColor: `${themeColors.headerText}15`,
         }}
-        aria-label="الإشعارات"
+        aria-label={t('الإشعارات')}
       >
         <Bell className="w-5 h-5" />
         {unread > 0 && (
@@ -111,9 +113,9 @@ export function NotificationsBell() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/70">
             <h4 className="text-xs font-black text-gray-900 flex items-center gap-1.5">
               <Bell className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
-              الإشعارات
+              {t('الإشعارات')}
               {unread > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black">{unread} جديد</span>
+                <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px] font-black">{t('{0} جديد', [unread])}</span>
               )}
             </h4>
             {unread > 0 && (
@@ -122,7 +124,7 @@ export function NotificationsBell() {
                 className="flex items-center gap-1 text-[10px] font-bold text-teal-600 hover:bg-teal-50 px-2 py-1 rounded-lg transition-colors"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
-                قراءة الكل
+                {t('قراءة الكل')}
               </button>
             )}
           </div>
@@ -131,8 +133,8 @@ export function NotificationsBell() {
             {items.length === 0 ? (
               <div className="px-4 py-10 text-center">
                 <Inbox className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-xs font-bold text-gray-500">لا توجد إشعارات بعد</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">ستصلك هنا تحديثات روشتاتك وطلباتك فوراً</p>
+                <p className="text-xs font-bold text-gray-500">{t('لا توجد إشعارات بعد')}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{t('ستصلك هنا تحديثات روشتاتك وطلباتك فوراً')}</p>
               </div>
             ) : (
               items.map((n) => (
@@ -153,7 +155,7 @@ export function NotificationsBell() {
                       {!n.read && <span className="w-2 h-2 shrink-0 rounded-full bg-red-500" />}
                     </span>
                     {n.body && <span className="block text-[11px] text-gray-500 mt-0.5 leading-relaxed">{n.body}</span>}
-                    <span className="block text-[10px] text-gray-400 font-bold mt-1">{timeAgo(n.created_at)}</span>
+                    <span className="block text-[10px] text-gray-400 font-bold mt-1">{timeAgo(n.created_at, t)}</span>
                   </span>
                 </button>
               ))
@@ -170,7 +172,7 @@ export function NotificationsBell() {
               style={{ backgroundColor: themeColors.primaryColor }}
             >
               <FileText className="w-3.5 h-3.5" />
-              متابعة روشتاتي في حسابي
+              {t('متابعة روشتاتي في حسابي')}
             </button>
           </div>
         </div>

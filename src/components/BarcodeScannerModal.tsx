@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Barcode, Check, AlertCircle, Sparkles, Upload } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface BarcodeScannerModalProps {
   open: boolean;
@@ -19,6 +20,7 @@ const SAMPLE_BARCODES = [
 
 export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerModalProps) {
   const { themeColors } = useSettings();
+  const { t } = useLanguage();
   const [cameraActive, setCameraActive] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -48,10 +50,10 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
         }
         setCameraActive(true);
       } else {
-        setError('الكاميرا غير مدعومة في المتصفح الحالي، يمكنك كتابة الباركود أو اختيار نموذج أدناه.');
+        setError(t('الكاميرا غير مدعومة في المتصفح الحالي، يمكنك كتابة الباركود أو اختيار نموذج أدناه.'));
       }
     } catch {
-      setError('تعذر الوصول إلى الكاميرا. يرجى تفعيل الإذن أو تجربة العينات السريعة.');
+      setError(t('تعذر الوصول إلى الكاميرا. يرجى تفعيل الإذن أو تجربة العينات السريعة.'));
       setCameraActive(false);
     }
   };
@@ -107,8 +109,8 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
               <Barcode className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-extrabold text-lg leading-tight">ماسح باركود وتصوير المنتج</h3>
-              <p className="text-xs text-white/80">وجه الكاميرا نحو باركود الدواء أو اختر منتجك</p>
+              <h3 className="font-extrabold text-lg leading-tight">{t('ماسح باركود وتصوير المنتج')}</h3>
+              <p className="text-xs text-white/80">{t('وجه الكاميرا نحو باركود الدواء أو اختر منتجك')}</p>
             </div>
           </div>
           <button
@@ -140,7 +142,7 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
                   onClick={stopCamera}
                   className="absolute bottom-3 right-3 px-3 py-1.5 bg-red-600/90 text-white rounded-xl text-xs font-bold flex items-center gap-1 backdrop-blur shadow"
                 >
-                  إيقاف الكاميرا
+                  {t('إيقاف الكاميرا')}
                 </button>
               </div>
             ) : (
@@ -149,8 +151,8 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
                   <Camera className="w-8 h-8" />
                 </div>
                 <div>
-                  <h4 className="text-slate-200 font-bold text-sm">مسح بالمسح الضوئي المباشر</h4>
-                  <p className="text-slate-400 text-xs mt-0.5">افتح الكاميرا لقراءة الباركود من العلبة فوراً</p>
+                  <h4 className="text-slate-200 font-bold text-sm">{t('مسح بالمسح الضوئي المباشر')}</h4>
+                  <p className="text-slate-400 text-xs mt-0.5">{t('افتح الكاميرا لقراءة الباركود من العلبة فوراً')}</p>
                 </div>
                 <button
                   onClick={startCamera}
@@ -158,7 +160,7 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
                   style={{ backgroundColor: themeColors.priceColor }}
                 >
                   <Camera className="w-4 h-4" />
-                  تشغيل الكاميرا الآن
+                  {t('تشغيل الكاميرا الآن')}
                 </button>
               </div>
             )}
@@ -168,7 +170,7 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
                 <div className="w-14 h-14 rounded-full bg-teal-500 flex items-center justify-center text-white mb-2 shadow-lg animate-bounce">
                   <Check className="w-8 h-8" />
                 </div>
-                <p className="font-extrabold text-base">تم قراءة الباركود بنجاح!</p>
+                <p className="font-extrabold text-base">{t('تم قراءة الباركود بنجاح!')}</p>
                 <p className="text-xs text-teal-200 mt-1 font-mono">{scannedSuccess}</p>
               </div>
             )}
@@ -185,14 +187,14 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
           <div className="flex gap-2">
             <label className="flex-1 flex items-center justify-center gap-2 p-3 bg-gray-50 border border-dashed border-gray-300 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer text-xs font-semibold text-gray-700">
               <Upload className="w-4 h-4 text-gray-500" />
-              رفع صورة دواء / باركود
+              {t('رفع صورة دواء / باركود')}
               <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
             </label>
           </div>
 
           {/* Manual Input */}
           <form onSubmit={handleManualSubmit} className="space-y-2">
-            <label className="block text-xs font-bold text-gray-700">أدخل رقم الباركود يدوياً:</label>
+            <label className="block text-xs font-bold text-gray-700">{t('أدخل رقم الباركود يدوياً:')}</label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Barcode className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -200,7 +202,7 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
                   type="text"
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value)}
-                  placeholder="مثال: 6223000123456"
+                  placeholder={t('مثال: 6223000123456')}
                   className="w-full pr-10 pl-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
                   style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                 />
@@ -210,7 +212,7 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
                 className="px-4 py-2 text-white font-bold text-xs rounded-xl shadow transition-transform hover:scale-[1.02]"
                 style={{ backgroundColor: themeColors.priceColor }}
               >
-                بحث
+                {t('بحث')}
               </button>
             </div>
           </form>
@@ -219,7 +221,7 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
           <div className="space-y-2 pt-2 border-t border-gray-100">
             <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              أو تجربة منتجات نموذجية سريعة (اضغط للتجربة):
+              {t('أو تجربة منتجات نموذجية سريعة (اضغط للتجربة):')}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {SAMPLE_BARCODES.map((item) => (

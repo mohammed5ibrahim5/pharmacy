@@ -5,6 +5,7 @@ import { useRouter } from '@/context/RouterContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { getDirectionsUrl } from '@/lib/directions';
 import { formatDistance } from '@/lib/distance';
+import { useLanguage } from '@/context/LanguageContext';
 import type { Pharmacy } from '@/types';
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function PharmacyMap({ pharmacies, loading }: Props) {
+  const { t } = useLanguage();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { location } = useGeolocation();
@@ -49,18 +51,18 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
               style={{ backgroundColor: `${themeColors.primaryColor}15`, color: themeColors.primaryColor }}
             >
               <MapPin className="w-4 h-4" />
-              خريطة الصيدليات
+              {t('خريطة الصيدليات')}
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2 tracking-tight">
-              الصيدليات على الخريطة
+              {t('الصيدليات على الخريطة')}
             </h2>
-            <p className="text-sm text-slate-500 mt-1.5 font-bold">اختر صيدلية من القائمة وشاهد موقعها مباشرة</p>
+            <p className="text-sm text-slate-500 mt-1.5 font-bold">{t('اختر صيدلية من القائمة وشاهد موقعها مباشرة')}</p>
           </div>
           <button
             onClick={() => navigate({ name: 'search', query: '' })}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-extrabold text-gray-800 hover:bg-slate-50 transition-all shadow-2xs group self-start sm:self-auto"
           >
-            <span>عرض جميع الصيدليات</span>
+            <span>{t('عرض جميع الصيدليات')}</span>
             <ChevronLeft className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:-translate-x-1" />
           </button>
         </div>
@@ -70,7 +72,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
           <div className="lg:col-span-1 bg-white rounded-3xl border border-gray-100 overflow-hidden flex flex-col max-h-[320px] lg:max-h-none">
             <div className="p-4 border-b border-gray-100 flex items-center gap-2 bg-slate-50/70">
               <Store className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
-              <p className="text-xs font-black text-slate-700">{activePharmacies.length} صيدلية متاحة</p>
+              <p className="text-xs font-black text-slate-700">{t('{0} صيدلية متاحة', [activePharmacies.length])}</p>
             </div>
             <div className="overflow-y-auto flex-1 divide-y divide-gray-50">
               {activePharmacies.map((p) => {
@@ -110,7 +112,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
             {selected && (
               <>
                 <iframe
-                  title="خريطة الصيدليات"
+                  title={t('خريطة الصيدليات')}
                   src={embedSrc}
                   className="w-full h-full min-h-[320px] lg:h-[480px]"
                   loading="lazy"
@@ -136,7 +138,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
                     style={{ backgroundColor: themeColors.primaryColor }}
                   >
                     <Navigation2 className="w-4 h-4" />
-                    الاتجاهات إليها
+                    {t('الاتجاهات إليها')}
                   </a>
                 </div>
               </>
@@ -144,7 +146,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
             {location == null && (
               <div className="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-xl shadow border border-gray-100 px-3 py-2 text-[10px] font-bold text-slate-600 flex items-center gap-1.5">
                 <Cross className="w-3 h-3 text-slate-400" />
-                حدّد موقعك لعرض المسافات
+                {t('حدّد موقعك لعرض المسافات')}
               </div>
             )}
           </div>

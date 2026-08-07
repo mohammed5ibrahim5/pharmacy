@@ -1,0 +1,61 @@
+﻿export const en_pages: Record<string, string> = {
+  // SearchPage
+  'العودة للرئيسية': 'Back to home',
+  'نتائج البحث': 'Search results',
+  'البحث عن:': 'Search for:',
+  'لا توجد نتائج': 'No results found',
+  'لم نجد أي منتج أو صيدلية تطابق "{0}"': 'We couldn\'t find any product or pharmacy matching "{0}"',
+  'أقرب صيدليات بها هذا المنتج': 'Nearest pharmacies with this product',
+  'صيدليات بها هذا المنتج': 'Pharmacies with this product',
+  'المنتجات ({0})': 'Products ({0})',
+
+  // CategoryPage
+  'الفئة': 'Category',
+  '{0} منتج متاح حالياً': '{0} products currently available',
+  'لا توجد منتجات': 'No products found',
+  'لا توجد منتجات في هذه الفئة حالياً': 'No products in this category right now',
+
+  // PharmacyDetailPage
+  'الصيدلية غير موجودة': 'Pharmacy not found',
+  'رجوع': 'Back',
+  'مفتوح الآن': 'Open now',
+  '24 ساعة': '24 hours',
+  'تقييم': 'Rating',
+  'على بُعد {0}': '{0} away',
+  'اتصال': 'Call',
+  'واتساب': 'WhatsApp',
+  'الاتجاهات': 'Directions',
+  'ساعات العمل': 'Working hours',
+  'غير محدد': 'Not specified',
+  'التوصيل': 'Delivery',
+  'متاح - {0} ج.م': 'Available - {0} EGP',
+  'غير متاح': 'Not available',
+  'البريد الإلكتروني': 'Email',
+  'العنوان': 'Address',
+  'المنتجات المتاحة': 'Available products',
+  '{0} منتج في صيدلية {1}': '{0} products in {1} pharmacy',
+  'ابحث داخل الصيدلية...': 'Search inside this pharmacy...',
+  'الكل': 'All',
+  'لا توجد منتجات مطابقة': 'No matching products',
+  'لا توجد منتجات متاحة حالياً': 'No products available right now',
+  'جرّب كلمة بحث مختلفة أو تصفّح فئة أخرى — قد تجد ما تبحث عنه': 'Try a different search term or browse another category — you might find what you\'re looking for',
+  'الصيدلية لم تُضف منتجات بعد — تابعنا قريباً أو جرّب صيدلية أخرى': 'This pharmacy hasn\'t added products yet — check back soon or try another pharmacy',
+  'عرض كل المنتجات': 'Show all products',
+
+  // ImageUploader
+  'يرجى اختيار ملف صورة صالح.': 'Please choose a valid image file.',
+  'حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.': 'The image is too large, the maximum size is 5 MB.',
+  'فشل رفع الصورة. تأكد من أن بوكيت التخزين مفعّل في Supabase.': 'Failed to upload the image. Make sure the storage bucket is enabled in Supabase.',
+  'من الجهاز': 'From device',
+  'رابط': 'Link',
+  'جاري الرفع...': 'Uploading...',
+  'اضغط لاختيار صورة من الجهاز': 'Click to choose an image from your device',
+
+  // ReminderScheduler
+  'تذكير بأخذ الدواء 💊': 'Medication reminder 💊',
+  'في {0}': 'at {0}',
+  'انتهى الدواء': 'Medication finished',
+  'اقترب النفاد — متبقي {0} يوم': 'Running low — {0} days left',
+  'تنبيه نفاد الدواء 💊': 'Medication running out 💊',
+  'أعد طلبه الآن من أقرب صيدلية.': 'Order it again now from the nearest pharmacy.',
+};

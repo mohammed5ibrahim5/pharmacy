@@ -7,6 +7,7 @@ import {
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { translateError } from '@/lib/errorMessages';
 import { awardLoyaltyPoints } from '@/lib/loyalty';
@@ -41,6 +42,7 @@ export function OrderModal() {
   const { cart, cartOpen, cartStep, setCartStep, closeCart, updateCartQty, removeFromCart, clearCart, contactProduct, closeContact } = useOrder();
   const { user, profile, setAuthModalOpen } = useCustomer();
   const { settings, themeColors, paymentConfig, storeConfig, loyaltyConfig } = useSettings();
+  const { t } = useLanguage();
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [address, setAddress] = useState(profile?.phone || '');
   const [note, setNote] = useState('');
@@ -90,8 +92,8 @@ export function OrderModal() {
         map.set(key, {
           key,
           label: p.for_all_pharmacies
-            ? 'متوفر لدى جميع الصيدليات'
-            : pharmacy?.name || entry.pharmacyName || p.pharmacy?.name || 'الصيدلية',
+            ? t('متوفر لدى جميع الصيدليات')
+            : pharmacy?.name || entry.pharmacyName || p.pharmacy?.name || t('الصيدلية'),
           pharmacy,
           subtotal: 0,
         });
@@ -101,7 +103,7 @@ export function OrderModal() {
       group.subtotal += price;
     });
     return Array.from(map.values());
-  }, [cart, pharmacies]);
+  }, [cart, pharmacies, t]);
 
   const subtotal = cart.reduce((sum, entry) => sum + finalPriceOf(entry.product) * entry.quantity, 0);
   const freeThreshold = parseFloat(paymentConfig.freeDeliveryThreshold) || 0;
@@ -150,8 +152,8 @@ export function OrderModal() {
             >
               <Phone className="w-8 h-8" />
             </div>
-            <h2 className="text-xl font-extrabold text-gray-900">تواصل مع الصيدلية مباشرة</h2>
-            <p className="text-gray-500 text-sm mt-2 leading-relaxed">{storeConfig.contactMessage}</p>
+            <h2 className="text-xl font-extrabold text-gray-900">{t('تواصل مع الصيدلية مباشرة')}</h2>
+            <p className="text-gray-500 text-sm mt-2 leading-relaxed">{t(storeConfig.contactMessage)}</p>
           </div>
 
           <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-3 mb-5">
@@ -169,7 +171,7 @@ export function OrderModal() {
                 {contactName}
               </p>
               <p className="text-xs font-bold mt-0.5" style={{ color: themeColors.priceColor }}>
-                {fp.toFixed(2)} ج.م
+                {t('{0} ج.م', [fp.toFixed(2)])}
               </p>
             </div>
           </div>
@@ -184,7 +186,7 @@ export function OrderModal() {
               style={{ backgroundColor: '#25d366', boxShadow: '0 8px 20px -6px #25d36688' }}
             >
               <Send className="w-5 h-5" />
-              مراسلة {contactName} واتساب
+              {t('مراسلة {0} واتساب', [contactName])}
             </a>
           ) : (
             phone && (
@@ -194,7 +196,7 @@ export function OrderModal() {
                 style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
               >
                 <Phone className="w-5 h-5" />
-                الاتصال بـ {contactName}
+                {t('الاتصال بـ {0}', [contactName])}
               </a>
             )
           )}
@@ -206,19 +208,19 @@ export function OrderModal() {
               style={{ borderColor: themeColors.priceColor, color: themeColors.priceColor }}
             >
               <Phone className="w-5 h-5" />
-              الاتصال المباشر
+              {t('الاتصال المباشر')}
             </a>
           )}
 
           {!phone && !whatsappDigits && (
             <div className="w-full py-3.5 rounded-xl mb-3 bg-amber-50 border border-amber-200 text-center">
-              <p className="text-xs font-bold text-amber-700">لا يتوفر رقم تواصل مسجل حالياً، حاول لاحقاً.</p>
+              <p className="text-xs font-bold text-amber-700">{t('لا يتوفر رقم تواصل مسجل حالياً، حاول لاحقاً.')}</p>
             </div>
           )}
 
           <p className="text-[11px] text-gray-400 text-center leading-relaxed">
             <Info className="w-3 h-3 inline -mt-0.5 ml-1" />
-            الطلب المباشر أونلاين متوقف حالياً، يمكنك الاتصال بالصيدلية لتأكيد توفر المنتج وطريقة الشراء.
+            {t('الطلب المباشر أونلاين متوقف حالياً، يمكنك الاتصال بالصيدلية لتأكيد توفر المنتج وطريقة الشراء.')}
           </p>
         </div>
       </div>
@@ -251,18 +253,17 @@ export function OrderModal() {
               <Plus className="w-3 h-3" strokeWidth={3} />
             </span>
           </div>
-          <h2 className="text-xl font-black text-gray-900 mb-2">سلة التسوق فارغة</h2>
+          <h2 className="text-xl font-black text-gray-900 mb-2">{t('سلة التسوق فارغة')}</h2>
           <p className="text-sm text-gray-500 leading-relaxed mb-6">
-            لم تضف أي منتجات بعد. تصفح الصيدليات وأضف أدويتك إلى سلة التسوق لتدفعها كلها في طلب واحد بتوصيلة واحدة.
+            {t('لم تضف أي منتجات بعد. تصفح الصيدليات وأضف أدويتك إلى سلة التسوق لتدفعها كلها في طلب واحد بتوصيلة واحدة.')}
           </p>
           <button
             onClick={closeModal}
             className="w-full py-3.5 rounded-2xl text-white font-black transition-all hover:brightness-105 active:scale-[0.99] shadow-lg"
             style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
           >
-            ابدأ التسوق
-          </button>
-        </div>
+            {t('ابدأ التسوق')}
+          </button>        </div>
       </div>
     );
   }
@@ -275,20 +276,20 @@ export function OrderModal() {
           <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-5">
             <CheckCircle2 className="w-10 h-10 text-teal-600" />
           </div>
-          <h2 className="text-xl font-extrabold text-gray-900 mb-2">تم استلام طلبك بنجاح!</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 mb-2">{t('تم استلام طلبك بنجاح!')}</h2>
           <p className="text-gray-500 text-sm leading-relaxed mb-3">
-            سنراجع إثبات التحويل الخاص بك، وبمجرد تأكيد الدفع ستصل إليك رسالة بأن طلبك في الطريق.
+            {t('سنراجع إثبات التحويل الخاص بك، وبمجرد تأكيد الدفع ستصل إليك رسالة بأن طلبك في الطريق.')}
           </p>
           {groups.length > 1 && (
             <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex items-center gap-2 text-xs font-bold text-teal-700 mb-4">
               <Building2 className="w-4 h-4 shrink-0" />
-              طلبك موحّد من {groups.length} صيدليات في توصيلة واحدة.
+              {t('طلبك موحّد من {0} صيدليات في توصيلة واحدة.', [groups.length])}
             </div>
           )}
           {loyaltyConfig.enabled && loyaltyConfig.pointsPerOrder > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2 text-xs font-bold text-amber-700 mb-4">
               <Sparkles className="w-4 h-4 shrink-0" />
-              حصلت على {loyaltyConfig.pointsPerOrder} نقطة مكافأة أُضيفت لرصيدك!
+              {t('حصلت على {0} نقطة مكافأة أُضيفت لرصيدك!', [loyaltyConfig.pointsPerOrder])}
             </div>
           )}
           <button
@@ -299,7 +300,7 @@ export function OrderModal() {
             className="w-full py-3 rounded-xl text-white font-bold"
             style={{ backgroundColor: themeColors.priceColor }}
           >
-            حسناً
+            {t('حسناً')}
           </button>
         </div>
       </div>
@@ -310,7 +311,7 @@ export function OrderModal() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      setError('حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.');
+      setError(t('حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.'));
       return;
     }
     const reader = new FileReader();
@@ -334,17 +335,17 @@ export function OrderModal() {
     setError(null);
 
     if (!user) {
-      setError('يرجى تسجيل الدخول أولاً لإتمام الطلب.');
+      setError(t('يرجى تسجيل الدخول أولاً لإتمام الطلب.'));
       setLoading(false);
       return;
     }
     if (!hasMethodNumber) {
-      setError('لم يتم إعداد رقم الدفع من الإدارة بعد، يرجى المحاولة لاحقاً.');
+      setError(t('لم يتم إعداد رقم الدفع من الإدارة بعد، يرجى المحاولة لاحقاً.'));
       setLoading(false);
       return;
     }
     if (!screenshot) {
-      setError('يرجى رفع صورة إثبات التحويل (سكرين شوت) حتى يتم تأكيد الطلب.');
+      setError(t('يرجى رفع صورة إثبات التحويل (سكرين شوت) حتى يتم تأكيد الطلب.'));
       setLoading(false);
       return;
     }
@@ -403,7 +404,7 @@ export function OrderModal() {
         setSuccess(true);
       }
     } catch {
-      setError('فشل رفع صورة التحويل، برجاء المحاولة مرة أخرى.');
+      setError(t('فشل رفع صورة التحويل، برجاء المحاولة مرة أخرى.'));
     } finally {
       setLoading(false);
     }
@@ -424,9 +425,9 @@ export function OrderModal() {
                 <ShoppingCart className="w-5 h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-lg font-black text-gray-900">سلة التسوق</h2>
+                <h2 className="text-lg font-black text-gray-900">{t('سلة التسوق')}</h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {cart.reduce((s, i) => s + i.quantity, 0)} منتج من {groups.length} {groups.length === 1 ? 'صيدلية' : 'صيدليات'} · توصيلة واحدة
+                  {t('{0} منتج من {1} {2} · توصيلة واحدة', [cart.reduce((s, i) => s + i.quantity, 0), groups.length, groups.length === 1 ? t('صيدلية') : t('صيدليات')])}
                 </p>
               </div>
               <button onClick={closeModal} className="w-8 h-8 rounded-xl hover:bg-gray-100 flex items-center justify-center shrink-0">
@@ -437,10 +438,10 @@ export function OrderModal() {
             {/* Step indicator */}
             <div className="flex items-center gap-2 mt-4">
               <span className="text-[10px] font-black text-white px-2.5 py-1 rounded-full" style={{ backgroundColor: themeColors.priceColor }}>1</span>
-              <span className="text-[10px] font-bold text-gray-600">السلة</span>
+              <span className="text-[10px] font-bold text-gray-600">{t('السلة')}</span>
               <span className="h-px flex-1 bg-gray-200" />
               <span className="text-[10px] font-black text-gray-400 w-5 h-5 rounded-full border border-gray-200 flex items-center justify-center">2</span>
-              <span className="text-[10px] font-bold text-gray-400">الدفع والتوصيل</span>
+              <span className="text-[10px] font-bold text-gray-400">{t('الدفع والتوصيل')}</span>
             </div>
           </div>
 
@@ -464,7 +465,7 @@ export function OrderModal() {
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${groupFee(g) === 0 ? 'bg-teal-50 text-teal-700' : 'bg-gray-100 text-gray-600'}`}
                     >
-                      {groupFee(g) === 0 ? 'توصيل مجاني' : `توصيل ${groupFee(g).toFixed(0)} ج.م`}
+                      {groupFee(g) === 0 ? t('توصيل مجاني') : t('توصيل {0} ج.م', [groupFee(g).toFixed(0)])}
                     </span>
                   )}
                 </div>
@@ -484,9 +485,9 @@ export function OrderModal() {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-[13px] font-bold text-gray-900 truncate">{entry.product.name}</p>
-                            <p className="text-[11px] text-gray-500 truncate mt-0.5">{entry.product.unit || 'قطعة'} · {price.toFixed(2)} ج.م</p>
+                            <p className="text-[11px] text-gray-500 truncate mt-0.5">{entry.product.unit || t('قطعة')} · {t('{0} ج.م', [price.toFixed(2)])}</p>
                             <p className="text-sm font-extrabold mt-1" style={{ color: themeColors.priceColor }}>
-                              {(price * entry.quantity).toFixed(2)} <span className="text-[10px] text-gray-400 font-medium">ج.م</span>
+                              {(price * entry.quantity).toFixed(2)} <span className="text-[10px] text-gray-400 font-medium">{t('ج.م')}</span>
                             </p>
                           </div>
                           <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -494,7 +495,7 @@ export function OrderModal() {
                               <button
                                 onClick={() => updateCartQty(entry.key, entry.quantity - 1)}
                                 className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
-                                aria-label="إنقاص الكمية"
+                                aria-label={t('إنقاص الكمية')}
                               >
                                 <Minus className="w-3.5 h-3.5" />
                               </button>
@@ -503,7 +504,7 @@ export function OrderModal() {
                                 onClick={() => updateCartQty(entry.key, entry.quantity + 1)}
                                 className="w-7 h-7 rounded-lg flex items-center justify-center text-white transition-all active:scale-90"
                                 style={{ backgroundColor: themeColors.priceColor }}
-                                aria-label="زيادة الكمية"
+                                aria-label={t('زيادة الكمية')}
                               >
                                 <Plus className="w-3.5 h-3.5" />
                               </button>
@@ -512,7 +513,7 @@ export function OrderModal() {
                               onClick={() => removeFromCart(entry.key)}
                               className="text-[10px] font-bold text-gray-400 hover:text-red-500 flex items-center gap-0.5 transition-colors"
                             >
-                              <Trash2 className="w-3 h-3" /> إزالة
+                              <Trash2 className="w-3 h-3" /> {t('إزالة')}
                             </button>
                           </div>
                         </div>
@@ -525,15 +526,15 @@ export function OrderModal() {
             {/* Summary */}
             <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2.5">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">المجموع الفرعي</span>
-                <span className="font-bold text-gray-800">{subtotal.toFixed(2)} ج.م</span>
+                <span className="text-gray-500">{t('المجموع الفرعي')}</span>
+                <span className="font-bold text-gray-800">{t('{0} ج.م', [subtotal.toFixed(2)])}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500 flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5" /> رسوم التوصيل
+                  <Truck className="w-3.5 h-3.5" /> {t('رسوم التوصيل')}
                 </span>
                 <span className={`font-bold ${totalDelivery === 0 ? 'text-teal-600' : 'text-gray-800'}`}>
-                  {totalDelivery === 0 ? (deliveryFreeGlobal ? 'مجاني' : 'بدون رسوم') : `${totalDelivery.toFixed(0)} ج.م`}
+                  {totalDelivery === 0 ? (deliveryFreeGlobal ? t('مجاني') : t('بدون رسوم')) : t('{0} ج.م', [totalDelivery.toFixed(0)])}
                 </span>
               </div>
               {freeThreshold > 0 && subtotal < freeThreshold && (
@@ -545,14 +546,14 @@ export function OrderModal() {
                     />
                   </div>
                   <p className="text-[11px] text-teal-600 font-bold">
-                    أضف {(freeThreshold - subtotal).toFixed(2)} ج.م ليصبح التوصيل مجانياً!
+                    {t('أضف {0} ج.م ليصبح التوصيل مجانياً!', [(freeThreshold - subtotal).toFixed(2)])}
                   </p>
                 </div>
               )}
               {paymentConfig.shippingNote && (
                 <p className="text-[11px] text-gray-400 leading-relaxed flex items-start gap-1 pt-1 border-t border-gray-100">
                   <Info className="w-3 h-3 mt-0.5 shrink-0" />
-                  {paymentConfig.shippingNote}
+                  {t(paymentConfig.shippingNote)}
                 </p>
               )}
             </div>
@@ -561,9 +562,9 @@ export function OrderModal() {
           {/* Footer */}
           <div className="p-4 pt-3 border-t border-gray-100 shrink-0" style={{ backgroundColor: themeColors.modalHeaderBg }}>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-gray-500">الإجمالي</span>
+              <span className="text-xs font-bold text-gray-500">{t('الإجمالي')}</span>
               <span className="font-black text-xl" style={{ color: themeColors.priceColor }}>
-                {total.toFixed(2)} <span className="text-xs text-gray-400 font-medium">ج.م</span>
+                {total.toFixed(2)} <span className="text-xs text-gray-400 font-medium">{t('ج.م')}</span>
               </span>
             </div>
             <button
@@ -579,7 +580,7 @@ export function OrderModal() {
               style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
             >
               <Send className="w-5 h-5" />
-              متابعة إتمام الطلب
+              {t('متابعة إتمام الطلب')}
             </button>
           </div>
         </div>
@@ -600,13 +601,13 @@ export function OrderModal() {
             <button
               onClick={() => setCartStep('cart')}
               className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors shrink-0"
-              title="العودة للسلة"
+              title={t('العودة للسلة')}
             >
               <X className="w-4 h-4 rotate-45" />
             </button>
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-black text-gray-900">إتمام الطلب</h2>
-              <p className="text-xs text-gray-500 mt-0.5">طلب من {groups.length} {groups.length === 1 ? 'صيدلية' : 'صيدليات'} في توصيلة واحدة</p>
+              <h2 className="text-lg font-black text-gray-900">{t('إتمام الطلب')}</h2>
+              <p className="text-xs text-gray-500 mt-0.5">{t('طلب من {0} {1} في توصيلة واحدة', [groups.length, groups.length === 1 ? t('صيدلية') : t('صيدليات')])}</p>
             </div>
           </div>
 
@@ -615,10 +616,10 @@ export function OrderModal() {
             <span className="text-[10px] font-black text-white w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: themeColors.priceColor }}>
               <CheckCheck className="w-3 h-3" />
             </span>
-            <span className="text-[10px] font-bold text-gray-600">السلة</span>
+            <span className="text-[10px] font-bold text-gray-600">{t('السلة')}</span>
             <span className="h-px flex-1 bg-gray-200" />
             <span className="text-[10px] font-black text-white w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: themeColors.priceColor }}>2</span>
-            <span className="text-[10px] font-bold text-gray-600">الدفع والتوصيل</span>
+            <span className="text-[10px] font-bold text-gray-600">{t('الدفع والتوصيل')}</span>
           </div>
         </div>
 
@@ -632,7 +633,7 @@ export function OrderModal() {
                 <p className="font-bold text-sm text-red-700 mb-0.5">{error}</p>
                 <p className="text-xs text-red-600/80 flex items-start gap-1 leading-relaxed">
                   <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  يرجى التحقق من البيانات وإعادة المحاولة
+                  {t('يرجى التحقق من البيانات وإعادة المحاولة')}
                 </p>
               </div>
             </div>
@@ -643,14 +644,14 @@ export function OrderModal() {
           {/* Contact info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">اسم المستلم</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('اسم المستلم')}</label>
               <div className="relative">
                 <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input type="text" value={profile?.full_name || ''} readOnly className="w-full pr-10 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">رقم الهاتف</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('رقم الهاتف')}</label>
               <div className="relative">
                 <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input type="tel" value={profile?.phone || ''} readOnly dir="ltr" className="w-full pr-10 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
@@ -660,10 +661,10 @@ export function OrderModal() {
 
           {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">عنوان التوصيل</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('عنوان التوصيل')}</label>
             <div className="relative">
               <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="العنوان بالتفصيل" className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: themeColors.priceColor }} />
+              <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('العنوان بالتفصيل')} className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: themeColors.priceColor }} />
             </div>
           </div>
 
@@ -671,7 +672,7 @@ export function OrderModal() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
               <Wallet className="w-4 h-4" />
-              طريقة الدفع
+              {t('طريقة الدفع')}
             </label>
             <div className="grid grid-cols-2 gap-3">
               {PAYMENT_METHODS.map((m) => (
@@ -694,8 +695,8 @@ export function OrderModal() {
                       {METHOD_ICONS[m.id]}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-xs font-extrabold text-gray-900">{m.label}</p>
-                      <p className="text-[10px] text-gray-500 truncate">{m.description}</p>
+                      <p className="text-xs font-extrabold text-gray-900">{t(m.label)}</p>
+                      <p className="text-[10px] text-gray-500 truncate">{t(m.description)}</p>
                     </div>
                   </div>
                   {paymentMethod === m.id && (
@@ -714,7 +715,7 @@ export function OrderModal() {
               {hasMethodNumber ? (
                 <>
                   <p className="text-[11px] font-bold text-gray-600 mb-1">
-                    أرسل المبلغ إلى رقم {PAYMENT_METHOD_LABEL[paymentMethod]}:
+                    {t('أرسل المبلغ إلى رقم {0}:', [t(PAYMENT_METHOD_LABEL[paymentMethod])])}
                   </p>
                   <div className="flex items-center gap-2">
                     <span className="text-base font-black text-gray-900" dir="ltr">{methodNumber}</span>
@@ -725,14 +726,14 @@ export function OrderModal() {
                       style={{ backgroundColor: themeColors.priceColor }}
                     >
                       {copied ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      {copied ? 'تم النسخ' : 'نسخ الرقم'}
+                      {copied ? t('تم النسخ') : t('نسخ الرقم')}
                     </button>
                   </div>
                 </>
               ) : (
                 <p className="text-xs font-bold text-amber-700 flex items-center gap-1.5">
                   <Info className="w-4 h-4" />
-                  لم يتم إعداد أرقام الدفع من الإدارة بعد، برجاء المحاولة لاحقاً.
+                  {t('لم يتم إعداد أرقام الدفع من الإدارة بعد، برجاء المحاولة لاحقاً.')}
                 </p>
               )}
             </div>
@@ -741,11 +742,11 @@ export function OrderModal() {
           {/* Payment screenshot */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              صورة إثبات التحويل (سكرين شوت) *
+              {t('صورة إثبات التحويل (سكرين شوت) *')}
             </label>
             {screenshot ? (
               <div className="relative rounded-2xl overflow-hidden border-2 max-h-56 bg-slate-900 flex items-center justify-center" style={{ borderColor: themeColors.priceColor }}>
-                <img src={screenshot} alt="إثبات التحويل" className="max-h-56 w-auto object-contain mx-auto" />
+                <img src={screenshot} alt={t('إثبات التحويل')} className="max-h-56 w-auto object-contain mx-auto" />
                 <button
                   type="button"
                   onClick={() => setScreenshot(null)}
@@ -764,8 +765,8 @@ export function OrderModal() {
                     <Camera className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-800">اضغط لرفع صورة التحويل</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">JPG, PNG حتى 5MB</p>
+                    <p className="text-xs font-bold text-gray-800">{t('اضغط لرفع صورة التحويل')}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{t('JPG, PNG حتى 5MB')}</p>
                   </div>
                   <input type="file" accept="image/*" className="hidden" onChange={handleScreenshotChange} />
                 </label>
@@ -775,7 +776,7 @@ export function OrderModal() {
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-gray-200 text-[11px] font-bold text-gray-500 hover:bg-gray-50 transition-colors"
                 >
                   <Link2 className="w-3.5 h-3.5" />
-                  أو ألصق رابط الصورة
+                  {t('أو ألصق رابط الصورة')}
                 </button>
               </div>
             )}
@@ -800,7 +801,7 @@ export function OrderModal() {
                   className="px-4 py-2.5 rounded-xl text-white text-xs font-bold"
                   style={{ backgroundColor: themeColors.priceColor }}
                 >
-                  استخدام الرابط
+                  {t('استخدام الرابط')}
                 </button>
               </div>
             )}
@@ -808,33 +809,33 @@ export function OrderModal() {
 
           {/* Note */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">ملاحظات (اختياري)</label>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="أي تفاصيل إضافية..." className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: themeColors.priceColor }} />
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('ملاحظات (اختياري)')}</label>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={t('أي تفاصيل إضافية...')} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: themeColors.priceColor }} />
           </div>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">المجموع الفرعي ({cart.reduce((s, i) => s + i.quantity, 0)} منتج)</span>
-              <span className="font-bold text-gray-800">{subtotal.toFixed(2)} ج.م</span>
+              <span className="text-gray-500">{t('المجموع الفرعي ({0} منتج)', [cart.reduce((s, i) => s + i.quantity, 0)])}</span>
+              <span className="font-bold text-gray-800">{t('{0} ج.م', [subtotal.toFixed(2)])}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500 flex items-center gap-1">
-                <Truck className="w-3.5 h-3.5" /> رسوم التوصيل
+                <Truck className="w-3.5 h-3.5" /> {t('رسوم التوصيل')}
               </span>
               <span className={`font-bold ${totalDelivery === 0 ? 'text-teal-600' : 'text-gray-800'}`}>
-                {totalDelivery === 0 ? (freeThreshold > 0 && subtotal >= freeThreshold ? 'مجاني' : 'بدون رسوم') : `${totalDelivery.toFixed(0)} ج.م`}
+                {totalDelivery === 0 ? (freeThreshold > 0 && subtotal >= freeThreshold ? t('مجاني') : t('بدون رسوم')) : t('{0} ج.م', [totalDelivery.toFixed(0)])}
               </span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <span className="text-sm text-gray-500">الإجمالي</span>
+              <span className="text-sm text-gray-500">{t('الإجمالي')}</span>
               <span className="font-extrabold text-lg" style={{ color: themeColors.priceColor }}>
-                {total.toFixed(2)} ج.م
+                {t('{0} ج.م', [total.toFixed(2)])}
               </span>
             </div>
             {paymentConfig.shippingNote && (
               <p className="text-[11px] text-gray-400 leading-relaxed flex items-start gap-1 pt-1">
                 <Info className="w-3 h-3 mt-0.5 shrink-0" />
-                {paymentConfig.shippingNote}
+                {t(paymentConfig.shippingNote)}
               </p>
             )}
           </div>
@@ -845,12 +846,12 @@ export function OrderModal() {
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 shadow-lg"
             style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-5 h-5" /> تأكيد الطلب</>}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-5 h-5" /> {t('تأكيد الطلب')}</>}
           </button>
 
           <p className="text-[11px] text-gray-400 text-center leading-relaxed">
             <Lock className="w-3 h-3 inline -mt-0.5 ml-1" />
-            بعد رفع إثبات التحويل سيراجع فريقنا العملية ويؤكد طلبك، وستصل إليك إشعارات الحالة في صفحة طلباتك.
+            {t('بعد رفع إثبات التحويل سيراجع فريقنا العملية ويؤكد طلبك، وستصل إليك إشعارات الحالة في صفحة طلباتك.')}
           </p>
         </form>
       </div>

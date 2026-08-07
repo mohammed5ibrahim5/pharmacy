@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { TrendingUp, Search, X, Flame, Package, ArrowLeft } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useRouter } from '@/context/RouterContext';
 import { ProductCard } from '@/components/ProductCard';
 import { readSearchHistory, clearSearchHistory } from '@/lib/searchHistory';
@@ -13,6 +14,7 @@ interface Props {
 
 export function MostSearched({ products, popularProductIds = [] }: Props) {
   const { themeColors } = useSettings();
+  const { t } = useLanguage();
   const { navigate } = useRouter();
   const [, setVersion] = useState(0);
 
@@ -55,12 +57,12 @@ export function MostSearched({ products, popularProductIds = [] }: Props) {
               style={{ backgroundColor: `${themeColors.badgePillBg}15`, color: themeColors.badgePillText }}
             >
               <TrendingUp className="w-4 h-4" />
-              الأكثر بحثاً
+              {t('الأكثر بحثاً')}
             </span>
             <h2 className="text-2xl sm:text-3xl font-black mt-2 tracking-tight" style={{ color: themeColors.sectionHeadingText }}>
-              عمليات بحثك الأخيرة
+              {t('عمليات بحثك الأخيرة')}
             </h2>
-            <p className="text-sm mt-1.5 font-bold" style={{ color: themeColors.sectionSubheadingText }}>تابع من حيث توقفت أو أعد البحث بضغطة واحدة</p>
+            <p className="text-sm mt-1.5 font-bold" style={{ color: themeColors.sectionSubheadingText }}>{t('تابع من حيث توقفت أو أعد البحث بضغطة واحدة')}</p>
           </div>
           {history.length > 0 && (
             <button
@@ -68,7 +70,7 @@ export function MostSearched({ products, popularProductIds = [] }: Props) {
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
             >
               <X className="w-3.5 h-3.5" />
-              مسح السجل
+              {t('مسح السجل')}
             </button>
           )}
         </div>
@@ -95,7 +97,7 @@ export function MostSearched({ products, popularProductIds = [] }: Props) {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Flame className="w-4 h-4" style={{ color: themeColors.accentColor }} />
-              <h3 className="text-sm font-extrabold" style={{ color: themeColors.sectionHeadingText }}>منتجات ننصح بها بناءً على بحثك</h3>
+              <h3 className="text-sm font-extrabold" style={{ color: themeColors.sectionHeadingText }}>{t('منتجات ننصح بها بناءً على بحثك')}</h3>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {matchedProducts.map((product) => (
@@ -112,7 +114,7 @@ export function MostSearched({ products, popularProductIds = [] }: Props) {
               onClick={() => navigate({ name: 'search', query: '' })}
               className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-extrabold text-gray-800 hover:bg-slate-50 transition-all shadow-2xs group"
             >
-              <span>تصفح كل المنتجات</span>
+              <span>{t('تصفح كل المنتجات')}</span>
               <ArrowLeft className="w-4 h-4 text-gray-400 group-hover:-translate-x-1 transition-transform" />
             </button>
           </div>
@@ -121,7 +123,7 @@ export function MostSearched({ products, popularProductIds = [] }: Props) {
         {matchedProducts.length === 0 && (
           <div className="text-center py-10 rounded-3xl border border-gray-100" style={{ backgroundColor: themeColors.cardBg }}>
             <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm font-bold" style={{ color: themeColors.cardMutedText }}>لا توجد منتجات مطابقة لبحثك الأخير حالياً</p>
+            <p className="text-sm font-bold" style={{ color: themeColors.cardMutedText }}>{t('لا توجد منتجات مطابقة لبحثك الأخير حالياً')}</p>
           </div>
         )}
       </div>

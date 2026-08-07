@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Star, Quote, BadgeCheck, MessageSquareQuote } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import type { Review } from '@/types';
 
@@ -8,6 +9,7 @@ const AVATAR_COLORS = ['#0d9488', '#2563eb', '#d97706', '#7c3aed', '#db2777'];
 
 export function HomeTestimonials() {
   const { themeColors } = useSettings();
+  const { t } = useLanguage();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,11 +42,11 @@ export function HomeTestimonials() {
           className="text-xs font-extrabold px-3.5 py-1 rounded-full"
           style={{ backgroundColor: `${themeColors.badgePillBg}15`, color: themeColors.badgePillText }}
         >
-          آراء عملائنا
+          {t('آراء عملائنا')}
         </span>
-        <h2 className="text-2xl sm:text-3xl font-black mt-2" style={{ color: themeColors.sectionHeadingText }}>ماذا قالوا عنا؟</h2>
+        <h2 className="text-2xl sm:text-3xl font-black mt-2" style={{ color: themeColors.sectionHeadingText }}>{t('ماذا قالوا عنا؟')}</h2>
         <p className="text-sm mt-2 font-bold" style={{ color: themeColors.sectionSubheadingText }}>
-          آراء حقيقية يشاركها عملاؤنا بعد تجربة الطلب
+          {t('آراء حقيقية يشاركها عملاؤنا بعد تجربة الطلب')}
         </p>
         {reviews.length > 0 && !loading && (
           <div
@@ -53,7 +55,7 @@ export function HomeTestimonials() {
           >
             <Star className="w-4 h-4 fill-current" style={{ color: themeColors.ratingColor }} />
             <span className="font-black" style={{ color: themeColors.ratingColor }}>{average.toFixed(1)}</span>
-            <span className="text-xs font-bold" style={{ color: themeColors.ratingColor }}>({reviews.length} تقييم حقيقي)</span>
+            <span className="text-xs font-bold" style={{ color: themeColors.ratingColor }}>({t('{0} تقييم حقيقي', [reviews.length])})</span>
           </div>
         )}
       </div>
@@ -72,9 +74,9 @@ export function HomeTestimonials() {
           >
             <MessageSquareQuote className="w-8 h-8" />
           </div>
-          <h3 className="font-black text-lg mb-1.5" style={{ color: themeColors.cardText }}>كن أول من يقيّمنا</h3>
+          <h3 className="font-black text-lg mb-1.5" style={{ color: themeColors.cardText }}>{t('كن أول من يقيّمنا')}</h3>
           <p className="text-sm font-bold leading-relaxed" style={{ color: themeColors.cardMutedText }}>
-            لم تصلنا تقييمات بعد — جرّب طلب دوائك وشاركنا تجربتك، وستظهر آراء عملائنا الحقيقيين هنا.
+            {t('لم تصلنا تقييمات بعد — جرّب طلب دوائك وشاركنا تجربتك، وستظهر آراء عملائنا الحقيقيين هنا.')}
           </p>
         </div>
       ) : (
@@ -98,7 +100,7 @@ export function HomeTestimonials() {
               </div>
 
               <p className="text-sm leading-relaxed font-medium mb-5" style={{ color: themeColors.cardMutedText }}>
-                {review.comment || 'تجربة ممتازة، شكراً على سرعة التوصيل.'}
+                {review.comment || t('تجربة ممتازة، شكراً على سرعة التوصيل.')}
               </p>
 
               <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
@@ -110,7 +112,7 @@ export function HomeTestimonials() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-extrabold flex items-center gap-1.5 truncate" style={{ color: themeColors.cardText }}>
-                    {review.customer_name || 'عميل'}
+                    {review.customer_name || t('عميل')}
                     <BadgeCheck className="w-4 h-4 shrink-0" style={{ color: themeColors.inStockColor }} />
                   </p>
                   <p className="text-[11px] font-bold" style={{ color: themeColors.cardMutedText }}>

@@ -3,6 +3,7 @@ import { BadgePercent, X, Copy, Check, ShoppingBag, Ticket } from 'lucide-react'
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useCountdown } from '@/hooks/useCountdown';
+import { useLanguage } from '@/context/LanguageContext';
 
 const STORAGE_KEY = 'pharmacy_welcome_popup_seen';
 const OFFER_CODE = 'WELCOME10';
@@ -10,6 +11,7 @@ const OFFER_CODE = 'WELCOME10';
 export function WelcomePopup() {
   const { themeColors, storeConfig } = useSettings();
   const { navigate } = useRouter();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -56,7 +58,7 @@ export function WelcomePopup() {
           <button
             onClick={() => setOpen(false)}
             className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors"
-            aria-label="إغلاق"
+            aria-label={t('إغلاق')}
           >
             <X className="w-4 h-4 text-white" />
           </button>
@@ -64,9 +66,9 @@ export function WelcomePopup() {
             <div className="w-16 h-16 rounded-3xl bg-white/20 border border-white/30 flex items-center justify-center mx-auto mb-3 animate-float shadow-lg">
               <BadgePercent className="w-8 h-8 text-white" />
             </div>
-            <p className="text-[11px] font-black uppercase tracking-widest text-white/80">عرض ترحيبي خاص</p>
-            <h3 className="text-2xl font-black mt-1">خصم 10% على طلبك الأول</h3>
-            <p className="text-xs text-white/85 font-bold mt-1.5">ادخل الكود عند إتمام الطلب واستفد بالخصم</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-white/80">{t('عرض ترحيبي خاص')}</p>
+            <h3 className="text-2xl font-black mt-1">{t('خصم 10% على طلبك الأول')}</h3>
+            <p className="text-xs text-white/85 font-bold mt-1.5">{t('ادخل الكود عند إتمام الطلب واستفد بالخصم')}</p>
           </div>
         </div>
 
@@ -76,9 +78,9 @@ export function WelcomePopup() {
           {countdown && (
             <div className="flex items-center justify-center gap-2 mb-5">
               {[
-                { value: countdown.hours, label: 'ساعة' },
-                { value: countdown.minutes, label: 'دقيقة' },
-                { value: countdown.seconds, label: 'ثانية' },
+                { value: countdown.hours, label: t('ساعة') },
+                { value: countdown.minutes, label: t('دقيقة') },
+                { value: countdown.seconds, label: t('ثانية') },
               ].map((unit, i) => (
                 <div key={unit.label} className="flex items-center gap-2">
                   <div className="bg-slate-50 border border-gray-200 rounded-xl px-3 py-2 text-center">
@@ -103,7 +105,7 @@ export function WelcomePopup() {
               style={{ backgroundColor: themeColors.accentColor }}
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? 'تم النسخ' : 'نسخ الكود'}
+              {copied ? t('تم النسخ') : t('نسخ الكود')}
             </button>
           </div>
 
@@ -117,13 +119,13 @@ export function WelcomePopup() {
             style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 12px 28px -8px ${themeColors.priceColor}99` }}
           >
             <ShoppingBag className="w-4 h-4" />
-            ابدأ التسوق الآن
+            {t('ابدأ التسوق الآن')}
           </button>
           <button
             onClick={() => setOpen(false)}
             className="mt-3 w-full text-center text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
           >
-            لاحقاً، لن أشتري الآن
+            {t('لاحقاً، لن أشتري الآن')}
           </button>
         </div>
       </div>

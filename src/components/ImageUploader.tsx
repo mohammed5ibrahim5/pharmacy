@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Link2, Upload, Loader2, Image as ImageIcon, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ImageUploaderProps {
   label: string;
@@ -12,6 +13,7 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ label, value, onChange, bucket = 'images', previewClassName = '', hint }: ImageUploaderProps) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'link' | 'device'>(value ? 'link' : 'device');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,11 +21,11 @@ export function ImageUploader({ label, value, onChange, bucket = 'images', previ
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      setError('يرجى اختيار ملف صورة صالح.');
+      setError(t('يرجى اختيار ملف صورة صالح.'));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError('حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.');
+      setError(t('حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.'));
       return;
     }
     setUploading(true);
@@ -38,7 +40,7 @@ export function ImageUploader({ label, value, onChange, bucket = 'images', previ
       const { data } = supabase.storage.from(bucket).getPublicUrl(path);
       onChange(data.publicUrl);
     } catch {
-      setError('فشل رفع الصورة. تأكد من أن بوكيت التخزين مفعّل في Supabase.');
+      setError(t('فشل رفع الصورة. تأكد من أن بوكيت التخزين مفعّل في Supabase.'));
     } finally {
       setUploading(false);
     }
@@ -53,8 +55,8 @@ export function ImageUploader({ label, value, onChange, bucket = 'images', previ
         </div>
         <div className="flex-1 min-w-0 space-y-2">
           <div className="flex rounded-lg overflow-hidden border border-gray-200 w-max text-[11px] font-bold">
-            <button type="button" onClick={() => setMode('device')} className={`flex items-center gap-1 px-3 py-1.5 transition-colors ${mode === 'device' ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}><Upload className="w-3.5 h-3.5" /> من الجهاز</button>
-            <button type="button" onClick={() => setMode('link')} className={`flex items-center gap-1 px-3 py-1.5 transition-colors ${mode === 'link' ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}><Link2 className="w-3.5 h-3.5" /> رابط</button>
+            <button type="button" onClick={() => setMode('device')} className={`flex items-center gap-1 px-3 py-1.5 transition-colors ${mode === 'device' ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}><Upload className="w-3.5 h-3.5" /> {t('من الجهاز')}</button>
+            <button type="button" onClick={() => setMode('link')} className={`flex items-center gap-1 px-3 py-1.5 transition-colors ${mode === 'link' ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}><Link2 className="w-3.5 h-3.5" /> {t('رابط')}</button>
           </div>
 
           {mode === 'device' ? (
@@ -77,7 +79,7 @@ export function ImageUploader({ label, value, onChange, bucket = 'images', previ
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-gray-300 text-xs font-medium text-gray-600 hover:border-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-60"
               >
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                {uploading ? 'جاري الرفع...' : 'اضغط لاختيار صورة من الجهاز'}
+                {uploading ? t('جاري الرفع...') : t('اضغط لاختيار صورة من الجهاز')}
               </button>
             </div>
           ) : (
