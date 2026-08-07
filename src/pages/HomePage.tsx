@@ -136,7 +136,7 @@ type PharmacyTab = 'nearest' | 'highest_rated' | 'most_popular' | 'delivery' | '
 
 export function HomePage() {
   const { settings, themeColors, heroConfig, storeConfig } = useSettings();
-  const { t, dir } = useLanguage();
+  const { t, lang, dir } = useLanguage();
   const { navigate } = useRouter();
   const { location, requestLocation, loading, permissionDenied, setUserLocation } = useGeolocation();
 
@@ -714,7 +714,7 @@ export function HomePage() {
                 </div>
 
                 <h3 className="text-xs font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors line-clamp-1">
-                  {cat.name}
+                  {lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}
                 </h3>
               </button>
             );

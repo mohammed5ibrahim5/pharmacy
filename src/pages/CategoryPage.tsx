@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function CategoryPage({ slug }: Props) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -78,7 +78,7 @@ return (
             <Pill className="w-8 h-8" style={{ color: themeColors.priceColor }} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.sectionHeadingText }}>{category?.name || t('الفئة')}</h1>
+            <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.sectionHeadingText }}>{category ? (lang === 'en' ? (category.name_en || t(category.name)) : category.name) : t('الفئة')}</h1>
             <p className="font-bold text-xs mt-1 flex items-center gap-1.5" style={{ color: themeColors.priceColor }}>
               <Package className="w-4 h-4" />
               {t('{0} منتج متاح حالياً', [products.length])}

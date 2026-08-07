@@ -78,15 +78,15 @@ const CATEGORY_STYLES: Record<string, { icon: LucideIcon; color: string }> = {
   digestive: { icon: Activity, color: '#16a34a' },
 };
 
-const FALLBACK_CATEGORIES: { slug: string; name: string }[] = [
-  { slug: 'painkillers', name: 'مسكنات الألم' },
-  { slug: 'antibiotics', name: 'مضادات حيوية' },
-  { slug: 'supplements', name: 'مكملات غذائية' },
-  { slug: 'cold-flu', name: 'برد وإنفلونزا' },
-  { slug: 'vitamins', name: 'فيتامينات' },
-  { slug: 'skin-care', name: 'العناية بالبشرة' },
-  { slug: 'baby-care', name: 'مستلزمات الأطفال' },
-  { slug: 'digestive', name: 'الجهاز الهضمي' },
+const FALLBACK_CATEGORIES: { slug: string; name: string; name_en?: string | null }[] = [
+  { slug: 'painkillers', name: 'مسكنات الألم', name_en: 'Pain Relievers' },
+  { slug: 'antibiotics', name: 'مضادات حيوية', name_en: 'Antibiotics' },
+  { slug: 'supplements', name: 'مكملات غذائية', name_en: 'Supplements' },
+  { slug: 'cold-flu', name: 'برد وإنفلونزا', name_en: 'Cold & Flu' },
+  { slug: 'vitamins', name: 'فيتامينات', name_en: 'Vitamins' },
+  { slug: 'skin-care', name: 'العناية بالبشرة', name_en: 'Skin Care' },
+  { slug: 'baby-care', name: 'مستلزمات الأطفال', name_en: 'Baby Care' },
+  { slug: 'digestive', name: 'الجهاز الهضمي', name_en: 'Digestive Health' },
 ];
 
 export function Header() {
@@ -654,7 +654,7 @@ export function Header() {
                     >
                       <Icon className="w-3.5 h-3.5" />
                     </span>
-                    <span className="text-xs font-extrabold whitespace-nowrap">{t(cat.name)}</span>
+                    <span className="text-xs font-extrabold whitespace-nowrap">{lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}</span>
                     <ArrowUpLeft className="w-3 h-3 opacity-0 group-hover:opacity-60 -mt-1 -ms-0.5 transition-opacity" />
                   </button>
                 );

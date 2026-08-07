@@ -314,7 +314,7 @@ export function PharmacyDetailPage({ id }: Props) {
                     ? { backgroundColor: themeColors.tabActiveBg, boxShadow: `0 6px 14px -6px ${themeColors.tabActiveBg}88` }
                     : { backgroundColor: themeColors.cardBg, color: themeColors.cardMutedText }}
                 >
-                  {cat.name}
+                  {lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}
                 </button>
               ))}
             </div>
