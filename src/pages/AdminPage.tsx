@@ -36,8 +36,8 @@ import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig,
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
 
-function statAutoHint(id: string): string {
-  return id === 'pharmacies' ? 'عدد الصيدليات تلقائياً' : 'عدد المنتجات تلقائياً';
+function statAutoHint(s: HeroStat): string {
+  return s.autoSource === 'products' ? 'عدد المنتجات تلقائياً' : 'عدد الصيدليات تلقائياً';
 }
 
 export function AdminPage() {
@@ -2522,7 +2522,12 @@ function SettingsTab() {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.heroConfig) {
           const merged = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
-          merged.stats = (merged.stats || []).map((s: HeroStat) => ({ ...s, auto: s.id === 'pharmacies' || s.id === 'products' }));
+          merged.stats = (merged.stats || []).map((s: HeroStat) => ({
+            ...s,
+            auto: s.auto === undefined ? s.id === 'pharmacies' || s.id === 'products' : s.auto,
+            autoSource: s.autoSource || (s.id === 'products' ? 'products' : 'pharmacies'),
+            visible: s.visible === undefined ? true : s.visible,
+          }));
           return merged;
         }
       } catch (e) {
@@ -2641,6 +2646,9 @@ function SettingsTab() {
     refresh();
     setTimeout(() => setSaved(false), 2000);
   };
+
+  const updateHeroStat = (id: string, patch: Partial<HeroStat>) =>
+    setHeroCfg({ ...heroCfg, stats: heroCfg.stats.map((x) => (x.id === id ? { ...x, ...patch } : x)) });
 
   const handleResetColors = () => {
     if (window.confirm('هل أنت متأكد من إعادة تعيين كافة الألوان إلى الألوان الافتراضية؟')) {
@@ -3156,61 +3164,99 @@ function SettingsTab() {
             </div>
           </SettingsSection>
 
-          <SettingsSection title="أرقام الإحصائيات (البطاقات الأربعة)" icon={<Percent className="w-5 h-5" />}>
+          <SettingsSection title="أرقام الإحصائيات (البطاقات)" icon={<Percent className="w-5 h-5" />}>
             <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-              عدّل العنوان والوصف لكل بطاقة. الأيقونة تُختار من: store, package, users, truck, pills.
-              بطاقتا «الصيدليات» و«المنتجات» قيمتهما تلقائية تُحسب من البيانات الفعلية في الموقع ولا يمكن تعديلها يدوياً.
+              لكل بطاقة: فعّل «إظهار البطاقة في الموقع» لعرضها أو أوقفه لإخفائها. اختر «قيمة تلقائية من بيانات الموقع» لعدّها من الصيدليات/المنتجات الفعلية في الموقع، أو اكتب القيمة يدوياً.
+              الأيقونة تُختار من: store, package, users, truck, pills.
             </p>
             <div className="space-y-4">
               {heroCfg.stats.map((s) => (
-                <div key={s.id} className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-3 rounded-xl bg-gray-50/70 border border-gray-100">
-                  <div className="relative">
-                    <input
-                      value={s.auto ? statAutoHint(s.id) : s.value}
-                      disabled={s.auto}
-                      onChange={(e) => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.map((x) => (x.id === s.id ? { ...x, value: e.target.value } : x)) })}
-                      className={`${inputClass} ${s.auto ? 'cursor-not-allowed opacity-60 bg-gray-100' : ''}`}
-                      placeholder="القيمة"
+                <div key={s.id} className="rounded-xl bg-gray-50/70 border border-gray-100 p-4 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Toggle
+                      checked={s.visible !== false}
+                      onChange={(v) => updateHeroStat(s.id, { visible: v })}
+                      label="إظهار البطاقة في الموقع"
                     />
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!s.auto}
+                          onChange={(e) =>
+                            updateHeroStat(s.id, {
+                              auto: e.target.checked,
+                              autoSource: e.target.checked ? s.autoSource || (s.id === 'products' ? 'products' : 'pharmacies') : s.autoSource,
+                            })
+                          }
+                          className="w-4 h-4 rounded"
+                        />
+                        قيمة تلقائية من بيانات الموقع
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.filter((x) => x.id !== s.id) })}
+                        className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg border border-red-100"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> حذف
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="relative">
+                      {s.auto ? (
+                        <>
+                          <input value={statAutoHint(s)} disabled className={`${inputClass} cursor-not-allowed opacity-60 bg-gray-100`} />
+                          <span className="absolute -top-2 right-2 bg-teal-500 text-white text-[10px] font-bold px-1.5 py-px rounded-full">تلقائي</span>
+                        </>
+                      ) : (
+                        <input
+                          value={s.value}
+                          onChange={(e) => updateHeroStat(s.id, { value: e.target.value })}
+                          className={inputClass}
+                          placeholder="القيمة (مثال: 24/7)"
+                        />
+                      )}
+                    </div>
+                    <input
+                      value={s.sub}
+                      onChange={(e) => updateHeroStat(s.id, { sub: e.target.value })}
+                      className={inputClass}
+                      placeholder="العنوان"
+                    />
+                    <input
+                      value={s.desc}
+                      onChange={(e) => updateHeroStat(s.id, { desc: e.target.value })}
+                      className={inputClass}
+                      placeholder="الوصف"
+                    />
+                    <select
+                      value={s.icon}
+                      onChange={(e) => updateHeroStat(s.id, { icon: e.target.value })}
+                      className={inputClass}
+                    >
+                      <option value="store">صيدلية</option>
+                      <option value="package">منتج</option>
+                      <option value="users">عميل</option>
+                      <option value="truck">توصيل</option>
+                      <option value="pills">أدوية</option>
+                    </select>
                     {s.auto && (
-                      <span className="absolute -top-2 right-2 bg-teal-500 text-white text-[10px] font-bold px-1.5 py-px rounded-full">تلقائي</span>
+                      <select
+                        value={s.autoSource || (s.id === 'products' ? 'products' : 'pharmacies')}
+                        onChange={(e) => updateHeroStat(s.id, { autoSource: e.target.value as 'pharmacies' | 'products' })}
+                        className={inputClass}
+                      >
+                        <option value="pharmacies">العد من عدد الصيدليات</option>
+                        <option value="products">العد من عدد المنتجات</option>
+                      </select>
                     )}
                   </div>
-                  <input
-                    value={s.sub}
-                    onChange={(e) => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.map((x) => (x.id === s.id ? { ...x, sub: e.target.value } : x)) })}
-                    className={inputClass}
-                    placeholder="العنوان"
-                  />
-                  <input
-                    value={s.desc}
-                    onChange={(e) => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.map((x) => (x.id === s.id ? { ...x, desc: e.target.value } : x)) })}
-                    className={inputClass}
-                    placeholder="الوصف"
-                  />
-                  <select
-                    value={s.icon}
-                    onChange={(e) => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.map((x) => (x.id === s.id ? { ...x, icon: e.target.value } : x)) })}
-                    className={inputClass}
-                  >
-                    <option value="store">صيدلية</option>
-                    <option value="package">منتج</option>
-                    <option value="users">عميل</option>
-                    <option value="truck">توصيل</option>
-                    <option value="pills">أدوية</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.filter((x) => x.id !== s.id) })}
-                    className="flex items-center justify-center gap-1 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg border border-red-100"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> حذف
-                  </button>
                 </div>
               ))}
               <button
                 type="button"
-                onClick={() => setHeroCfg({ ...heroCfg, stats: [...heroCfg.stats, { id: `stat_${Date.now()}`, value: '0', sub: 'عنوان جديد', desc: 'وصف جديد', icon: 'store' }] })}
+                onClick={() => setHeroCfg({ ...heroCfg, stats: [...heroCfg.stats, { id: `stat_${Date.now()}`, value: '0', sub: 'عنوان جديد', desc: 'وصف جديد', icon: 'store', auto: false, visible: true }] })}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-gray-300 text-xs font-bold text-gray-500 hover:bg-gray-50"
               >
                 <Plus className="w-4 h-4" /> إضافة بطاقة جديدة

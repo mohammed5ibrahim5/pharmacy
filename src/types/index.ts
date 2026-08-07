@@ -224,6 +224,8 @@ export interface HeroStat {
   desc: string;
   icon: string;
   auto?: boolean;
+  autoSource?: 'pharmacies' | 'products';
+  visible?: boolean;
 }
 
 export interface HeroConfig {

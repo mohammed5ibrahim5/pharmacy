@@ -307,9 +307,10 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
     'كمامات طبية',
   ],
   stats: [
-    { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true },
-    { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true },
-    { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck' },
+    { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true },
+    { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true, autoSource: 'products', visible: true },
+    { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: false, visible: true },
+    { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck', auto: false, visible: true },
   ],
 };
 
@@ -433,7 +434,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
         if (parsed && parsed.heroConfig) {
           hero = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
-          hero.stats = (hero.stats || []).map((s) => ({ ...s, auto: s.id === 'pharmacies' || s.id === 'products' }));
+          hero.stats = (hero.stats || []).map((s) => ({
+            ...s,
+            auto: s.auto === undefined ? s.id === 'pharmacies' || s.id === 'products' : s.auto,
+            autoSource: s.autoSource || (s.id === 'products' ? 'products' : 'pharmacies'),
+            visible: s.visible === undefined ? true : s.visible,
+          }));
         }
         if (parsed && parsed.howItWorksConfig) {
           howItWorks = { ...DEFAULT_HOW_IT_WORKS_CONFIG, ...parsed.howItWorksConfig };

@@ -89,10 +89,11 @@ const HERO_TRENDING = [
   'كمامات طبية',
 ];
 
-const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string; auto?: boolean }[] = [
-  { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true },
-  { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true },
-  { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck' },
+const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string; auto?: boolean; autoSource?: 'pharmacies' | 'products'; visible?: boolean }[] = [
+  { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true },
+  { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true, autoSource: 'products', visible: true },
+  { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: false, visible: true },
+  { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck', auto: false, visible: true },
 ];
 
 function statIcon(key: string): React.ReactNode {
@@ -124,10 +125,10 @@ function formatStatCount(n: number): string {
   return `${n}+`;
 }
 
-function statDisplayValue(stat: { id: string; value: string; auto?: boolean }, pharmacyCount: number, productCount: number): string {
+function statDisplayValue(stat: { id: string; value: string; auto?: boolean; autoSource?: 'pharmacies' | 'products' }, pharmacyCount: number, productCount: number): string {
   if (stat.auto) {
-    if (stat.id === 'pharmacies') return formatStatCount(pharmacyCount);
-    if (stat.id === 'products') return formatStatCount(productCount);
+    if (stat.autoSource === 'products' || stat.id === 'products') return formatStatCount(productCount);
+    if (stat.autoSource === 'pharmacies' || stat.id === 'pharmacies') return formatStatCount(pharmacyCount);
   }
   return stat.value;
 }
@@ -613,7 +614,7 @@ export function HomePage() {
             }}
           >
             {(heroConfig.stats.length > 0 ? heroConfig.stats : DEFAULT_HERO_STATS)
-              .filter((stat) => stat.id !== 'customers')
+              .filter((stat) => stat.visible !== false)
               .map((stat, i) => (
               <div
                 key={i}

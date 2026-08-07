@@ -21,6 +21,8 @@
   'تحديث يومي للأسعار': 'prices updated daily',
   'خدمة توصيل': 'delivery service',
   'شحن آمن وسريع': 'safe and fast shipping',
+  'عميل سعيد': 'happy customer',
+  'تقييم ممتاز 4.9⭐': 'excellent 4.9⭐ rating',
   'تصفح الأقسام والمجموعات': 'Browse sections & collections',
   'تسوق حسب الفئة': 'Shop by category',
   'عرض جميع الأقسام': 'View all sections',
