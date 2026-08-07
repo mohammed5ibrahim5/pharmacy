@@ -53,7 +53,7 @@ export function AuthModal({ open, onClose }: Props) {
           : await signUp(email, password, name.trim(), phone.trim(), avatar);
       if (res.error) {
         const msg = res.error.includes('Invalid login')
-          ? 'بيانات الدخول غير صحيحة'
+          ? 'عذراً، بيانات الدخول غير صحيحة'
           : res.error;
         setError(msg);
         return;

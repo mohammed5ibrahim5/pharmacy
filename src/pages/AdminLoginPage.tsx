@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Lock, Mail, ArrowRight, Eye, EyeOff, Cross, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
+import { translateError } from '@/lib/errorMessages';
 
 export function AdminLoginPage() {
   const { signIn, user, loading: authLoading } = useAuth();
@@ -24,7 +25,8 @@ export function AdminLoginPage() {
     const { error: signInError } = await signIn(email, password);
     setLoading(false);
     if (signInError) {
-      setError(signInError);
+      const translated = translateError(signInError);
+      setError(translated.hint ? `${translated.ar} — ${translated.hint}` : translated.ar);
     }
   };
 

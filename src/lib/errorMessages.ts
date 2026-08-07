@@ -9,7 +9,7 @@ interface TranslatedError {
 
 const ERROR_MAP: { pattern: RegExp; ar: string; hint?: string }[] = [
   { pattern: /email not confirmed|not confirmed/i, ar: 'البريد الإلكتروني غير مؤكد', hint: 'يرجى تفعيل حسابك من رابط التأكيد المرسل لبريدك' },
-  { pattern: /invalid login credentials|invalid login|wrong password|incorrect password/i, ar: 'بيانات الدخول غير صحيحة', hint: 'تأكد من البريد وكلمة المرور' },
+  { pattern: /invalid login credentials|invalid login|wrong password|incorrect password/i, ar: 'عذراً، بيانات الدخول غير صحيحة', hint: 'تأكد من صحة البريد الإلكتروني وكلمة المرور ثم أعد المحاولة' },
   { pattern: /user already registered|already has an account|already been registered|already registered/i, ar: 'هذا البريد مسجل بالفعل', hint: 'يمكنك تسجيل الدخول مباشرة' },
   { pattern: /rate limit|too many requests|exceeded/i, ar: 'عدد المحاولات كبير جداً', hint: 'انتظر قليلاً ثم أعد المحاولة' },
   { pattern: /password.*(less than|minimum|at least|too short|6 characters)/i, ar: 'كلمة المرور قصيرة جداً', hint: 'يجب ألا تقل عن 6 أحرف' },
