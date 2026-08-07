@@ -121,6 +121,7 @@ export interface FooterConfig {
 export interface StoreConfig {
   purchasesEnabled: boolean;
   contactMessage: string;
+  catalogWhatsapp: string;
 }
 
 export interface SiteSettings {

@@ -7,7 +7,7 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
@@ -997,6 +997,34 @@ function DashboardTab() {
     fetch();
   }, []);
 
+  const [catalogWhatsappInput, setCatalogWhatsappInput] = useState('');
+  const [savingCatalogWhatsapp, setSavingCatalogWhatsapp] = useState(false);
+
+  useEffect(() => {
+    setCatalogWhatsappInput(storeConfig.catalogWhatsapp || '');
+  }, [storeConfig.catalogWhatsapp]);
+
+  const handleSaveCatalogWhatsapp = async () => {
+    if (savingCatalogWhatsapp) return;
+    setSavingCatalogWhatsapp(true);
+    try {
+      const parsed = settings.features_json ? JSON.parse(settings.features_json) : {};
+      const next = {
+        ...parsed,
+        storeConfig: { ...storeConfig, catalogWhatsapp: catalogWhatsappInput.trim() },
+      };
+      await supabase.from('site_settings').update({
+        features_json: JSON.stringify(next),
+        updated_at: new Date().toISOString(),
+      }).eq('id', settings.id);
+      await refresh();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSavingCatalogWhatsapp(false);
+    }
+  };
+
   const handleTogglePurchases = async () => {
     if (togglingPurchases) return;
     setTogglingPurchases(true);
@@ -1074,6 +1102,40 @@ function DashboardTab() {
           />
           {togglingPurchases && <Loader2 className="absolute inset-0 m-auto w-4 h-4 text-white animate-spin" />}
         </button>
+      </div>
+
+      {/* Catalog WhatsApp number */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-green-50 text-green-600">
+            <MessageCircle className="w-6 h-6" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-gray-900 text-base">رقم واتساب طلبات المعاينة (الكطلوج)</h3>
+            <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+              الرقم الذي يُرسل إليه زر «إرسال الفاتورة واتساب» داخل السلة عند إيقاف الشراء أونلاين. اتركه فارغاً ليتم استخدام رقم الصيدلية ثم رقم تواصل المنصة.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 mt-4">
+          <input
+            type="tel"
+            dir="ltr"
+            value={catalogWhatsappInput}
+            onChange={(e) => setCatalogWhatsappInput(e.target.value)}
+            placeholder="01XXXXXXXXX"
+            className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:border-green-500"
+          />
+          <button
+            type="button"
+            onClick={handleSaveCatalogWhatsapp}
+            disabled={savingCatalogWhatsapp}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-green-700 transition-colors disabled:opacity-60"
+          >
+            {savingCatalogWhatsapp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            حفظ
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

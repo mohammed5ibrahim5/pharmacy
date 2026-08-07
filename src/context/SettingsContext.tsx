@@ -229,6 +229,7 @@ export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
 export const DEFAULT_STORE_CONFIG: StoreConfig = {
   purchasesEnabled: true,
   contactMessage: 'للشراء يرجى التواصل مع الصيدلية مباشرة',
+  catalogWhatsapp: '',
 };
 
 export interface LoyaltyConfig {

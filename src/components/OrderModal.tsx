@@ -129,7 +129,7 @@ export function OrderModal() {
 
   const cartPharmacy = groups.find((g) => g.key !== '__all__')?.pharmacy || null;
   const catalogTargetName = cartPharmacy?.name || settings.site_name || 'صيدليتي';
-  const catalogWhatsapp = (cartPharmacy?.whatsapp || settings.contact_whatsapp || '').replace(/\D/g, '') || null;
+  const catalogWhatsapp = (storeConfig.catalogWhatsapp || cartPharmacy?.whatsapp || settings.contact_whatsapp || '').replace(/\D/g, '') || null;
   const catalogPhone = cartPharmacy?.phone || settings.contact_phone || null;
 
   useEffect(() => {
