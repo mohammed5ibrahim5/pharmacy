@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig, StoreConfig, HowItWorksConfig } from '@/types';
 import type { PaymentConfig } from '@/lib/orders';
@@ -17,6 +17,7 @@ export interface ThemeColors {
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
+  accent2Color: string;
   statsCardBg: string;
   statsCardText: string;
   pharmacyHoverBorder: string;
@@ -72,6 +73,7 @@ export const DEFAULT_THEME_COLORS: ThemeColors = {
   primaryColor: '#0d9488',
   secondaryColor: '#0f766e',
   accentColor: '#f59e0b',
+  accent2Color: '#4f46e5',
   statsCardBg: '#ffffff',
   statsCardText: '#0f172a',
   pharmacyHoverBorder: '#0d9488',
@@ -112,6 +114,61 @@ export const DEFAULT_THEME_COLORS: ThemeColors = {
   bottomNavText: '#94a3b8',
   bottomNavActiveText: '#0d9488',
 };
+
+function toDarkPalette(c: ThemeColors): ThemeColors {
+  return {
+    ...c,
+    headerBg: '#0f172a',
+    headerText: '#e2e8f0',
+    headerNavBg: '#0b1220',
+    headerNavText: '#e2e8f0',
+    heroBgStart: '#0b1220',
+    heroBgMiddle: '#111827',
+    heroBgEnd: '#0f172a',
+    heroText: '#f1f5f9',
+    heroBtnBg: c.primaryColor,
+    heroBtnText: '#ffffff',
+    statsCardBg: '#111827',
+    statsCardText: '#f1f5f9',
+    pharmacyHoverBorder: c.pharmacyHoverBorder,
+    footerBg: '#020617',
+    footerText: '#94a3b8',
+    announcementBg: c.primaryColor,
+    announcementText: '#ffffff',
+    headerSearchBg: '#1e293b',
+    headerSearchText: '#e2e8f0',
+    sectionBg: '#0f172a',
+    sectionAltBg: '#111827',
+    sectionHeadingText: '#f1f5f9',
+    sectionSubheadingText: '#94a3b8',
+    badgePillBg: c.badgePillBg,
+    badgePillText: c.badgePillText,
+    cardBg: '#111827',
+    cardText: '#f1f5f9',
+    cardMutedText: '#94a3b8',
+    cardHoverBorder: c.cardHoverBorder,
+    priceColor: c.priceColor,
+    discountBadgeBg: c.discountBadgeBg,
+    discountBadgeText: '#ffffff',
+    inStockColor: '#34d399',
+    outOfStockColor: '#f87171',
+    ratingColor: '#fbbf24',
+    pharmacyHeaderBg: '#111827',
+    pharmacyHeaderText: '#f1f5f9',
+    tabActiveBg: c.primaryColor,
+    tabActiveText: '#ffffff',
+    pageSearchBg: '#1e293b',
+    pageSearchText: '#e2e8f0',
+    modalHeaderBg: '#111827',
+    modalHeaderText: '#f1f5f9',
+    modalBodyBg: '#111827',
+    modalBodyText: '#f1f5f9',
+    whatsappBtnBg: c.whatsappBtnBg,
+    bottomNavBg: '#0f172a',
+    bottomNavText: '#94a3b8',
+    bottomNavActiveText: c.bottomNavActiveText,
+  };
+}
 
 export const DEFAULT_HEADER_CONFIG: HeaderConfig = {
   showLocationBar: true,
@@ -267,6 +324,8 @@ interface SettingsContextType {
   storeConfig: StoreConfig;
   loyaltyConfig: LoyaltyConfig;
   featuresConfig: FeaturesConfig;
+  darkMode: boolean;
+  toggleDarkMode: () => void;
   loading: boolean;
   refresh: () => Promise<void>;
 }
@@ -310,6 +369,8 @@ const SettingsContext = createContext<SettingsContextType>({
   storeConfig: DEFAULT_STORE_CONFIG,
   loyaltyConfig: DEFAULT_LOYALTY_CONFIG,
   featuresConfig: DEFAULT_FEATURES_CONFIG,
+  darkMode: false,
+  toggleDarkMode: () => {},
   loading: true,
   refresh: async () => {},
 });
@@ -325,7 +386,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [storeConfig, setStoreConfig] = useState<StoreConfig>(DEFAULT_STORE_CONFIG);
   const [loyaltyConfig, setLoyaltyConfig] = useState<LoyaltyConfig>(DEFAULT_LOYALTY_CONFIG);
   const [featuresConfig, setFeaturesConfig] = useState<FeaturesConfig>(DEFAULT_FEATURES_CONFIG);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('pharmacy-dark-mode') === '1';
+    } catch {
+      return false;
+    }
+  });
   const [loading, setLoading] = useState(true);
+
+  const resolvedThemeColors = darkMode ? toDarkPalette(themeColors) : themeColors;
 
   const fetchSettings = async () => {
     const { data } = await supabase
@@ -403,40 +473,49 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     fetchSettings();
   }, []);
 
+  useLayoutEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    try {
+      localStorage.setItem('pharmacy-dark-mode', darkMode ? '1' : '0');
+    } catch {
+      // ignore storage errors
+    }
+  }, [darkMode]);
+
   useEffect(() => {
     if (settings) {
       const root = document.documentElement;
       // Set all custom CSS variables dynamically
-      root.style.setProperty('--color-primary', themeColors.primaryColor);
-      root.style.setProperty('--color-secondary', themeColors.secondaryColor);
-      root.style.setProperty('--color-accent', themeColors.accentColor);
+      root.style.setProperty('--color-primary', resolvedThemeColors.primaryColor);
+      root.style.setProperty('--color-secondary', resolvedThemeColors.secondaryColor);
+      root.style.setProperty('--color-accent', resolvedThemeColors.accentColor);
       
-      root.style.setProperty('--header-bg', themeColors.headerBg);
-      root.style.setProperty('--header-text', themeColors.headerText);
-      root.style.setProperty('--header-nav-bg', themeColors.headerNavBg);
-      root.style.setProperty('--header-nav-text', themeColors.headerNavText);
+      root.style.setProperty('--header-bg', resolvedThemeColors.headerBg);
+      root.style.setProperty('--header-text', resolvedThemeColors.headerText);
+      root.style.setProperty('--header-nav-bg', resolvedThemeColors.headerNavBg);
+      root.style.setProperty('--header-nav-text', resolvedThemeColors.headerNavText);
       
-      root.style.setProperty('--hero-bg-start', themeColors.heroBgStart);
-      root.style.setProperty('--hero-bg-middle', themeColors.heroBgMiddle);
-      root.style.setProperty('--hero-bg-end', themeColors.heroBgEnd);
-      root.style.setProperty('--hero-text', themeColors.heroText);
-      root.style.setProperty('--hero-btn-bg', themeColors.heroBtnBg);
-      root.style.setProperty('--hero-btn-text', themeColors.heroBtnText);
+      root.style.setProperty('--hero-bg-start', resolvedThemeColors.heroBgStart);
+      root.style.setProperty('--hero-bg-middle', resolvedThemeColors.heroBgMiddle);
+      root.style.setProperty('--hero-bg-end', resolvedThemeColors.heroBgEnd);
+      root.style.setProperty('--hero-text', resolvedThemeColors.heroText);
+      root.style.setProperty('--hero-btn-bg', resolvedThemeColors.heroBtnBg);
+      root.style.setProperty('--hero-btn-text', resolvedThemeColors.heroBtnText);
       
-      root.style.setProperty('--stats-card-bg', themeColors.statsCardBg);
-      root.style.setProperty('--stats-card-text', themeColors.statsCardText);
-      root.style.setProperty('--pharmacy-hover-border', themeColors.pharmacyHoverBorder);
+      root.style.setProperty('--stats-card-bg', resolvedThemeColors.statsCardBg);
+      root.style.setProperty('--stats-card-text', resolvedThemeColors.statsCardText);
+      root.style.setProperty('--pharmacy-hover-border', resolvedThemeColors.pharmacyHoverBorder);
       
-      root.style.setProperty('--footer-bg', themeColors.footerBg);
-      root.style.setProperty('--footer-text', themeColors.footerText);
+      root.style.setProperty('--footer-bg', resolvedThemeColors.footerBg);
+      root.style.setProperty('--footer-text', resolvedThemeColors.footerText);
     }
-  }, [settings, themeColors]);
+  }, [settings, resolvedThemeColors]);
 
 return (
     <SettingsContext.Provider
       value={{
         settings: settings || DEFAULT_SETTINGS,
-        themeColors,
+        themeColors: resolvedThemeColors,
         headerConfig,
         footerConfig,
         paymentConfig,
@@ -445,6 +524,8 @@ return (
         storeConfig,
         loyaltyConfig,
         featuresConfig,
+        darkMode,
+        toggleDarkMode: () => setDarkMode((v) => !v),
         loading,
         refresh: fetchSettings,
       }}

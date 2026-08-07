@@ -108,9 +108,9 @@ function statIconColor(key: string, colors: typeof import('@/context/SettingsCon
   switch (key) {
     case 'store': return colors.primaryColor;
     case 'package': return colors.secondaryColor;
-    case 'users': return colors.accentColor;
-    case 'truck': return '#0d9488';
-    default: return colors.primaryColor;
+    case 'users': return colors.accent2Color;
+    case 'truck': return colors.accent2Color;
+    default: return colors.accent2Color;
   }
 }
 
@@ -390,7 +390,7 @@ export function HomePage() {
               borderColor: `${themeColors.primaryColor}22`
             }}
           >
-            <Truck className="w-4 h-4 shrink-0" style={{ color: themeColors.primaryColor }} />
+            <Truck className="w-4 h-4 shrink-0" style={{ color: themeColors.accent2Color }} />
             <div className="leading-tight">
               <p className="text-[11px] font-black" style={{ color: themeColors.heroText }}>توصيل فوري</p>
               <p className="text-[9px] font-bold" style={{ color: themeColors.primaryColor }}>أقل من 30 دقيقة</p>
@@ -418,7 +418,7 @@ export function HomePage() {
               borderColor: `${themeColors.primaryColor}22`
             }}
           >
-            <BadgeCheck className="w-4 h-4 shrink-0" style={{ color: themeColors.primaryColor }} />
+            <BadgeCheck className="w-4 h-4 shrink-0" style={{ color: themeColors.accent2Color }} />
             <p className="text-[11px] font-black whitespace-nowrap" style={{ color: themeColors.heroText }}>
               صيدليات معتمدة 100%
             </p>
@@ -465,7 +465,7 @@ export function HomePage() {
                       className={`p-1.5 sm:p-2 rounded-xl text-gray-400 hover:bg-teal-50 transition-colors ${
                         isListening ? 'text-red-500 animate-bounce' : ''
                       }`}
-                      style={{ color: themeColors.primaryColor }}
+                      style={{ color: isListening ? '#ef4444' : themeColors.accent2Color }}
                       title="بحث بالصوت"
                     >
                       <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -476,9 +476,9 @@ export function HomePage() {
                       onClick={() => setBarcodeModalOpen(true)}
                       className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1.5 rounded-xl transition-colors text-xs font-bold border"
                       style={{
-                        backgroundColor: `${themeColors.primaryColor}10`,
-                        color: themeColors.primaryColor,
-                        borderColor: `${themeColors.primaryColor}30`
+                        backgroundColor: `${themeColors.accent2Color}10`,
+                        color: themeColors.accent2Color,
+                        borderColor: `${themeColors.accent2Color}30`
                       }}
                       title="مسح باركود وتصوير الدواء"
                     >
@@ -497,10 +497,11 @@ export function HomePage() {
 
                   <button
                     type="submit"
-                    className="px-4 sm:px-8 py-3.5 rounded-2xl text-white font-black text-sm sm:text-base flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-95 shadow-md shrink-0"
+                    className="px-4 sm:px-8 py-3.5 rounded-2xl text-white font-black text-sm sm:text-base flex items-center gap-2 transition-all duration-300 hover:scale-[1.03] hover:brightness-110 active:scale-95 shrink-0"
                     style={{
                       backgroundColor: themeColors.heroBtnBg,
-                      color: themeColors.heroBtnText
+                      color: themeColors.heroBtnText,
+                      boxShadow: `0 12px 24px -8px ${themeColors.heroBtnBg}99, 0 4px 14px -4px ${themeColors.heroBtnBg}66`
                     }}
                   >
                     <Search className="w-5 h-5" />

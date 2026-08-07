@@ -3302,6 +3302,9 @@ function SettingsTab() {
                   <ColorField label="اللون الثانوي" value={colors.secondaryColor} onChange={(v) => setColors({ ...colors, secondaryColor: v })} />
                   <ColorField label="لون التمييز والوسومات" value={colors.accentColor} onChange={(v) => setColors({ ...colors, accentColor: v })} />
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                  <ColorField label="لون التفاصيل (أيقونات وحدود)" value={colors.accent2Color} onChange={(v) => setColors({ ...colors, accent2Color: v })} />
+                </div>
               </ColorGroup>
 
               <ColorGroup

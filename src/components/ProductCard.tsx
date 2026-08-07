@@ -24,7 +24,9 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
   const [alerting, setAlerting] = useState(false);
   const [alerted, setAlerted] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
+  const [heartPop, setHeartPop] = useState(false);
   const addTimer = useRef<number | null>(null);
+  const heartTimer = useRef<number | null>(null);
   const isFav = isProductFavorite(product.id);
   const cartEntry = storeConfig.purchasesEnabled ? cart.find((i) => i.product.id === product.id) : undefined;
 
@@ -41,11 +43,26 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
     }
   };
 
+  const handleToggleFavorite = () => {
+    toggleProductFavorite(product.id);
+    setHeartPop(true);
+    if (heartTimer.current) window.clearTimeout(heartTimer.current);
+    heartTimer.current = window.setTimeout(() => setHeartPop(false), 500);
+  };
+
   return (
     <div
       onClick={handleClick}
-      className="group rounded-3xl border border-gray-200/80 overflow-hidden hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between"
+      className="group rounded-3xl border overflow-hidden hover:-translate-y-2 active:scale-[0.98] transition-all duration-300 cursor-pointer flex flex-col justify-between will-change-transform"
       style={{ backgroundColor: themeColors.cardBg, borderColor: `${themeColors.cardHoverBorder}33` }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = themeColors.cardHoverBorder;
+        e.currentTarget.style.boxShadow = `0 20px 40px -12px ${themeColors.cardHoverBorder}44, 0 8px 20px -8px ${themeColors.cardHoverBorder}33`;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = `${themeColors.cardHoverBorder}33`;
+        e.currentTarget.style.boxShadow = '';
+      }}
     >
       <div>
         {/* Product Image Box */}
@@ -100,7 +117,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              toggleProductFavorite(product.id);
+              handleToggleFavorite();
             }}
             className={`absolute top-2.5 left-2.5 w-9 h-9 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 group-hover:scale-110 active:scale-90 ${
               isFav ? 'bg-pink-500 border-pink-400' : 'bg-white/90 backdrop-blur-sm border-gray-100 hover:bg-white'
@@ -110,8 +127,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
           >
             <Heart
               className={`w-[18px] h-[18px] transition-all ${
-                isFav ? 'fill-white text-white scale-110' : 'fill-transparent text-pink-500'
-              }`}
+                heartPop ? 'animate-heart-pop' : ''
+              } ${isFav ? 'fill-white text-white scale-110' : 'fill-transparent text-pink-500'}`}
             />
           </button>
 
@@ -127,7 +144,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               title="قارن الأسعار والبدائل"
               aria-label="قارن الأسعار والبدائل"
             >
-              <Scale className="w-[18px] h-[18px]" style={{ color: themeColors.priceColor }} />
+              <Scale className="w-[18px] h-[18px]" style={{ color: themeColors.accent2Color }} />
             </button>
           )}
 

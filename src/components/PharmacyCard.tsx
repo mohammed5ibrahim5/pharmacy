@@ -19,17 +19,17 @@ export function PharmacyCard({ pharmacy }: Props) {
   return (
     <div
       onClick={() => navigate({ name: 'pharmacy', id: pharmacy.id })}
-      className="group rounded-3xl border overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between relative"
+      className="group rounded-3xl border overflow-hidden shadow-sm hover:-translate-y-2 active:scale-[0.98] transition-all duration-300 cursor-pointer flex flex-col justify-between relative will-change-transform"
       style={{
         backgroundColor: themeColors.cardBg,
-        borderColor: 'rgba(0, 0, 0, 0.08)',
+        borderColor: 'rgba(100, 116, 139, 0.28)',
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = themeColors.pharmacyHoverBorder;
         e.currentTarget.style.boxShadow = `0 20px 40px -10px ${themeColors.pharmacyHoverBorder}25`;
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.08)';
+        e.currentTarget.style.borderColor = 'rgba(100, 116, 139, 0.28)';
         e.currentTarget.style.boxShadow = '';
       }}
     >

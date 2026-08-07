@@ -31,19 +31,25 @@ export function HomeHowItWorks() {
           {steps.map((step, i) => (
             <div key={i} className="relative text-center group">
               <div className="relative z-10 mx-auto mb-4">
-                <div
-                  className="w-20 h-20 rounded-3xl flex items-center justify-center border-2 border-white shadow-xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
-                    color: '#fff',
-                    boxShadow: `0 16px 30px -10px ${themeColors.primaryColor}66`,
-                  }}
-                >
-                  {STEP_ICONS[i % STEP_ICONS.length]}
+                <div className="relative">
+                  <span
+                    className="absolute inset-0 rounded-3xl animate-ping opacity-20"
+                    style={{ backgroundColor: themeColors.secondaryColor, animationDuration: '3s' }}
+                  />
+                  <div
+                    className="relative w-20 h-20 rounded-3xl flex items-center justify-center border-2 border-white shadow-xl transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 animate-icon-bob"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
+                      color: '#fff',
+                      boxShadow: `0 16px 30px -10px ${themeColors.primaryColor}66`,
+                    }}
+                  >
+                    {STEP_ICONS[i % STEP_ICONS.length]}
+                  </div>
                 </div>
                 <span
-                  className="absolute -top-2 -left-2 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black border-2 border-white shadow-md"
-                  style={{ backgroundColor: themeColors.accentColor, color: '#fff' }}
+                  className="absolute -top-2 -left-2 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black border-2 border-white shadow-md animate-pulse-soft"
+                  style={{ backgroundColor: themeColors.accent2Color, color: '#fff' }}
                 >
                   {i + 1}
                 </span>

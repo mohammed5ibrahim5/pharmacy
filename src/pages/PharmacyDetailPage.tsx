@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, MapPin, Phone, MessageCircle, Star, Clock, Truck, Mail, Search, Pill, Navigation2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, MessageCircle, Star, Clock, Truck, Mail, Search, Package, Navigation2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
@@ -319,12 +319,35 @@ export function PharmacyDetailPage({ id }: Props) {
           )}
 
           {filteredProducts.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-3xl border border-gray-100">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
-                <Pill className="w-8 h-8 text-gray-300" />
+            <div className="text-center py-16 rounded-3xl border" style={{ backgroundColor: themeColors.cardBg, borderColor: `${themeColors.cardMutedText}22` }}>
+              <div
+                className="relative w-20 h-20 mx-auto rounded-3xl flex items-center justify-center mb-4 animate-float-slow"
+                style={{ background: `linear-gradient(135deg, ${themeColors.priceColor}15, ${themeColors.accent2Color}15)` }}
+              >
+                <Package className="w-9 h-9" style={{ color: themeColors.priceColor, opacity: 0.55 }} />
+                <span className="absolute -bottom-1 -left-1 w-8 h-8 rounded-2xl flex items-center justify-center border bg-white" style={{ borderColor: `${themeColors.accent2Color}33` }}>
+                  <Search className="w-4 h-4" style={{ color: themeColors.accent2Color }} />
+                </span>
               </div>
-              <p className="text-gray-500 font-bold">لا توجد منتجات مطابقة</p>
-              <p className="text-xs text-gray-400 mt-1">جرّب كلمة بحث مختلفة أو تصفّح فئة أخرى</p>
+              <h3 className="font-black text-base" style={{ color: themeColors.cardText }}>
+                {search || activeCategory ? 'لا توجد منتجات مطابقة' : 'لا توجد منتجات متاحة حالياً'}
+              </h3>
+              <p className="text-xs mt-1.5 font-bold max-w-xs mx-auto" style={{ color: themeColors.cardMutedText }}>
+                {search || activeCategory
+                  ? 'جرّب كلمة بحث مختلفة أو تصفّح فئة أخرى — قد تجد ما تبحث عنه'
+                  : 'الصيدلية لم تُضف منتجات بعد — تابعنا قريباً أو جرّب صيدلية أخرى'}
+              </p>
+              {(search || activeCategory) && (
+                <button
+                  type="button"
+                  onClick={() => { setSearch(''); setActiveCategory(null); }}
+                  className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  style={{ backgroundColor: themeColors.tabActiveBg, boxShadow: `0 10px 22px -8px ${themeColors.tabActiveBg}77` }}
+                >
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
+                  عرض كل المنتجات
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

@@ -7,11 +7,18 @@
     direction: rtl;
   }
   body {
-    font-family: 'Tajawal', 'Cairo', system-ui, -apple-system, sans-serif;
+    font-family: 'Cairo', 'Tajawal', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #f8fafc;
     color: #0f172a;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Cairo', 'Tajawal', system-ui, sans-serif;
+    letter-spacing: -0.01em;
   }
   ::selection {
     background: rgba(13, 148, 136, 0.2);
@@ -132,6 +139,59 @@
   --shadow-lift: 0 20px 40px -12px rgba(2, 6, 23, 0.15);
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
+}
+
+/* ============ DARK MODE ============ */
+html.dark body {
+  background-color: #0b1220;
+  color: #e2e8f0;
+}
+
+html.dark .bg-white { background-color: #111827 !important; }
+html.dark .bg-white\/85,
+html.dark .bg-white\/90,
+html.dark .bg-white\/95 { background-color: #1e293b !important; }
+html.dark .bg-gray-50 { background-color: #0f172a !important; }
+html.dark .bg-gray-50\/80 { background-color: #1e293b !important; }
+html.dark .bg-slate-50 { background-color: #0f172a !important; }
+html.dark .bg-slate-50\/60 { background-color: #0b1220 !important; }
+html.dark .bg-gray-100,
+html.dark .bg-slate-100 { background-color: #1e293b !important; }
+
+html.dark .text-slate-900,
+html.dark .text-gray-900,
+html.dark .text-slate-800,
+html.dark .text-gray-800,
+html.dark .text-slate-700,
+html.dark .text-gray-700 { color: #e2e8f0 !important; }
+html.dark .text-slate-600,
+html.dark .text-gray-600,
+html.dark .text-slate-500,
+html.dark .text-gray-500 { color: #94a3b8 !important; }
+html.dark .text-slate-400,
+html.dark .text-gray-400 { color: #64748b !important; }
+
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-gray-200\/80 { border-color: #1e293b !important; }
+
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-white:hover { background-color: #1e293b !important; }
+html.dark .hover\:border-gray-300:hover,
+html.dark .hover\:border-gray-200:hover { border-color: #334155 !important; }
+
+html.dark .skeleton { background-color: #1e293b !important; }
+html.dark .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+}
+
+html.dark ::-webkit-scrollbar-track { background: #0f172a; }
+html.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #475569, #334155);
+  border-color: #0f172a;
 }
 
 /* Custom scrollbar */
@@ -260,9 +320,41 @@ select:focus {
   animation: cartBump 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+@keyframes heartPop {
+  0% {
+    transform: scale(0.6) rotate(-10deg);
+  }
+  50% {
+    transform: scale(1.45) rotate(6deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.animate-heart-pop {
+  animation: heartPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes iconBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.animate-icon-bob {
+  animation: iconBob 3.2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-cart-add,
-  .animate-cart-bump {
+  .animate-cart-bump,
+  .animate-heart-pop,
+  .animate-icon-bob {
     animation: none;
   }
 }

@@ -23,6 +23,8 @@ import {
   Flame,
   ArrowUpLeft,
   ShoppingCart,
+  Moon,
+  Sun,
   type LucideIcon
 } from 'lucide-react';
 import { useRouter } from '@/context/RouterContext';
@@ -87,7 +89,7 @@ const FALLBACK_CATEGORIES: { slug: string; name: string }[] = [
 
 export function Header() {
   const { navigate } = useRouter();
-  const { settings, themeColors, headerConfig, storeConfig } = useSettings();
+  const { settings, themeColors, headerConfig, storeConfig, darkMode, toggleDarkMode } = useSettings();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
   const { setUserLocation: setGeoLocation } = useGeolocation();
@@ -346,9 +348,9 @@ export function Header() {
                     type="button"
                     onClick={handleVoiceSearch}
                     className={`p-1.5 rounded-full transition-colors ${
-                      isListening ? 'text-red-500 animate-bounce' : 'opacity-60 hover:opacity-100'
+                      isListening ? 'text-red-500 animate-bounce' : 'opacity-70 hover:opacity-100'
                     }`}
-                    style={{ color: themeColors.headerSearchText }}
+                    style={{ color: themeColors.accent2Color }}
                     title="بحث بالصوت"
                   >
                         <Mic className="w-4 h-4" />
@@ -361,9 +363,9 @@ export function Header() {
                         onClick={() => setBarcodeModalOpen(true)}
                         className="flex items-center gap-1 px-2 py-1 rounded-lg transition-all text-xs font-extrabold shadow-sm border hover:brightness-105"
                         style={{
-                          backgroundColor: `${themeColors.primaryColor}15`,
-                          color: themeColors.primaryColor,
-                          borderColor: `${themeColors.primaryColor}33`
+                          backgroundColor: `${themeColors.accent2Color}15`,
+                          color: themeColors.accent2Color,
+                          borderColor: `${themeColors.accent2Color}33`
                         }}
                         title="ماسح باركود وتصوير المنتج"
                       >
@@ -495,6 +497,21 @@ export function Header() {
               )}
 
               <NotificationsBell />
+
+              <button
+                onClick={toggleDarkMode}
+                className="relative p-2.5 rounded-2xl border transition-all duration-300 active:scale-90"
+                style={{
+                  backgroundColor: `${themeColors.headerText}08`,
+                  color: themeColors.headerText,
+                  borderColor: `${themeColors.headerText}15`
+                }}
+                title={darkMode ? 'الوضع الفاتح' : 'الوضع الليلي'}
+                aria-label={darkMode ? 'الوضع الفاتح' : 'الوضع الليلي'}
+              >
+                <Sun className={`w-5 h-5 transition-transform duration-300 ${darkMode ? 'rotate-0 scale-100' : '-rotate-90 scale-0'}`} />
+                <Moon className={`absolute inset-0 m-auto w-5 h-5 transition-transform duration-300 ${darkMode ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
+              </button>
 
               {storeConfig.purchasesEnabled && (
                 <button
