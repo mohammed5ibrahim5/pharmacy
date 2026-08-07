@@ -7,7 +7,7 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
@@ -45,6 +45,11 @@ export function AdminPage() {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [adminDark, setAdminDark] = useState(() => localStorage.getItem('pharmacy-admin-dark-mode') === '1');
+
+  useEffect(() => {
+    localStorage.setItem('pharmacy-admin-dark-mode', adminDark ? '1' : '0');
+  }, [adminDark]);
 
   const navItems: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'الرئيسية', icon: <LayoutDashboard className="w-5 h-5" /> },
@@ -71,7 +76,7 @@ export function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex" dir="rtl">
+    <div className={`min-h-screen bg-gray-50 flex ${adminDark ? 'admin-dark' : ''}`} dir="rtl">
       {/* Sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -160,6 +165,16 @@ export function AdminPage() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setAdminDark((v) => !v)}
+              className="relative p-2.5 rounded-2xl border transition-colors"
+              style={{ backgroundColor: `${settings.primary_color}08`, color: adminDark ? '#e2e8f0' : '#374151', borderColor: `${settings.primary_color}20` }}
+              title={adminDark ? 'الوضع الفاتح' : 'الوضع الليلي'}
+              aria-label={adminDark ? 'الوضع الفاتح' : 'الوضع الليلي'}
+            >
+              <Sun className={`w-5 h-5 transition-transform duration-300 ${adminDark ? 'rotate-0 scale-100' : '-rotate-90 scale-0'}`} />
+              <Moon className={`absolute inset-0 m-auto w-5 h-5 transition-transform duration-300 ${adminDark ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
+            </button>
             <span className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400">
               <span className="w-2 h-2 rounded-full bg-green-400" />
               متصل
