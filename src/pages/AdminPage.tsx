@@ -7,7 +7,7 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, Monitor, Tablet, Smartphone, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
@@ -23,6 +23,7 @@ import {
   type PharmacySectionKey,
 } from '@/lib/pharmacySections';
 import { ImageUploader } from '@/components/ImageUploader';
+import { InvoiceModal } from '@/components/InvoiceModal';
 import {
   PRESCRIPTION_STATUSES,
   PRESCRIPTION_STATUS_META,
@@ -495,6 +496,7 @@ function OrdersTab() {
   const [filter, setFilter] = useState<'all' | (typeof ORDER_STATUSES)[number]>('all');
   const [toast, setToast] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [invoiceView, setInvoiceView] = useState<GroupView | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -886,11 +888,42 @@ function OrdersTab() {
                       واتساب العميل
                     </a>
                   )}
+                  <button
+                    onClick={() => setInvoiceView(view)}
+                    className="flex items-center gap-1.5 py-2 px-4 rounded-xl border text-xs font-bold hover:bg-gray-50 active:scale-95 transition-all"
+                    style={{ color: settings.primary_color, borderColor: `${settings.primary_color}33`, backgroundColor: `${settings.primary_color}0d` }}
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    فاتورة العميل
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {invoiceView && (
+        <InvoiceModal
+          open
+          order={{
+            id: invoiceView.key,
+            status: invoiceView.status,
+            created_at: invoiceView.created_at,
+            customer: invoiceView.orders[0]?.customer
+              ? { full_name: invoiceView.orders[0].customer.full_name, phone: invoiceView.orders[0].customer.phone }
+              : null,
+            address: invoiceView.address,
+            note: invoiceView.note,
+            payment_method: invoiceView.payment_method,
+            payment_number: invoiceView.payment_number,
+            delivery_fee: invoiceView.group ? Number(invoiceView.group.delivery_fee || 0) : 0,
+            total: invoiceView.total,
+            orders: invoiceView.orders,
+          }}
+          settings={settings}
+          onClose={() => setInvoiceView(null)}
+        />
       )}
     </div>
   );

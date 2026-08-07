@@ -283,3 +283,46 @@ select:focus {
   pointer-events: none;
 }
 
+/* Invoice print styles */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .invoice-area,
+  .invoice-area * {
+    visibility: visible !important;
+  }
+
+  .invoice-area {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .invoice-no-print {
+    display: none !important;
+  }
+}
+
+
