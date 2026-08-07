@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
   Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark,
-  Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2, Download, FileText,
+  Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2, Download, FileText, ZoomIn,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -57,6 +57,7 @@ export function OrderModal() {
   const [error, setError] = useState<string | null>(null);
   const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceViewer, setInvoiceViewer] = useState(false);
 
   const catalogMode = !storeConfig.purchasesEnabled;
 
@@ -607,7 +608,19 @@ export function OrderModal() {
                       <Download className="w-3 h-3" /> {t('تنزيل الفاتورة')}
                     </button>
                   </div>
-                  <img src={invoiceUrl} alt={t('فاتورة الطلب')} className="w-full rounded-xl border border-gray-100" />
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceViewer(true)}
+                    className="relative w-full block cursor-zoom-in group rounded-xl overflow-hidden"
+                  >
+                    <img src={invoiceUrl} alt={t('فاتورة الطلب')} className="w-full rounded-xl border border-gray-100" />
+                    <span
+                      className="absolute bottom-2 end-2 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 text-white text-[10px] font-bold backdrop-blur-sm transition-opacity group-hover:opacity-90"
+                    >
+                      <ZoomIn className="w-3 h-3" />
+                      {t('اضغط لتكبير الفاتورة')}
+                    </span>
+                  </button>
                 </div>
               ) : (
                 <div className="flex items-center justify-center gap-2 py-4 text-xs font-bold text-gray-400">
@@ -681,6 +694,40 @@ export function OrderModal() {
             )}
           </div>
         </div>
+
+        {invoiceViewer && invoiceUrl && (
+          <div className="fixed inset-0 z-[95] bg-black/90 flex flex-col" onClick={() => setInvoiceViewer(false)}>
+            <div className="flex items-center justify-between gap-2 p-4 shrink-0">
+              <p className="text-sm font-bold text-white flex items-center gap-1.5" dir="rtl">
+                <FileText className="w-4 h-4" style={{ color: themeColors.priceColor }} />
+                {t('فاتورة الطلب')}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadInvoice}
+                  className="flex items-center gap-1 px-3 py-2 rounded-lg bg-white/10 text-white text-xs font-bold hover:bg-white/20 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" /> {t('تنزيل الفاتورة')}
+                </button>
+                <button
+                  onClick={() => setInvoiceViewer(false)}
+                  className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                  aria-label={t('إغلاق')}
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto flex justify-center items-start p-4" dir="ltr" onClick={(e) => e.stopPropagation()}>
+              <img
+                src={invoiceUrl}
+                alt={t('فاتورة الطلب')}
+                style={{ width: 620, maxWidth: 'none' }}
+                className="rounded-xl shadow-2xl"
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   }

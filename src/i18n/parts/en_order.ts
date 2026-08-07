@@ -108,5 +108,6 @@
   'جاري تجهيز الفاتورة...': 'Preparing your invoice...',
   'فاتورة إلكترونية صادرة من منصة {0} — شكراً لثقتكم.': 'Electronic invoice issued by {0} platform — thank you for your trust.',
   'سيُفتح واتساب مع صيدلية {0} وفي الشات صورة الفاتورة جاهزة للإرسال.': 'WhatsApp will open with {0} pharmacy and the invoice image will be ready to send in the chat.',
+  'اضغط لتكبير الفاتورة': 'Tap to view the invoice full size',
   'لا يمكن إضافة منتجات من أكثر من صيدلية في هذا الوضع، السلة مرتبطة بصيدلية واحدة فقط.': 'You can only add products from one pharmacy in this mode. The cart is linked to a single pharmacy.',
 };
