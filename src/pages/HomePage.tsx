@@ -68,9 +68,9 @@ const HERO_TRENDING = [
   'كمامات طبية',
 ];
 
-const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string }[] = [
-  { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store' },
-  { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package' },
+const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string; auto?: boolean }[] = [
+  { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true },
+  { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true },
   { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users' },
   { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck' },
 ];
@@ -96,6 +96,22 @@ function statIconColor(key: string, colors: typeof import('@/context/SettingsCon
   }
 }
 
+function formatStatCount(n: number): string {
+  if (n >= 1000) {
+    const v = n / 1000;
+    return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1).replace(/\.0$/, '')}k+`;
+  }
+  return `${n}+`;
+}
+
+function statDisplayValue(stat: { id: string; value: string; auto?: boolean }, pharmacyCount: number, productCount: number): string {
+  if (stat.auto) {
+    if (stat.id === 'pharmacies') return formatStatCount(pharmacyCount);
+    if (stat.id === 'products') return formatStatCount(productCount);
+  }
+  return stat.value;
+}
+
 type PharmacyTab = 'nearest' | 'highest_rated' | 'most_popular' | 'delivery' | '24h';
 
 export function HomePage() {
@@ -109,6 +125,8 @@ export function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
+  const [pharmacyCount, setPharmacyCount] = useState(0);
+  const [productCount, setProductCount] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
 
   // Manual section membership from admin (pharmacy_sections)
@@ -147,16 +165,20 @@ export function HomePage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [pharmRes, prodRes, catRes, ordersRes, sectionsRes] = await Promise.all([
+      const [pharmRes, prodRes, catRes, ordersRes, sectionsRes, pharmCountRes, prodCountRes] = await Promise.all([
         supabase.from('pharmacies').select('*').eq('is_active', true),
         supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').eq('is_available', true).limit(20),
         supabase.from('categories').select('*').order('name'),
         supabase.from('orders').select('pharmacy_id'),
         supabase.from('pharmacy_sections').select('pharmacy_id, section_key'),
+        supabase.from('pharmacies').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('products').select('id', { count: 'exact', head: true }).eq('is_available', true),
       ]);
       setPharmacies(pharmRes.data || []);
       setProducts(prodRes.data || []);
       setCategories(catRes.data || []);
+      setPharmacyCount(pharmCountRes.count || 0);
+      setProductCount(prodCountRes.count || 0);
 
       const counts: Record<string, number> = {};
       (ordersRes.data || []).forEach((order) => {
@@ -560,7 +582,7 @@ export function HomePage() {
                 </div>
                 <div>
                   <div className="flex items-baseline gap-1">
-                    <p className="text-xl sm:text-2xl font-black">{stat.value}</p>
+                    <p className="text-xl sm:text-2xl font-black">{statDisplayValue(stat, pharmacyCount, productCount)}</p>
                     <span className="text-xs font-bold opacity-80">{stat.sub}</span>
                   </div>
                   <p className="text-[11px] opacity-60 mt-0.5 font-bold">{stat.desc}</p>

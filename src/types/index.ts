@@ -222,6 +222,7 @@ export interface HeroStat {
   sub: string;
   desc: string;
   icon: string;
+  auto?: boolean;
 }
 
 export interface HeroConfig {
