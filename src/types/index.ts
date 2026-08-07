@@ -193,6 +193,7 @@ export interface MedicationReminder {
   time: string;
   days: number[];
   note: string;
+  refillDate?: string | null;
   created_at: string;
 }
 

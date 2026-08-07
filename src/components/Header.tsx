@@ -24,6 +24,7 @@ import {
   PhoneCall,
   Flame,
   ArrowUpLeft,
+  ShoppingCart,
   type LucideIcon
 } from 'lucide-react';
 import { useRouter } from '@/context/RouterContext';
@@ -35,6 +36,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { BarcodeScannerModal } from '@/components/BarcodeScannerModal';
 import { LocationSelectorModal } from '@/components/LocationSelectorModal';
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
+import { useOrder } from '@/context/OrderContext';
 import { supabase } from '@/lib/supabase';
 import type { Product, Category } from '@/types';
 
@@ -74,6 +76,7 @@ export function Header() {
   const { navigate } = useRouter();
   const { settings, themeColors, headerConfig } = useSettings();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
+  const { cartCount, openCart } = useOrder();
 
   const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
@@ -461,6 +464,28 @@ export function Header() {
 
               <NotificationsBell />
 
+              <button
+                onClick={() => openCart('cart')}
+                className="relative p-2.5 rounded-2xl border transition-colors"
+                style={{
+                  backgroundColor: `${themeColors.headerText}08`,
+                  color: themeColors.headerText,
+                  borderColor: `${themeColors.headerText}15`
+                }}
+                title="السلة الموحدة"
+                aria-label="السلة الموحدة"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span
+                    className="absolute -top-1.5 -left-1.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center border-2"
+                    style={{ backgroundColor: themeColors.priceColor, borderColor: themeColors.headerBg }}
+                  >
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </button>
+
               <UserMenu />
 
               <button
@@ -478,14 +503,17 @@ export function Header() {
             </div>
           </div>
 
-          {/* TRENDING QUICK SEARCH TAGS */}
+          {/* TRENDING QUICK SEARCH TAGS — secondary "suggestions" strip */}
           {headerConfig.showTrendingTags && (
             <div
-              className="flex items-center gap-2 py-2 border-t overflow-x-auto scrollbar-none"
-              style={{ borderColor: `${themeColors.headerText}10` }}
+              className="flex items-center gap-2 py-2 px-4 lg:px-0 overflow-x-auto scrollbar-none"
+              style={{
+                backgroundColor: `${themeColors.headerText}03`,
+                borderBottom: `1px solid ${themeColors.headerText}08`
+              }}
             >
-              <span className="font-bold opacity-70 flex items-center gap-1 shrink-0" style={{ color: themeColors.headerText }}>
-                <Flame className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
+              <span className="font-bold opacity-50 flex items-center gap-1 shrink-0 text-[11px] whitespace-nowrap" style={{ color: themeColors.headerText }}>
+                <Flame className="w-3.5 h-3.5" style={{ color: themeColors.accentColor, opacity: 0.55 }} />
                 الأكثر طلباً:
               </span>
               {UNIFIED_TRENDING.map((tag, i) => (
@@ -495,14 +523,14 @@ export function Header() {
                     setSearchQuery(tag);
                     handleSearchSubmit(undefined, tag);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full transition-all shrink-0 text-[11px] border font-bold hover:brightness-105 active:scale-95"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full transition-all shrink-0 text-[11px] font-bold hover:bg-white active:scale-95"
                   style={{
-                    backgroundColor: `${themeColors.headerText}05`,
+                    backgroundColor: `${themeColors.headerText}08`,
                     color: themeColors.headerText,
-                    borderColor: `${themeColors.headerText}12`
+                    border: `1px solid ${themeColors.headerText}12`
                   }}
                 >
-                  <span className="text-[9px] font-black opacity-70" style={{ color: themeColors.accentColor }}>
+                  <span className="text-[9px] font-black" style={{ color: themeColors.headerText, opacity: 0.45 }}>
                     {i + 1}
                   </span>
                   {tag}

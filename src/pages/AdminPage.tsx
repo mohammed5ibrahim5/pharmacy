@@ -31,7 +31,7 @@ import {
 } from '@/lib/prescriptions';
 import { insertNotification } from '@/lib/notifications';
 import { notifyStockAvailable } from '@/lib/loyalty';
-import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HowItWorksConfig } from '@/types';
+import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HeroStat, HowItWorksConfig } from '@/types';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
 
@@ -2345,7 +2345,7 @@ function SettingsTab() {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.heroConfig) {
           const merged = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
-          merged.stats = (merged.stats || []).map((s) => ({ ...s, auto: s.id === 'pharmacies' || s.id === 'products' }));
+          merged.stats = (merged.stats || []).map((s: HeroStat) => ({ ...s, auto: s.id === 'pharmacies' || s.id === 'products' }));
           return merged;
         }
       } catch (e) {

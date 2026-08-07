@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Camera, X, Check, Phone, MessageSquare, AlertCircle, Send, Loader2, Link2 } from 'lucide-react';
+import { FileText, Camera, X, Check, Phone, MessageSquare, AlertCircle, Send, Loader2, Link2, ShieldCheck, UserCheck } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { uploadPrescriptionImage, insertPrescription } from '@/lib/prescriptions';
@@ -99,7 +99,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
             </div>
             <div>
               <h3 className="font-extrabold text-lg leading-tight">رفع روشتة طبية أو صورة الدواء</h3>
-              <p className="text-xs text-white/80">أرسل روشتتك وسيحدد الصيدلي لك الأسعار والجرعات فوراً</p>
+              <p className="text-xs text-white/80">صوّر الروشتة وسيراجعها صيدلي حقيقي مرخّص قبل التنفيذ</p>
             </div>
           </div>
           <button
@@ -118,10 +118,33 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                 <Check className="w-10 h-10" />
               </div>
               <h4 className="text-lg font-extrabold text-gray-900">تم إرسال الروشتة بنجاح!</h4>
-              <p className="text-xs text-gray-600">سيقوم الصيدلي المختص بتجهيز طلبيتك والتواصل مع الرقم المسجل.</p>
+              <p className="text-xs text-gray-600">صيدلي حقيقي مرخّص يراجعها الآن، وسيتواصل معك على الرقم المسجل لتأكيد الصرف والجرعات.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Review steps reassurance */}
+              <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-3.5 space-y-2.5">
+                <div className="flex items-center gap-2 text-teal-800">
+                  <ShieldCheck className="w-4 h-4 shrink-0" />
+                  <p className="text-[11px] font-extrabold">لن يُصرف أي دواء قبل مراجعة صيدلي حقيقي مرخّص لروشتك</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {[
+                    { icon: <Camera className="w-3.5 h-3.5" />, text: 'صوّر الروشتة أو ارفع صورة لها' },
+                    { icon: <UserCheck className="w-3.5 h-3.5" />, text: 'يراجعها صيدلي حقيقي ويتحقق من الجرعات' },
+                    { icon: <Phone className="w-3.5 h-3.5" />, text: 'نتصل بك للتأكيد قبل التنفيذ' },
+                  ].map((step, i, arr) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 rounded-xl bg-white border border-teal-100 px-2.5 py-1.5 text-teal-700">
+                        {step.icon}
+                        <span className="text-[10px] font-bold">{step.text}</span>
+                      </div>
+                      {i < arr.length - 1 && <span className="text-teal-300 text-xs font-black">←</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Image Preview or Upload Area */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-gray-700">صورة الروشتة / الدواء *</label>
@@ -240,12 +263,12 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                 {uploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    جاري رفع الروشتة وتجهيزها...
+                    جاري رفع الروشتة لإرسالها للصيدلي...
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    إرسال الروشتة الآن للصيدلية
+                    إرسال الروشتة لمراجعة صيدلي حقيقي
                   </>
                 )}
               </button>

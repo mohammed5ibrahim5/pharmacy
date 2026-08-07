@@ -54,6 +54,8 @@ import {
   requestNotificationPermission,
   loadLocalReminders,
   saveLocalReminders,
+  medicationRunOutInfo,
+  computeRefillDate,
 } from '@/lib/loyalty';
 
 interface OrderRecord {
@@ -207,6 +209,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const [remTime, setRemTime] = useState('09:00');
   const [remDays, setRemDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [remNote, setRemNote] = useState('');
+  const [remDaysSupply, setRemDaysSupply] = useState('');
   const [permDenied, setPermDenied] = useState(false);
   const WEEKDAYS = [
     { n: 0, label: 'أحد', short: 'أ' },
@@ -242,13 +245,15 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       time: remTime,
       days: remDays,
       note: remNote.trim(),
+      refillDate: remDaysSupply.trim() ? computeRefillDate(Number(remDaysSupply.trim())) : null,
       created_at: new Date().toISOString(),
     };
     saveReminders([...reminders, rec]);
     setRemName('');
     setRemDose('');
     setRemNote('');
-    showToast('تمت إضافة تذكير الدواء بنجاح');
+    setRemDaysSupply('');
+    showToast('تمت إضافة الدواء إلى ملفك الدوائي بنجاح');
   };
 
   const handleRemoveReminder = (id: string) => {
@@ -517,7 +522,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     { id: 'orders', label: 'طلباتي ومتابعة الشحنات', icon: <PackageCheck className="w-4 h-4" />, count: activeOrdersCount },
     { id: 'prescriptions', label: 'الروشتات المحفوظة', icon: <FileText className="w-4 h-4" />, count: prescriptions.length },
     ...(loyaltyConfig.enabled ? [{ id: 'rewards' as AccountTab, label: 'نقاطي ومكافآتي', icon: <Sparkles className="w-4 h-4" />, count: loyaltyPoints }] : []),
-    ...(featuresConfig.reminders ? [{ id: 'reminders' as AccountTab, label: 'تذكير مواعيد الأدوية', icon: <Bell className="w-4 h-4" />, count: reminders.length }] : []),
+    ...(featuresConfig.reminders ? [{ id: 'reminders' as AccountTab, label: 'الملف الدوائي', icon: <Bell className="w-4 h-4" />, count: reminders.length }] : []),
     { id: 'addresses', label: 'العناوين المسجلة', icon: <MapPin className="w-4 h-4" />, count: addresses.length },
     { id: 'favorites', label: 'المفضلة', icon: <Heart className="w-4 h-4" />, count: productFavoritesCount + pharmacyFavoritesCount },
   ];
@@ -1049,30 +1054,30 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
         </div>
       )}
 
-      {/* ===== Reminders tab ===== */}
+      {/* ===== Medical file tab ===== */}
       {tab === 'reminders' && (
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">تذكير مواعيد الأدوية</h2>
-            <span className="text-xs font-bold text-gray-500">{reminders.length} تذكير نشط</span>
+            <h2 className="text-lg font-black text-gray-900">الملف الدوائي</h2>
+            <span className="text-xs font-bold text-gray-500">{reminders.length} دواء في ملفك</span>
           </div>
 
           {permDenied && (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
               <Bell className="w-5 h-5 text-amber-600 shrink-0" />
               <p className="text-xs font-bold text-amber-800">
-                الإشعارات معطلة في المتصفح. فعّل الإشعارات من إعدادات المتصفح لتستقبل تذكيرات مواعيد الأدوية.
+                الإشعارات معطلة في المتصفح. فعّل الإشعارات من إعدادات المتصفح لتستقبل تذكيرات مواعيد الأدوية وتنبيهات قرب النفاد.
               </p>
             </div>
           )}
 
-          {/* Add reminder form */}
+          {/* Add medication form */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}>
                 <Plus className="w-4.5 h-4.5" />
               </div>
-              <h3 className="text-sm font-black text-gray-900">إضافة تذكير جديد</h3>
+              <h3 className="text-sm font-black text-gray-900">إضافة دواء لملفك الدوائي</h3>
             </div>
             <form onSubmit={handleAddReminder} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1095,7 +1100,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-600 mb-1.5 block">موعد الجرعة *</label>
                   <input
@@ -1129,6 +1134,19 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                     })}
                   </div>
                 </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">كم يوماً سيكفي الدواء؟</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={remDaysSupply}
+                    onChange={(e) => setRemDaysSupply(e.target.value)}
+                    placeholder="مثال: 15"
+                    dir="ltr"
+                    className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
+                  />
+                  <p className="text-[10px] text-gray-400 font-medium mt-1">سنذكّرك عندما يقترب الدواء من النفاد</p>
+                </div>
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-600 mb-1.5 block">ملاحظة (اختياري)</label>
@@ -1145,19 +1163,19 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 style={{ backgroundColor: themeColors.primaryColor }}
               >
                 <Bell className="w-4 h-4" />
-                إضافة التذكير
+                إضافة إلى الملف الدوائي
               </button>
             </form>
           </div>
 
-          {/* Reminder list */}
+          {/* Medication list */}
           <div>
-            <h3 className="text-sm font-black text-gray-900 mb-3">التذكيرات النشطة ({reminders.length})</h3>
+            <h3 className="text-sm font-black text-gray-900 mb-3">أدويتك ({reminders.length})</h3>
             {reminders.length === 0 ? (
               <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
                 <Bell className="w-10 h-10 mx-auto text-gray-300 mb-3" />
-                <h4 className="font-black text-gray-900 text-sm mb-1">لا توجد تذكيرات</h4>
-                <p className="text-xs text-gray-500">أضف تذكيراً لأي دواء وسنرسل لك إشعاراً في الموعد المحدد.</p>
+                <h4 className="font-black text-gray-900 text-sm mb-1">لا توجد أدوية في ملفك</h4>
+                <p className="text-xs text-gray-500">أضف أدويتك الدورية وسنذكّرك بمواعيدها وعند اقترابها من النفاد.</p>
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -1167,6 +1185,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                     const dayNames = WEEKDAYS.filter((d) => r.days.includes(d.n)).map((d) => d.short);
                     const isToday = r.days.includes(new Date().getDay());
                     const dueSoon = isToday && r.time <= new Date().toTimeString().slice(0, 5);
+                    const runOut = medicationRunOutInfo(r);
                     return (
                       <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
                         <div
@@ -1176,7 +1195,21 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                           <Pill className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-black text-gray-900">{r.name}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-black text-gray-900">{r.name}</p>
+                            {dueSoon && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-600">استُحق موعده اليوم</span>
+                            )}
+                            {runOut.status === 'out' && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-600">انتهى الدواء</span>
+                            )}
+                            {runOut.status === 'soon' && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-700">قرب النفاد ({runOut.daysLeft} يوم)</span>
+                            )}
+                            {runOut.status === 'ok' && runOut.daysLeft != null && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-700">متبقي {runOut.daysLeft} يوم</span>
+                            )}
+                          </div>
                           <p className="text-[11px] text-gray-500 font-bold mt-0.5">
                             {r.dosage ? `${r.dosage} • ` : ''}يومياً في {r.time}
                             {r.note ? ` • ${r.note}` : ''}
@@ -1200,7 +1233,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                         <button
                           onClick={() => handleRemoveReminder(r.id)}
                           className="shrink-0 w-9 h-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-all active:scale-90"
-                          title="حذف التذكير"
+                          title="حذف الدواء من الملف"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

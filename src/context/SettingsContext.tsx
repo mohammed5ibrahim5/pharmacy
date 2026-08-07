@@ -236,7 +236,7 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
   showPrescriptionButton: true,
   showLocationButton: true,
   searchPlaceholder: 'ابحث عن اسم الدواء، المادة الفعالة، أو المنتج...',
-  prescriptionButtonText: 'ارفع روشتتك للصيدلي فوراً',
+  prescriptionButtonText: 'ارفع صورة الروشتة — يراجعها صيدلي حقيقي',
   locationButtonText: 'حدد موقعك لأقرب صيدلية',
   locationSetText: 'تم تحديد موقعك - أقرب الصيدليات أولاً',
   trendingLabel: 'الأكثر بحثاً:',

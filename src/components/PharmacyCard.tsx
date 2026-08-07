@@ -1,4 +1,4 @@
-import { MapPin, Star, Phone, Clock, Truck, MessageCircle, ArrowLeft, Navigation, ShieldCheck, Car, CheckCircle2, Heart, Navigation2 } from 'lucide-react';
+import { MapPin, Star, Phone, Clock, Truck, MessageCircle, ArrowLeft, Navigation, ShieldCheck, Car, BadgeCheck, Heart, Navigation2 } from 'lucide-react';
 import type { Pharmacy } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
@@ -132,7 +132,14 @@ export function PharmacyCard({ pharmacy }: Props) {
                 >
                   {pharmacy.name}
                 </h3>
-                <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: themeColors.inStockColor, fill: `${themeColors.inStockColor}20` }} aria-label="صيدلية معتمدة" role="img" />
+                <span
+                  className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-sm"
+                  style={{ backgroundColor: themeColors.inStockColor }}
+                  title="صيدلية مرخصة ومعتمدة"
+                >
+                  <BadgeCheck className="w-3 h-3" />
+                  مرخصة
+                </span>
               </div>
 
               <div className="flex items-center gap-1 text-xs font-bold mt-0.5" style={{ color: themeColors.cardMutedText }}>

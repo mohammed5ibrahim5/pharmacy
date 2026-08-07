@@ -13,6 +13,8 @@ import {
   Heart,
   Package,
   BadgeCheck,
+  BadgePercent,
+  ShieldCheck,
   PhoneCall,
   Users,
   ShoppingBag,
@@ -131,6 +133,7 @@ export function HomePage() {
   const [productCount, setProductCount] = useState(0);
   const [popularProductIds, setPopularProductIds] = useState<string[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [heroFloatingVisible, setHeroFloatingVisible] = useState(true);
 
   // Manual section membership from admin (pharmacy_sections)
   const [pharmacySections, setPharmacySections] = useState<Record<string, string[]>>({});
@@ -165,6 +168,13 @@ export function HomePage() {
   const [userLocationName, setUserLocationName] = useState<string>(() => {
     return localStorage.getItem('user_delivery_location') || 'القاهرة - المعادي';
   });
+
+  useEffect(() => {
+    const onScroll = () => setHeroFloatingVisible(window.scrollY < 300);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -346,61 +356,53 @@ export function HomePage() {
           <div className="absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.04)_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-20" />
         </div>
 
-        {/* Floating Decorative Elements */}
-        <div className="absolute inset-0 pointer-events-none hidden lg:block">
+        {/* Floating Decorative Elements — single tidy trust bar that hides on scroll */}
+        <div
+          className="absolute bottom-5 left-[5%] hidden lg:flex items-center gap-2.5 pointer-events-none transition-all duration-500"
+          style={{
+            opacity: heroFloatingVisible ? 1 : 0,
+            transform: heroFloatingVisible ? 'translateY(0)' : 'translateY(16px)'
+          }}
+        >
           <div
-            className="absolute top-16 right-[8%] p-3.5 px-4 rounded-3xl backdrop-blur-md shadow-xl rotate-6 animate-float flex items-center gap-3 border"
+            className="flex items-center gap-2 rounded-full px-3.5 py-2 backdrop-blur-md shadow-lg border"
             style={{
               backgroundColor: `${themeColors.headerBg}e6`,
               borderColor: `${themeColors.primaryColor}22`
             }}
           >
-            <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center font-bold"
-              style={{
-                backgroundColor: `${themeColors.primaryColor}15`,
-                color: themeColors.primaryColor
-              }}
-            >
-              <Pill className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-black" style={{ color: themeColors.heroText }}>توصيل فورى للأدوية</p>
-              <p className="text-[10px] font-bold" style={{ color: themeColors.primaryColor }}>أقل من 30 دقيقة</p>
+            <Truck className="w-4 h-4 shrink-0" style={{ color: themeColors.primaryColor }} />
+            <div className="leading-tight">
+              <p className="text-[11px] font-black" style={{ color: themeColors.heroText }}>توصيل فوري</p>
+              <p className="text-[9px] font-bold" style={{ color: themeColors.primaryColor }}>أقل من 30 دقيقة</p>
             </div>
           </div>
 
           <div
-            className="absolute top-48 left-[6%] p-3.5 px-4 rounded-3xl backdrop-blur-md shadow-xl -rotate-6 animate-float-slow flex items-center gap-3 border"
+            className="flex items-center gap-2 rounded-full px-3.5 py-2 backdrop-blur-md shadow-lg border"
             style={{
               backgroundColor: `${themeColors.headerBg}e6`,
               borderColor: `${themeColors.primaryColor}22`
             }}
           >
-            <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center font-bold"
-              style={{
-                backgroundColor: `${themeColors.accentColor}15`,
-                color: themeColors.accentColor
-              }}
-            >
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-black" style={{ color: themeColors.heroText }}>خصومات وتخفيضات</p>
-              <p className="text-[10px] font-bold" style={{ color: themeColors.accentColor }}>عروض تصل إلى 30%</p>
+            <BadgePercent className="w-4 h-4 shrink-0" style={{ color: themeColors.accentColor }} />
+            <div className="leading-tight">
+              <p className="text-[11px] font-black" style={{ color: themeColors.heroText }}>خصومات وتخفيضات</p>
+              <p className="text-[9px] font-bold" style={{ color: themeColors.accentColor }}>عروض تصل إلى 30%</p>
             </div>
           </div>
 
           <div
-            className="absolute bottom-24 right-[10%] p-2.5 px-3.5 rounded-2xl backdrop-blur-md shadow-lg animate-float flex items-center gap-2 border"
+            className="flex items-center gap-2 rounded-full px-3.5 py-2 backdrop-blur-md shadow-lg border"
             style={{
               backgroundColor: `${themeColors.headerBg}e6`,
               borderColor: `${themeColors.primaryColor}22`
             }}
           >
-            <BadgeCheck className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
-            <span className="text-xs font-bold" style={{ color: themeColors.heroText }}>صيدليات معتمدة 100%</span>
+            <BadgeCheck className="w-4 h-4 shrink-0" style={{ color: themeColors.primaryColor }} />
+            <p className="text-[11px] font-black whitespace-nowrap" style={{ color: themeColors.heroText }}>
+              صيدليات معتمدة 100%
+            </p>
           </div>
         </div>
 
@@ -564,6 +566,13 @@ export function HomePage() {
               </>
               )}
             </div>
+
+            {heroConfig.showPrescriptionButton && (
+              <p className="text-[11px] font-bold opacity-70 flex items-center justify-center gap-1.5 animate-fade-up" style={{ color: themeColors.heroText, animationDelay: '0.45s' }}>
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0" style={{ color: themeColors.primaryColor }} />
+                صوّر الروشتة من هاتفك — يراجعها صيدلي حقيقي مرخّص قبل صرف أي دواء
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -903,7 +912,7 @@ export function HomePage() {
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-slate-900 font-black text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-lg"
               >
                 <FileText className="w-4 h-4 text-slate-700" />
-                رفع صورة الروشتة فوراً
+                صوّر روشتك الآن
               </button>
               <button
                 onClick={() => setBarcodeModalOpen(true)}
@@ -925,6 +934,10 @@ export function HomePage() {
                 </a>
               )}
             </div>
+            <p className="text-[11px] text-white/70 font-bold flex items-center justify-center gap-1.5 mt-5">
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+              تصوير الروشتة مجاني وسرّي — يراجعها صيدلي حقيقي قبل صرف أي دواء
+            </p>
           </div>
         </div>
       </section>

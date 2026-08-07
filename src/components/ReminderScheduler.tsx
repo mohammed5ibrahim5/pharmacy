@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { loadLocalReminders } from '@/lib/loyalty';
+import { loadLocalReminders, medicationRunOutInfo } from '@/lib/loyalty';
 import { useSettings } from '@/context/SettingsContext';
 
 export function ReminderScheduler() {
@@ -13,8 +13,9 @@ export function ReminderScheduler() {
     const check = () => {
       const now = new Date();
       const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-      const timeNow = now.toTimeString().slice(0, 5);
       const reminders = loadLocalReminders();
+
+      // 1) Dose-time reminders
       reminders.forEach((r) => {
         const key = `${r.id}|${todayKey}|${r.time}`;
         if (firedRef.current.has(key)) return;
@@ -36,6 +37,21 @@ export function ReminderScheduler() {
             if (k.startsWith(`${r.id}|`) && !k.includes(todayKey)) firedRef.current.delete(k);
           });
         }
+      });
+
+      // 2) Run-out warning — once per day per medication
+      reminders.forEach((r) => {
+        const info = medicationRunOutInfo(r);
+        if (info.daysLeft == null || info.status === 'ok') return;
+        const outKey = `runout|${r.id}|${todayKey}`;
+        if (firedRef.current.has(outKey)) return;
+        firedRef.current.add(outKey);
+        const label = info.status === 'out' ? 'انتهى الدواء' : `اقترب النفاد — متبقي ${info.daysLeft} يوم`;
+        new Notification('تنبيه نفاد الدواء 💊', {
+          body: `${r.name} ${label}. أعد طلبه الآن من أقرب صيدلية.`,
+          tag: outKey,
+          silent: false,
+        });
       });
     };
 

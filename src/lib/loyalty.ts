@@ -95,6 +95,25 @@ export function saveLocalReminders(list: MedicationReminder[]) {
   }
 }
 
+export type MedicationRunOutStatus = 'ok' | 'soon' | 'out';
+
+export function medicationRunOutInfo(r: MedicationReminder): { status: MedicationRunOutStatus; daysLeft: number | null } {
+  if (!r.refillDate) return { status: 'ok', daysLeft: null };
+  const target = new Date(r.refillDate).getTime();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysLeft = Math.ceil((target - today.getTime()) / 86400000);
+  if (daysLeft <= 0) return { status: 'out', daysLeft };
+  if (daysLeft <= 3) return { status: 'soon', daysLeft };
+  return { status: 'ok', daysLeft };
+}
+
+export function computeRefillDate(daysSupply: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysSupply);
+  return d.toISOString().slice(0, 10);
+}
+
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!('Notification' in window)) return false;
   if (Notification.permission === 'granted') return true;

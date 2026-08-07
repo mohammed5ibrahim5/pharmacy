@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
-  Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark, Link2, Truck, Sparkles,
+  Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark,
+  Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -15,22 +16,34 @@ import {
   uploadPaymentScreenshot,
   type PaymentMethod,
 } from '@/lib/orders';
-import type { Pharmacy } from '@/types';
+import type { Pharmacy, Product } from '@/types';
 
 const METHOD_ICONS: Record<PaymentMethod, React.ReactNode> = {
   vodafone_cash: <Smartphone className="w-5 h-5" />,
   instapay: <Landmark className="w-5 h-5" />,
 };
 
+interface CartGroup {
+  key: string;
+  label: string;
+  pharmacy: Pharmacy | null;
+  subtotal: number;
+}
+
+function finalPriceOf(product: Product): number {
+  const activeDiscount = product.discounts?.find((d) => d.is_active);
+  return activeDiscount
+    ? product.price * (1 - activeDiscount.discount_percentage / 100)
+    : product.price;
+}
+
 export function OrderModal() {
-  const { orderItem, orderModalOpen, closeOrder } = useOrder();
+  const { cart, cartOpen, cartStep, setCartStep, closeCart, updateCartQty, removeFromCart, clearCart } = useOrder();
   const { user, profile, setAuthModalOpen } = useCustomer();
-  const { settings, themeColors, paymentConfig, storeConfig, loyaltyConfig, featuresConfig } = useSettings();
-  const [quantity, setQuantity] = useState(1);
+  const { settings, themeColors, paymentConfig, storeConfig, loyaltyConfig } = useSettings();
+  const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [address, setAddress] = useState(profile?.phone || '');
   const [note, setNote] = useState('');
-  const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
-  const [pharmacyId, setPharmacyId] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('vodafone_cash');
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [screenshotLinkMode, setScreenshotLinkMode] = useState(false);
@@ -41,22 +54,7 @@ export function OrderModal() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setQuantity(1);
-    setAddress(profile?.phone || '');
-    setNote('');
-    setScreenshot(null);
-    setScreenshotLinkMode(false);
-    setScreenshotLinkValue('');
-    setError(null);
-    setSuccess(false);
-    setCopied(false);
-    if (orderItem?.product) {
-      setPharmacyId(orderItem.product.for_all_pharmacies ? '' : orderItem.product.pharmacy_id);
-    }
-  }, [orderItem, profile?.phone]);
-
-  useEffect(() => {
-    if (!orderModalOpen) return;
+    if (!cartOpen) return;
     let cancelled = false;
     const loadPharmacies = async () => {
       const { data } = await supabase.from('pharmacies').select('*').order('name');
@@ -66,34 +64,82 @@ export function OrderModal() {
     return () => {
       cancelled = true;
     };
-  }, [orderModalOpen]);
+  }, [cartOpen]);
 
-  if (!orderModalOpen || !orderItem) return null;
+  useEffect(() => {
+    if (!cartOpen) return;
+    setAddress(profile?.phone || '');
+    setNote('');
+    setScreenshot(null);
+    setScreenshotLinkMode(false);
+    setScreenshotLinkValue('');
+    setError(null);
+    setSuccess(false);
+    setCopied(false);
+  }, [cartOpen, profile?.phone, cartStep]);
 
-  const product = orderItem.product;
-  const activeDiscount = product.discounts?.find((d) => d.is_active);
-  const finalPrice = activeDiscount
-    ? product.price * (1 - activeDiscount.discount_percentage / 100)
-    : product.price;
+  const groups = useMemo(() => {
+    const map = new Map<string, CartGroup>();
+    cart.forEach((entry) => {
+      const p = entry.product;
+      const key = p.for_all_pharmacies ? '__all__' : p.pharmacy_id || '__all__';
+      if (!map.has(key)) {
+        const pharmacy = p.for_all_pharmacies
+          ? null
+          : pharmacies.find((ph) => ph.id === p.pharmacy_id) || null;
+        map.set(key, {
+          key,
+          label: p.for_all_pharmacies
+            ? 'متوفر لدى جميع الصيدليات'
+            : pharmacy?.name || entry.pharmacyName || p.pharmacy?.name || 'الصيدلية',
+          pharmacy,
+          subtotal: 0,
+        });
+      }
+      const group = map.get(key)!;
+      const price = finalPriceOf(p) * entry.quantity;
+      group.subtotal += price;
+    });
+    return Array.from(map.values());
+  }, [cart, pharmacies]);
 
-  const selectedPharmacy = pharmacies.find((p) => p.id === pharmacyId);
+  const subtotal = cart.reduce((sum, entry) => sum + finalPriceOf(entry.product) * entry.quantity, 0);
+  const freeThreshold = parseFloat(paymentConfig.freeDeliveryThreshold) || 0;
+  const defaultFee = parseFloat(paymentConfig.deliveryFee) || 0;
+  const deliveryFreeGlobal = freeThreshold > 0 && subtotal >= freeThreshold;
+
+  const groupFee = (g: CartGroup): number => {
+    if (g.key === '__all__') return 0;
+    if (deliveryFreeGlobal) return 0;
+    if (g.pharmacy?.delivery_available === false) return 0;
+    return g.pharmacy ? (g.pharmacy.delivery_fee ?? defaultFee) : defaultFee;
+  };
+
+  const totalDelivery = groups.reduce((sum, g) => sum + groupFee(g), 0);
+  const total = subtotal + totalDelivery;
+
   const methodNumber = paymentMethod === 'vodafone_cash' ? paymentConfig.vodafoneCash : paymentConfig.instapay;
   const hasMethodNumber = Boolean(methodNumber.trim());
 
-  // Catalog mode: online purchases are disabled, contact the pharmacy directly
+  if (!cartOpen) return null;
+
+  const closeModal = () => {
+    if (!loading) closeCart();
+  };
+
+  // ============ Catalog mode: online purchases disabled ============
   if (!storeConfig.purchasesEnabled) {
-    const pharmacy = product.for_all_pharmacies
-      ? null
-      : pharmacies.find((p) => p.id === (pharmacyId || product.pharmacy_id)) || null;
-    const phone = pharmacy?.phone || settings.contact_phone || null;
-    const whatsapp = pharmacy?.whatsapp || settings.contact_whatsapp || null;
-    const contactName = pharmacy?.name || orderItem.pharmacyName || settings.site_name;
+    const phone = settings.contact_phone || null;
+    const whatsapp = settings.contact_whatsapp || null;
     const whatsappDigits = whatsapp ? whatsapp.replace(/\D/g, '') : null;
+    const itemLines = cart
+      .map((entry) => `- ${entry.product.name} (${entry.quantity})`)
+      .join('\n');
 
     return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeOrder}>
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
         <div className="rounded-3xl w-full max-w-md p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
-          <button onClick={closeOrder} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+          <button onClick={closeModal} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
             <X className="w-5 h-5 text-gray-500" />
           </button>
 
@@ -104,41 +150,50 @@ export function OrderModal() {
             >
               <Phone className="w-8 h-8" />
             </div>
-            <h2 className="text-xl font-extrabold text-gray-900">تواصل مع الصيدلية مباشرة</h2>
+            <h2 className="text-xl font-extrabold text-gray-900">تواصل معنا لاستكمال طلبك</h2>
             <p className="text-gray-500 text-sm mt-2 leading-relaxed">{storeConfig.contactMessage}</p>
           </div>
 
-          <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-3 mb-5">
-            {product.image_url ? (
-              <img src={product.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
-            ) : (
-              <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                <ShoppingBag className="w-6 h-6 text-gray-400" />
+          <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-5 max-h-64 overflow-y-auto">
+            {groups.map((g) => (
+              <div key={g.key}>
+                <p className="text-[11px] font-extrabold text-gray-500 mb-1.5 flex items-center gap-1">
+                  <Store className="w-3.5 h-3.5" /> {g.label}
+                </p>
+                {cart
+                  .filter((e) => (e.product.for_all_pharmacies ? g.key === '__all__' : e.product.pharmacy_id === g.key))
+                  .map((entry) => (
+                    <div key={entry.key} className="flex items-center gap-3 bg-white rounded-lg p-2 mb-1.5">
+                      {entry.product.image_url ? (
+                        <img src={entry.product.image_url} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
+                          <ShoppingBag className="w-5 h-5 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-gray-900 truncate">{entry.product.name}</p>
+                        <p className="text-xs font-bold" style={{ color: themeColors.priceColor }}>
+                          {(finalPriceOf(entry.product) * entry.quantity).toFixed(2)} ج.م × {entry.quantity}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
               </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 truncate">{product.name}</p>
-              <p className="text-xs text-gray-500 truncate flex items-center gap-1">
-                <Store className="w-3.5 h-3.5 shrink-0" />
-                {contactName}
-              </p>
-              <p className="text-xs font-bold mt-0.5" style={{ color: themeColors.priceColor }}>
-                {finalPrice.toFixed(2)} ج.م
-              </p>
-            </div>
+            ))}
           </div>
 
           {whatsappDigits ? (
             <a
-              href={`https://wa.me/${whatsappDigits}`}
+              href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(`مرحباً، أود طلب:\n${itemLines}`)}`}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={closeOrder}
+              onClick={closeModal}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg mb-3"
               style={{ backgroundColor: '#25d366', boxShadow: '0 8px 20px -6px #25d36688' }}
             >
               <Send className="w-5 h-5" />
-              مراسلة {contactName} واتساب
+              إرسال الطلب واتساب
             </a>
           ) : (
             phone && (
@@ -148,84 +203,89 @@ export function OrderModal() {
                 style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
               >
                 <Phone className="w-5 h-5" />
-                الاتصال بـ {contactName}
+                الاتصال لاستكمال الطلب
               </a>
             )
           )}
 
-          {phone && whatsappDigits && (
-            <a
-              href={`tel:${phone}`}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all hover:scale-[1.01] active:scale-95 border-2 mb-3"
-              style={{ borderColor: themeColors.priceColor, color: themeColors.priceColor }}
-            >
-              <Phone className="w-5 h-5" />
-              الاتصال المباشر
-            </a>
-          )}
-
-          {!phone && !whatsappDigits && (
-            <div className="w-full py-3.5 rounded-xl mb-3 bg-amber-50 border border-amber-200 text-center">
-              <p className="text-xs font-bold text-amber-700">لا يتوفر رقم تواصل مسجل حالياً، حاول لاحقاً.</p>
-            </div>
-          )}
-
           <p className="text-[11px] text-gray-400 text-center leading-relaxed">
             <Info className="w-3 h-3 inline -mt-0.5 ml-1" />
-            الطلب المباشر أونلاين متوقف حالياً، يمكنك الاتصال بالصيدلية لتأكيد توفر المنتج وطريقة الشراء.
+            الطلب المباشر أونلاين متوقف حالياً، يمكنك الاتصال بنا لتأكيد توفر المنتجات وطريقة الشراء.
           </p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  // ============ Empty cart ============
+  if (cart.length === 0 && !success) {
     return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeOrder}>
-        <div className="rounded-3xl w-full max-w-md p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
-          <button onClick={closeOrder} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+        <div className="rounded-3xl w-full max-w-md p-8 text-center relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
+          <button onClick={closeModal} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
             <X className="w-5 h-5 text-gray-500" />
           </button>
-
-          <div className="text-center mb-6">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ backgroundColor: `${themeColors.priceColor}12` }}
-            >
-              <Lock className="w-8 h-8" style={{ color: themeColors.priceColor }} />
-            </div>
-            <h2 className="text-xl font-extrabold text-gray-900">سجّل دخولك أولاً</h2>
-            <p className="text-gray-500 text-sm mt-2">يجب تسجيل الدخول أو إنشاء حساب لتتمكن من طلب المنتجات</p>
-          </div>
-
-          <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-3 mb-6">
-            {product.image_url ? (
-              <img src={product.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
-            ) : (
-              <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
-                <ShoppingBag className="w-6 h-6 text-gray-400" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900 truncate">{product.name}</p>
-              <p className="text-xs text-gray-500">{finalPrice.toFixed(2)} ج.م</p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => { closeOrder(); setAuthModalOpen(true); }}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg"
-            style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ backgroundColor: `${themeColors.priceColor}12`, color: themeColors.priceColor }}
           >
-            <User className="w-5 h-5" />
-            تسجيل الدخول / إنشاء حساب
+            <ShoppingCart className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-extrabold text-gray-900 mb-2">سلتك فارغة</h2>
+          <p className="text-gray-500 text-sm leading-relaxed mb-6">
+            أضف منتجات من الصيدليات المتاحة وستظهر هنا في سلة موحدة يمكنك دفعها في طلب واحد.
+          </p>
+          <button
+            onClick={closeModal}
+            className="w-full py-3 rounded-xl text-white font-bold"
+            style={{ backgroundColor: themeColors.priceColor }}
+          >
+            تصفح المنتجات
           </button>
         </div>
       </div>
     );
   }
 
-  // Logged in - order form
+  // ============ Success ============
+  if (success) {
+    return (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+        <div className="rounded-3xl w-full max-w-md p-8 text-center relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
+          <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-5">
+            <CheckCircle2 className="w-10 h-10 text-teal-600" />
+          </div>
+          <h2 className="text-xl font-extrabold text-gray-900 mb-2">تم استلام طلبك بنجاح!</h2>
+          <p className="text-gray-500 text-sm leading-relaxed mb-3">
+            سنراجع إثبات التحويل الخاص بك، وبمجرد تأكيد الدفع ستصل إليك رسالة بأن طلبك في الطريق.
+          </p>
+          {groups.length > 1 && (
+            <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex items-center gap-2 text-xs font-bold text-teal-700 mb-4">
+              <Building2 className="w-4 h-4 shrink-0" />
+              طلبك موحّد من {groups.length} صيدليات في توصيلة واحدة.
+            </div>
+          )}
+          {loyaltyConfig.enabled && loyaltyConfig.pointsPerOrder > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2 text-xs font-bold text-amber-700 mb-4">
+              <Sparkles className="w-4 h-4 shrink-0" />
+              حصلت على {loyaltyConfig.pointsPerOrder} نقطة مكافأة أُضيفت لرصيدك!
+            </div>
+          )}
+          <button
+            onClick={() => {
+              clearCart();
+              closeCart();
+            }}
+            className="w-full py-3 rounded-xl text-white font-bold"
+            style={{ backgroundColor: themeColors.priceColor }}
+          >
+            حسناً
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -253,8 +313,8 @@ export function OrderModal() {
     setLoading(true);
     setError(null);
 
-    if (!pharmacyId) {
-      setError('يرجى اختيار الصيدلية التي ستقوم بالطلب منها.');
+    if (!user) {
+      setError('يرجى تسجيل الدخول أولاً لإتمام الطلب.');
       setLoading(false);
       return;
     }
@@ -271,19 +331,46 @@ export function OrderModal() {
 
     try {
       const screenshotUrl = screenshot.startsWith('data:') ? await uploadPaymentScreenshot(screenshot) : screenshot;
-      const { error: err } = await supabase.from('orders').insert({
-        customer_id: user.id,
-        product_id: product.id,
-        pharmacy_id: pharmacyId,
-        quantity,
-        total_price: finalPrice * quantity,
-        address: address || null,
-        note: note || null,
-        status: 'pending',
-        payment_method: paymentMethod,
-        payment_number: methodNumber,
-        payment_screenshot_url: screenshotUrl,
+      const { data: groupData, error: groupErr } = await supabase
+        .from('order_groups')
+        .insert({
+          customer_id: user.id,
+          address: address || null,
+          note: note || null,
+          status: 'pending',
+          payment_method: paymentMethod,
+          payment_number: methodNumber,
+          payment_screenshot_url: screenshotUrl,
+          delivery_fee: totalDelivery,
+          total_price: total,
+        })
+        .select('id')
+        .single();
+      if (groupErr) {
+        setError(translateError(groupErr.message).ar);
+        setLoading(false);
+        return;
+      }
+
+      const rows = cart.map((entry) => {
+        const price = finalPriceOf(entry.product) * entry.quantity;
+        return {
+          customer_id: user.id,
+          product_id: entry.product.id,
+          pharmacy_id: entry.product.pharmacy_id || null,
+          quantity: entry.quantity,
+          total_price: price,
+          address: address || null,
+          note: note || null,
+          status: 'pending' as const,
+          payment_method: paymentMethod,
+          payment_number: methodNumber,
+          payment_screenshot_url: screenshotUrl,
+          order_group_id: groupData.id,
+        };
       });
+
+      const { error: err } = await supabase.from('orders').insert(rows);
       if (err) {
         setError(translateError(err.message).ar);
       } else {
@@ -291,7 +378,7 @@ export function OrderModal() {
         if (earnedPoints > 0) {
           const { data: customer } = await supabase.from('customers').select('loyalty_points').eq('id', user.id).maybeSingle();
           const current = Number((customer as { loyalty_points?: number } | null)?.loyalty_points || 0);
-          await awardLoyaltyPoints(user.id, current + earnedPoints, `مكافأة طلب: ${product.name}`);
+          await awardLoyaltyPoints(user.id, current + earnedPoints, `مكافأة طلب موحّد من ${groups.length} صيدلية`);
         }
         setSuccess(true);
       }
@@ -302,63 +389,182 @@ export function OrderModal() {
     }
   };
 
-  if (success) {
+  // ============ Cart step ============
+  if (cartStep === 'cart') {
     return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeOrder}>
-        <div className="rounded-3xl w-full max-w-md p-8 text-center relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
-          <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-5">
-            <CheckCircle2 className="w-10 h-10 text-teal-600" />
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+        <div className="rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
+          <button onClick={closeModal} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+
+          <div className="flex items-center gap-3 mb-5">
+            <div
+              className="w-11 h-11 rounded-2xl flex items-center justify-center"
+              style={{ backgroundColor: `${themeColors.priceColor}14`, color: themeColors.priceColor }}
+            >
+              <ShoppingCart className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-extrabold text-gray-900">سلة الطلب الموحدة</h2>
+              <p className="text-xs text-gray-500">
+                {cart.reduce((s, i) => s + i.quantity, 0)} منتج من {groups.length} {groups.length === 1 ? 'صيدلية' : 'صيدليات'} في توصيلة واحدة
+              </p>
+            </div>
           </div>
-          <h2 className="text-xl font-extrabold text-gray-900 mb-2">تم استلام طلبك بنجاح!</h2>
-          <p className="text-gray-500 text-sm leading-relaxed mb-3">
-            سنراجع إثبات التحويل الخاص بك، وبمجرد تأكيد الدفع ستصل إليك رسالة بأن طلبك في الطريق.
-          </p>
-          {loyaltyConfig.enabled && loyaltyConfig.pointsPerOrder > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2 text-xs font-bold text-amber-700 mb-4">
-              <Sparkles className="w-4 h-4 shrink-0" />
-              حصلت على {loyaltyConfig.pointsPerOrder} نقطة مكافأة أُضيفت لرصيدك!
+
+          {groups.map((g) => (
+            <div key={g.key} className="mb-4 rounded-2xl border border-gray-100 bg-gray-50/60 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100" style={{ backgroundColor: `${themeColors.priceColor}08` }}>
+                <Store className="w-4 h-4 shrink-0" style={{ color: themeColors.priceColor }} />
+                <p className="text-sm font-extrabold text-gray-800 flex-1 truncate">{g.label}</p>
+                <p className="text-[11px] font-bold text-gray-500 shrink-0">
+                  {g.subtotal.toFixed(2)} ج.م
+                </p>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {cart
+                  .filter((e) => (e.product.for_all_pharmacies ? g.key === '__all__' : e.product.pharmacy_id === g.key))
+                  .map((entry) => {
+                    const price = finalPriceOf(entry.product);
+                    return (
+                      <div key={entry.key} className="flex items-center gap-3 p-3">
+                        {entry.product.image_url ? (
+                          <img src={entry.product.image_url} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl bg-gray-200 flex items-center justify-center shrink-0">
+                            <ShoppingBag className="w-6 h-6 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900 truncate">{entry.product.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{entry.product.unit || 'قطعة'}</p>
+                          <p className="text-sm font-extrabold mt-0.5" style={{ color: themeColors.priceColor }}>
+                            {price.toFixed(2)} <span className="text-[10px] text-gray-400 font-medium">ج.م</span>
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => updateCartQty(entry.key, entry.quantity - 1)}
+                              className="w-7 h-7 rounded-lg border border-gray-200 bg-white flex items-center justify-center font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="w-8 text-center font-bold text-sm">{entry.quantity}</span>
+                            <button
+                              onClick={() => updateCartQty(entry.key, entry.quantity + 1)}
+                              className="w-7 h-7 rounded-lg border border-gray-200 bg-white flex items-center justify-center font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => removeFromCart(entry.key)}
+                            className="text-[10px] font-bold text-red-400 hover:text-red-600 flex items-center gap-0.5 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" /> إزالة
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+              {g.key !== '__all__' && g.pharmacy?.delivery_available !== false && (
+                <div className="px-4 py-2 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-[11px] text-gray-500 flex items-center gap-1">
+                    <Truck className="w-3 h-3" /> رسوم توصيل من هذه الصيدلية
+                  </span>
+                  <span className={`text-[11px] font-bold ${groupFee(g) === 0 ? 'text-teal-600' : 'text-gray-700'}`}>
+                    {groupFee(g) === 0 ? (deliveryFreeGlobal ? 'مجاني' : 'بدون رسوم') : `${groupFee(g).toFixed(0)} ج.م`}
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+
+          <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2 mb-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500">المجموع الفرعي</span>
+              <span className="font-bold text-gray-800">{subtotal.toFixed(2)} ج.م</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500 flex items-center gap-1">
+                <Truck className="w-3.5 h-3.5" /> رسوم التوصيل
+              </span>
+              <span className={`font-bold ${totalDelivery === 0 ? 'text-teal-600' : 'text-gray-800'}`}>
+                {totalDelivery === 0 ? (freeThreshold > 0 && subtotal >= freeThreshold ? 'مجاني' : 'بدون رسوم') : `${totalDelivery.toFixed(0)} ج.م`}
+              </span>
+            </div>
+            {freeThreshold > 0 && subtotal < freeThreshold && (
+              <p className="text-[11px] text-teal-600 font-bold">
+                أضف {(freeThreshold - subtotal).toFixed(2)} ج.م ليصبح التوصيل مجانياً!
+              </p>
+            )}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+              <span className="text-sm text-gray-500">الإجمالي</span>
+              <span className="font-extrabold text-lg" style={{ color: themeColors.priceColor }}>
+                {total.toFixed(2)} ج.م
+              </span>
+            </div>
+            {paymentConfig.shippingNote && (
+              <p className="text-[11px] text-gray-400 leading-relaxed flex items-start gap-1 pt-1">
+                <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                {paymentConfig.shippingNote}
+              </p>
+            )}
+          </div>
+
+          {error && (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-gradient-to-bl from-red-50 to-orange-50 p-4 animate-fade-in">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                </div>
+                <p className="font-bold text-sm text-red-700">{error}</p>
+              </div>
             </div>
           )}
-          {selectedPharmacy && (
-            <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2 mb-6 text-xs font-bold text-gray-700">
-              <Store className="w-4 h-4" style={{ color: themeColors.priceColor }} />
-              سيتم التوصيل من: {selectedPharmacy.name}
-            </div>
-          )}
+
           <button
-            onClick={closeOrder}
-            className="w-full py-3 rounded-xl text-white font-bold"
-            style={{ backgroundColor: themeColors.priceColor }}
+            onClick={() => {
+              if (!user) {
+                closeCart();
+                setAuthModalOpen(true);
+                return;
+              }
+              setCartStep('checkout');
+            }}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg"
+            style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
           >
-            حسناً
+            <Send className="w-5 h-5" />
+            متابعة إتمام الطلب
           </button>
         </div>
       </div>
     );
   }
 
+  // ============ Checkout step ============
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeOrder}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
       <div className="rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
-        <button onClick={closeOrder} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+        <button onClick={closeModal} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
           <X className="w-5 h-5 text-gray-500" />
         </button>
 
         <div className="flex items-center gap-3 mb-5">
-          {product.image_url ? (
-            <img src={product.image_url} alt="" className="w-16 h-16 rounded-2xl object-cover" />
-          ) : (
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
-              <ShoppingBag className="w-8 h-8 text-gray-300" />
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-900">{product.name}</p>
-            {orderItem.pharmacyName && <p className="text-xs text-gray-500">{orderItem.pharmacyName}</p>}
-            <div className="flex items-baseline gap-1.5 mt-1">
-              <span className="font-extrabold" style={{ color: themeColors.priceColor }}>{finalPrice.toFixed(2)}</span>
-              <span className="text-xs text-gray-500">ج.م</span>
-            </div>
+          <button
+            onClick={() => setCartStep('cart')}
+            className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
+            title="العودة للسلة"
+          >
+            <X className="w-4 h-4 rotate-45" />
+          </button>
+          <div className="flex-1">
+            <h2 className="text-xl font-extrabold text-gray-900">إتمام الطلب</h2>
+            <p className="text-xs text-gray-500">طلب موحّد من {groups.length} {groups.length === 1 ? 'صيدلية' : 'صيدليات'}</p>
           </div>
         </div>
 
@@ -380,43 +586,6 @@ export function OrderModal() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Quantity */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">الكمية</label>
-            <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-lg border border-gray-200 hover:bg-gray-50 font-bold text-lg">-</button>
-              <span className="w-12 text-center font-bold text-lg">{quantity}</span>
-              <button type="button" onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 rounded-lg border border-gray-200 hover:bg-gray-50 font-bold text-lg">+</button>
-            </div>
-          </div>
-
-          {/* Pharmacy selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              اختر الصيدلية التي تريد الطلب منها
-            </label>
-            <div className="relative">
-              <Store className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <select
-                value={pharmacyId}
-                onChange={(e) => setPharmacyId(e.target.value)}
-                className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 appearance-none"
-                style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
-              >
-                <option value="">اختر الصيدلية...</option>
-                {pharmacies.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-            {selectedPharmacy && (
-              <p className="text-[11px] font-bold text-gray-500 mt-1.5 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" style={{ color: themeColors.priceColor }} />
-                سيتم تنفيذ الطلب من صيدلية {selectedPharmacy.name}
-              </p>
-            )}
-          </div>
-
           {/* Contact info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -591,34 +760,21 @@ export function OrderModal() {
 
           <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">سعر المنتج × {quantity}</span>
-              <span className="font-bold text-gray-800">{(finalPrice * quantity).toFixed(2)} ج.م</span>
+              <span className="text-gray-500">المجموع الفرعي ({cart.reduce((s, i) => s + i.quantity, 0)} منتج)</span>
+              <span className="font-bold text-gray-800">{subtotal.toFixed(2)} ج.م</span>
             </div>
-            {(() => {
-              const subtotal = finalPrice * quantity;
-              const freeThreshold = parseFloat(paymentConfig.freeDeliveryThreshold) || 0;
-              const fee = parseFloat(paymentConfig.deliveryFee) || 0;
-              const deliveryFree = freeThreshold > 0 && subtotal >= freeThreshold;
-              return (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 flex items-center gap-1">
-                    <Truck className="w-3.5 h-3.5" /> رسوم التوصيل
-                  </span>
-                  <span className={`font-bold ${deliveryFree ? 'text-teal-600' : 'text-gray-800'}`}>
-                    {deliveryFree ? 'مجاني' : `${fee.toFixed(0)} ج.م`}
-                  </span>
-                </div>
-              );
-            })()}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-500 flex items-center gap-1">
+                <Truck className="w-3.5 h-3.5" /> رسوم التوصيل
+              </span>
+              <span className={`font-bold ${totalDelivery === 0 ? 'text-teal-600' : 'text-gray-800'}`}>
+                {totalDelivery === 0 ? (freeThreshold > 0 && subtotal >= freeThreshold ? 'مجاني' : 'بدون رسوم') : `${totalDelivery.toFixed(0)} ج.م`}
+              </span>
+            </div>
             <div className="flex items-center justify-between pt-2 border-t border-gray-100">
               <span className="text-sm text-gray-500">الإجمالي</span>
               <span className="font-extrabold text-lg" style={{ color: themeColors.priceColor }}>
-                {(() => {
-                  const subtotal = finalPrice * quantity;
-                  const freeThreshold = parseFloat(paymentConfig.freeDeliveryThreshold) || 0;
-                  const fee = (freeThreshold > 0 && subtotal >= freeThreshold) ? 0 : (parseFloat(paymentConfig.deliveryFee) || 0);
-                  return (subtotal + fee).toFixed(2);
-                })()} ج.م
+                {total.toFixed(2)} ج.م
               </span>
             </div>
             {paymentConfig.shippingNote && (
@@ -635,7 +791,7 @@ export function OrderModal() {
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 shadow-lg"
             style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-5 h-5" /> تأكيد الطلب</>}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-5 h-5" /> تأكيد الطلب الموحّد</>}
           </button>
 
           <p className="text-[11px] text-gray-400 text-center leading-relaxed">

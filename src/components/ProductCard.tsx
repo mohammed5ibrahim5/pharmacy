@@ -1,4 +1,4 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, Plus, Heart, Store, Phone, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, X, Flame } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, Phone, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, X, Flame } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -193,10 +193,10 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
             style={{ color: themeColors.priceColor }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = themeColors.priceColor; e.currentTarget.style.color = '#ffffff'; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = themeColors.priceColor; }}
-            title={storeConfig.purchasesEnabled ? 'اطلب الدواء الآن' : 'تواصل مع الصيدلية'}
+            title={storeConfig.purchasesEnabled ? 'أضف إلى السلة' : 'تواصل مع الصيدلية'}
           >
             {storeConfig.purchasesEnabled ? (
-              <Plus className="w-5 h-5 font-bold" />
+              <ShoppingCart className="w-[18px] h-[18px] font-bold" />
             ) : (
               <Phone className="w-4 h-4" />
             )}
