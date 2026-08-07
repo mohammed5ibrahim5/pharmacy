@@ -52,7 +52,7 @@ export function MobileBottomNav() {
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
                   <span
-                    className="absolute -top-2 -left-2.5 min-w-4 h-4 px-0.5 rounded-full text-[9px] font-black text-white flex items-center justify-center"
+                    className="absolute -top-2 -start-2.5 min-w-4 h-4 px-0.5 rounded-full text-[9px] font-black text-white flex items-center justify-center"
                     style={{ backgroundColor: themeColors.priceColor }}
                   >
                     {cartCount > 99 ? '99+' : cartCount}
@@ -110,7 +110,7 @@ export function MobileBottomNav() {
         </div>
 
         {whatsappDigits && (
-          <div className="absolute -top-12 right-4">
+          <div className="absolute -top-12 end-4">
             <a
               href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(t('مرحباً، أحتاج مساعدة من صيدليتي'))}`}
               target="_blank"

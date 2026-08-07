@@ -24,14 +24,14 @@ import { useRouter } from '@/context/RouterContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import { translateError } from '@/lib/errorMessages';
+import { localizedError } from '@/lib/errorMessages';
 
 export function UserMenu() {
   const { user, profile, signOut, setAuthModalOpen, loading, refreshProfile } = useCustomer();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { favoriteCount } = useFavorites();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -133,7 +133,7 @@ export function UserMenu() {
         .update({ avatar_url: avatarUrl })
         .eq('id', user.id);
       if (err) {
-        setError(t(translateError(err.message).ar));
+        setError(localizedError(err.message, lang));
       } else {
         setSuccess(t('تم تحديث الصورة بنجاح'));
         setTimeout(() => setSuccess(null), 2000);
@@ -152,7 +152,7 @@ export function UserMenu() {
       .update({ avatar_url: avatarLinkValue.trim() })
       .eq('id', user.id);
     if (err) {
-      setError(t(translateError(err.message).ar));
+      setError(localizedError(err.message, lang));
     } else {
       setSuccess(t('تم تحديث الصورة بنجاح'));
       setTimeout(() => setSuccess(null), 2000);
@@ -172,7 +172,7 @@ export function UserMenu() {
       .eq('id', user.id);
     setSaving(false);
     if (err) {
-      setError(t(translateError(err.message).ar));
+      setError(localizedError(err.message, lang));
       return;
     }
     setSuccess(t('تم حفظ رقم الهاتف'));
@@ -199,7 +199,7 @@ export function UserMenu() {
         >
           <UserCircle2 className="w-4 h-4" />
         </div>
-        <div className="text-right leading-tight hidden sm:block">
+        <div className="text-start leading-tight hidden sm:block">
           <span className="block font-bold">{t('دخول / حساب')}</span>
           <span className="text-[10px] text-gray-500 font-normal">{t('إدارة طلباتك وروشتاتك')}</span>
         </div>
@@ -214,7 +214,7 @@ export function UserMenu() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 p-1.5 pr-3 pl-2 rounded-2xl border border-gray-200/80 bg-white/90 hover:bg-white hover:border-teal-300 transition-all shadow-sm group"
+        className="flex items-center gap-2 p-1.5 ps-3 pe-2 rounded-2xl border border-gray-200/80 bg-white/90 hover:bg-white hover:border-teal-300 transition-all shadow-sm group"
       >
         {profile?.avatar_url ? (
           <img
@@ -230,7 +230,7 @@ export function UserMenu() {
             {initial}
           </div>
         )}
-        <div className="hidden sm:block text-right leading-tight">
+        <div className="hidden sm:block text-start leading-tight">
           <div className="flex items-center gap-1">
             <span className="text-xs font-extrabold text-gray-900 max-w-[90px] truncate">
               {profile?.full_name || t('عميل متميز')}
@@ -243,13 +243,13 @@ export function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
+        <div className="absolute start-0 top-full mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
           {/* Profile header card */}
           <div
             className="p-4 text-white relative overflow-hidden"
             style={{ background: `linear-gradient(135deg, ${themeColors.priceColor}, ${themeColors.priceColor})` }}
           >
-            <div className="absolute -bottom-8 -left-8 w-28 h-28 rounded-full bg-white/10 blur-xl pointer-events-none" />
+            <div className="absolute -bottom-8 -start-8 w-28 h-28 rounded-full bg-white/10 blur-xl pointer-events-none" />
             <div className="relative flex items-center gap-3">
               <div className="relative shrink-0">
                 {profile?.avatar_url ? (
@@ -264,7 +264,7 @@ export function UserMenu() {
                   </div>
                 )}
                 <label
-                  className="absolute -bottom-1 -left-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow bg-white"
+                  className="absolute -bottom-1 -start-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform shadow bg-white"
                   title={t('تغيير الصورة')}
                 >
                   <Camera className="w-3.5 h-3.5" style={{ color: themeColors.priceColor }} />
@@ -355,7 +355,7 @@ export function UserMenu() {
                 ) : (
                   <button onClick={() => setEditing(true)} className="text-xs text-gray-700 flex items-center justify-between flex-1" dir="ltr">
                     <span>{profile?.phone || t('إضافة رقم هاتف')}</span>
-                    <span className="text-[10px] text-teal-600 font-bold underline ml-2">{t('تعديل')}</span>
+                    <span className="text-[10px] text-teal-600 font-bold underline me-2">{t('تعديل')}</span>
                   </button>
                 )}
               </div>

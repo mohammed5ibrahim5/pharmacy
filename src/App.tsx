@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
-import { LanguageProvider } from '@/context/LanguageContext';
+import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { RouterProvider, useRouter } from '@/context/RouterContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { CustomerProvider } from '@/context/CustomerContext';
@@ -26,6 +26,7 @@ const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage').then((m) => (
 
 function SiteLoading() {
   const { loading, themeColors } = useSettings();
+  const { t } = useLanguage();
   if (!loading) return null;
 
   return (
@@ -36,7 +37,7 @@ function SiteLoading() {
       >
         <Cross className="w-9 h-9 text-white" strokeWidth={2.5} />
       </div>
-      <p className="mt-4 text-sm font-bold text-gray-500">جاري تحميل الصيدليتي...</p>
+      <p className="mt-4 text-sm font-bold text-gray-500">{t('جاري تحميل الصيدليتي...')}</p>
     </div>
   );
 }
@@ -67,9 +68,10 @@ function AdminRoute() {
 
 function SiteContent() {
   const { route } = useRouter();
+  const { dir } = useLanguage();
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-gray-50" dir={dir}>
       <AnnouncementBar />
       <Header />
       <main className="flex-1 pb-20 lg:pb-0">

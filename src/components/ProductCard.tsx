@@ -96,7 +96,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
           {/* Badges Overlay */}
           {activeDiscount && (
             <div
-              className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md animate-pulse whitespace-nowrap z-10"
+              className="absolute top-2.5 end-2.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md animate-pulse whitespace-nowrap z-10"
               style={{ backgroundColor: themeColors.discountBadgeBg, color: themeColors.discountBadgeText }}
             >
               {t('خصم {0}%', [activeDiscount.discount_percentage])}
@@ -106,7 +106,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
           {/* Most-requested Badge */}
           {popular && (
             <div
-              className="absolute top-10 right-2.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md inline-flex items-center gap-1"
+              className="absolute top-10 end-2.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md inline-flex items-center gap-1"
               style={{ backgroundColor: themeColors.accentColor, color: '#ffffff' }}
             >
               <Flame className="w-3 h-3" fill="currentColor" />
@@ -121,7 +121,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               e.stopPropagation();
               handleToggleFavorite();
             }}
-            className={`absolute top-2.5 left-2.5 w-9 h-9 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 group-hover:scale-110 active:scale-90 ${
+            className={`absolute top-2.5 start-2.5 w-9 h-9 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 group-hover:scale-110 active:scale-90 ${
               isFav ? 'bg-pink-500 border-pink-400' : 'bg-white/90 backdrop-blur-sm border-gray-100 hover:bg-white'
             }`}
             title={isFav ? t('إزالة من المفضلة') : t('أضف إلى المفضلة')}
@@ -142,7 +142,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                 e.stopPropagation();
                 setCompareOpen(true);
               }}
-              className="absolute top-2.5 left-12 w-9 h-9 rounded-2xl bg-white/90 backdrop-blur-sm border border-gray-100 shadow-lg hover:bg-white flex items-center justify-center transition-all duration-300 group-hover:scale-110 active:scale-90"
+              className="absolute top-2.5 start-12 w-9 h-9 rounded-2xl bg-white/90 backdrop-blur-sm border border-gray-100 shadow-lg hover:bg-white flex items-center justify-center transition-all duration-300 group-hover:scale-110 active:scale-90"
               title={t('قارن الأسعار والبدائل')}
               aria-label={t('قارن الأسعار والبدائل')}
             >
@@ -172,7 +172,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                   setAlerting(false);
                 }
               }}
-              className={`absolute bottom-2.5 right-2.5 w-9 h-9 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-300 active:scale-90 ${
+              className={`absolute bottom-2.5 end-2.5 w-9 h-9 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-300 active:scale-90 ${
                 alerted
                   ? 'text-white'
                   : 'bg-white/90 backdrop-blur-sm border border-gray-100 hover:bg-white'
@@ -198,7 +198,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
           )}
 
           {product.requires_prescription && (
-            <div className="absolute bottom-2 right-2 bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 shadow">
+            <div className="absolute bottom-2 end-2 bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 shadow">
               <AlertCircle className="w-3 h-3" />
               {t('بوصفة طبية')}
             </div>
@@ -208,7 +208,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
           {storeConfig.purchasesEnabled ? (
             cartEntry ? (
               <div
-                className="absolute bottom-2.5 left-2.5 flex items-center gap-0.5 rounded-xl bg-white shadow-lg border p-0.5 animate-fade-in"
+                className="absolute bottom-2.5 start-2.5 flex items-center gap-0.5 rounded-xl bg-white shadow-lg border p-0.5 animate-fade-in"
                 style={{ borderColor: `${themeColors.priceColor}35` }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -240,7 +240,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                 </button>
               </div>
             ) : (
-              <div className="absolute bottom-2.5 left-2.5">
+              <div className="absolute bottom-2.5 start-2.5">
                 {justAdded && (
                   <span
                     className="pointer-events-none absolute -top-1.5 left-1/2 -translate-x-1/2 text-xs font-black animate-cart-add"
@@ -276,7 +276,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                 e.stopPropagation();
                 openOrder(product, pharmacyName);
               }}
-              className="absolute bottom-2.5 left-2.5 w-9 h-9 rounded-2xl bg-white shadow-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+              className="absolute bottom-2.5 start-2.5 w-9 h-9 rounded-2xl bg-white shadow-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105"
               style={{ color: themeColors.priceColor }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = themeColors.priceColor; e.currentTarget.style.color = '#ffffff'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = themeColors.priceColor; }}

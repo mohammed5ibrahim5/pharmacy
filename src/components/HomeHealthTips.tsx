@@ -38,11 +38,11 @@ export function HomeHealthTips() {
       {/* Decorative background */}
       <div className="absolute inset-0 pointer-events-none bg-dots" />
       <div
-        className="absolute -top-20 -right-20 w-72 h-72 rounded-full blur-3xl pointer-events-none"
+        className="absolute -top-20 -end-20 w-72 h-72 rounded-full blur-3xl pointer-events-none"
         style={{ backgroundColor: `${themeColors.primaryColor}0d` }}
       />
       <div
-        className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full blur-3xl pointer-events-none"
+        className="absolute -bottom-24 -start-24 w-80 h-80 rounded-full blur-3xl pointer-events-none"
         style={{ backgroundColor: `${themeColors.accentColor}0a` }}
       />
       <div
@@ -83,7 +83,7 @@ export function HomeHealthTips() {
                 style={{ background: `linear-gradient(to left, ${tip.color}, ${themeColors.primaryColor})` }}
               />
               <div
-                className="absolute -top-6 -left-6 w-24 h-24 rounded-full blur-2xl opacity-40 group-hover:opacity-60 transition-opacity pointer-events-none"
+                className="absolute -top-6 -start-6 w-24 h-24 rounded-full blur-2xl opacity-40 group-hover:opacity-60 transition-opacity pointer-events-none"
                 style={{ backgroundColor: `${tip.color}15` }}
               />
               <div

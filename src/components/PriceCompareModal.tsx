@@ -84,7 +84,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
             <span className="truncate">{p.pharmacy?.name || t('جميع الصيدليات')}</span>
           </p>
         </div>
-        <div className="text-left shrink-0">
+        <div className="text-end shrink-0">
           <p className="text-base font-black" style={{ color: themeColors.priceColor }}>
             {fp.toFixed(2)} <span className="text-[10px] font-bold text-gray-400">{t('ج.م')}</span>
           </p>
@@ -154,10 +154,10 @@ export function PriceCompareModal({ product, onClose }: Props) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-black text-gray-900">السعر الحالي</p>
+              <p className="text-sm font-black text-gray-900">{t('السعر الحالي')}</p>
               <p className="text-[11px] text-gray-500 font-bold">{product.pharmacy?.name || t('جميع الصيدليات')}</p>
             </div>
-            <div className="text-left shrink-0">
+            <div className="text-end shrink-0">
               <p className="text-lg font-black" style={{ color: themeColors.priceColor }}>
                 {currentFinal.toFixed(2)} <span className="text-[10px] font-bold text-gray-400">{t('ج.م')}</span>
               </p>
@@ -182,7 +182,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
                 </div>
                 <h3 className="text-sm font-black text-gray-900">{t('نفس الدواء في صيدليات أخرى ({0})', [sameName.length])}</h3>
                 {cheapestSame && (
-                  <span className="mr-auto flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 border border-teal-200 text-[10px] font-extrabold text-teal-700">
+                  <span className="ms-auto flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 border border-teal-200 text-[10px] font-extrabold text-teal-700">
                     <TrendingDown className="w-3 h-3" />
                     {t('الأرخص {0} ج.م', [finalPrice(cheapestSame).toFixed(2)])}
                   </span>
@@ -214,15 +214,17 @@ export function PriceCompareModal({ product, onClose }: Props) {
                 </div>
                 <h3 className="text-sm font-black text-gray-900">{t('بدائل بنفس المادة الفعالة ({0})', [alternatives.length])}</h3>
                 {cheapestAlt && (
-                  <span className="mr-auto flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-extrabold text-amber-700">
+                  <span className="ms-auto flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-extrabold text-amber-700">
                     <CheckCircle2 className="w-3 h-3" />
                     {t('البديل الأرخص {0} ج.م', [finalPrice(cheapestAlt).toFixed(2)])}
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-gray-400 mb-3 font-bold">
-                {t('بدائل تحتوي على نفس المادة الفعالة "{0}" — استشر الصيدلي قبل التبديل.', [product.active_ingredient!])}
-              </p>
+              {product.active_ingredient && (
+                <p className="text-[11px] text-gray-400 mb-3 font-bold">
+                  {t('بدائل تحتوي على نفس المادة الفعالة "{0}" — استشر الصيدلي قبل التبديل.', [product.active_ingredient])}
+                </p>
+              )}
               <div className="space-y-2">
                 {[...alternatives]
                   .sort((a, b) => finalPrice(a) - finalPrice(b))

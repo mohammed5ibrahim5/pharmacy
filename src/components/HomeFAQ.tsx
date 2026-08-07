@@ -71,7 +71,7 @@ export function HomeFAQ() {
                 <button
                   type="button"
                   onClick={() => setOpenIndex(isOpen ? null : i)}
-                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-right"
+                  className="w-full flex items-center justify-between gap-4 px-5 py-4 text-start"
                 >
                   <span className="font-extrabold text-sm" style={{ color: themeColors.cardText }}>{t(faq.q)}</span>
                   <ChevronDown

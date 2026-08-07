@@ -155,6 +155,19 @@ html[lang='en'] .text-left { text-align: right; }
 html[lang='en'] .text-start { text-align: left; }
 html[lang='en'] .text-end { text-align: right; }
 
+/* Scrolling tickers flow leftward in LTR */
+html[lang='en'] .animate-marquee {
+  animation-direction: reverse;
+}
+
+/* Slightly tighter headings for Latin glyphs */
+html[lang='en'] h1,
+html[lang='en'] h2,
+html[lang='en'] h3,
+html[lang='en'] h4 {
+  letter-spacing: -0.02em;
+}
+
 /* ============ DARK MODE ============ */
 html.dark body {
   background-color: #0b1220;

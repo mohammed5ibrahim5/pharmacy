@@ -13,7 +13,7 @@ interface Props {
 export function AuthModal({ open, onClose }: Props) {
   const { signIn, signUp } = useCustomer();
   const { themeColors } = useSettings();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -56,7 +56,7 @@ export function AuthModal({ open, onClose }: Props) {
       if (res.error) {
         const msg = res.error.includes('Invalid login')
           ? t('عذراً، بيانات الدخول غير صحيحة')
-          : res.error;
+          : t(res.error);
         setError(msg);
         return;
       }
@@ -82,12 +82,12 @@ export function AuthModal({ open, onClose }: Props) {
         >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white"
+            className="absolute top-4 end-4 w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white"
             aria-label={t('إغلاق')}
           >
             <X className="w-5 h-5" />
           </button>
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -bottom-10 -start-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
           <div className="relative text-center">
             <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Cross className="w-8 h-8 text-white" strokeWidth={2.5} />
@@ -103,7 +103,7 @@ export function AuthModal({ open, onClose }: Props) {
 
 <div className="p-6">
           {error && (() => {
-            const translated = translateError(error);
+            const tr = translateError(error);
             return (
               <div className="mb-5 rounded-2xl border border-red-200 bg-gradient-to-bl from-red-50 to-orange-50 p-4 animate-fade-in">
                 <div className="flex items-start gap-3">
@@ -111,11 +111,11 @@ export function AuthModal({ open, onClose }: Props) {
                     <AlertCircle className="w-5 h-5 text-red-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-red-700 mb-0.5">{translated.ar}</p>
-                    {translated.hint && (
+                    <p className="font-bold text-sm text-red-700 mb-0.5">{lang === 'en' ? tr.en : tr.ar}</p>
+                    {tr.hint && (
                       <p className="text-xs text-red-600/80 flex items-start gap-1 leading-relaxed">
                         <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                        {translated.hint}
+                        {lang === 'en' ? tr.hintEn : tr.hint}
                       </p>
                     )}
                   </div>
@@ -141,7 +141,7 @@ export function AuthModal({ open, onClose }: Props) {
                       )}
                     </div>
                     <label
-                      className="absolute bottom-0 left-0 w-9 h-9 rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform shadow-lg"
+                      className="absolute bottom-0 end-0 w-9 h-9 rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform shadow-lg"
                       style={{ backgroundColor: themeColors.priceColor }}
                     >
                       <Camera className="w-4 h-4 text-white" />
@@ -190,13 +190,13 @@ export function AuthModal({ open, onClose }: Props) {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('الاسم الكامل *')}</label>
                   <div className="relative">
-                    <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <User className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
-                      className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
+                      className="w-full ps-11 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
                       style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                       placeholder={t('اسمك الكامل')}
                     />
@@ -206,14 +206,14 @@ export function AuthModal({ open, onClose }: Props) {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('رقم الهاتف *')}</label>
                   <div className="relative">
-                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Phone className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       required
                       dir="ltr"
-                      className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
+                      className="w-full ps-11 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
                       style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                       placeholder="01XXXXXXXXX"
                     />
@@ -226,14 +226,14 @@ export function AuthModal({ open, onClose }: Props) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('البريد الإلكتروني')}</label>
                 <div className="relative">
-                  <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     dir="ltr"
-                    className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
+                    className="w-full ps-11 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
                     style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                     placeholder="you@example.com"
                   />
@@ -243,7 +243,7 @@ export function AuthModal({ open, onClose }: Props) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('كلمة المرور')}</label>
                 <div className="relative">
-                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
@@ -251,14 +251,14 @@ export function AuthModal({ open, onClose }: Props) {
                     required
                     minLength={6}
                     dir="ltr"
-                    className="w-full pr-11 pl-11 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
+                    className="w-full ps-11 pe-11 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
                     style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -281,7 +281,7 @@ export function AuthModal({ open, onClose }: Props) {
               {mode === 'login' ? t('ليس لديك حساب؟') : t('لديك حساب بالفعل؟')}
               <button
                 onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}
-                className="mr-1 font-semibold hover:underline"
+                className="ms-1 font-semibold hover:underline"
                 style={{ color: themeColors.priceColor }}
               >
                 {mode === 'login' ? t('إنشاء حساب') : t('تسجيل الدخول')}

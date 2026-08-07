@@ -102,14 +102,14 @@ export function NotificationsBell() {
       >
         <Bell className="w-5 h-5" />
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-white">
+          <span className="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-white">
             {unread > 9 ? '9+' : unread}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
+        <div className="absolute start-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/70">
             <h4 className="text-xs font-black text-gray-900 flex items-center gap-1.5">
               <Bell className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
@@ -144,17 +144,17 @@ export function NotificationsBell() {
                     setOpen(false);
                     navigate({ name: 'account', tab: n.type === 'prescription' ? 'prescriptions' : 'orders' });
                   }}
-                  className={`w-full text-right px-4 py-3 flex items-start gap-3 transition-colors hover:bg-teal-50/40 ${n.read ? 'opacity-70' : ''}`}
+                  className={`w-full text-start px-4 py-3 flex items-start gap-3 transition-colors hover:bg-teal-50/40 ${n.read ? 'opacity-70' : ''}`}
                 >
                   <span className="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center bg-gray-50 border border-gray-100">
                     {typeIcon(n.type)}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-black text-gray-900 truncate">{n.title}</span>
+                      <span className="text-xs font-black text-gray-900 truncate">{t(n.title)}</span>
                       {!n.read && <span className="w-2 h-2 shrink-0 rounded-full bg-red-500" />}
                     </span>
-                    {n.body && <span className="block text-[11px] text-gray-500 mt-0.5 leading-relaxed">{n.body}</span>}
+                    {n.body && <span className="block text-[11px] text-gray-500 mt-0.5 leading-relaxed">{t(n.body)}</span>}
                     <span className="block text-[10px] text-gray-400 font-bold mt-1">{timeAgo(n.created_at, t)}</span>
                   </span>
                 </button>

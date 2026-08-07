@@ -98,9 +98,9 @@ function toRad(value: number): number {
   return (value * Math.PI) / 180;
 }
 
-export function formatDistance(distance: number): string {
+export function formatDistance(distance: number, lang: 'ar' | 'en' = 'ar'): string {
   if (distance < 1) {
-    return `${Math.round(distance * 1000)} م`;
+    return lang === 'en' ? `${Math.round(distance * 1000)} m` : `${Math.round(distance * 1000)} م`;
   }
-  return `${distance.toFixed(1)} كم`;
+  return lang === 'en' ? `${distance.toFixed(1)} km` : `${distance.toFixed(1)} كم`;
 }

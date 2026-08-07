@@ -65,12 +65,13 @@ export async function notifyStockAvailable(productId: string) {
     .eq('product_id', productId);
   const { data: product } = await supabase.from('products').select('name').eq('id', productId).maybeSingle();
   if (!alerts || alerts.length === 0) return;
+  const productName = (product as { name: string } | null)?.name || 'المنتج الذي طلبته';
   for (const alert of alerts as (StockAlert & { customer: { id: string } })[]) {
     await insertNotification({
       customerId: alert.customer_id,
       type: 'stock',
       title: 'الدواء أصبح متوفراً الآن',
-      body: `لقد توفر ${(product as { name: string } | null)?.name || 'المنتج الذي طلبته'} — اطلبه الآن قبل نفاد الكمية.`,
+      body: 'لقد توفر {0} — اطلبه الآن قبل نفاد الكمية.'.replace('{0}', productName),
     });
   }
   await supabase.from('stock_alerts').delete().eq('product_id', productId);

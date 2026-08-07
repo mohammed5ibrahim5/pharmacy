@@ -4,7 +4,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { uploadPrescriptionImage, insertPrescription } from '@/lib/prescriptions';
-import { translateError } from '@/lib/errorMessages';
+import { localizedError } from '@/lib/errorMessages';
 
 interface PrescriptionUploadModalProps {
   open: boolean;
@@ -14,7 +14,7 @@ interface PrescriptionUploadModalProps {
 export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadModalProps) {
   const { settings, themeColors } = useSettings();
   const { profile, user } = useCustomer();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [image, setImage] = useState<string | null>(null);
   const [linkMode, setLinkMode] = useState(false);
   const [linkValue, setLinkValue] = useState('');
@@ -76,7 +76,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
         onClose();
       }, 1400);
     } catch (err) {
-      const msg = translateError((err as { message?: string })?.message || '').ar;
+      const msg = localizedError((err as { message?: string })?.message || '', lang);
       setError(msg || t('فشل رفع الروشتة، برجاء المحاولة مرة أخرى.'));
     } finally {
       setUploading(false);
@@ -156,7 +156,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                     <button
                       type="button"
                       onClick={() => setImage(null)}
-                      className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow"
+                      className="absolute top-2 end-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -219,7 +219,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-gray-700">{t('رقم الهاتف للتواصل *')}</label>
                 <div className="relative">
-                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Phone className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="tel"
                     value={phone}
@@ -227,7 +227,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                     placeholder="01XXXXXXXXX"
                     required
                     dir="ltr"
-                    className="w-full pr-10 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
+                    className="w-full ps-10 pe-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
                     style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                   />
                 </div>
@@ -237,13 +237,13 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-gray-700">{t('ملاحظات إضافية للصيدلي (اختياري)')}</label>
                 <div className="relative">
-                  <MessageSquare className="absolute right-3 top-3 w-4 h-4 text-gray-400" />
+                  <MessageSquare className="absolute end-3 top-3 w-4 h-4 text-gray-400" />
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     rows={3}
                     placeholder={t('اكتب أية ملاحظات بخصوص الجرعات أو البدائل المتاحة...')}
-                    className="w-full pr-10 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 resize-none"
+                    className="w-full ps-10 pe-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 resize-none"
                     style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                   />
                 </div>

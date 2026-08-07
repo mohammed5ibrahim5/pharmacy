@@ -55,7 +55,7 @@ export function AnnouncementBar() {
       </div>
       <button
         onClick={dismiss}
-        className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+        className="absolute end-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
         style={{ color: themeColors.announcementText }}
         aria-label={t('إغلاق')}
       >

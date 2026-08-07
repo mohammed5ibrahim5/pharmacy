@@ -50,7 +50,7 @@ export function HomeHowItWorks() {
                   </div>
                 </div>
                 <span
-                  className="absolute -top-2 -left-2 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black border-2 border-white shadow-md animate-pulse-soft"
+                  className="absolute -top-2 -start-2 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black border-2 border-white shadow-md animate-pulse-soft"
                   style={{ backgroundColor: themeColors.accent2Color, color: '#fff' }}
                 >
                   {i + 1}

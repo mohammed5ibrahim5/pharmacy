@@ -75,7 +75,7 @@ export function Footer() {
     <h4 className="text-sm font-black tracking-wide relative pb-2.5 mb-5">
       <span style={{ color: footerText }}>{label}</span>
       <span
-        className="absolute right-0 bottom-0 h-[3px] w-9 rounded-full"
+        className="absolute end-0 bottom-0 h-[3px] w-9 rounded-full"
         style={{ backgroundColor: primary, boxShadow: `0 0 12px ${withAlpha(primary, 0.5)}` }}
       />
     </h4>
@@ -93,11 +93,11 @@ export function Footer() {
       {/* Background decor */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute -top-40 right-0 w-[520px] h-[520px] rounded-full blur-3xl"
+          className="absolute -top-40 end-0 w-[520px] h-[520px] rounded-full blur-3xl"
           style={{ backgroundColor: primary, opacity: dark ? 0.09 : 0.07 }}
         />
         <div
-          className="absolute -bottom-44 -left-32 w-[440px] h-[440px] rounded-full blur-3xl"
+          className="absolute -bottom-44 -start-32 w-[440px] h-[440px] rounded-full blur-3xl"
           style={{ backgroundColor: secondary, opacity: dark ? 0.07 : 0.06 }}
         />
         <div

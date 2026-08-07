@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function PharmacyMap({ pharmacies, loading }: Props) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { location } = useGeolocation();
@@ -39,7 +39,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
 
   if (activePharmacies.length === 0) return null;
 
-  const embedSrc = `https://www.google.com/maps?q=${selected?.latitude},${selected?.longitude}&z=14&output=embed&hl=ar`;
+  const embedSrc = `https://www.google.com/maps?q=${selected?.latitude},${selected?.longitude}&z=14&output=embed&hl=${lang}`;
 
   return (
     <section className="py-12">
@@ -81,7 +81,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
                   <button
                     key={p.id}
                     onClick={() => setSelectedId(p.id)}
-                    className={`w-full text-right p-3.5 flex items-center gap-3 transition-colors ${
+                    className={`w-full text-start p-3.5 flex items-center gap-3 transition-colors ${
                       isSelected ? 'bg-teal-50/70' : 'hover:bg-gray-50'
                     }`}
                     style={isSelected ? { boxShadow: `inset 3px 0 0 ${themeColors.primaryColor}` } : {}}
@@ -98,7 +98,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
                     </div>
                     {p.distance != null && (
                       <span className="text-[10px] font-black text-teal-700 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded-lg shrink-0" dir="ltr">
-                        {formatDistance(p.distance)}
+                        {formatDistance(p.distance, lang)}
                       </span>
                     )}
                   </button>
@@ -120,7 +120,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
                   allowFullScreen
                   referrerPolicy="no-referrer-when-downgrade"
                 />
-                <div className="absolute bottom-3 left-3 right-3 sm:right-auto flex flex-col sm:flex-row gap-2 sm:items-center">
+                <div className="absolute bottom-3 start-3 end-3 sm:end-auto flex flex-col sm:flex-row gap-2 sm:items-center">
                   <div className="bg-white/95 backdrop-blur rounded-2xl shadow-lg border border-gray-100 px-4 py-2.5 flex items-center gap-2.5 flex-1 sm:flex-none">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-black" style={{ backgroundColor: themeColors.primaryColor }}>
                       {selected.name.charAt(0)}
@@ -144,7 +144,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
               </>
             )}
             {location == null && (
-              <div className="absolute top-3 right-3 bg-white/95 backdrop-blur rounded-xl shadow border border-gray-100 px-3 py-2 text-[10px] font-bold text-slate-600 flex items-center gap-1.5">
+              <div className="absolute top-3 end-3 bg-white/95 backdrop-blur rounded-xl shadow border border-gray-100 px-3 py-2 text-[10px] font-bold text-slate-600 flex items-center gap-1.5">
                 <Cross className="w-3 h-3 text-slate-400" />
                 {t('حدّد موقعك لعرض المسافات')}
               </div>

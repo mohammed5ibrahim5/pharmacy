@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Star, Quote, BadgeCheck, MessageSquareQuote } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { localizedDate } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import type { Review } from '@/types';
 
@@ -9,7 +10,7 @@ const AVATAR_COLORS = ['#0d9488', '#2563eb', '#d97706', '#7c3aed', '#db2777'];
 
 export function HomeTestimonials() {
   const { themeColors } = useSettings();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,7 +88,7 @@ export function HomeTestimonials() {
               className="relative rounded-3xl border border-slate-200/80 p-6 shadow-2xs hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
               style={{ backgroundColor: themeColors.cardBg }}
             >
-              <Quote className="absolute top-5 left-5 w-8 h-8 opacity-10 group-hover:opacity-20 transition-opacity" style={{ color: themeColors.primaryColor }} fill="currentColor" />
+              <Quote className="absolute top-5 start-5 w-8 h-8 opacity-10 group-hover:opacity-20 transition-opacity" style={{ color: themeColors.primaryColor }} fill="currentColor" />
 
               <div className="flex items-center gap-1 mb-4">
                 {[1, 2, 3, 4, 5].map((s) => (
@@ -108,7 +109,7 @@ export function HomeTestimonials() {
                   className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-lg shrink-0"
                   style={{ background: `linear-gradient(135deg, ${AVATAR_COLORS[i % AVATAR_COLORS.length]}, ${themeColors.secondaryColor})` }}
                 >
-                  {(review.customer_name || 'ع').charAt(0)}
+                  {(review.customer_name || t('عميل')).charAt(0)}
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-extrabold flex items-center gap-1.5 truncate" style={{ color: themeColors.cardText }}>
@@ -116,7 +117,7 @@ export function HomeTestimonials() {
                     <BadgeCheck className="w-4 h-4 shrink-0" style={{ color: themeColors.inStockColor }} />
                   </p>
                   <p className="text-[11px] font-bold" style={{ color: themeColors.cardMutedText }}>
-                    {new Date(review.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    {localizedDate(review.created_at, lang, { year: 'numeric', month: 'short', day: 'numeric' })}
                   </p>
                 </div>
               </div>

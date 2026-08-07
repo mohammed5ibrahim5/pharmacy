@@ -57,7 +57,7 @@ export function WelcomePopup() {
           <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.2)_1px,transparent_1px)] [background-size:18px_18px] opacity-60" />
           <button
             onClick={() => setOpen(false)}
-            className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors"
+            className="absolute top-3 end-3 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors"
             aria-label={t('إغلاق')}
           >
             <X className="w-4 h-4 text-white" />

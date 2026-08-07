@@ -73,7 +73,7 @@ return (
       <div className="relative rounded-3xl p-8 mb-8 overflow-hidden border shadow-2xs"
         style={{ background: `linear-gradient(135deg, ${themeColors.pharmacyHeaderBg}, ${themeColors.sectionBg})`, borderColor: `${themeColors.priceColor}20` }}>
         <div className="absolute inset-0 bg-[radial-gradient(transparent_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-10" />
-        <div className="absolute -top-16 -left-16 w-48 h-48 rounded-full opacity-[0.1] blur-3xl" style={{ backgroundColor: themeColors.priceColor }} />
+        <div className="absolute -top-16 -start-16 w-48 h-48 rounded-full opacity-[0.1] blur-3xl" style={{ backgroundColor: themeColors.priceColor }} />
         <div className="relative flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg border" style={{ backgroundColor: themeColors.cardBg, borderColor: `${themeColors.priceColor}20` }}>
             <Search className="w-8 h-8" style={{ color: themeColors.priceColor }} />

@@ -18,7 +18,7 @@ export function FloatingActions() {
   const whatsappDigits = settings.contact_whatsapp ? settings.contact_whatsapp.replace(/\D/g, '') : null;
 
   return (
-    <div className="fixed bottom-24 lg:bottom-5 left-5 z-50 flex flex-col items-center gap-3">
+    <div className="fixed bottom-24 lg:bottom-5 start-5 z-50 flex flex-col items-center gap-3">
       {showTop && (
         <button
           type="button"

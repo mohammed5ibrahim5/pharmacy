@@ -131,16 +131,16 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
                 {/* Laser scan line overlay animation */}
                 <div className="absolute inset-0 flex items-center justify-center p-6 pointer-events-none">
                   <div className="w-full h-40 border-2 border-teal-400/80 rounded-2xl relative shadow-[0_0_15px_rgba(20,184,166,0.5)]">
-                    <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-teal-400" />
-                    <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-teal-400" />
-                    <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-teal-400" />
-                    <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-teal-400" />
+                    <div className="absolute top-0 start-0 w-4 h-4 border-t-4 border-s-4 border-teal-400" />
+                    <div className="absolute top-0 end-0 w-4 h-4 border-t-4 border-e-4 border-teal-400" />
+                    <div className="absolute bottom-0 start-0 w-4 h-4 border-b-4 border-s-4 border-teal-400" />
+                    <div className="absolute bottom-0 end-0 w-4 h-4 border-b-4 border-e-4 border-teal-400" />
                     <div className="w-full h-0.5 bg-teal-400 shadow-[0_0_10px_#14b8a6] animate-pulse absolute top-1/2 -translate-y-1/2" />
                   </div>
                 </div>
                 <button
                   onClick={stopCamera}
-                  className="absolute bottom-3 right-3 px-3 py-1.5 bg-red-600/90 text-white rounded-xl text-xs font-bold flex items-center gap-1 backdrop-blur shadow"
+                  className="absolute bottom-3 end-3 px-3 py-1.5 bg-red-600/90 text-white rounded-xl text-xs font-bold flex items-center gap-1 backdrop-blur shadow"
                 >
                   {t('إيقاف الكاميرا')}
                 </button>
@@ -197,13 +197,13 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
             <label className="block text-xs font-bold text-gray-700">{t('أدخل رقم الباركود يدوياً:')}</label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Barcode className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Barcode className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value)}
                   placeholder={t('مثال: 6223000123456')}
-                  className="w-full pr-10 pl-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
+                  className="w-full ps-10 pe-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
                   style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                 />
               </div>
@@ -228,11 +228,11 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
                 <button
                   key={item.barcode}
                   onClick={() => handleSelectCode(item.barcode)}
-                  className="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 bg-slate-50 hover:bg-teal-50 hover:border-teal-200 transition-all text-right group"
+                  className="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 bg-slate-50 hover:bg-teal-50 hover:border-teal-200 transition-all text-start group"
                 >
                   <div>
-                    <p className="text-xs font-bold text-gray-900 group-hover:text-teal-700">{item.name}</p>
-                    <p className="text-[10px] text-gray-500">{item.category}</p>
+                    <p className="text-xs font-bold text-gray-900 group-hover:text-teal-700">{t(item.name)}</p>
+                    <p className="text-[10px] text-gray-500">{t(item.category)}</p>
                   </div>
                   <span className="text-[10px] font-mono bg-white px-2 py-1 rounded-md border border-gray-200 text-gray-600 group-hover:border-teal-300">
                     {item.barcode.slice(-5)}

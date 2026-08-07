@@ -9,7 +9,7 @@ import { useCustomer } from '@/context/CustomerContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
-import { translateError } from '@/lib/errorMessages';
+import { localizedError } from '@/lib/errorMessages';
 import { awardLoyaltyPoints } from '@/lib/loyalty';
 import {
   PAYMENT_METHODS,
@@ -42,7 +42,7 @@ export function OrderModal() {
   const { cart, cartOpen, cartStep, setCartStep, closeCart, updateCartQty, removeFromCart, clearCart, contactProduct, closeContact } = useOrder();
   const { user, profile, setAuthModalOpen } = useCustomer();
   const { settings, themeColors, paymentConfig, storeConfig, loyaltyConfig } = useSettings();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [address, setAddress] = useState(profile?.phone || '');
   const [note, setNote] = useState('');
@@ -141,7 +141,7 @@ export function OrderModal() {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeContact}>
         <div className="rounded-3xl w-full max-w-md p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
-          <button onClick={closeContact} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+          <button onClick={closeContact} className="absolute top-4 end-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
             <X className="w-5 h-5 text-gray-500" />
           </button>
 
@@ -219,7 +219,7 @@ export function OrderModal() {
           )}
 
           <p className="text-[11px] text-gray-400 text-center leading-relaxed">
-            <Info className="w-3 h-3 inline -mt-0.5 ml-1" />
+            <Info className="w-3 h-3 inline -mt-0.5 me-1" />
             {t('الطلب المباشر أونلاين متوقف حالياً، يمكنك الاتصال بالصيدلية لتأكيد توفر المنتج وطريقة الشراء.')}
           </p>
         </div>
@@ -238,7 +238,7 @@ export function OrderModal() {
     return (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
         <div className="rounded-3xl w-full max-w-md p-8 text-center relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
-          <button onClick={closeModal} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+          <button onClick={closeModal} className="absolute top-4 end-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
             <X className="w-5 h-5 text-gray-500" />
           </button>
           <div
@@ -247,7 +247,7 @@ export function OrderModal() {
           >
             <ShoppingCart className="w-9 h-9" />
             <span
-              className="absolute -bottom-1 -left-1 w-5 h-5 rounded-full bg-white shadow flex items-center justify-center"
+              className="absolute -bottom-1 -start-1 w-5 h-5 rounded-full bg-white shadow flex items-center justify-center"
               style={{ color: themeColors.accentColor }}
             >
               <Plus className="w-3 h-3" strokeWidth={3} />
@@ -368,7 +368,7 @@ export function OrderModal() {
         .select('id')
         .single();
       if (groupErr) {
-        setError(translateError(groupErr.message).ar);
+        setError(localizedError(groupErr.message, lang));
         setLoading(false);
         return;
       }
@@ -393,13 +393,13 @@ export function OrderModal() {
 
       const { error: err } = await supabase.from('orders').insert(rows);
       if (err) {
-        setError(translateError(err.message).ar);
+        setError(localizedError(err.message, lang));
       } else {
         const earnedPoints = loyaltyConfig.enabled ? loyaltyConfig.pointsPerOrder : 0;
         if (earnedPoints > 0) {
           const { data: customer } = await supabase.from('customers').select('loyalty_points').eq('id', user.id).maybeSingle();
           const current = Number((customer as { loyalty_points?: number } | null)?.loyalty_points || 0);
-          await awardLoyaltyPoints(user.id, current + earnedPoints, `مكافأة طلب موحّد من ${groups.length} صيدلية`);
+          await awardLoyaltyPoints(user.id, current + earnedPoints, t('مكافأة طلب موحّد من {0} صيدلية', [groups.length]));
         }
         setSuccess(true);
       }
@@ -592,7 +592,7 @@ export function OrderModal() {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
       <div className="rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
-        <button onClick={closeModal} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+        <button onClick={closeModal} className="absolute top-4 end-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
           <X className="w-5 h-5 text-gray-500" />
         </button>
 
@@ -646,15 +646,15 @@ export function OrderModal() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('اسم المستلم')}</label>
               <div className="relative">
-                <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="text" value={profile?.full_name || ''} readOnly className="w-full pr-10 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                <User className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input type="text" value={profile?.full_name || ''} readOnly className="w-full ps-10 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('رقم الهاتف')}</label>
               <div className="relative">
-                <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="tel" value={profile?.phone || ''} readOnly dir="ltr" className="w-full pr-10 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                <Phone className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input type="tel" value={profile?.phone || ''} readOnly dir="ltr" className="w-full ps-10 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
               </div>
             </div>
           </div>
@@ -663,8 +663,8 @@ export function OrderModal() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('عنوان التوصيل')}</label>
             <div className="relative">
-              <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('العنوان بالتفصيل')} className="w-full pr-11 pl-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: themeColors.priceColor }} />
+              <MapPin className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('العنوان بالتفصيل')} className="w-full ps-11 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: themeColors.priceColor }} />
             </div>
           </div>
 
@@ -680,7 +680,7 @@ export function OrderModal() {
                   key={m.id}
                   type="button"
                   onClick={() => setPaymentMethod(m.id)}
-                  className={`relative rounded-2xl border-2 p-3 text-right transition-all ${
+                  className={`relative rounded-2xl border-2 p-3 text-start transition-all ${
                     paymentMethod === m.id
                       ? 'shadow-md'
                       : 'border-gray-200 bg-white hover:border-gray-300'
@@ -701,7 +701,7 @@ export function OrderModal() {
                   </div>
                   {paymentMethod === m.id && (
                     <span
-                      className="absolute top-2 left-2 w-4 h-4 rounded-full flex items-center justify-center text-white"
+                      className="absolute top-2 start-2 w-4 h-4 rounded-full flex items-center justify-center text-white"
                       style={{ backgroundColor: themeColors.priceColor }}
                     >
                       <CheckCheck className="w-3 h-3" />
@@ -750,7 +750,7 @@ export function OrderModal() {
                 <button
                   type="button"
                   onClick={() => setScreenshot(null)}
-                  className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow"
+                  className="absolute top-2 end-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -850,7 +850,7 @@ export function OrderModal() {
           </button>
 
           <p className="text-[11px] text-gray-400 text-center leading-relaxed">
-            <Lock className="w-3 h-3 inline -mt-0.5 ml-1" />
+            <Lock className="w-3 h-3 inline -mt-0.5 me-1" />
             {t('بعد رفع إثبات التحويل سيراجع فريقنا العملية ويؤكد طلبك، وستصل إليك إشعارات الحالة في صفحة طلباتك.')}
           </p>
         </form>

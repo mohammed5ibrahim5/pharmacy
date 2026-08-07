@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { BadgePercent, Sparkles, Package, ChevronLeft, Clock, Flame } from 'lucide-react';
+import { BadgePercent, Sparkles, Package, ChevronLeft, ChevronRight, Clock, Flame } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRouter } from '@/context/RouterContext';
@@ -17,7 +17,7 @@ type ProductTab = 'discounts' | 'newest' | 'all';
 
 export function FeaturedProducts({ products, loading, popularProductIds = [] }: Props) {
   const { themeColors } = useSettings();
-  const { t } = useLanguage();
+  const { t, dir } = useLanguage();
   const { navigate } = useRouter();
   const [activeTab, setActiveTab] = useState<ProductTab>('discounts');
 
@@ -74,7 +74,11 @@ export function FeaturedProducts({ products, loading, popularProductIds = [] }: 
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-extrabold text-gray-800 hover:bg-slate-50 transition-all shadow-2xs group self-start sm:self-auto"
           >
             <span>{t('عرض جميع المنتجات')}</span>
-            <ChevronLeft className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:-translate-x-1" />
+            {dir === 'ltr' ? (
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:translate-x-1" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:-translate-x-1" />
+            )}
           </button>
         </div>
 

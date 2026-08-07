@@ -41,7 +41,8 @@ import type { Pharmacy, Product, LoyaltyTransaction, MedicationReminder } from '
 import { ProductCard } from '@/components/ProductCard';
 import { PharmacyCard } from '@/components/PharmacyCard';
 import { OrderReviewModal } from '@/components/OrderReviewModal';
-import { translateError } from '@/lib/errorMessages';
+import { localizedError } from '@/lib/errorMessages';
+import { localizedDate } from '@/lib/format';
 import {
   PRESCRIPTION_STATUS_META,
   type Prescription,
@@ -184,7 +185,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const { settings, themeColors, loyaltyConfig, featuresConfig } = useSettings();
   const { navigate } = useRouter();
   const { openOrder } = useOrder();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const {
     favoriteProducts,
     favoritePharmacies,
@@ -295,9 +296,9 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       .order('created_at', { ascending: false })
       .limit(50);
     setPrescriptions((data || []) as Prescription[]);
-    if (error) showToast(translateError(error.message).ar);
+    if (error) showToast(localizedError(error.message, lang));
     setRxLoading(false);
-  }, [user]);
+  }, [user, lang]);
 
   useEffect(() => {
     setAddresses(loadList<AddressRecord>(ADDRESSES_KEY));
@@ -348,7 +349,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
         .limit(50);
       if (!cancelled) {
         setOrders((data || []) as OrderRecord[]);
-        if (error) showToast(translateError(error.message).ar);
+        if (error) showToast(localizedError(error.message, lang));
         setOrdersLoading(false);
       }
     };
@@ -356,7 +357,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, lang]);
 
   const activeOrdersCount = useMemo(
     () => orders.filter((o) => o.status === 'pending' || o.status === 'confirmed' || o.status === 'shipped').length,
@@ -545,8 +546,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
         className="rounded-3xl text-white relative overflow-hidden p-6 sm:p-8 mb-6 shadow-xl"
         style={{ background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}
       >
-        <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-10 -start-10 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+        <div className="absolute -top-16 -end-16 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
 
         <button
           onClick={() => navigate({ name: 'home' })}
@@ -584,7 +585,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
             </div>
           </div>
 
-          <div className="sm:mr-auto flex items-center gap-2">
+          <div className="sm:ms-auto flex items-center gap-2">
             <button
               onClick={signOut}
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-bold transition-colors"
@@ -748,12 +749,12 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                         )}
                         <span className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5" />
-                          {new Date(order.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {localizedDate(order.created_at, lang, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                     </div>
 
-                    <div className="sm:mr-auto flex sm:flex-col sm:items-end items-center gap-3 justify-between">
+                    <div className="sm:ms-auto flex sm:flex-col sm:items-end items-center gap-3 justify-between">
                       <div>
                         <p className="text-xl font-black text-gray-900">{Number(order.total_price).toFixed(2)}</p>
                         <p className="text-[11px] font-bold text-gray-400">{t('ج.م')}</p>
@@ -831,7 +832,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <button
                   type="button"
                   onClick={() => setRxImage(null)}
-                  className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow"
+                  className="absolute top-2 end-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -854,14 +855,14 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
 
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="relative">
-                <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Phone className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="tel"
                   value={rxPhone}
                   onChange={(e) => setRxPhone(e.target.value)}
                   placeholder={t('رقم الهاتف للتواصل')}
                   dir="ltr"
-                  className="w-full pr-10 pl-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
+                  className="w-full ps-10 pe-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
                   style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
                 />
               </div>
@@ -921,13 +922,13 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   <div key={rx.id} className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                     <div className="h-36 bg-slate-900 relative flex items-center justify-center">
                       <img src={rx.image_url} alt={t('روشتة')} className="max-h-36 w-auto object-contain" />
-                      <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold border border-white/20">
+                      <span className="absolute top-2 end-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold border border-white/20">
                         <Clock className="w-3 h-3" />
-                        {new Date(rx.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}
+                        {localizedDate(rx.created_at, lang, { month: 'short', day: 'numeric' })}
                       </span>
-                      <span className={`absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${meta.className}`}>
+                      <span className={`absolute bottom-2 end-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${meta.className}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-                        {meta.label}
+                        {t(meta.label)}
                       </span>
                     </div>
                     <div className="p-4 space-y-2">
@@ -977,8 +978,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
             className="rounded-3xl text-white relative overflow-hidden p-6 sm:p-8 shadow-xl"
             style={{ background: `linear-gradient(135deg, ${themeColors.accentColor}, #d97706)` }}
           >
-            <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-            <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-10 -start-10 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+            <div className="absolute -top-16 -end-16 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
             <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
               <div
                 className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-lg"
@@ -992,7 +993,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   {t('أكمل {0} نقطة إضافية لتحصل على خصم {1} ج.م على طلبك القادم', [Math.max(0, loyaltyConfig.redeemThreshold - loyaltyPoints), loyaltyConfig.redeemValue])}
                 </p>
               </div>
-              <div className="sm:mr-auto bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20 text-center">
+              <div className="sm:ms-auto bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20 text-center">
                 <p className="text-[10px] font-bold text-amber-100 mb-0.5">{t('كل {0} ج.م =', [loyaltyConfig.pointsPerPound])}</p>
                 <p className="text-lg font-black">{t('1 نقطة')}</p>
               </div>
@@ -1043,7 +1044,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-black text-gray-900">{tx.reason}</p>
                       <p className="text-[11px] text-gray-400 font-bold mt-0.5">
-                        {new Date(tx.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        {localizedDate(tx.created_at, lang, { year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
                     </div>
                     <span className={`text-sm font-black ${tx.points > 0 ? 'text-amber-600' : 'text-red-500'}`}>

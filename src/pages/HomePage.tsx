@@ -7,6 +7,7 @@ import {
   Truck,
   TrendingDown,
   ChevronLeft,
+  ChevronRight,
   Sparkles,
   Stethoscope,
   Shield,
@@ -135,7 +136,7 @@ type PharmacyTab = 'nearest' | 'highest_rated' | 'most_popular' | 'delivery' | '
 
 export function HomePage() {
   const { settings, themeColors, heroConfig, storeConfig } = useSettings();
-  const { t } = useLanguage();
+  const { t, dir } = useLanguage();
   const { navigate } = useRouter();
   const { location, requestLocation, loading, permissionDenied, setUserLocation } = useGeolocation();
 
@@ -186,7 +187,7 @@ export function HomePage() {
   };
 
   const [userLocationName, setUserLocationName] = useState<string>(() => {
-    return localStorage.getItem('user_delivery_location') || 'القاهرة - المعادي';
+    return localStorage.getItem('user_delivery_location') || t('القاهرة - المعادي');
   });
 
   useEffect(() => {
@@ -367,11 +368,11 @@ export function HomePage() {
         {/* Glow Orbs */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div
-            className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full opacity-20 blur-[130px] animate-pulse"
+            className="absolute -top-40 -end-40 w-[600px] h-[600px] rounded-full opacity-20 blur-[130px] animate-pulse"
             style={{ backgroundColor: themeColors.primaryColor }}
           />
           <div
-            className="absolute top-1/2 -left-40 w-[500px] h-[500px] rounded-full opacity-15 blur-[110px] animate-float"
+            className="absolute top-1/2 -start-40 w-[500px] h-[500px] rounded-full opacity-15 blur-[110px] animate-float"
             style={{ backgroundColor: themeColors.secondaryColor }}
           />
           <div className="absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.04)_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-20" />
@@ -379,7 +380,7 @@ export function HomePage() {
 
         {/* Floating Decorative Elements — single tidy trust bar that hides on scroll */}
         <div
-          className="absolute bottom-5 left-[5%] hidden lg:flex items-center gap-2.5 pointer-events-none transition-all duration-500"
+          className="absolute bottom-5 start-[5%] hidden lg:flex items-center gap-2.5 pointer-events-none transition-all duration-500"
           style={{
             opacity: heroFloatingVisible ? 1 : 0,
             transform: heroFloatingVisible ? 'translateY(0)' : 'translateY(16px)'
@@ -460,7 +461,7 @@ export function HomePage() {
                   className="relative flex items-center rounded-3xl shadow-xl border-2 p-2 transition-all group bg-white"
                   style={{ borderColor: `${themeColors.primaryColor}33` }}
                 >
-                  <div className="flex items-center gap-1 sm:gap-2 pr-2 sm:pr-3 pl-1 sm:pl-2 border-r border-gray-200 shrink-0">
+                  <div className="flex items-center gap-1 sm:gap-2 ps-2 sm:ps-3 pe-1 sm:pe-2 border-s border-gray-200 shrink-0">
                     <button
                       type="button"
                       onClick={handleVoiceSearch}
@@ -532,7 +533,7 @@ export function HomePage() {
                       color: themeColors.primaryColor
                     }}
                   >
-                    {item}
+                    {t(item)}
                   </button>
                 ))}
               </div>
@@ -616,7 +617,7 @@ export function HomePage() {
               .map((stat, i) => (
               <div
                 key={i}
-                className="p-3 sm:p-4 text-right flex items-center gap-3.5 group hover:bg-black/[0.02] rounded-2xl transition-all"
+                className="p-3 sm:p-4 text-start flex items-center gap-3.5 group hover:bg-black/[0.02] rounded-2xl transition-all"
               >
                 <div
                   className="w-14 h-14 rounded-2xl flex items-center justify-center border shadow-sm shrink-0 transition-transform group-hover:scale-110"
@@ -672,7 +673,11 @@ export function HomePage() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-extrabold text-gray-800 hover:bg-slate-50 transition-all shadow-2xs group"
           >
             <span>{t('عرض جميع الأقسام')}</span>
-            <ChevronLeft className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:-translate-x-1" />
+            {dir === 'ltr' ? (
+              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:translate-x-1" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:-translate-x-1" />
+            )}
           </button>
         </div>
 
@@ -912,8 +917,8 @@ export function HomePage() {
               backgroundSize: '22px 22px',
             }}
           />
-          <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-32 -right-20 w-80 h-80 rounded-full bg-black/10 blur-3xl pointer-events-none" />
+          <div className="absolute -top-24 -start-24 w-72 h-72 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 -end-20 w-80 h-80 rounded-full bg-black/10 blur-3xl pointer-events-none" />
 
           <div className="relative z-10 px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
             {/* Badge */}

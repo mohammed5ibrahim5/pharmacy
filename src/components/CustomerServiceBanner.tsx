@@ -19,8 +19,8 @@ export function CustomerServiceBanner() {
             backgroundSize: '22px 22px',
           }}
         />
-        <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-white/5 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: `${themeColors.primaryColor}22` }} />
+        <div className="absolute -top-24 -end-24 w-72 h-72 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -start-20 w-80 h-80 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: `${themeColors.primaryColor}22` }} />
 
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6 px-6 sm:px-10 py-10">
           <div className="flex items-start gap-4 max-w-xl">

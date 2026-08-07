@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { translateError } from '@/lib/errorMessages';
 
 export interface CustomerProfile {
   id: string;
@@ -90,7 +89,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       .eq('email', email.toLowerCase().trim())
       .maybeSingle();
 if (error) {
-      return { error: translateError(error.message).ar };
+      return { error: error.message };
     }
     if (!data) {
       return { error: 'لا يوجد حساب بهذا البريد الإلكتروني' };
@@ -119,7 +118,7 @@ if (existing) {
       return { error: 'هذا البريد الإلكتروني مسجل بالفعل، برجاء تسجيل الدخول' };
     }
     if (existingError) {
-      return { error: translateError(existingError.message).ar };
+      return { error: existingError.message };
     }
 
     const { data, error } = await supabase
@@ -136,7 +135,7 @@ if (existing) {
 
     if (error) {
       console.error('Signup error:', error);
-      return { error: translateError(error.message).ar };
+      return { error: error.message };
     }
     const customer = data as CustomerProfile;
     localStorage.setItem(SESSION_KEY, customer.id);
@@ -165,7 +164,7 @@ if (existing) {
 if (!error) {
       await fetchProfileById(user.id);
     }
-    return { error: error ? translateError(error.message).ar : null };
+    return { error: error ? error.message : null };
   };
 
   return (

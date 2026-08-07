@@ -76,4 +76,79 @@
   'اكتب أية ملاحظات بخصوص الجرعات أو البدائل المتاحة...': 'Write any notes about dosages or available alternatives...',
   'جاري رفع الروشتة لإرسالها للصيدلي...': 'Uploading the prescription to send to the pharmacist...',
   'إرسال الروشتة لمراجعة صيدلي حقيقي': 'Send the prescription for review by a real pharmacist',
+
+  // BarcodeScannerModal sample products
+  'بنادول اكسترا (Panadol Extra)': 'Panadol Extra',
+  'كونجستال (Congestal)': 'Congestal',
+  'سي ريتارد 500 (C-Retard 500)': 'C-Retard 500',
+  'أوميجا 3 بلس (Omega 3 Plus)': 'Omega 3 Plus',
+  'أوجمنتين 1 جرام (Augmentin 1g)': 'Augmentin 1g',
+  'مسكنات': 'Analgesics',
+  'برد وإنفلونزا': 'Cold & Flu',
+  'فيتامينات': 'Vitamins',
+  'مكملات غذائية': 'Dietary supplements',
+  'مضادات حيوية': 'Antibiotics',
+
+  // LocationSelectorModal governorates
+  'موقعي الحالي (GPS)': 'My current location (GPS)',
+  'القاهرة': 'Cairo',
+  'الجيزة': 'Giza',
+  'الإسكندرية': 'Alexandria',
+  'الدقهلية': 'Dakahlia',
+  'الغربية': 'Gharbia',
+  'القليوبية': 'Qalyubia',
+  'الشرقية': 'Sharqia',
+  'أسيوط': 'Assiut',
+
+  // LocationSelectorModal areas
+  'المعادي': 'Maadi',
+  'مدينة نصر': 'Nasr City',
+  'التجمع الخامس': 'Fifth Settlement',
+  'مصر الجديدة': 'Heliopolis',
+  'الزمالك': 'Zamalek',
+  'الشروق': 'El Shorouk',
+  'الرحاب': 'Rehab City',
+  'الدقي': 'Dokki',
+  'المهندسين': 'Mohandessin',
+  'الشيخ زايد': 'Sheikh Zayed',
+  '٦ أكتوبر': '6th of October',
+  'الهرم': 'Haram',
+  'فيصل': 'Faisal',
+  'سموحة': 'Smouha',
+  'سيدي جابر': 'Sidi Gaber',
+  'المنتزه': 'El Montazah',
+  'ستانلي': 'Stanley',
+  'جليم': 'Glim',
+  'ميامي': 'Miami',
+  'المنصورة': 'Mansoura',
+  'طلخا': 'Talkha',
+  'ميت غمر': 'Mit Ghamr',
+  'طنطا': 'Tanta',
+  'المحلة الكبرى': 'El Mahalla El Kubra',
+  'بنها': 'Banha',
+  'شبرا الخيمة': 'Shubra El Kheima',
+  'الزقازيق': 'Zagazig',
+  'العاشر من رمضان': '10th of Ramadan',
+  'مدينة أسيوط': 'Assiut City',
+  'أبنوب': 'Abnoub',
+
+  // OrderModal
+  'مكافأة طلب موحّد من {0} صيدلية': 'Reward for a combined order from {0} pharmacies',
+
+  // PriceCompareModal
+  'السعر الحالي': 'Current price',
+
+  // CustomerContext app-generated errors
+  'لا يوجد حساب بهذا البريد الإلكتروني': 'No account found with this email',
+  'هذا الحساب لا يدعم تسجيل الدخول المباشر': 'This account does not support direct login',
+  'كلمة المرور غير صحيحة': 'Incorrect password',
+  'هذا البريد الإلكتروني مسجل بالفعل، برجاء تسجيل الدخول': 'This email is already registered. Please log in',
+  'غير مسجل دخول': 'You are not signed in',
+
+  // useGeolocation errors (displayed via t() in LocationSelectorModal)
+  'المتصفح لا يدعم تحديد الموقع': 'Your browser does not support location detection',
+  'تم رفض الإذن بتحديد الموقع': 'Location permission was denied',
+  'لا يمكن تحديد موقعك حالياً': 'We cannot determine your location right now',
+  'انتهت مهلة تحديد الموقع': 'Location detection timed out',
+  'حدث خطأ أثناء تحديد الموقع': 'An error occurred while detecting your location',
 };

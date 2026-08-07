@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function PharmacyCard({ pharmacy }: Props) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { isPharmacyFavorite, togglePharmacyFavorite } = useFavorites();
@@ -60,7 +60,7 @@ export function PharmacyCard({ pharmacy }: Props) {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/30 to-transparent" />
 
           {/* Top Left: Delivery Badge */}
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
+          <div className="absolute top-3 start-3 flex items-center gap-1.5 z-10">
             {pharmacy.delivery_available && (
               <div className="backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg border"
                 style={{ backgroundColor: themeColors.priceColor, borderColor: `${themeColors.priceColor}55` }}>
@@ -73,14 +73,14 @@ export function PharmacyCard({ pharmacy }: Props) {
 
           {/* Top Right: GPS Distance Badge */}
           {pharmacy.distance != null && (
-            <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md border border-white/20 text-white px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg z-10">
+            <div className="absolute top-3 end-3 bg-slate-950/80 backdrop-blur-md border border-white/20 text-white px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg z-10">
               <Navigation className="w-3.5 h-3.5 text-teal-400 animate-pulse" />
-              <span dir="ltr">{formatDistance(pharmacy.distance)}</span>
+              <span dir="ltr">{formatDistance(pharmacy.distance, lang)}</span>
             </div>
           )}
 
           {/* Rating Badge on Cover Bottom Right */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-1 px-3 py-1 rounded-2xl bg-black/60 backdrop-blur-md text-white text-xs font-black shadow-md border border-white/20 z-10">
+          <div className="absolute bottom-3 end-3 flex items-center gap-1 px-3 py-1 rounded-2xl bg-black/60 backdrop-blur-md text-white text-xs font-black shadow-md border border-white/20 z-10">
             <Star className="w-3.5 h-3.5 fill-current" style={{ color: themeColors.ratingColor }} />
             <span style={{ color: themeColors.ratingColor }}>{pharmacy.rating}</span>
             <span className="text-[10px] text-slate-300 font-normal">/ 5.0</span>
@@ -93,7 +93,7 @@ export function PharmacyCard({ pharmacy }: Props) {
               e.stopPropagation();
               togglePharmacyFavorite(pharmacy.id);
             }}
-            className={`absolute bottom-3 left-3 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 z-10 active:scale-90 ${
+            className={`absolute bottom-3 start-3 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 z-10 active:scale-90 ${
               isFav
                 ? 'bg-pink-500 border-pink-400'
                 : 'bg-white/90 backdrop-blur-md border-white/40 hover:bg-white'

@@ -49,7 +49,7 @@ export function OrderReviewModal({ orderId, pharmacyId, pharmacyName, productNam
     await supabase.from('reviews').insert({
       pharmacy_id: pharmacyId,
       customer_id: user.id,
-      customer_name: profile?.full_name || user.full_name || 'عميل',
+      customer_name: profile?.full_name || user.full_name || t('عميل'),
       rating,
       comment: comment.trim() || null,
       order_id: orderId,

@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function PharmacyDetailPage({ id }: Props) {
-  const { t } = useLanguage();
+  const { t, lang, dir } = useLanguage();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { location } = useGeolocation();
@@ -125,7 +125,7 @@ export function PharmacyDetailPage({ id }: Props) {
         </button>
 
         {/* Open badge */}
-        <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-bold shadow-lg">
+        <div className="absolute top-4 start-4 flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-bold shadow-lg">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           {t('مفتوح الآن')}
         </div>
@@ -175,7 +175,7 @@ export function PharmacyDetailPage({ id }: Props) {
                       style={{ backgroundColor: `${themeColors.accentColor}15`, color: themeColors.accentColor }}
                     >
                       <Navigation2 className="w-3.5 h-3.5" />
-                      {t('على بُعد {0}', [formatDistance(pharmacyWithDistance.distance)])}
+                      {t('على بُعد {0}', [formatDistance(pharmacyWithDistance.distance, lang)])}
                     </span>
                   )}
                 </div>
@@ -264,7 +264,7 @@ export function PharmacyDetailPage({ id }: Props) {
         {/* Description */}
         {pharmacy.description && (
           <div className="rounded-2xl border border-gray-100 p-5 mb-8 relative overflow-hidden" style={{ backgroundColor: themeColors.cardBg }}>
-            <div className="absolute top-0 right-0 w-1 h-full" style={{ backgroundColor: themeColors.priceColor }} />
+            <div className="absolute top-0 end-0 w-1 h-full" style={{ backgroundColor: themeColors.priceColor }} />
             <p className="leading-relaxed" style={{ color: themeColors.cardMutedText }}>{pharmacy.description}</p>
           </div>
         )}
@@ -282,10 +282,10 @@ export function PharmacyDetailPage({ id }: Props) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t('ابحث داخل الصيدلية...')}
-                className="w-full pr-10 pl-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-transparent focus:ring-2 text-sm"
+                className="w-full ps-10 pe-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-transparent focus:ring-2 text-sm"
                 style={{ backgroundColor: themeColors.pageSearchBg, color: themeColors.pageSearchText, ['--tw-ring-color' as string]: themeColors.priceColor }}
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: themeColors.pageSearchText }} />
+              <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: themeColors.pageSearchText }} />
             </div>
           </div>
 
@@ -327,7 +327,7 @@ export function PharmacyDetailPage({ id }: Props) {
                 style={{ background: `linear-gradient(135deg, ${themeColors.priceColor}15, ${themeColors.accent2Color}15)` }}
               >
                 <Package className="w-9 h-9" style={{ color: themeColors.priceColor, opacity: 0.55 }} />
-                <span className="absolute -bottom-1 -left-1 w-8 h-8 rounded-2xl flex items-center justify-center border bg-white" style={{ borderColor: `${themeColors.accent2Color}33` }}>
+                <span className="absolute -bottom-1 -start-1 w-8 h-8 rounded-2xl flex items-center justify-center border bg-white" style={{ borderColor: `${themeColors.accent2Color}33` }}>
                   <Search className="w-4 h-4" style={{ color: themeColors.accent2Color }} />
                 </span>
               </div>
@@ -346,7 +346,7 @@ export function PharmacyDetailPage({ id }: Props) {
                   className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-lg"
                   style={{ backgroundColor: themeColors.tabActiveBg, boxShadow: `0 10px 22px -8px ${themeColors.tabActiveBg}77` }}
                 >
-                  <ArrowLeft className="w-4 h-4 rotate-180" />
+                  <ArrowLeft className={`w-4 h-4 ${dir === 'rtl' ? 'rotate-180' : ''}`} />
                   {t('عرض كل المنتجات')}
                 </button>
               )}

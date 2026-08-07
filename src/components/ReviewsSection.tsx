@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { localizedDate } from '@/lib/format';
 import type { Review } from '@/types';
 
 interface Props {
@@ -12,7 +13,7 @@ interface Props {
 }
 
 export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { themeColors } = useSettings();
   const { user } = useCustomer();
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -46,7 +47,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
     await supabase.from('reviews').insert({
       pharmacy_id: pharmacyId,
       customer_id: user.id,
-      customer_name: user.full_name || 'عميل',
+      customer_name: user.full_name || t('عميل'),
       rating,
       comment: comment.trim() || null,
     });
@@ -96,7 +97,7 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
                   </div>
                   <div>
                     <p className="text-sm font-extrabold" style={{ color: themeColors.cardText }}>{review.customer_name}</p>
-                    <p className="text-[10px]" style={{ color: themeColors.cardMutedText }}>{new Date(review.created_at).toLocaleDateString('ar-EG')}</p>
+                    <p className="text-[10px]" style={{ color: themeColors.cardMutedText }}>{localizedDate(review.created_at, lang)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5">
