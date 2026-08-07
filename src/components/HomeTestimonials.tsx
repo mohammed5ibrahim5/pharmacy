@@ -1,32 +1,37 @@
-import { Star, Quote, BadgeCheck } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Star, Quote, BadgeCheck, MessageSquareQuote } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
+import { supabase } from '@/lib/supabase';
+import type { Review } from '@/types';
 
-const REVIEWS = [
-  {
-    name: 'أحمد محمود',
-    role: 'عميل منذ 2024',
-    initial: 'أ',
-    color: '#0d9488',
-    text: 'لقيت دواء بناتي في أقل من دقيقة، والبحث بالباركود وفّر عليّ مجهود كبير. التوصيل كان سريع جداً.',
-  },
-  {
-    name: 'سارة عبدالله',
-    role: 'صيدلية الزيتون',
-    initial: 'س',
-    color: '#2563eb',
-    text: 'منصة سهلة ومريحة، قدرت أقارن الأسعار بين الصيدليات وأختار الأقرب. الروشتة اترفعت وردوا عليّ بسرعة.',
-  },
-  {
-    name: 'محمد حسن',
-    role: 'عميل منذ 2025',
-    initial: 'م',
-    color: '#d97706',
-    text: 'أفضل حاجة إن في طوارئ 24 ساعة، ودواي وصلني نص الليل. التغليف محكم والأسعار مناسبة.',
-  },
-];
+const AVATAR_COLORS = ['#0d9488', '#2563eb', '#d97706', '#7c3aed', '#db2777'];
 
 export function HomeTestimonials() {
   const { themeColors } = useSettings();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchReviews = async () => {
+      const { data } = await supabase
+        .from('reviews')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(6);
+      if (!cancelled) {
+        setReviews((data || []) as Review[]);
+        setLoading(false);
+      }
+    };
+    fetchReviews();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const average =
+    reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
 
   return (
     <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ backgroundColor: themeColors.sectionBg }}>
@@ -38,44 +43,85 @@ export function HomeTestimonials() {
           آراء عملائنا
         </span>
         <h2 className="text-2xl sm:text-3xl font-black mt-2" style={{ color: themeColors.sectionHeadingText }}>ماذا قالوا عنا؟</h2>
-        <p className="text-sm mt-2 font-bold" style={{ color: themeColors.sectionSubheadingText }}>ثقة أكثر من 10 آلاف عميل هي سر تميزنا</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {REVIEWS.map((review, i) => (
+        <p className="text-sm mt-2 font-bold" style={{ color: themeColors.sectionSubheadingText }}>
+          آراء حقيقية يشاركها عملاؤنا بعد تجربة الطلب
+        </p>
+        {reviews.length > 0 && !loading && (
           <div
-            key={i}
-            className="relative rounded-3xl border border-slate-200/80 p-6 shadow-2xs hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
-            style={{ backgroundColor: themeColors.cardBg }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl mt-3"
+            style={{ backgroundColor: `${themeColors.ratingColor}18`, border: `1px solid ${themeColors.ratingColor}30` }}
           >
-            <Quote className="absolute top-5 left-5 w-8 h-8 opacity-10 group-hover:opacity-20 transition-opacity" style={{ color: themeColors.primaryColor }} fill="currentColor" />
-
-            <div className="flex items-center gap-1 mb-4">
-              {[...Array(5)].map((_, s) => (
-                <Star key={s} className="w-4 h-4 fill-current" style={{ color: themeColors.ratingColor }} />
-              ))}
-            </div>
-
-            <p className="text-sm leading-relaxed font-medium mb-5" style={{ color: themeColors.cardMutedText }}>{review.text}</p>
-
-            <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
-              <div
-                className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-lg shrink-0"
-                style={{ background: `linear-gradient(135deg, ${review.color}, ${themeColors.secondaryColor})` }}
-              >
-                {review.initial}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-extrabold flex items-center gap-1.5" style={{ color: themeColors.cardText }}>
-                  {review.name}
-                  <BadgeCheck className="w-4 h-4 shrink-0" style={{ color: themeColors.inStockColor }} />
-                </p>
-                <p className="text-[11px] font-bold" style={{ color: themeColors.cardMutedText }}>{review.role}</p>
-              </div>
-            </div>
+            <Star className="w-4 h-4 fill-current" style={{ color: themeColors.ratingColor }} />
+            <span className="font-black" style={{ color: themeColors.ratingColor }}>{average.toFixed(1)}</span>
+            <span className="text-xs font-bold" style={{ color: themeColors.ratingColor }}>({reviews.length} تقييم حقيقي)</span>
           </div>
-        ))}
+        )}
       </div>
+
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="rounded-3xl border border-slate-200/80 p-6 h-56 animate-pulse" style={{ backgroundColor: themeColors.cardBg }} />
+          ))}
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-slate-200 p-12 text-center max-w-2xl mx-auto" style={{ backgroundColor: themeColors.cardBg }}>
+          <div
+            className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4"
+            style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}
+          >
+            <MessageSquareQuote className="w-8 h-8" />
+          </div>
+          <h3 className="font-black text-lg mb-1.5" style={{ color: themeColors.cardText }}>كن أول من يقيّمنا</h3>
+          <p className="text-sm font-bold leading-relaxed" style={{ color: themeColors.cardMutedText }}>
+            لم تصلنا تقييمات بعد — جرّب طلب دوائك وشاركنا تجربتك، وستظهر آراء عملائنا الحقيقيين هنا.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {reviews.slice(0, 3).map((review, i) => (
+            <div
+              key={review.id}
+              className="relative rounded-3xl border border-slate-200/80 p-6 shadow-2xs hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
+              style={{ backgroundColor: themeColors.cardBg }}
+            >
+              <Quote className="absolute top-5 left-5 w-8 h-8 opacity-10 group-hover:opacity-20 transition-opacity" style={{ color: themeColors.primaryColor }} fill="currentColor" />
+
+              <div className="flex items-center gap-1 mb-4">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    className={`w-4 h-4 ${s <= review.rating ? 'fill-current' : ''}`}
+                    style={{ color: s <= review.rating ? themeColors.ratingColor : themeColors.cardMutedText }}
+                  />
+                ))}
+              </div>
+
+              <p className="text-sm leading-relaxed font-medium mb-5" style={{ color: themeColors.cardMutedText }}>
+                {review.comment || 'تجربة ممتازة، شكراً على سرعة التوصيل.'}
+              </p>
+
+              <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
+                <div
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-lg shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${AVATAR_COLORS[i % AVATAR_COLORS.length]}, ${themeColors.secondaryColor})` }}
+                >
+                  {(review.customer_name || 'ع').charAt(0)}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold flex items-center gap-1.5 truncate" style={{ color: themeColors.cardText }}>
+                    {review.customer_name || 'عميل'}
+                    <BadgeCheck className="w-4 h-4 shrink-0" style={{ color: themeColors.inStockColor }} />
+                  </p>
+                  <p className="text-[11px] font-bold" style={{ color: themeColors.cardMutedText }}>
+                    {new Date(review.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

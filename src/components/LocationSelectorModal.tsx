@@ -6,7 +6,7 @@ interface LocationSelectorModalProps {
   open: boolean;
   onClose: () => void;
   currentLocation: string;
-  onSelectLocation: (locationName: string) => void;
+  onSelectLocation: (locationName: string, coords?: { latitude: number; longitude: number }) => void;
 }
 
 const EGYPT_GOVERNORATES = [
@@ -29,34 +29,37 @@ export function LocationSelectorModal({
   const { themeColors } = useSettings();
   const [search, setSearch] = useState('');
   const [detecting, setDetecting] = useState(false);
+  const [detectError, setDetectError] = useState('');
   const [selectedGov, setSelectedGov] = useState('القاهرة');
 
   if (!open) return null;
 
   const handleDetectLocation = () => {
-    setDetecting(true);
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        () => {
-          setDetecting(false);
-          // Auto select a smart nearby location string based on coordinates demo
-          const locationName = '📍 موقعي الحقيقي (القاهرة - حي المعادي)';
-          onSelectLocation(locationName);
-          onClose();
-        },
-        () => {
-          setDetecting(false);
-          // Fallback location
-          onSelectLocation('القاهرة - المعادي (تحديد تلقائي)');
-          onClose();
-        },
-        { timeout: 5000 }
-      );
-    } else {
-      setDetecting(false);
-      onSelectLocation('القاهرة - المعادي');
-      onClose();
+    setDetectError('');
+    if (!('geolocation' in navigator)) {
+      setDetectError('متصفحك لا يدعم تحديد الموقع — اختر منطقتك يدوياً من الأسفل');
+      return;
     }
+    setDetecting(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setDetecting(false);
+        onSelectLocation('موقعي الحالي (GPS)', {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
+        onClose();
+      },
+      (err) => {
+        setDetecting(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          setDetectError('رفضت صلاحية تحديد الموقع — اختر منطقتك يدوياً من الأسفل');
+        } else {
+          setDetectError('لم نتمكن من تحديد موقعك — اختر منطقتك يدوياً من الأسفل');
+        }
+      },
+      { timeout: 5000 }
+    );
   };
 
   const filteredGovs = EGYPT_GOVERNORATES.filter(
@@ -103,6 +106,10 @@ export function LocationSelectorModal({
             <Navigation className={`w-4 h-4 text-teal-600 ${detecting ? 'animate-spin' : 'animate-bounce'}`} />
             {detecting ? 'جاري تحديد موقعك الجغرافي...' : 'استخدام موقعي الحالي الجغرافي (GPS)'}
           </button>
+
+          {detectError && (
+            <p className="text-[11px] font-bold text-amber-600 text-center">{detectError}</p>
+          )}
 
           {/* Search Box */}
           <div className="relative">

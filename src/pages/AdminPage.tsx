@@ -4415,8 +4415,8 @@ function SitePreviewMockup({
       <div className="px-[1.2em] py-[1em] grid grid-cols-4 gap-[0.8em]" style={{ backgroundColor: colors.statsCardBg, color: colors.statsCardText }}>
         {[
           { n: '5+', l: 'صيدلية شريكة', c: colors.primaryColor },
-          { n: '10k+', l: 'عميل سعيد', c: colors.secondaryColor },
-          { n: '500+', l: 'منتج دوائي', c: colors.accentColor },
+          { n: '8+', l: 'منتج متاح', c: colors.secondaryColor },
+          { n: '24/7', l: 'خدمة توصيل', c: colors.accentColor },
           { n: '24/7', l: 'طوارئ ودعم', c: colors.primaryColor },
         ].map((s) => (
           <div key={s.l} className="text-center">
@@ -4830,8 +4830,8 @@ function HeroVisual({ colors }: { colors: ThemeColors }) {
 
 function StatsVisual({ colors }: { colors: ThemeColors }) {
   const stats = [
-    { v: '1,200+', l: 'صيدلية شريكة' },
-    { v: '10k+', l: 'منتج طبي' },
+    { v: '5+', l: 'صيدلية شريكة' },
+    { v: '8+', l: 'منتج متاح' },
     { v: '24/7', l: 'توصيل سريع' },
   ];
   return (

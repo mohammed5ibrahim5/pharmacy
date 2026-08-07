@@ -77,7 +77,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
           {/* Badges Overlay */}
           {activeDiscount && (
             <div
-              className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md animate-pulse"
+              className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold shadow-md animate-pulse whitespace-nowrap z-10"
               style={{ backgroundColor: themeColors.discountBadgeBg, color: themeColors.discountBadgeText }}
             >
               خصم {activeDiscount.discount_percentage}%
@@ -123,7 +123,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                 e.stopPropagation();
                 setCompareOpen(true);
               }}
-              className="absolute top-2.5 right-12 w-9 h-9 rounded-2xl bg-white/90 backdrop-blur-sm border border-gray-100 shadow-lg hover:bg-white flex items-center justify-center transition-all duration-300 group-hover:scale-110 active:scale-90"
+              className="absolute top-2.5 left-12 w-9 h-9 rounded-2xl bg-white/90 backdrop-blur-sm border border-gray-100 shadow-lg hover:bg-white flex items-center justify-center transition-all duration-300 group-hover:scale-110 active:scale-90"
               title="قارن الأسعار والبدائل"
               aria-label="قارن الأسعار والبدائل"
             >
@@ -278,6 +278,20 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
           >
             {product.name}
           </h3>
+
+          {product.is_available && (
+            <p
+              className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+              style={{
+                color: themeColors.inStockColor,
+                backgroundColor: `${themeColors.inStockColor}12`,
+                border: `1px solid ${themeColors.inStockColor}25`,
+              }}
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              متاح الآن
+            </p>
+          )}
 
           {product.for_all_pharmacies ? (
             <p className="text-[11px] font-semibold flex items-center gap-1 truncate" style={{ color: themeColors.priceColor }}>

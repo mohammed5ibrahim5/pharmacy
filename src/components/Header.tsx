@@ -35,6 +35,7 @@ import { BarcodeScannerModal } from '@/components/BarcodeScannerModal';
 import { LocationSelectorModal } from '@/components/LocationSelectorModal';
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
 import { useOrder } from '@/context/OrderContext';
+import { useGeolocation } from '@/hooks/useGeolocation';
 import { supabase } from '@/lib/supabase';
 import type { Product, Category } from '@/types';
 
@@ -89,6 +90,7 @@ export function Header() {
   const { settings, themeColors, headerConfig, storeConfig } = useSettings();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
+  const { setUserLocation: setGeoLocation } = useGeolocation();
 
   const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
@@ -177,9 +179,13 @@ export function Header() {
     handleSearchSubmit(undefined, scannedValue);
   };
 
-  const handleLocationChange = (newLoc: string) => {
+  const handleLocationChange = (newLoc: string, coords?: { latitude: number; longitude: number }) => {
     setUserLocation(newLoc);
     localStorage.setItem('user_delivery_location', newLoc);
+    if (coords) {
+      setGeoLocation(coords.latitude, coords.longitude);
+      sessionStorage.setItem('pharmacy_location_set', '1');
+    }
   };
 
   const handleVoiceSearch = () => {
@@ -536,12 +542,12 @@ export function Header() {
             <div
               className="flex items-center gap-2 py-2 px-4 lg:px-0 overflow-x-auto scrollbar-none"
               style={{
-                backgroundColor: `${themeColors.headerText}03`,
-                borderBottom: `1px solid ${themeColors.headerText}08`
+                backgroundColor: `${themeColors.accentColor}0a`,
+                borderBottom: `1px solid ${themeColors.accentColor}22`
               }}
             >
-              <span className="font-bold opacity-50 flex items-center gap-1 shrink-0 text-[11px] whitespace-nowrap" style={{ color: themeColors.headerText }}>
-                <Flame className="w-3.5 h-3.5" style={{ color: themeColors.accentColor, opacity: 0.55 }} />
+              <span className="font-bold flex items-center gap-1.5 shrink-0 text-[11px] whitespace-nowrap" style={{ color: themeColors.accentColor }}>
+                <Flame className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} fill="currentColor" />
                 الأكثر طلباً:
               </span>
               {UNIFIED_TRENDING.map((tag, i) => (

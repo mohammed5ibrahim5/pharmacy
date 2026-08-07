@@ -45,6 +45,7 @@ import { HomeHowItWorks } from '@/components/HomeHowItWorks';
 import { HomeTestimonials } from '@/components/HomeTestimonials';
 import { HomeHealthTips } from '@/components/HomeHealthTips';
 import { HomeFAQ } from '@/components/HomeFAQ';
+import { CustomerServiceBanner } from '@/components/CustomerServiceBanner';
 import { PharmacyMap } from '@/components/PharmacyMap';
 import { MostSearched } from '@/components/MostSearched';
 import { Reveal } from '@/components/Reveal';
@@ -89,7 +90,6 @@ const HERO_TRENDING = [
 const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string; auto?: boolean }[] = [
   { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true },
   { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true },
-  { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users' },
   { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck' },
 ];
 
@@ -169,12 +169,16 @@ export function HomePage() {
     setLocationSet(true);
   };
 
-  const handleManualLocation = (loc: string) => {
+  const handleManualLocation = (loc: string, coords?: { latitude: number; longitude: number }) => {
     setUserLocationName(loc);
     localStorage.setItem('user_delivery_location', loc);
-    const coords = findAreaLocation(loc);
     if (coords) {
       setUserLocation(coords.latitude, coords.longitude);
+    } else {
+      const areaCoords = findAreaLocation(loc);
+      if (areaCoords) {
+        setUserLocation(areaCoords.latitude, areaCoords.longitude);
+      }
     }
     markLocationSet();
   };
@@ -604,7 +608,9 @@ export function HomePage() {
               borderColor: `${themeColors.primaryColor}15`
             }}
           >
-            {(heroConfig.stats.length > 0 ? heroConfig.stats : DEFAULT_HERO_STATS).map((stat, i) => (
+            {(heroConfig.stats.length > 0 ? heroConfig.stats : DEFAULT_HERO_STATS)
+              .filter((stat) => stat.id !== 'customers')
+              .map((stat, i) => (
               <div
                 key={i}
                 className="p-3 sm:p-4 text-right flex items-center gap-3.5 group hover:bg-black/[0.02] rounded-2xl transition-all"
@@ -880,6 +886,9 @@ export function HomePage() {
 
       {/* ==================== FAQ ==================== */}
       <Reveal><HomeFAQ /></Reveal>
+
+      {/* ==================== CUSTOMER SERVICE ==================== */}
+      <Reveal><CustomerServiceBanner /></Reveal>
 
       {/* ==================== EMERGENCY CTA BANNER ==================== */}
       {storeConfig.purchasesEnabled && (
