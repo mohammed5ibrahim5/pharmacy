@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS order_groups (
   customer_id uuid REFERENCES customers(id) ON DELETE SET NULL,
   address text,
   note text,
-  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'delivered', 'cancelled')),
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled')),
   payment_method text,
   payment_number text,
   payment_screenshot_url text,
