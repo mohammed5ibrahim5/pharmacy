@@ -91,6 +91,19 @@ export function Header() {
   const [userLocation, setUserLocation] = useState<string>(() => {
     return localStorage.getItem('user_delivery_location') || 'القاهرة - المعادي';
   });
+  const [cartBump, setCartBump] = useState(false);
+  const firstCartRender = useRef(true);
+
+  useEffect(() => {
+    if (firstCartRender.current) {
+      firstCartRender.current = false;
+      return;
+    }
+    if (cartCount <= 0) return;
+    setCartBump(true);
+    const t = window.setTimeout(() => setCartBump(false), 550);
+    return () => window.clearTimeout(t);
+  }, [cartCount]);
 
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -467,7 +480,7 @@ export function Header() {
               {storeConfig.purchasesEnabled && (
                 <button
                   onClick={() => openCart('cart')}
-                  className="relative p-2.5 rounded-2xl border transition-colors"
+                  className={`relative p-2.5 rounded-2xl border transition-colors ${cartBump ? 'animate-cart-bump' : ''}`}
                   style={{
                     backgroundColor: `${themeColors.headerText}08`,
                     color: themeColors.headerText,

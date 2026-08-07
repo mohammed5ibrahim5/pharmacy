@@ -1,9 +1,9 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, Phone, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, X, Flame } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, Phone, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, Flame, Plus, Minus } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
 import { useFavorites } from '@/context/FavoritesContext';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { addStockAlert, removeStockAlert } from '@/lib/loyalty';
 import { PriceCompareModal } from '@/components/PriceCompareModal';
@@ -16,14 +16,17 @@ interface Props {
 }
 
 export function ProductCard({ product, pharmacyName, onClick, popular = false }: Props) {
-  const { settings, themeColors, storeConfig, featuresConfig } = useSettings();
-  const { openOrder } = useOrder();
+  const { themeColors, storeConfig, featuresConfig } = useSettings();
+  const { cart, openOrder, addToCart, updateCartQty } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { user } = useAuth();
   const [compareOpen, setCompareOpen] = useState(false);
   const [alerting, setAlerting] = useState(false);
   const [alerted, setAlerted] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const addTimer = useRef<number | null>(null);
   const isFav = isProductFavorite(product.id);
+  const cartEntry = storeConfig.purchasesEnabled ? cart.find((i) => i.product.id === product.id) : undefined;
 
   const activeDiscount = product.discounts?.find((d: Discount) => d.is_active);
   const finalPrice = activeDiscount
@@ -182,25 +185,88 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
             </div>
           )}
 
-          {/* Quick Buy / Contact Button */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              openOrder(product, pharmacyName);
-            }}
-            className="absolute bottom-2.5 left-2.5 w-9 h-9 rounded-2xl bg-white shadow-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105"
-            style={{ color: themeColors.priceColor }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = themeColors.priceColor; e.currentTarget.style.color = '#ffffff'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = themeColors.priceColor; }}
-            title={storeConfig.purchasesEnabled ? 'أضف إلى السلة' : 'تواصل مع الصيدلية'}
-          >
-            {storeConfig.purchasesEnabled ? (
-              <ShoppingCart className="w-[18px] h-[18px] font-bold" />
+          {/* Quick Add / Quantity Stepper / Contact Button */}
+          {storeConfig.purchasesEnabled ? (
+            cartEntry ? (
+              <div
+                className="absolute bottom-2.5 left-2.5 flex items-center gap-0.5 rounded-xl bg-white shadow-lg border p-0.5 animate-fade-in"
+                style={{ borderColor: `${themeColors.priceColor}35` }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => updateCartQty(cartEntry.key, cartEntry.quantity - 1)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-90"
+                  style={{ color: themeColors.priceColor }}
+                  title="إنقاص الكمية"
+                  aria-label="إنقاص الكمية"
+                >
+                  <Minus className="w-3.5 h-3.5" strokeWidth={3} />
+                </button>
+                <span
+                  className="min-w-[1.6rem] text-center text-xs font-black"
+                  style={{ color: themeColors.priceColor }}
+                >
+                  {cartEntry.quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => updateCartQty(cartEntry.key, cartEntry.quantity + 1)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-90 hover:brightness-110 text-white"
+                  style={{ backgroundColor: themeColors.priceColor }}
+                  title="زيادة الكمية"
+                  aria-label="زيادة الكمية"
+                >
+                  <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                </button>
+              </div>
             ) : (
+              <div className="absolute bottom-2.5 left-2.5">
+                {justAdded && (
+                  <span
+                    className="pointer-events-none absolute -top-1.5 left-1/2 -translate-x-1/2 text-xs font-black animate-cart-add"
+                    style={{ color: themeColors.priceColor }}
+                  >
+                    +1
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addToCart(product, pharmacyName);
+                    setJustAdded(true);
+                    if (addTimer.current) window.clearTimeout(addTimer.current);
+                    addTimer.current = window.setTimeout(() => setJustAdded(false), 900);
+                  }}
+                  className="w-9 h-9 rounded-2xl bg-white shadow-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110 active:scale-90"
+                  style={{ color: themeColors.priceColor }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = themeColors.priceColor; e.currentTarget.style.color = '#ffffff'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = themeColors.priceColor; }}
+                  title="أضف إلى السلة"
+                  aria-label="أضف إلى السلة"
+                >
+                  <ShoppingCart className="w-[18px] h-[18px]" />
+                </button>
+              </div>
+            )
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openOrder(product, pharmacyName);
+              }}
+              className="absolute bottom-2.5 left-2.5 w-9 h-9 rounded-2xl bg-white shadow-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105"
+              style={{ color: themeColors.priceColor }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = themeColors.priceColor; e.currentTarget.style.color = '#ffffff'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.color = themeColors.priceColor; }}
+              title="تواصل مع الصيدلية"
+              aria-label="تواصل مع الصيدلية"
+            >
               <Phone className="w-4 h-4" />
-            )}
-          </button>
+            </button>
+          )}
         </div>
 
         {/* Info */}
