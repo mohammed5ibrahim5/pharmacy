@@ -3104,88 +3104,8 @@ function SettingsTab() {
       )}
 
 {settingsSubTab === 'colors' && (
-        <div className="space-y-6">
-            {/* LIVE FULL-SITE PREVIEW — updates in real-time as colors change */}
-            <div className="bg-slate-900 text-white rounded-3xl p-5 border border-slate-800 shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <span className="relative flex w-2.5 h-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full w-2.5 h-2.5 bg-teal-400" />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                      <Eye className="w-4 h-4 text-teal-400" />
-                      معاينة حية للموقع
-                      <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-bold">تتحدّث لحظيًا</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      كل لون تغيّره في المجموعات بالأسفل يظهر هنا فورًا — شاهد الموقع كاملًا قبل الحفظ.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 bg-slate-800 rounded-xl p-1">
-                  {[
-                    { id: 'mobile' as const, label: 'هاتف', icon: <Smartphone className="w-3.5 h-3.5" /> },
-                    { id: 'tablet' as const, label: 'تابلت', icon: <Tablet className="w-3.5 h-3.5" /> },
-                    { id: 'desktop' as const, label: 'كمبيوتر', icon: <Monitor className="w-3.5 h-3.5" /> },
-                  ].map((d) => (
-                    <button
-                      key={d.id}
-                      onClick={() => setPreviewDevice(d.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                        previewDevice === d.id ? 'bg-white text-slate-900 shadow' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {d.icon}
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-5">
-                {previewDevice === 'desktop' && (
-                  <div className="mx-auto max-w-3xl">
-                    <div className="bg-slate-800 rounded-2xl rounded-b-none px-3 py-2 flex items-center gap-2 border-b border-slate-700">
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                      <span className="flex-1 mx-2 h-4 rounded-md bg-slate-700 text-[9px] text-slate-400 flex items-center justify-center font-mono" dir="ltr">
-                        {form.site_name.toLowerCase()}.site
-                      </span>
-                    </div>
-                    <div className="bg-slate-100 rounded-b-2xl overflow-hidden border border-slate-700 border-t-0 text-slate-900 shadow-2xl">
-                      <SitePreviewMockup colors={colors} form={form} headerCfg={headerCfg} mockSearch={mockSearch} onSearchChange={setMockSearch} device="desktop" />
-                    </div>
-                  </div>
-                )}
-                {previewDevice === 'tablet' && (
-                  <div className="mx-auto max-w-lg">
-                    <div className="rounded-[1.75rem] bg-slate-800 p-2.5 shadow-2xl border border-slate-700">
-                      <div className="relative bg-slate-100 rounded-[1.2rem] overflow-hidden text-slate-900">
-                        <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-16 h-1 rounded-full bg-slate-800/90 z-20" />
-                        <SitePreviewMockup colors={colors} form={form} headerCfg={headerCfg} mockSearch={mockSearch} onSearchChange={setMockSearch} device="tablet" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {previewDevice === 'mobile' && (
-                  <div className="mx-auto max-w-xs">
-                    <div className="rounded-[2.5rem] bg-slate-900 p-3 shadow-2xl border border-slate-700">
-                      <div className="relative bg-slate-100 rounded-[2rem] overflow-hidden text-slate-900">
-                        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-4 rounded-full bg-slate-900 z-20 flex items-center justify-end pr-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-700" />
-                        </div>
-                        <SitePreviewMockup colors={colors} form={form} headerCfg={headerCfg} mockSearch={mockSearch} onSearchChange={setMockSearch} device="mobile" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-6 lg:items-start">
+            <div className="space-y-6 min-w-0">
             {/* ADVANCED WEBSITE COLORS MANAGER */}
             <SettingsSection title="لوحة تخصيص ألوان الموقع بالكامل" icon={<Tag className="w-5 h-5" />}>
               <p className="text-xs text-gray-500 mb-4 leading-relaxed">
@@ -3547,7 +3467,36 @@ function SettingsTab() {
               </div>
             </div>
             </SettingsSection>
-        </div>
+            </div>
+
+            {/* Sticky compact live preview */}
+            <div className="hidden lg:block lg:sticky lg:top-24 lg:self-start">
+              <div className="bg-slate-900 text-white rounded-3xl p-4 border border-slate-800 shadow-2xl overflow-hidden">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className="flex items-center gap-1.5">
+                    <span className="relative flex w-2 h-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full w-2 h-2 bg-teal-400" />
+                    </span>
+                    <h3 className="text-xs font-bold flex items-center gap-1.5">
+                      <Eye className="w-3.5 h-3.5 text-teal-400" />
+                      معاينة حية
+                    </h3>
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-bold">تتحدّث لحظياً</span>
+                </div>
+                <div className="mx-auto max-w-[250px]">
+                  <div className="rounded-[2rem] bg-slate-900 p-2.5 shadow-2xl border border-slate-700">
+                    <div className="relative bg-slate-100 rounded-[1.6rem] overflow-hidden text-slate-900">
+                      <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-14 h-3 rounded-full bg-slate-900 z-20" />
+                      <SitePreviewMockup colors={colors} form={form} headerCfg={headerCfg} mockSearch={mockSearch} onSearchChange={setMockSearch} device="mobile" compact />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-center text-[10px] text-slate-400 mt-3">كل لون تغيّره في المجموعات يظهر هنا فوراً قبل الحفظ.</p>
+              </div>
+            </div>
+          </div>
       )}
 
       {settingsSubTab === 'payment' && (
