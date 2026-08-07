@@ -15,7 +15,7 @@ interface Props {
 
 export function PharmacyMap({ pharmacies, loading }: Props) {
   const { t, lang } = useLanguage();
-  const { themeColors } = useSettings();
+  const { themeColors, darkMode } = useSettings();
   const { navigate } = useRouter();
   const { location } = useGeolocation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -70,7 +70,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Pharmacy list */}
           <div className="lg:col-span-1 bg-white rounded-3xl border border-gray-100 overflow-hidden flex flex-col max-h-[320px] lg:max-h-none">
-            <div className="p-4 border-b border-gray-100 flex items-center gap-2 bg-slate-50/70">
+            <div className={`p-4 border-b border-gray-100 flex items-center gap-2 ${darkMode ? 'bg-slate-800/60' : 'bg-slate-50/70'}`}>
               <Store className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
               <p className="text-xs font-black text-slate-700">{t('{0} صيدلية متاحة', [activePharmacies.length])}</p>
             </div>
@@ -82,7 +82,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
                     key={p.id}
                     onClick={() => setSelectedId(p.id)}
                     className={`w-full text-start p-3.5 flex items-center gap-3 transition-colors ${
-                      isSelected ? 'bg-teal-50/70' : 'hover:bg-gray-50'
+                      isSelected ? (darkMode ? 'bg-teal-900/30' : 'bg-teal-50/70') : 'hover:bg-gray-50'
                     }`}
                     style={isSelected ? { boxShadow: `inset 3px 0 0 ${themeColors.primaryColor}` } : {}}
                   >
