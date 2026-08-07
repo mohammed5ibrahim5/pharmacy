@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   LayoutDashboard, Store, Package, Tag, Settings, Plus, Edit2, Trash2,
   X, Search, MapPin, Phone, Star, Truck, Save, Eye, EyeOff,
@@ -7,7 +7,7 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, Monitor, Tablet, Smartphone, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, BellOff, BadgeCheck, Pill, Home
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, CreditCard, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, BellOff, BadgeCheck, Pill, Home, Building2, Layers
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
@@ -452,14 +452,45 @@ interface OrderRecord {
   payment_screenshot_url: string | null;
   created_at: string;
   customer_id: string | null;
+  order_group_id: string | null;
   product?: Product;
   pharmacy?: Pharmacy;
   customer?: { full_name: string | null; phone: string | null } | null;
 }
 
+interface OrderGroupRecord {
+  id: string;
+  customer_id: string | null;
+  address: string | null;
+  note: string | null;
+  status: string;
+  payment_method: string | null;
+  payment_number: string | null;
+  payment_screenshot_url: string | null;
+  delivery_fee: number;
+  total_price: number;
+  created_at: string;
+}
+
+interface GroupView {
+  key: string;
+  group: OrderGroupRecord | null;
+  orders: OrderRecord[];
+  status: string;
+  created_at: string;
+  customer_id: string | null;
+  address: string | null;
+  note: string | null;
+  payment_method: string | null;
+  payment_number: string | null;
+  payment_screenshot_url: string | null;
+  total: number;
+}
+
 function OrdersTab() {
   const { settings } = useSettings();
   const [list, setList] = useState<OrderRecord[]>([]);
+  const [groups, setGroups] = useState<OrderGroupRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | (typeof ORDER_STATUSES)[number]>('all');
   const [toast, setToast] = useState<string | null>(null);
@@ -479,6 +510,12 @@ function OrdersTab() {
       .limit(200);
     setList((data || []) as OrderRecord[]);
     if (error) showToast(translateError(error.message).ar);
+    const { data: gData } = await supabase
+      .from('order_groups')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    setGroups((gData || []) as OrderGroupRecord[]);
     setLoading(false);
   }, []);
 
@@ -486,38 +523,107 @@ function OrdersTab() {
     fetchOrders();
   }, [fetchOrders]);
 
+  const views = useMemo<GroupView[]>(() => {
+    const grouped = new Map<string, OrderRecord[]>();
+    const standalone: OrderRecord[] = [];
+    list.forEach((o) => {
+      if (o.order_group_id) {
+        const arr = grouped.get(o.order_group_id) || [];
+        arr.push(o);
+        grouped.set(o.order_group_id, arr);
+      } else {
+        standalone.push(o);
+      }
+    });
+    const result: GroupView[] = [];
+    grouped.forEach((orders, gid) => {
+      const grp = groups.find((g) => g.id === gid) || null;
+      const first = orders[0];
+      result.push({
+        key: gid,
+        group: grp,
+        orders,
+        status: grp?.status || first?.status || 'pending',
+        created_at: grp?.created_at || first?.created_at || '',
+        customer_id: first?.customer_id || null,
+        address: grp?.address ?? first?.address ?? null,
+        note: grp?.note ?? first?.note ?? null,
+        payment_method: grp?.payment_method ?? first?.payment_method ?? null,
+        payment_number: grp?.payment_number ?? first?.payment_number ?? null,
+        payment_screenshot_url: grp?.payment_screenshot_url ?? first?.payment_screenshot_url ?? null,
+        total: grp ? Number(grp.total_price || 0) : orders.reduce((s, o) => s + Number(o.total_price || 0), 0),
+      });
+    });
+    standalone.forEach((o) => {
+      result.push({
+        key: o.id,
+        group: null,
+        orders: [o],
+        status: o.status,
+        created_at: o.created_at,
+        customer_id: o.customer_id,
+        address: o.address,
+        note: o.note,
+        payment_method: o.payment_method,
+        payment_number: o.payment_number,
+        payment_screenshot_url: o.payment_screenshot_url,
+        total: Number(o.total_price || 0),
+      });
+    });
+    result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return result;
+  }, [list, groups]);
+
   const counts = useCallback(
-    (status: string) => list.filter((o) => o.status === status).length,
-    [list]
+    (status: string) => views.filter((v) => v.status === status).length,
+    [views]
   );
 
-  const updateStatus = async (order: OrderRecord, status: string) => {
-    setUpdatingId(order.id);
-    const { error } = await supabase
-      .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', order.id);
+  const updateStatus = async (view: GroupView, status: string) => {
+    setUpdatingId(view.key);
+    const now = new Date().toISOString();
+    const ids = view.orders.map((o) => o.id);
+    const errors: string[] = [];
+    if (view.group) {
+      const { error } = await supabase
+        .from('order_groups')
+        .update({ status, updated_at: now })
+        .eq('id', view.group.id);
+      if (error) errors.push(error.message);
+    }
+    if (ids.length > 0) {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status, updated_at: now })
+        .in('id', ids);
+      if (error) errors.push(error.message);
+    }
     setUpdatingId(null);
-    if (error) {
-      showToast(translateError(error.message).ar);
+    if (errors.length > 0) {
+      showToast(translateError(errors[0]).ar);
     } else {
       await fetchOrders();
-      showToast('تم تحديث حالة الطلب بنجاح');
-      if (order.customer_id) {
+      const first = view.orders[0];
+      if (first?.customer_id) {
         const meta = ORDER_STATUS_META[(status as (typeof ORDER_STATUSES)[number])] || ORDER_STATUS_META.pending;
+        const pharmacyCount = new Set(view.orders.map((o) => o.pharmacy?.name).filter(Boolean)).size;
+        const isGroup = view.orders.length > 1 || !!view.group;
         await insertNotification({
-          customerId: order.customer_id,
+          customerId: first.customer_id,
           type: 'order',
-          title: `تحديث حالة طلبك: ${meta.label}`,
-          body: order.product?.name
-            ? `طلبك "${order.product.name}" أصبح ${meta.label}`
-            : `حالة طلبك أصبحت: ${meta.label}`,
+          title: isGroup ? `تحديث حالة طلبك الموحد: ${meta.label}` : `تحديث حالة طلبك: ${meta.label}`,
+          body: isGroup
+            ? `طلبك الموحد (${view.orders.length} منتج من ${pharmacyCount} صيدليات) أصبح ${meta.label}`
+            : first.product?.name
+              ? `طلبك "${first.product.name}" أصبح ${meta.label}`
+              : `حالة طلبك أصبحت: ${meta.label}`,
         });
       }
+      showToast('تم تحديث حالة الطلب بنجاح');
     }
   };
 
-  const filtered = filter === 'all' ? list : list.filter((o) => o.status === filter);
+  const filtered = filter === 'all' ? views : views.filter((v) => v.status === filter);
 
   return (
     <div className="space-y-5">
@@ -530,7 +636,7 @@ function OrdersTab() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <p className="text-2xl font-black text-gray-900">{list.length}</p>
+          <p className="text-2xl font-black text-gray-900">{views.length}</p>
           <p className="text-xs font-bold text-gray-500 mt-1">إجمالي الطلبات</p>
         </div>
         <div className="bg-amber-50 rounded-2xl border border-amber-200 p-4">
@@ -555,7 +661,7 @@ function OrdersTab() {
             filter === 'all' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
           }`}
         >
-          الكل ({list.length})
+          الكل ({views.length})
         </button>
         {ORDER_STATUSES.map((s) => {
           const m = ORDER_STATUS_META[s];
@@ -592,54 +698,76 @@ function OrdersTab() {
         </div>
       ) : (
         <div className="space-y-4">
-          {filtered.map((order) => {
-            const m = ORDER_STATUS_META[(order.status as (typeof ORDER_STATUSES)[number])] || ORDER_STATUS_META.pending;
+          {filtered.map((view) => {
+            const order = view.orders[0];
+            const isGroup = view.orders.length > 1 || !!view.group;
+            const m = ORDER_STATUS_META[(view.status as (typeof ORDER_STATUSES)[number])] || ORDER_STATUS_META.pending;
             const paymentLabel =
-              order.payment_method === 'instapay'
+              view.payment_method === 'instapay'
                 ? 'انستا باي'
-                : order.payment_method === 'vodafone_cash'
+                : view.payment_method === 'vodafone_cash'
                   ? 'فودافون كاش'
                   : null;
-            const product = order.product;
+            const pharmacyCount = new Set(view.orders.map((o) => o.pharmacy?.name).filter(Boolean)).size;
+            const subtotal = view.orders.reduce((s, o) => s + Number(o.total_price || 0), 0);
+            const deliveryFee = view.group ? Number(view.group.delivery_fee || 0) : 0;
             return (
-              <div key={order.id} className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div key={view.key} className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
                 {/* Header */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-gray-100 mb-4">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {isGroup && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border border-gray-200 bg-gray-50 text-gray-600">
+                        <Layers className="w-3 h-3" />
+                        طلب موحد
+                      </span>
+                    )}
                     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold border ${m.className}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${m.dot}`} />
                       {m.label}
                     </span>
                     <span className="text-[11px] font-bold text-gray-400">
-                      {new Date(order.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {view.orders.length} {isGroup ? `منتج من ${pharmacyCount} صيدليات` : 'منتج'}
+                    </span>
+                    <span className="text-[11px] font-bold text-gray-400">
+                      {new Date(view.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <span className="text-[11px] font-bold text-gray-400" dir="ltr">#{order.id.slice(0, 8)}</span>
+                  <span className="text-[11px] font-bold text-gray-400" dir="ltr">#{view.key.slice(0, 8)}</span>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  {/* Product + pharmacy */}
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-16 h-16 shrink-0 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
-                      {product?.image_url ? (
-                        <img src={product.image_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <Package className="w-7 h-7 text-gray-300" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-black text-gray-900 text-sm truncate">{product?.name || 'منتج'}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                        <Store className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{order.pharmacy?.name || 'صيدلية'}</span>
-                      </p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        الكمية: <strong className="text-gray-700">{order.quantity}</strong> ×{' '}
-                        <strong className="text-gray-700">{Number(order.total_price / order.quantity).toFixed(2)}</strong> ج.م
-                      </p>
-                    </div>
-                  </div>
+                {/* Products (one or more, from multiple pharmacies) */}
+                <div className="space-y-2">
+                  {view.orders.map((o) => {
+                    const unitPrice = Number(o.total_price / o.quantity).toFixed(2);
+                    return (
+                      <div key={o.id} className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/60 p-3">
+                        <div className="w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-white border border-gray-100 flex items-center justify-center">
+                          {o.product?.image_url ? (
+                            <img src={o.product.image_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <Package className="w-6 h-6 text-gray-300" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-black text-gray-900 text-xs truncate">{o.product?.name || 'منتج'}</p>
+                          <p className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1 truncate">
+                            <Store className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{o.pharmacy?.name || 'صيدلية'}</span>
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-left">
+                          <p className="text-xs font-black" style={{ color: settings.primary_color }}>
+                            {Number(o.total_price).toFixed(2)} ج.م
+                          </p>
+                          <p className="text-[10px] text-gray-400">الكمية {o.quantity} × {unitPrice}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
                   {/* Customer + payment */}
                   <div className="space-y-2 min-w-0">
                     <div className="flex items-center gap-2">
@@ -664,9 +792,9 @@ function OrdersTab() {
                             <Wallet className="w-3.5 h-3.5" style={{ color: settings.primary_color }} />
                             الدفع: {paymentLabel}
                           </p>
-                          {order.payment_screenshot_url && (
+                          {view.payment_screenshot_url && (
                             <a
-                              href={order.payment_screenshot_url}
+                              href={view.payment_screenshot_url}
                               target="_blank"
                               rel="noopener noreferrer"
                               title="عرض إثبات التحويل"
@@ -678,9 +806,9 @@ function OrdersTab() {
                             </a>
                           )}
                         </div>
-                        {order.payment_number && (
+                        {view.payment_number && (
                           <p className="text-[11px] font-black text-gray-800 mt-1" dir="ltr">
-                            {order.payment_number}
+                            {view.payment_number}
                           </p>
                         )}
                       </div>
@@ -695,18 +823,34 @@ function OrdersTab() {
                   <div className="space-y-1.5 min-w-0">
                     <p className="text-[11px] font-bold text-gray-600 flex items-start gap-1.5">
                       <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5 text-gray-400" />
-                      <span className="truncate">{order.address || 'عنوان التوصيل غير محدد'}</span>
+                      <span className="truncate">{view.address || 'عنوان التوصيل غير محدد'}</span>
                     </p>
-                    {order.note && (
+                    {view.note && (
                       <p className="text-[11px] font-bold text-gray-600 flex items-start gap-1.5">
                         <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-gray-400" />
-                        <span className="truncate">{order.note}</span>
+                        <span className="truncate">{view.note}</span>
                       </p>
                     )}
-                    <div className="flex items-center justify-between pt-1">
+                  </div>
+
+                  {/* Totals */}
+                  <div className="space-y-1.5 min-w-0">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-gray-500">
+                      <span>المجموع الفرعي</span>
+                      <span className="text-gray-700">{subtotal.toFixed(2)} ج.م</span>
+                    </div>
+                    {isGroup && (
+                      <div className="flex items-center justify-between text-[11px] font-bold text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Truck className="w-3 h-3" /> رسوم التوصيل
+                        </span>
+                        <span className="text-gray-700">{deliveryFee.toFixed(2)} ج.م</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between pt-1 border-t border-gray-100">
                       <span className="text-xs text-gray-400 font-bold">الإجمالي</span>
                       <span className="font-black text-base" style={{ color: settings.primary_color }}>
-                        {Number(order.total_price).toFixed(2)} ج.م
+                        {Number(view.total).toFixed(2)} ج.م
                       </span>
                     </div>
                   </div>
@@ -717,12 +861,12 @@ function OrdersTab() {
                   <span className="text-[10px] font-black text-gray-400 ml-1">تحديث الحالة:</span>
                   {ORDER_STATUSES.map((s) => {
                     const sm = ORDER_STATUS_META[s];
-                    const active = order.status === s;
+                    const active = view.status === s;
                     return (
                       <button
                         key={s}
-                        onClick={() => updateStatus(order, s)}
-                        disabled={updatingId === order.id}
+                        onClick={() => updateStatus(view, s)}
+                        disabled={updatingId === view.key}
                         className={`px-2.5 py-1.5 rounded-full text-[10px] font-extrabold border transition-all active:scale-95 disabled:opacity-50 ${
                           active ? `${sm.className} shadow-sm scale-105` : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'
                         }`}

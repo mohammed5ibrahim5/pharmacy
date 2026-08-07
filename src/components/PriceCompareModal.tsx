@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Scale, Store, ArrowDown, Sparkles, Pill, TrendingDown, CheckCircle2 } from 'lucide-react';
+import { X, Scale, Store, ArrowDown, Sparkles, Pill, TrendingDown, CheckCircle2, ShoppingCart, Phone } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -16,8 +16,8 @@ function finalPrice(p: Product): number {
 }
 
 export function PriceCompareModal({ product, onClose }: Props) {
-  const { settings, themeColors } = useSettings();
-  const { openOrder } = useOrder();
+  const { settings, themeColors, storeConfig } = useSettings();
+  const { openOrder, addToCart, openCart } = useOrder();
   const [sameName, setSameName] = useState<Product[]>([]);
   const [alternatives, setAlternatives] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,11 +91,29 @@ export function PriceCompareModal({ product, onClose }: Props) {
           )}
         </div>
         <button
-          onClick={() => openOrder(p, p.pharmacy?.name)}
-          className="shrink-0 px-3 py-1.5 rounded-xl text-white text-[11px] font-extrabold hover:brightness-110 active:scale-95 transition-all"
+          onClick={() => {
+            if (storeConfig.purchasesEnabled) {
+              addToCart(p, p.pharmacy?.name);
+              onClose();
+              openCart('cart');
+            } else {
+              openOrder(p, p.pharmacy?.name);
+            }
+          }}
+          className="shrink-0 px-3 py-1.5 rounded-xl text-white text-[11px] font-extrabold hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-1.5"
           style={{ backgroundColor: themeColors.priceColor }}
         >
-          اطلب
+          {storeConfig.purchasesEnabled ? (
+            <>
+              <ShoppingCart className="w-3.5 h-3.5" />
+              أضف للسلة
+            </>
+          ) : (
+            <>
+              <Phone className="w-3.5 h-3.5" />
+              تواصل
+            </>
+          )}
         </button>
       </div>
     );

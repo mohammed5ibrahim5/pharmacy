@@ -74,7 +74,7 @@ const FALLBACK_CATEGORIES: { slug: string; name: string }[] = [
 
 export function Header() {
   const { navigate } = useRouter();
-  const { settings, themeColors, headerConfig } = useSettings();
+  const { settings, themeColors, headerConfig, storeConfig } = useSettings();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
 
@@ -464,27 +464,29 @@ export function Header() {
 
               <NotificationsBell />
 
-              <button
-                onClick={() => openCart('cart')}
-                className="relative p-2.5 rounded-2xl border transition-colors"
-                style={{
-                  backgroundColor: `${themeColors.headerText}08`,
-                  color: themeColors.headerText,
-                  borderColor: `${themeColors.headerText}15`
-                }}
-                title="السلة الموحدة"
-                aria-label="السلة الموحدة"
-              >
-                <ShoppingCart className="w-5 h-5" />
-                {cartCount > 0 && (
-                  <span
-                    className="absolute -top-1.5 -left-1.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center border-2"
-                    style={{ backgroundColor: themeColors.priceColor, borderColor: themeColors.headerBg }}
-                  >
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </span>
-                )}
-              </button>
+              {storeConfig.purchasesEnabled && (
+                <button
+                  onClick={() => openCart('cart')}
+                  className="relative p-2.5 rounded-2xl border transition-colors"
+                  style={{
+                    backgroundColor: `${themeColors.headerText}08`,
+                    color: themeColors.headerText,
+                    borderColor: `${themeColors.headerText}15`
+                  }}
+                  title="السلة الموحدة"
+                  aria-label="السلة الموحدة"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  {cartCount > 0 && (
+                    <span
+                      className="absolute -top-1.5 -left-1.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center border-2"
+                      style={{ backgroundColor: themeColors.priceColor, borderColor: themeColors.headerBg }}
+                    >
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </span>
+                  )}
+                </button>
+              )}
 
               <UserMenu />
 

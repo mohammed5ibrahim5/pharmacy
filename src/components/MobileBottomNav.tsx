@@ -5,7 +5,7 @@ import { useCustomer } from '@/context/CustomerContext';
 import { useOrder } from '@/context/OrderContext';
 
 export function MobileBottomNav() {
-  const { settings, themeColors } = useSettings();
+  const { settings, themeColors, storeConfig } = useSettings();
   const { navigate, route } = useRouter();
   const { user, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
@@ -40,25 +40,29 @@ export function MobileBottomNav() {
         }
       },
     },
-    {
-      id: 'cart',
-      label: 'السلة',
-      icon: (
-        <span className="relative">
-          <ShoppingCart className="w-5 h-5" />
-          {cartCount > 0 && (
-            <span
-              className="absolute -top-2 -left-2.5 min-w-4 h-4 px-0.5 rounded-full text-[9px] font-black text-white flex items-center justify-center"
-              style={{ backgroundColor: themeColors.priceColor }}
-            >
-              {cartCount > 99 ? '99+' : cartCount}
-            </span>
-          )}
-        </span>
-      ),
-      active: false,
-      onClick: () => openCart('cart'),
-    },
+    ...(storeConfig.purchasesEnabled
+      ? [
+          {
+            id: 'cart',
+            label: 'السلة',
+            icon: (
+              <span className="relative">
+                <ShoppingCart className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span
+                    className="absolute -top-2 -left-2.5 min-w-4 h-4 px-0.5 rounded-full text-[9px] font-black text-white flex items-center justify-center"
+                    style={{ backgroundColor: themeColors.priceColor }}
+                  >
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </span>
+            ),
+            active: false,
+            onClick: () => openCart('cart'),
+          },
+        ]
+      : []),
     {
       id: 'account',
       label: 'حسابي',

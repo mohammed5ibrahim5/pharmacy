@@ -38,7 +38,7 @@ function finalPriceOf(product: Product): number {
 }
 
 export function OrderModal() {
-  const { cart, cartOpen, cartStep, setCartStep, closeCart, updateCartQty, removeFromCart, clearCart } = useOrder();
+  const { cart, cartOpen, cartStep, setCartStep, closeCart, updateCartQty, removeFromCart, clearCart, contactProduct, closeContact } = useOrder();
   const { user, profile, setAuthModalOpen } = useCustomer();
   const { settings, themeColors, paymentConfig, storeConfig, loyaltyConfig } = useSettings();
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
@@ -54,7 +54,7 @@ export function OrderModal() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!cartOpen) return;
+    if (!cartOpen && !contactProduct) return;
     let cancelled = false;
     const loadPharmacies = async () => {
       const { data } = await supabase.from('pharmacies').select('*').order('name');
@@ -64,7 +64,7 @@ export function OrderModal() {
     return () => {
       cancelled = true;
     };
-  }, [cartOpen]);
+  }, [cartOpen, contactProduct]);
 
   useEffect(() => {
     if (!cartOpen) return;
@@ -121,25 +121,25 @@ export function OrderModal() {
   const methodNumber = paymentMethod === 'vodafone_cash' ? paymentConfig.vodafoneCash : paymentConfig.instapay;
   const hasMethodNumber = Boolean(methodNumber.trim());
 
-  if (!cartOpen) return null;
-
-  const closeModal = () => {
-    if (!loading) closeCart();
-  };
-
-  // ============ Catalog mode: online purchases disabled ============
-  if (!storeConfig.purchasesEnabled) {
-    const phone = settings.contact_phone || null;
-    const whatsapp = settings.contact_whatsapp || null;
+  // ============ Catalog mode (online purchases disabled): single-product contact ============
+  const contactProd = contactProduct?.product;
+  if (contactProduct && contactProd && !cartOpen) {
+    const pharmacy = contactProd.for_all_pharmacies
+      ? null
+      : pharmacies.find((p) => p.id === contactProd.pharmacy_id) || null;
+    const phone = pharmacy?.phone || settings.contact_phone || null;
+    const whatsapp = pharmacy?.whatsapp || settings.contact_whatsapp || null;
+    const contactName = pharmacy?.name || contactProduct.pharmacyName || settings.site_name;
     const whatsappDigits = whatsapp ? whatsapp.replace(/\D/g, '') : null;
-    const itemLines = cart
-      .map((entry) => `- ${entry.product.name} (${entry.quantity})`)
-      .join('\n');
+    const activeDiscount = contactProd.discounts?.find((d) => d.is_active);
+    const fp = activeDiscount
+      ? contactProd.price * (1 - activeDiscount.discount_percentage / 100)
+      : contactProd.price;
 
     return (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={closeContact}>
         <div className="rounded-3xl w-full max-w-md p-6 relative" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
-          <button onClick={closeModal} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+          <button onClick={closeContact} className="absolute top-4 right-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
             <X className="w-5 h-5 text-gray-500" />
           </button>
 
@@ -150,50 +150,41 @@ export function OrderModal() {
             >
               <Phone className="w-8 h-8" />
             </div>
-            <h2 className="text-xl font-extrabold text-gray-900">تواصل معنا لاستكمال طلبك</h2>
+            <h2 className="text-xl font-extrabold text-gray-900">تواصل مع الصيدلية مباشرة</h2>
             <p className="text-gray-500 text-sm mt-2 leading-relaxed">{storeConfig.contactMessage}</p>
           </div>
 
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3 mb-5 max-h-64 overflow-y-auto">
-            {groups.map((g) => (
-              <div key={g.key}>
-                <p className="text-[11px] font-extrabold text-gray-500 mb-1.5 flex items-center gap-1">
-                  <Store className="w-3.5 h-3.5" /> {g.label}
-                </p>
-                {cart
-                  .filter((e) => (e.product.for_all_pharmacies ? g.key === '__all__' : e.product.pharmacy_id === g.key))
-                  .map((entry) => (
-                    <div key={entry.key} className="flex items-center gap-3 bg-white rounded-lg p-2 mb-1.5">
-                      {entry.product.image_url ? (
-                        <img src={entry.product.image_url} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                          <ShoppingBag className="w-5 h-5 text-gray-400" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-gray-900 truncate">{entry.product.name}</p>
-                        <p className="text-xs font-bold" style={{ color: themeColors.priceColor }}>
-                          {(finalPriceOf(entry.product) * entry.quantity).toFixed(2)} ج.م × {entry.quantity}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+          <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-3 mb-5">
+            {contactProd.image_url ? (
+              <img src={contactProd.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
+            ) : (
+              <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
+                <ShoppingBag className="w-6 h-6 text-gray-400" />
               </div>
-            ))}
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-gray-900 truncate">{contactProd.name}</p>
+              <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                <Store className="w-3.5 h-3.5 shrink-0" />
+                {contactName}
+              </p>
+              <p className="text-xs font-bold mt-0.5" style={{ color: themeColors.priceColor }}>
+                {fp.toFixed(2)} ج.م
+              </p>
+            </div>
           </div>
 
           {whatsappDigits ? (
             <a
-              href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(`مرحباً، أود طلب:\n${itemLines}`)}`}
+              href={`https://wa.me/${whatsappDigits}`}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={closeModal}
+              onClick={closeContact}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 shadow-lg mb-3"
               style={{ backgroundColor: '#25d366', boxShadow: '0 8px 20px -6px #25d36688' }}
             >
               <Send className="w-5 h-5" />
-              إرسال الطلب واتساب
+              مراسلة {contactName} واتساب
             </a>
           ) : (
             phone && (
@@ -203,19 +194,42 @@ export function OrderModal() {
                 style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
               >
                 <Phone className="w-5 h-5" />
-                الاتصال لاستكمال الطلب
+                الاتصال بـ {contactName}
               </a>
             )
           )}
 
+          {phone && whatsappDigits && (
+            <a
+              href={`tel:${phone}`}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold transition-all hover:scale-[1.01] active:scale-95 border-2 mb-3"
+              style={{ borderColor: themeColors.priceColor, color: themeColors.priceColor }}
+            >
+              <Phone className="w-5 h-5" />
+              الاتصال المباشر
+            </a>
+          )}
+
+          {!phone && !whatsappDigits && (
+            <div className="w-full py-3.5 rounded-xl mb-3 bg-amber-50 border border-amber-200 text-center">
+              <p className="text-xs font-bold text-amber-700">لا يتوفر رقم تواصل مسجل حالياً، حاول لاحقاً.</p>
+            </div>
+          )}
+
           <p className="text-[11px] text-gray-400 text-center leading-relaxed">
             <Info className="w-3 h-3 inline -mt-0.5 ml-1" />
-            الطلب المباشر أونلاين متوقف حالياً، يمكنك الاتصال بنا لتأكيد توفر المنتجات وطريقة الشراء.
+            الطلب المباشر أونلاين متوقف حالياً، يمكنك الاتصال بالصيدلية لتأكيد توفر المنتج وطريقة الشراء.
           </p>
         </div>
       </div>
     );
   }
+
+  if (!cartOpen) return null;
+
+  const closeModal = () => {
+    if (!loading) closeCart();
+  };
 
   // ============ Empty cart ============
   if (cart.length === 0 && !success) {
