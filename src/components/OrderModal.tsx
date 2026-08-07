@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
   Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark,
-  Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2,
+  Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2, Download, FileText,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -11,6 +11,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { localizedError } from '@/lib/errorMessages';
 import { awardLoyaltyPoints } from '@/lib/loyalty';
+import { buildInvoiceImage, dataUrlToBlob } from '@/lib/invoice';
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABEL,
@@ -54,6 +55,10 @@ export function OrderModal() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+
+  const catalogMode = !storeConfig.purchasesEnabled;
 
   useEffect(() => {
     if (!cartOpen) return;
@@ -120,14 +125,58 @@ export function OrderModal() {
   const totalDelivery = groups.reduce((sum, g) => sum + groupFee(g), 0);
   const total = subtotal + totalDelivery;
 
+  const displayTotal = catalogMode ? subtotal : total;
+
+  const cartPharmacy = groups.find((g) => g.key !== '__all__')?.pharmacy || null;
+  const catalogTargetName = cartPharmacy?.name || settings.site_name || 'صيدليتي';
+  const catalogWhatsapp = (cartPharmacy?.whatsapp || settings.contact_whatsapp || '').replace(/\D/g, '') || null;
+  const catalogPhone = cartPharmacy?.phone || settings.contact_phone || null;
+
+  useEffect(() => {
+    if (!catalogMode || !cartOpen || cart.length === 0) {
+      setInvoiceUrl(null);
+      return;
+    }
+    let cancelled = false;
+    buildInvoiceImage({
+      siteName: settings.site_name || 'صيدليتي',
+      title: t('فاتورة الطلب'),
+      pharmacyName: catalogTargetName,
+      dateLabel: new Date().toLocaleString(lang === 'en' ? 'en-GB' : 'ar-EG', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }),
+      items: cart.map((entry) => {
+        const unit = finalPriceOf(entry.product);
+        return {
+          name: entry.product.name,
+          quantity: entry.quantity,
+          unitPrice: unit,
+          lineTotal: unit * entry.quantity,
+        };
+      }),
+      subtotal,
+      total: subtotal,
+      currency: t('ج.م'),
+      customerLabel: t('الاسم:'),
+      customerName: profile?.full_name || undefined,
+      customerPhone: profile?.phone || undefined,
+      subtotalLabel: t('المجموع الفرعي'),
+      totalLabel: t('الإجمالي'),
+      footerNote: t('فاتورة إلكترونية صادرة من منصة {0} — شكراً لثقتكم.', [settings.site_name || 'صيدليتي']),
+      primaryColor: themeColors.priceColor,
+    }).then((url) => {
+      if (!cancelled) setInvoiceUrl(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [catalogMode, cartOpen, cart, subtotal, profile, settings.site_name, lang, t, themeColors.priceColor, catalogTargetName]);
+
   const methodNumber = paymentMethod === 'vodafone_cash' ? paymentConfig.vodafoneCash : paymentConfig.instapay;
   const hasMethodNumber = Boolean(methodNumber.trim());
 
   if (!cartOpen) return null;
-
-  const catalogMode = !storeConfig.purchasesEnabled;
-  const whatsappDigits = settings.contact_whatsapp ? settings.contact_whatsapp.replace(/\D/g, '') : null;
-  const contactPhone = settings.contact_phone || null;
 
   const buildWhatsAppMessage = () => {
     const lines: string[] = [];
@@ -248,6 +297,38 @@ export function OrderModal() {
       setTimeout(() => setCopied(false), 1500);
     } catch {
       // ignore
+    }
+  };
+
+  const handleDownloadInvoice = () => {
+    if (!invoiceUrl) return;
+    const a = document.createElement('a');
+    a.href = invoiceUrl;
+    a.download = `invoice-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
+  const handleSendInvoice = async () => {
+    if (!invoiceUrl) return;
+    setInvoiceLoading(true);
+    try {
+      const blob = dataUrlToBlob(invoiceUrl);
+      const file = new File([blob], `invoice-${Date.now()}.png`, { type: 'image/png' });
+      if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: t('فاتورة الطلب') });
+      } else if (catalogWhatsapp) {
+        window.open(
+          `https://wa.me/${catalogWhatsapp}?text=${encodeURIComponent(buildWhatsAppMessage())}`,
+          '_blank',
+          'noopener,noreferrer'
+        );
+      }
+    } catch {
+      // user cancelled the share sheet — nothing to do
+    } finally {
+      setInvoiceLoading(false);
     }
   };
 
@@ -383,7 +464,7 @@ export function OrderModal() {
                     <Store className="w-4 h-4" style={{ color: themeColors.priceColor }} />
                   </div>
                   <p className="text-[13px] font-extrabold text-gray-800 flex-1 truncate">{g.label}</p>
-                  {g.key !== '__all__' && g.pharmacy?.delivery_available !== false && (
+                  {!catalogMode && g.key !== '__all__' && g.pharmacy?.delivery_available !== false && (
                     <span
                       className={`text-[10px] font-bold px-2 py-1 rounded-full shrink-0 ${groupFee(g) === 0 ? 'bg-teal-50 text-teal-700' : 'bg-gray-100 text-gray-600'}`}
                     >
@@ -446,39 +527,94 @@ export function OrderModal() {
             ))}
 
             {/* Summary */}
-            <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2.5">
+            <div
+              className={
+                catalogMode
+                  ? 'rounded-2xl border-2 border-dashed p-4 space-y-2.5'
+                  : 'rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2.5'
+              }
+              style={
+                catalogMode
+                  ? { borderColor: `${themeColors.priceColor}40`, backgroundColor: `${themeColors.priceColor}05` }
+                  : undefined
+              }
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] font-black flex items-center gap-1.5" style={{ color: themeColors.priceColor }}>
+                  <FileText className="w-4 h-4" />
+                  {t('فاتورة الطلب')}
+                </span>
+                <span className="text-[11px] text-gray-400 font-bold">
+                  {t('{0} منتج', [cart.reduce((s, i) => s + i.quantity, 0)])}
+                </span>
+              </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">{t('المجموع الفرعي')}</span>
                 <span className="font-bold text-gray-800">{t('{0} ج.م', [subtotal.toFixed(2)])}</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500 flex items-center gap-1">
-                  <Truck className="w-3.5 h-3.5" /> {t('رسوم التوصيل')}
-                </span>
-                <span className={`font-bold ${totalDelivery === 0 ? 'text-teal-600' : 'text-gray-800'}`}>
-                  {totalDelivery === 0 ? (deliveryFreeGlobal ? t('مجاني') : t('بدون رسوم')) : t('{0} ج.م', [totalDelivery.toFixed(0)])}
+              {!catalogMode && (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500 flex items-center gap-1">
+                      <Truck className="w-3.5 h-3.5" /> {t('رسوم التوصيل')}
+                    </span>
+                    <span className={`font-bold ${totalDelivery === 0 ? 'text-teal-600' : 'text-gray-800'}`}>
+                      {totalDelivery === 0 ? (deliveryFreeGlobal ? t('مجاني') : t('بدون رسوم')) : t('{0} ج.م', [totalDelivery.toFixed(0)])}
+                    </span>
+                  </div>
+                  {freeThreshold > 0 && subtotal < freeThreshold && (
+                    <div>
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mb-1.5">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(100, (subtotal / freeThreshold) * 100)}%`, backgroundColor: themeColors.priceColor }}
+                        />
+                      </div>
+                      <p className="text-[11px] text-teal-600 font-bold">
+                        {t('أضف {0} ج.م ليصبح التوصيل مجانياً!', [(freeThreshold - subtotal).toFixed(2)])}
+                      </p>
+                    </div>
+                  )}
+                  {paymentConfig.shippingNote && (
+                    <p className="text-[11px] text-gray-400 leading-relaxed flex items-start gap-1 pt-1 border-t border-gray-100">
+                      <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                      {t(paymentConfig.shippingNote)}
+                    </p>
+                  )}
+                </>
+              )}
+              <div className="flex items-center justify-between pt-2 border-t border-dashed" style={{ borderColor: `${themeColors.priceColor}25` }}>
+                <span className="text-sm font-bold text-gray-700">{t('الإجمالي')}</span>
+                <span className="font-black text-lg" style={{ color: themeColors.priceColor }}>
+                  {t('{0} ج.م', [displayTotal.toFixed(2)])}
                 </span>
               </div>
-              {freeThreshold > 0 && subtotal < freeThreshold && (
-                <div>
-                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mb-1.5">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(100, (subtotal / freeThreshold) * 100)}%`, backgroundColor: themeColors.priceColor }}
-                    />
-                  </div>
-                  <p className="text-[11px] text-teal-600 font-bold">
-                    {t('أضف {0} ج.م ليصبح التوصيل مجانياً!', [(freeThreshold - subtotal).toFixed(2)])}
-                  </p>
-                </div>
-              )}
-              {paymentConfig.shippingNote && (
-                <p className="text-[11px] text-gray-400 leading-relaxed flex items-start gap-1 pt-1 border-t border-gray-100">
-                  <Info className="w-3 h-3 mt-0.5 shrink-0" />
-                  {t(paymentConfig.shippingNote)}
-                </p>
-              )}
             </div>
+
+            {/* Invoice image preview (catalog mode) */}
+            {catalogMode && cart.length > 0 && (
+              invoiceUrl ? (
+                <div className="rounded-2xl border border-gray-100 bg-white p-3 space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] font-black text-gray-700 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5" style={{ color: themeColors.priceColor }} />
+                      {t('فاتورة الطلب')}
+                    </p>
+                    <button
+                      onClick={handleDownloadInvoice}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-gray-500 hover:bg-gray-50 border border-gray-200 transition-colors"
+                    >
+                      <Download className="w-3 h-3" /> {t('تنزيل الفاتورة')}
+                    </button>
+                  </div>
+                  <img src={invoiceUrl} alt={t('فاتورة الطلب')} className="w-full rounded-xl border border-gray-100" />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2 py-4 text-xs font-bold text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t('جاري تجهيز الفاتورة...')}
+                </div>
+              )
+            )}
           </div>
 
           {/* Footer */}
@@ -486,25 +622,24 @@ export function OrderModal() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-gray-500">{t('الإجمالي')}</span>
               <span className="font-black text-xl" style={{ color: themeColors.priceColor }}>
-                {total.toFixed(2)} <span className="text-xs text-gray-400 font-medium">{t('ج.م')}</span>
+                {displayTotal.toFixed(2)} <span className="text-xs text-gray-400 font-medium">{t('ج.م')}</span>
               </span>
             </div>
             {catalogMode ? (
               <>
-                {whatsappDigits ? (
-                  <a
-                    href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(buildWhatsAppMessage())}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-black text-[15px] transition-all hover:brightness-105 active:scale-[0.99] shadow-lg"
+                {catalogWhatsapp ? (
+                  <button
+                    onClick={handleSendInvoice}
+                    disabled={invoiceLoading || !invoiceUrl}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-black text-[15px] transition-all hover:brightness-105 active:scale-[0.99] shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
                     style={{ backgroundColor: '#25d366', boxShadow: '0 8px 20px -6px #25d36688' }}
                   >
-                    <Send className="w-5 h-5" />
-                    {t('إرسال الطلب واتساب')}
-                  </a>
-                ) : contactPhone ? (
+                    {invoiceLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                    {t('إرسال الفاتورة واتساب')}
+                  </button>
+                ) : catalogPhone ? (
                   <a
-                    href={`tel:${contactPhone}`}
+                    href={`tel:${catalogPhone}`}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-black text-[15px] transition-all hover:brightness-105 active:scale-[0.99] shadow-lg"
                     style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
                   >
@@ -522,7 +657,9 @@ export function OrderModal() {
                 )}
                 <p className="text-[11px] text-gray-400 text-center leading-relaxed mt-2.5 flex items-center justify-center gap-1">
                   <Info className="w-3 h-3 shrink-0" />
-                  {t('بدون دفع مسبق — أرسل قائمتك للصيدلية وسيتواصل معك الصيدلي.')}
+                  {catalogWhatsapp
+                    ? t('سيُفتح واتساب مع صيدلية {0} وفي الشات صورة الفاتورة جاهزة للإرسال.', [catalogTargetName])
+                    : t('بدون دفع مسبق — أرسل قائمتك للصيدلية وسيتواصل معك الصيدلي.')}
                 </p>
               </>
             ) : (

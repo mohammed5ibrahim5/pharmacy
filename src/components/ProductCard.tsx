@@ -252,7 +252,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    addToCart(product, pharmacyName);
+                    const ok = addToCart(product, pharmacyName);
+                    if (!ok) return;
                     setJustAdded(true);
                     if (addTimer.current) window.clearTimeout(addTimer.current);
                     addTimer.current = window.setTimeout(() => setJustAdded(false), 900);

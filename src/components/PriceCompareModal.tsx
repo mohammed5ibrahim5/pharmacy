@@ -94,7 +94,8 @@ export function PriceCompareModal({ product, onClose }: Props) {
         </div>
         <button
           onClick={() => {
-            addToCart(p, p.pharmacy?.name);
+            const ok = addToCart(p, p.pharmacy?.name);
+            if (!ok) return;
             onClose();
             openCart('cart');
           }}

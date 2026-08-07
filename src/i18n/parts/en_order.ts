@@ -101,4 +101,12 @@
   'إرسال الطلب': 'Send order',
   'بدون دفع مسبق — أرسل قائمتك للصيدلية وسيتواصل معك الصيدلي.': 'No upfront payment — send your list to the pharmacy and the pharmacist will contact you.',
   'لم تضف أي منتجات بعد. أضف أدويتك إلى السلة ثم أرسل طلبك إلى الصيدلية واتساب.': "You haven't added any products yet. Add your medications to the cart, then send your order to the pharmacy via WhatsApp.",
+  'فاتورة الطلب': 'Order invoice',
+  '{0} منتج': '{0} products',
+  'إرسال الفاتورة واتساب': 'Send invoice via WhatsApp',
+  'تنزيل الفاتورة': 'Download invoice',
+  'جاري تجهيز الفاتورة...': 'Preparing your invoice...',
+  'فاتورة إلكترونية صادرة من منصة {0} — شكراً لثقتكم.': 'Electronic invoice issued by {0} platform — thank you for your trust.',
+  'سيُفتح واتساب مع صيدلية {0} وفي الشات صورة الفاتورة جاهزة للإرسال.': 'WhatsApp will open with {0} pharmacy and the invoice image will be ready to send in the chat.',
+  'لا يمكن إضافة منتجات من أكثر من صيدلية في هذا الوضع، السلة مرتبطة بصيدلية واحدة فقط.': 'You can only add products from one pharmacy in this mode. The cart is linked to a single pharmacy.',
 };
