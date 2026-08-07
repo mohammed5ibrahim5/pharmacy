@@ -36,6 +36,13 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
     }
   }, [open]);
 
+  useEffect(() => {
+    if (cameraActive && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraActive]);
+
   const startCamera = async () => {
     setError(null);
     try {
