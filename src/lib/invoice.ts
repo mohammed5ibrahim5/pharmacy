@@ -43,8 +43,22 @@ export function buildInvoiceImage(o: InvoiceOptions): Promise<string> {
     const W = 620;
     const PAD = 36;
     const headerH = 104;
-    const itemRows = Math.max(o.items.length, 1);
-    const H = headerH + itemRows * 66 + 190;
+    const infoLines = (o.customerName ? 1 : 0) + (o.customerPhone ? 1 : 0);
+    const itemsH = o.items.length === 0 ? 40 : o.items.length * 66;
+    const H =
+      headerH + // header
+      42 + // space after header
+      30 + // pharmacy name
+      24 + // date
+      infoLines * 20 + // customer name / phone
+      10 + // gap before divider
+      24 + // divider + gap
+      itemsH + // items
+      8 + // gap before divider
+      28 + // divider + gap
+      30 + // subtotal
+      40 + // total
+      40; // bottom padding (footer note + margin)
 
     const canvas = document.createElement('canvas');
     canvas.width = W * 2;
