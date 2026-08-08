@@ -39,7 +39,6 @@ export function AdminLoginPage() {
   }
 
   if (user) {
-    window.location.reload();
     return null;
   }
 

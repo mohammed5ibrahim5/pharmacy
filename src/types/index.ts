@@ -167,8 +167,6 @@ export interface PharmacyOwner {
   pharmacy_id: string;
   full_name: string;
   email: string;
-  password_hash: string;
-  password_salt?: string | null;
   phone: string | null;
   is_active: boolean;
   created_at: string;

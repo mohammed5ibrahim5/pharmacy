@@ -20,7 +20,7 @@ import { SearchPage } from '@/pages/SearchPage';
 import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
 import { CategoryPage } from '@/pages/CategoryPage';
 import { AccountPage } from '@/pages/AccountPage';
-import { Loader2, Cross } from 'lucide-react';
+import { Loader2, Cross, ShieldAlert } from 'lucide-react';
 
 const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
 const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage').then((m) => ({ default: m.AdminLoginPage })));
@@ -44,8 +44,29 @@ function SiteLoading() {
   );
 }
 
+function AdminForbidden() {
+  const { signOut } = useAuth();
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+        <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <ShieldAlert className="w-7 h-7 text-red-500" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">غير مصرح</h1>
+        <p className="text-gray-500 text-sm mb-6">هذا الحساب لا يملك صلاحيات الوصول إلى لوحة إدارة الموقع.</p>
+        <button
+          onClick={() => signOut()}
+          className="w-full px-4 py-3 rounded-xl bg-gray-900 text-white text-sm font-bold hover:opacity-90 transition-all"
+        >
+          تسجيل الخروج
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AdminRoute() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -63,7 +84,7 @@ function AdminRoute() {
         </div>
       }
     >
-      {user ? <AdminPage /> : <AdminLoginPage />}
+      {!user ? <AdminLoginPage /> : isAdmin ? <AdminPage /> : <AdminForbidden />}
     </Suspense>
   );
 }

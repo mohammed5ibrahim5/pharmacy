@@ -33,7 +33,6 @@ import {
 import { insertNotification } from '@/lib/notifications';
 import { notifyStockAvailable } from '@/lib/loyalty';
 import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HeroStat, HowItWorksConfig, HomepageConfig, PharmacyOwner } from '@/types';
-import { hashPassword } from '@/lib/ownerAuth';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
 
@@ -1496,7 +1495,7 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
         .eq('pharmacy_id', pharmacy.id)
         .maybeSingle();
       if (err && /could not find the table|could not find the function|does not exist|relation .* not found/i.test(err.message)) {
-        setError('جدول أصحاب الصيدليات غير موجود — شغّل ملف المايجرشن supabase/migrations/20260808100000_pharmacy_owners.sql في Supabase SQL Editor');
+        setError('جدول أصحاب الصيدليات غير موجود — شغّل ملف المايجرشن supabase/migrations/20260808120000_owner_auth_upgrade.sql في Supabase SQL Editor');
       }
       if (data) setOwner(data as PharmacyOwner);
       setLoading(false);
@@ -1513,27 +1512,17 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
     setError(null);
     setSaving(true);
     const normalizedEmail = email.toLowerCase().trim();
-    const { data: existing } = await supabase.from('pharmacy_owners').select('id').eq('email', normalizedEmail).maybeSingle();
-    if (existing) {
-      setError('هذا البريد الإلكتروني مستخدم بالفعل لصيدلية أخرى');
-      setSaving(false);
-      return;
-    }
-    const { hash, salt } = await hashPassword(password);
     const { data, error: err } = await supabase
-      .from('pharmacy_owners')
-      .insert({
-        pharmacy_id: pharmacy.id,
-        full_name: fullName.trim(),
-        email: normalizedEmail,
-        phone: phone.trim() || null,
-        password_hash: hash,
-        password_salt: salt,
+      .rpc('create_owner', {
+        p_pharmacy_id: pharmacy.id,
+        p_full_name: fullName.trim(),
+        p_email: normalizedEmail,
+        p_password: password,
+        p_phone: phone.trim() || null,
       })
-      .select()
       .single();
     if (err) {
-      setError(err.message);
+      setError(rpcError(err));
       setSaving(false);
       return;
     }
@@ -1554,14 +1543,13 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
     }
     setError(null);
     setSaving(true);
-    const { hash, salt } = await hashPassword(resetPassword);
-    const { error: err } = await supabase
-      .from('pharmacy_owners')
-      .update({ password_hash: hash, password_salt: salt, updated_at: new Date().toISOString() })
-      .eq('id', owner!.id);
+    const { error: err } = await supabase.rpc('reset_owner_password', {
+      p_owner_id: owner!.id,
+      p_password: resetPassword,
+    });
     setSaving(false);
     if (err) {
-      setError(err.message);
+      setError(rpcError(err));
       return;
     }
     setResetPassword('');
@@ -1570,18 +1558,28 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
 
   const handleToggleActive = async () => {
     setSaving(true);
-    const { error: err } = await supabase
-      .from('pharmacy_owners')
-      .update({ is_active: !owner!.is_active, updated_at: new Date().toISOString() })
-      .eq('id', owner!.id);
+    const { error: err } = await supabase.rpc('set_owner_active', {
+      p_owner_id: owner!.id,
+      p_active: !owner!.is_active,
+    });
     if (!err) {
       setOwner({ ...owner!, is_active: !owner!.is_active });
       showToast(owner!.is_active ? 'تم تعطيل حساب المالك' : 'تم تفعيل حساب المالك');
     } else {
-      setError(err.message);
+      setError(rpcError(err));
     }
     setSaving(false);
   };
+
+  function rpcError(err: { message?: string }): string {
+    const m = err.message || '';
+    if (/already exists|مستخدم بالفعل/i.test(m)) return 'هذا البريد الإلكتروني مستخدم بالفعل لصيدلية أخرى';
+    if (/غير مصرح/i.test(m)) return m;
+    if (/function .* does not exist|could not find the function/i.test(m)) {
+      return 'الصلاحية غير موجودة — شغّل ملف المايجرشن supabase/migrations/20260808120000_owner_auth_upgrade.sql في Supabase SQL Editor';
+    }
+    return m;
+  }
 
   return (
     <Modal onClose={onClose} title={`حساب مالك "${pharmacy.name}"`} wide>
