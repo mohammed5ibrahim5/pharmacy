@@ -7,7 +7,7 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_HOMEPAGE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
@@ -32,7 +32,8 @@ import {
 } from '@/lib/prescriptions';
 import { insertNotification } from '@/lib/notifications';
 import { notifyStockAvailable } from '@/lib/loyalty';
-import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HeroStat, HowItWorksConfig, HomepageConfig } from '@/types';
+import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HeroStat, HowItWorksConfig, HomepageConfig, PharmacyOwner } from '@/types';
+import { simpleHash } from '@/lib/ownerAuth';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
 
@@ -503,7 +504,7 @@ interface GroupView {
   total: number;
 }
 
-function OrdersTab() {
+export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
   const { settings } = useSettings();
   const [list, setList] = useState<OrderRecord[]>([]);
   const [groups, setGroups] = useState<OrderGroupRecord[]>([]);
@@ -520,11 +521,13 @@ function OrdersTab() {
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('orders')
       .select('*, product:products(*), pharmacy:pharmacies(*), customer:customers(full_name, phone)')
       .order('created_at', { ascending: false })
       .limit(200);
+    if (pharmacyId) query = query.eq('pharmacy_id', pharmacyId);
+    const { data, error } = await query;
     setList((data || []) as OrderRecord[]);
     if (error) showToast(translateError(error.message).ar);
     const { data: gData } = await supabase
@@ -534,7 +537,7 @@ function OrdersTab() {
       .limit(200);
     setGroups((gData || []) as OrderGroupRecord[]);
     setLoading(false);
-  }, []);
+  }, [pharmacyId]);
 
   useEffect(() => {
     fetchOrders();
@@ -599,9 +602,14 @@ function OrdersTab() {
   const updateStatus = async (view: GroupView, status: string) => {
     setUpdatingId(view.key);
     const now = new Date().toISOString();
-    const ids = view.orders.map((o) => o.id);
+    const scopedOrders = pharmacyId ? view.orders.filter((o) => o.pharmacy_id === pharmacyId) : view.orders;
+    if (scopedOrders.length === 0) {
+      setUpdatingId(null);
+      return;
+    }
+    const ids = scopedOrders.map((o) => o.id);
     const errors: string[] = [];
-    if (view.group) {
+    if (view.group && !pharmacyId) {
       const { error } = await supabase
         .from('order_groups')
         .update({ status, updated_at: now })
@@ -620,20 +628,17 @@ function OrdersTab() {
       showToast(translateError(errors[0]).ar);
     } else {
       await fetchOrders();
-      const first = view.orders[0];
+      const first = scopedOrders[0];
       if (first?.customer_id) {
         const meta = ORDER_STATUS_META[(status as (typeof ORDER_STATUSES)[number])] || ORDER_STATUS_META.pending;
-        const pharmacyCount = new Set(view.orders.map((o) => o.pharmacy?.name).filter(Boolean)).size;
-        const isGroup = view.orders.length > 1 || !!view.group;
+        const isScopedGroup = scopedOrders.length > 1 || !!view.group;
         await insertNotification({
           customerId: first.customer_id,
           type: 'order',
-          title: isGroup ? `تحديث حالة طلبك الموحد: ${meta.label}` : `تحديث حالة طلبك: ${meta.label}`,
-          body: isGroup
-            ? `طلبك الموحد (${view.orders.length} منتج من ${pharmacyCount} صيدليات) أصبح ${meta.label}`
-            : first.product?.name
-              ? `طلبك "${first.product.name}" أصبح ${meta.label}`
-              : `حالة طلبك أصبحت: ${meta.label}`,
+          title: isScopedGroup ? `تحديث حالة طلبك الموحد: ${meta.label}` : `تحديث حالة طلبك: ${meta.label}`,
+          body: first.product?.name
+            ? `طلبك "${first.product.name}" أصبح ${meta.label}`
+            : `حالة طلبك أصبحت: ${meta.label}`,
         });
       }
       showToast('تم تحديث حالة الطلب بنجاح');
@@ -1275,6 +1280,8 @@ function PharmaciesTab() {
   const [editing, setEditing] = useState<Pharmacy | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [sections, setSections] = useState<Record<string, string[]>>({});
+  const [ownersMap, setOwnersMap] = useState<Record<string, PharmacyOwner>>({});
+  const [ownerModal, setOwnerModal] = useState<Pharmacy | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
@@ -1285,9 +1292,10 @@ function PharmaciesTab() {
 
   const fetchPharmacies = useCallback(async () => {
     setLoading(true);
-    const [pharmRes, sectionsRes] = await Promise.all([
+    const [pharmRes, sectionsRes, ownersRes] = await Promise.all([
       supabase.from('pharmacies').select('*').order('created_at', { ascending: false }),
       supabase.from('pharmacy_sections').select('pharmacy_id, section_key'),
+      supabase.from('pharmacy_owners').select('*'),
     ]);
     setPharmacies((pharmRes.data || []) as Pharmacy[]);
 
@@ -1301,6 +1309,13 @@ function PharmaciesTab() {
       });
       setSections(map);
     }
+    const owners: Record<string, PharmacyOwner> = {};
+    if (!ownersRes.error) {
+      (ownersRes.data || []).forEach((row) => {
+        owners[(row as PharmacyOwner).pharmacy_id] = row as PharmacyOwner;
+      });
+    }
+    setOwnersMap(owners);
     setLoading(false);
   }, []);
 
@@ -1330,6 +1345,15 @@ function PharmaciesTab() {
     if (!confirm('هل أنت متأكد من حذف هذه الصيدلية؟ سيتم حذف جميع منتجاتها أيضاً.')) return;
     await supabase.from('pharmacies').delete().eq('id', id);
     fetchPharmacies();
+  };
+
+  const copyOwnerLink = async (pharmacyName: string) => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/admin/pharmacy`);
+      showToast(`تم نسخ رابط إدارة "${pharmacyName}"`);
+    } catch {
+      showToast('تعذر النسخ التلقائي، انسخ الرابط من نافذة الحساب');
+    }
   };
 
   return (
@@ -1382,6 +1406,33 @@ function PharmaciesTab() {
                   {pharmacy.accept_insurance && <span className="flex items-center gap-1"><Shield className="w-3 h-3" />تأمين</span>}
                 </div>
 
+                {/* Pharmacy owner account */}
+                <div className="mt-3 pt-3 border-t border-gray-50 flex flex-wrap items-center gap-2">
+                  {ownersMap[pharmacy.id] ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-teal-50 text-teal-700 border border-teal-200">
+                      <KeyRound className="w-3 h-3" /> حساب المالك موجود
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">
+                      <UserCog className="w-3 h-3" /> بدون حساب مالك
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setOwnerModal(pharmacy)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-gray-900 text-white hover:bg-gray-700 active:scale-95 transition-all"
+                  >
+                    <KeyRound className="w-3 h-3" />
+                    {ownersMap[pharmacy.id] ? 'إدارة حساب المالك' : 'إنشاء حساب المالك'}
+                  </button>
+                  <button
+                    onClick={() => copyOwnerLink(pharmacy.name)}
+                    title="نسخ رابط صفحة إدارة الصيدلية"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 active:scale-95 transition-all"
+                  >
+                    <Link2 className="w-3 h-3" /> نسخ الرابط
+                  </button>
+                </div>
+
                 {/* Home page sections toggle */}
                 <div className="mt-3 pt-3 border-t border-gray-50">
                   <p className="text-[10px] font-black text-gray-400 mb-1.5">الظهور في تبويبات الرئيسية:</p>
@@ -1414,11 +1465,214 @@ function PharmaciesTab() {
       )}
 
       {showForm && <PharmacyForm pharmacy={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchPharmacies(); setShowForm(false); setEditing(null); }} />}
+      {ownerModal && <OwnerAccountModal pharmacy={ownerModal} onClose={() => setOwnerModal(null)} onSaved={() => fetchPharmacies()} />}
     </div>
   );
 }
 
-function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy | null; onClose: () => void; onSaved: () => void }) {
+function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy; onClose: () => void; onSaved: () => void }) {
+  const { settings } = useSettings();
+  const [owner, setOwner] = useState<PharmacyOwner | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  useEffect(() => {
+    (async () => {
+      const { data, error: err } = await supabase
+        .from('pharmacy_owners')
+        .select('*')
+        .eq('pharmacy_id', pharmacy.id)
+        .maybeSingle();
+      if (err && /could not find the table|could not find the function|does not exist|relation .* not found/i.test(err.message)) {
+        setError('جدول أصحاب الصيدليات غير موجود — شغّل ملف المايجرشن supabase/migrations/20260808100000_pharmacy_owners.sql في Supabase SQL Editor');
+      }
+      if (data) setOwner(data as PharmacyOwner);
+      setLoading(false);
+    })();
+  }, [pharmacy.id]);
+
+  const ownerLink = `${window.location.origin}/admin/pharmacy`;
+
+  const handleCreate = async () => {
+    if (!fullName.trim() || !email.trim() || password.length < 6) {
+      setError('برجاء إدخال اسم المالك والبريد الإلكتروني وكلمة مرور (6 أحرف على الأقل)');
+      return;
+    }
+    setError(null);
+    setSaving(true);
+    const normalizedEmail = email.toLowerCase().trim();
+    const { data: existing } = await supabase.from('pharmacy_owners').select('id').eq('email', normalizedEmail).maybeSingle();
+    if (existing) {
+      setError('هذا البريد الإلكتروني مستخدم بالفعل لصيدلية أخرى');
+      setSaving(false);
+      return;
+    }
+    const { data, error: err } = await supabase
+      .from('pharmacy_owners')
+      .insert({
+        pharmacy_id: pharmacy.id,
+        full_name: fullName.trim(),
+        email: normalizedEmail,
+        phone: phone.trim() || null,
+        password_hash: simpleHash(password),
+      })
+      .select()
+      .single();
+    if (err) {
+      setError(err.message);
+      setSaving(false);
+      return;
+    }
+    setOwner(data as PharmacyOwner);
+    setPassword('');
+    setFullName('');
+    setEmail('');
+    setPhone('');
+    setSaving(false);
+    onSaved();
+    showToast('تم إنشاء حساب المالك بنجاح');
+  };
+
+  const handleResetPassword = async () => {
+    if (resetPassword.length < 6) {
+      setError('كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف');
+      return;
+    }
+    setError(null);
+    setSaving(true);
+    const { error: err } = await supabase
+      .from('pharmacy_owners')
+      .update({ password_hash: simpleHash(resetPassword), updated_at: new Date().toISOString() })
+      .eq('id', owner!.id);
+    setSaving(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    setResetPassword('');
+    showToast('تم تغيير كلمة المرور بنجاح');
+  };
+
+  const handleToggleActive = async () => {
+    setSaving(true);
+    const { error: err } = await supabase
+      .from('pharmacy_owners')
+      .update({ is_active: !owner!.is_active, updated_at: new Date().toISOString() })
+      .eq('id', owner!.id);
+    if (!err) {
+      setOwner({ ...owner!, is_active: !owner!.is_active });
+      showToast(owner!.is_active ? 'تم تعطيل حساب المالك' : 'تم تفعيل حساب المالك');
+    } else {
+      setError(err.message);
+    }
+    setSaving(false);
+  };
+
+  return (
+    <Modal onClose={onClose} title={`حساب مالك "${pharmacy.name}"`} wide>
+      <div className="space-y-4">
+        {toast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl">
+            {toast}
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">{error}</div>
+        )}
+
+        {/* Admin link */}
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <p className="text-[11px] font-black text-gray-500 mb-1.5">رابط صفحة إدارة الصيدلية (يرسل لصاحب الصيدلية):</p>
+          <div className="flex items-center gap-2">
+            <input readOnly value={ownerLink} dir="ltr" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 focus:outline-none" />
+            <button
+              onClick={async () => { await navigator.clipboard.writeText(ownerLink); showToast('تم نسخ الرابط'); }}
+              className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-lg text-white text-xs font-bold hover:brightness-110 active:scale-95 transition-all"
+              style={{ backgroundColor: settings.primary_color }}
+            >
+              <Copy className="w-3.5 h-3.5" /> نسخ
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="h-32 animate-pulse bg-gray-100 rounded-xl" />
+        ) : owner ? (
+          <div className="space-y-4">
+            <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold" style={{ backgroundColor: settings.primary_color }}>
+                    {owner.full_name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-black text-gray-900 text-sm">{owner.full_name}</p>
+                    <p className="text-xs text-gray-600" dir="ltr">{owner.email}</p>
+                    {owner.phone && <p className="text-[11px] text-gray-500" dir="ltr">{owner.phone}</p>}
+                  </div>
+                </div>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${owner.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                  {owner.is_active ? 'الحساب نشط' : 'الحساب معطّل'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5">كلمة مرور جديدة</label>
+                <input type="text" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} dir="ltr" className={inputClass} placeholder="كلمة مرور جديدة (6 أحرف على الأقل)" />
+              </div>
+              <div className="flex items-end">
+                <button onClick={handleResetPassword} disabled={saving} className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-white text-xs font-bold disabled:opacity-50 hover:brightness-110 transition-all" style={{ backgroundColor: settings.primary_color }}>
+                  <KeyRound className="w-3.5 h-3.5" /> تغيير كلمة المرور
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={handleToggleActive}
+              disabled={saving}
+              className={`w-full px-4 py-2.5 rounded-xl text-xs font-bold border transition-all disabled:opacity-50 ${owner.is_active ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-700 hover:bg-green-50'}`}
+            >
+              {owner.is_active ? 'تعطيل حساب المالك' : 'تفعيل حساب المالك'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">لا يوجد حساب مالك لهذه الصيدلية بعد. أنشئ حساباً ليرسل لصاحبها ويبدأ بإدارة صيدليته:</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="اسم المالك *"><input value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputClass} placeholder="مثال: أحمد محمد" /></Field>
+              <Field label="رقم الهاتف"><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} dir="ltr" placeholder="01012345678" /></Field>
+            </div>
+            <Field label="البريد الإلكتروني *"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} dir="ltr" placeholder="owner@example.com" /></Field>
+            <Field label="كلمة المرور * (6 أحرف على الأقل)"><input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} dir="ltr" placeholder="••••••••" /></Field>
+            <button onClick={handleCreate} disabled={saving} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white text-sm font-bold disabled:opacity-50 hover:brightness-110 active:scale-[0.99] transition-all" style={{ backgroundColor: settings.primary_color }}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCog className="w-4 h-4" />} إنشاء حساب المالك
+            </button>
+          </div>
+        )}
+
+        <div className="flex justify-end pt-2 border-t border-gray-100">
+          <button onClick={onClose} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">إغلاق</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+export function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy | null; onClose: () => void; onSaved: () => void }) {
   const { settings } = useSettings();
   const [form, setForm] = useState({
     name: pharmacy?.name || '', description: pharmacy?.description || '',
@@ -1549,7 +1803,7 @@ function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy | nul
 // ============================================
 // Products Tab
 // ============================================
-function ProductsTab() {
+export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
   const { settings } = useSettings();
   const [products, setProducts] = useState<Product[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
@@ -1562,16 +1816,20 @@ function ProductsTab() {
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').order('name');
+    let query = supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').order('name');
+    if (pharmacyId) query = query.eq('pharmacy_id', pharmacyId);
+    const { data } = await query;
     setProducts((data || []) as Product[]);
     setLoading(false);
-  }, []);
+  }, [pharmacyId]);
 
   useEffect(() => {
     fetchProducts();
-    supabase.from('pharmacies').select('*').order('name').then(({ data }) => setPharmacies((data || []) as Pharmacy[]));
+    if (!pharmacyId) {
+      supabase.from('pharmacies').select('*').order('name').then(({ data }) => setPharmacies((data || []) as Pharmacy[]));
+    }
     supabase.from('categories').select('*').order('name').then(({ data }) => setCategories((data || []) as Category[]));
-  }, [fetchProducts]);
+  }, [fetchProducts, pharmacyId]);
 
   const filtered = products.filter((p) => !filterPharmacy || p.pharmacy_id === filterPharmacy).filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -1589,10 +1847,12 @@ function ProductsTab() {
             <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="بحث عن منتج..." className="w-full pr-10 pl-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: settings.primary_color }} />
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           </div>
-          <select value={filterPharmacy} onChange={(e) => setFilterPharmacy(e.target.value)} className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: settings.primary_color }}>
-            <option value="">كل الصيدليات</option>
-            {pharmacies.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          {!pharmacyId && (
+            <select value={filterPharmacy} onChange={(e) => setFilterPharmacy(e.target.value)} className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: settings.primary_color }}>
+              <option value="">كل الصيدليات</option>
+              {pharmacies.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          )}
         </div>
         <button onClick={() => { setEditing(null); setShowForm(true); }} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-medium shrink-0" style={{ backgroundColor: settings.primary_color }}><Plus className="w-4 h-4" /> إضافة منتج</button>
       </div>
@@ -1605,7 +1865,7 @@ function ProductsTab() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs"><tr>
                 <th className="text-right p-3 font-medium">المنتج</th>
-                <th className="text-right p-3 font-medium hidden sm:table-cell">الصيدلية</th>
+                {!pharmacyId && <th className="text-right p-3 font-medium hidden sm:table-cell">الصيدلية</th>}
                 <th className="text-right p-3 font-medium hidden md:table-cell">الفئة</th>
                 <th className="text-right p-3 font-medium">السعر</th>
                 <th className="text-right p-3 font-medium hidden sm:table-cell">المخزون</th>
@@ -1628,7 +1888,7 @@ function ProductsTab() {
                           </div>
                         </div>
                       </td>
-                      <td className="p-3 text-gray-600 hidden sm:table-cell">{product.pharmacy?.name}</td>
+                      {!pharmacyId && <td className="p-3 text-gray-600 hidden sm:table-cell">{product.pharmacy?.name}</td>}
                       <td className="p-3 text-gray-600 hidden md:table-cell">{product.category?.name || '-'}</td>
                       <td className="p-3"><span className="font-semibold" style={{ color: settings.primary_color }}>{finalPrice.toFixed(2)}</span>{discount && <span className="text-xs text-gray-400 line-through mr-1">{product.price.toFixed(2)}</span>}<span className="text-xs text-gray-400"> ج.م</span></td>
                       <td className="p-3 hidden sm:table-cell"><span className={`text-xs font-medium ${product.stock_quantity > 10 ? 'text-green-600' : product.stock_quantity > 0 ? 'text-amber-600' : 'text-red-500'}`}>{product.stock_quantity}</span></td>
@@ -1646,17 +1906,17 @@ function ProductsTab() {
         </div>
       )}
 
-      {showForm && <ProductForm product={editing} pharmacies={pharmacies} categories={categories} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchProducts(); setShowForm(false); setEditing(null); }} />}
+      {showForm && <ProductForm product={editing} pharmacies={pharmacies} categories={categories} lockedPharmacy={pharmacyId ? { id: pharmacyId, name: '' } : undefined} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchProducts(); setShowForm(false); setEditing(null); }} />}
     </div>
   );
 }
 
-function ProductForm({ product, pharmacies, categories, onClose, onSaved }: { product: Product | null; pharmacies: Pharmacy[]; categories: Category[]; onClose: () => void; onSaved: () => void }) {
+export function ProductForm({ product, pharmacies, categories, onClose, onSaved, lockedPharmacy }: { product: Product | null; pharmacies: Pharmacy[]; categories: Category[]; onClose: () => void; onSaved: () => void; lockedPharmacy?: { id: string; name: string } }) {
   const { settings } = useSettings();
   const [form, setForm] = useState({
     name: product?.name || '', name_en: product?.name_en || '', description: product?.description || '',
     price: product?.price?.toString() || '', unit: product?.unit || 'قطعة', image_url: product?.image_url || '',
-    pharmacy_id: product?.pharmacy_id || pharmacies[0]?.id || '', category_id: product?.category_id || '',
+    pharmacy_id: lockedPharmacy?.id || product?.pharmacy_id || pharmacies[0]?.id || '', category_id: product?.category_id || '',
     for_all_pharmacies: product?.for_all_pharmacies ?? false,
     is_available: product?.is_available ?? true, requires_prescription: product?.requires_prescription ?? false,
     active_ingredient: product?.active_ingredient || '', manufacturer: product?.manufacturer || '',
@@ -1667,7 +1927,7 @@ function ProductForm({ product, pharmacies, categories, onClose, onSaved }: { pr
 
   const handleSave = async () => {
     setSaving(true);
-    const ownerPharmacyId = form.for_all_pharmacies && !form.pharmacy_id ? pharmacies[0]?.id || '' : form.pharmacy_id;
+    const ownerPharmacyId = lockedPharmacy?.id || (form.for_all_pharmacies && !form.pharmacy_id ? pharmacies[0]?.id || '' : form.pharmacy_id);
     const payload = {
       name: form.name, name_en: form.name_en, description: form.description,
       price: parseFloat(form.price) || 0, unit: form.unit, image_url: form.image_url,
@@ -1703,33 +1963,35 @@ function ProductForm({ product, pharmacies, categories, onClose, onSaved }: { pr
           <Field label="الوحدة"><input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className={inputClass} placeholder="شريط / علبة" /></Field>
           <Field label="الفئة"><select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={inputClass}><option value="">بدون فئة</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
         </div>
-        <div className="space-y-2">
-          <Field label="الصيدلية">
-            <select
-              value={form.pharmacy_id}
-              onChange={(e) => setForm({ ...form, pharmacy_id: e.target.value })}
-              className={inputClass}
-              disabled={form.for_all_pharmacies}
-            >
-              <option value="">اختر صيدلية</option>
-              {pharmacies.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          </Field>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.for_all_pharmacies}
-              onChange={(e) => setForm({ ...form, for_all_pharmacies: e.target.checked })}
-              className="w-4 h-4 rounded"
-            />
-            <span className="text-sm text-gray-700">متاح في جميع الصيدليات</span>
-          </label>
-          {form.for_all_pharmacies && (
-            <p className="text-[11px] font-bold text-teal-600 flex items-center gap-1">
-              <Check className="w-3.5 h-3.5" /> هذا المنتج سيظهر في كل صيدليات الموقع.
-            </p>
-          )}
-        </div>
+        {!lockedPharmacy && (
+          <div className="space-y-2">
+            <Field label="الصيدلية">
+              <select
+                value={form.pharmacy_id}
+                onChange={(e) => setForm({ ...form, pharmacy_id: e.target.value })}
+                className={inputClass}
+                disabled={form.for_all_pharmacies}
+              >
+                <option value="">اختر صيدلية</option>
+                {pharmacies.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </Field>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.for_all_pharmacies}
+                onChange={(e) => setForm({ ...form, for_all_pharmacies: e.target.checked })}
+                className="w-4 h-4 rounded"
+              />
+              <span className="text-sm text-gray-700">متاح في جميع الصيدليات</span>
+            </label>
+            {form.for_all_pharmacies && (
+              <p className="text-[11px] font-bold text-teal-600 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> هذا المنتج سيظهر في كل صيدليات الموقع.
+              </p>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="المادة الفعالة"><input value={form.active_ingredient} onChange={(e) => setForm({ ...form, active_ingredient: e.target.value })} className={inputClass} placeholder="مثال: باراسيتامول" /></Field>
           <Field label="الشركة المنتجة"><input value={form.manufacturer} onChange={(e) => setForm({ ...form, manufacturer: e.target.value })} className={inputClass} placeholder="مثال: GlaxoSmithKline" /></Field>

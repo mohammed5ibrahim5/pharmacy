@@ -162,6 +162,18 @@ export interface PharmacyWithDistance extends Pharmacy {
   distance?: number;
 }
 
+export interface PharmacyOwner {
+  id: string;
+  pharmacy_id: string;
+  full_name: string;
+  email: string;
+  password_hash: string;
+  phone: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Review {
   id: string;
   pharmacy_id: string;

@@ -3,6 +3,7 @@ import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { RouterProvider, useRouter } from '@/context/RouterContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { PharmacyOwnerProvider } from '@/context/PharmacyOwnerContext';
 import { CustomerProvider } from '@/context/CustomerContext';
 import { FavoritesProvider } from '@/context/FavoritesContext';
 import { OrderProvider } from '@/context/OrderContext';
@@ -23,6 +24,7 @@ import { Loader2, Cross } from 'lucide-react';
 
 const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
 const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage').then((m) => ({ default: m.AdminLoginPage })));
+const PharmacyAdminPage = lazy(() => import('@/pages/PharmacyAdminPage').then((m) => ({ default: m.PharmacyAdminPage })));
 
 function SiteLoading() {
   const { loading, themeColors } = useSettings();
@@ -66,6 +68,20 @@ function AdminRoute() {
   );
 }
 
+function PharmacyAdminRoute() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        </div>
+      }
+    >
+      <PharmacyAdminPage />
+    </Suspense>
+  );
+}
+
 function SiteContent() {
   const { route } = useRouter();
   const { dir } = useLanguage();
@@ -92,18 +108,32 @@ function SiteContent() {
 }
 
 function AppContent() {
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [path, setPath] = useState(window.location.pathname);
 
   useEffect(() => {
-    const checkAdmin = () => {
-      setIsAdmin(window.location.pathname.startsWith('/admin'));
-    };
+    const checkAdmin = () => setPath(window.location.pathname);
     checkAdmin();
     window.addEventListener('popstate', checkAdmin);
     return () => window.removeEventListener('popstate', checkAdmin);
   }, []);
 
-  if (isAdmin) {
+  const isPharmacyAdmin = path.startsWith('/admin/pharmacy');
+  const isSiteAdmin = path.startsWith('/admin') && !isPharmacyAdmin;
+
+  if (isPharmacyAdmin) {
+    return (
+      <LanguageProvider>
+        <SettingsProvider>
+          <PharmacyOwnerProvider>
+            <SiteLoading />
+            <PharmacyAdminRoute />
+          </PharmacyOwnerProvider>
+        </SettingsProvider>
+      </LanguageProvider>
+    );
+  }
+
+  if (isSiteAdmin) {
     return (
       <LanguageProvider>
         <AuthProvider>
