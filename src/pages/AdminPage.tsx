@@ -33,7 +33,7 @@ import {
 import { insertNotification } from '@/lib/notifications';
 import { notifyStockAvailable } from '@/lib/loyalty';
 import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HeroStat, HowItWorksConfig, HomepageConfig, PharmacyOwner } from '@/types';
-import { simpleHash } from '@/lib/ownerAuth';
+import { hashPassword } from '@/lib/ownerAuth';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
 
@@ -1519,6 +1519,7 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
       setSaving(false);
       return;
     }
+    const { hash, salt } = await hashPassword(password);
     const { data, error: err } = await supabase
       .from('pharmacy_owners')
       .insert({
@@ -1526,7 +1527,8 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
         full_name: fullName.trim(),
         email: normalizedEmail,
         phone: phone.trim() || null,
-        password_hash: simpleHash(password),
+        password_hash: hash,
+        password_salt: salt,
       })
       .select()
       .single();
@@ -1552,9 +1554,10 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
     }
     setError(null);
     setSaving(true);
+    const { hash, salt } = await hashPassword(resetPassword);
     const { error: err } = await supabase
       .from('pharmacy_owners')
-      .update({ password_hash: simpleHash(resetPassword), updated_at: new Date().toISOString() })
+      .update({ password_hash: hash, password_salt: salt, updated_at: new Date().toISOString() })
       .eq('id', owner!.id);
     setSaving(false);
     if (err) {

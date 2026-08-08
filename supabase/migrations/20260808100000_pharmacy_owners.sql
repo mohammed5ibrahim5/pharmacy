@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS pharmacy_owners (
   full_name text NOT NULL DEFAULT '',
   email text NOT NULL UNIQUE,
   password_hash text NOT NULL,
+  password_salt text,
   phone text,
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamptz DEFAULT now(),

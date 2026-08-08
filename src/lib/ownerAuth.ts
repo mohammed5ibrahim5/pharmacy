@@ -3,7 +3,7 @@ import type { Pharmacy, PharmacyOwner } from '@/types';
 
 export const OWNER_SESSION_KEY = 'pharmacy_owner_session';
 
-// Simple hash function (demo only — same approach as customer accounts)
+// Legacy simple hash — kept only للتحقق من الحسابات القديمة التي لا تحتوي ملحًا
 export function simpleHash(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -12,6 +12,34 @@ export function simpleHash(str: string): string {
     hash |= 0;
   }
   return 'h' + Math.abs(hash).toString(36) + '_' + str.length;
+}
+
+function bytesToHex(buf: ArrayBuffer): string {
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function randomSalt(length = 16): string {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return bytesToHex(digest);
+}
+
+// تشفير آمن: SHA-256 مع ملح عشوائي لكل حساب
+export async function hashPassword(password: string): Promise<{ hash: string; salt: string }> {
+  const salt = randomSalt();
+  const hash = await sha256Hex(`${salt}:${password}`);
+  return { hash, salt };
+}
+
+export async function verifyPassword(password: string, storedHash: string, salt?: string | null): Promise<boolean> {
+  if (!salt) return simpleHash(password) === storedHash;
+  return (await sha256Hex(`${salt}:${password}`)) === storedHash;
 }
 
 export function getOwnerSessionId(): string | null {
@@ -57,7 +85,7 @@ export async function loginOwner(
   if (!owner.is_active) {
     return { owner: null, pharmacy: null, error: 'هذا الحساب معطّل، تواصل مع مدير الموقع' };
   }
-  if (owner.password_hash !== simpleHash(password)) {
+  if (!(await verifyPassword(password, owner.password_hash, (owner as PharmacyOwner & { password_salt?: string | null }).password_salt))) {
     return { owner: null, pharmacy: null, error: 'كلمة المرور غير صحيحة' };
   }
   const pharmacy = await fetchPharmacy(owner.pharmacy_id);
