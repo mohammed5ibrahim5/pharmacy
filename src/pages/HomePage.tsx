@@ -136,7 +136,7 @@ function statDisplayValue(stat: { id: string; value: string; auto?: boolean; aut
 type PharmacyTab = 'nearest' | 'highest_rated' | 'most_popular' | 'delivery' | '24h';
 
 export function HomePage() {
-  const { settings, themeColors, heroConfig, storeConfig } = useSettings();
+  const { settings, themeColors, heroConfig, storeConfig, homepageConfig } = useSettings();
   const { t, lang, dir } = useLanguage();
   const { navigate } = useRouter();
   const { location, requestLocation, loading, permissionDenied, setUserLocation } = useGeolocation();
@@ -745,10 +745,10 @@ export function HomePage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              {t('الصيدليات المتاحة بجوارك')}
+              {t(homepageConfig.pharmaciesTitle)}
             </h2>
             <p className="text-sm text-slate-500 mt-1.5 font-bold">
-              {t('تصفح الصيدليات حسب تصنيف احتياجك')}
+              {t(homepageConfig.pharmaciesSubtitle)}
             </p>
           </div>
           <span

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig, StoreConfig, HowItWorksConfig } from '@/types';
+import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig, StoreConfig, HowItWorksConfig, HomepageConfig } from '@/types';
 import type { PaymentConfig } from '@/lib/orders';
 
 export interface ThemeColors {
@@ -232,6 +232,11 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
   catalogWhatsapp: '',
 };
 
+export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
+  pharmaciesTitle: 'الصيدليات المتاحة بجوارك',
+  pharmaciesSubtitle: 'تصفح الصيدليات حسب تصنيف احتياجك',
+};
+
 export interface LoyaltyConfig {
   enabled: boolean;
   pointsPerOrder: number;
@@ -324,6 +329,7 @@ interface SettingsContextType {
   heroConfig: HeroConfig;
   howItWorksConfig: HowItWorksConfig;
   storeConfig: StoreConfig;
+  homepageConfig: HomepageConfig;
   loyaltyConfig: LoyaltyConfig;
   featuresConfig: FeaturesConfig;
   darkMode: boolean;
@@ -369,6 +375,7 @@ const SettingsContext = createContext<SettingsContextType>({
   heroConfig: DEFAULT_HERO_CONFIG,
   howItWorksConfig: DEFAULT_HOW_IT_WORKS_CONFIG,
   storeConfig: DEFAULT_STORE_CONFIG,
+  homepageConfig: DEFAULT_HOMEPAGE_CONFIG,
   loyaltyConfig: DEFAULT_LOYALTY_CONFIG,
   featuresConfig: DEFAULT_FEATURES_CONFIG,
   darkMode: false,
@@ -386,6 +393,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [heroConfig, setHeroConfig] = useState<HeroConfig>(DEFAULT_HERO_CONFIG);
   const [howItWorksConfig, setHowItWorksConfig] = useState<HowItWorksConfig>(DEFAULT_HOW_IT_WORKS_CONFIG);
   const [storeConfig, setStoreConfig] = useState<StoreConfig>(DEFAULT_STORE_CONFIG);
+  const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
   const [loyaltyConfig, setLoyaltyConfig] = useState<LoyaltyConfig>(DEFAULT_LOYALTY_CONFIG);
   const [featuresConfig, setFeaturesConfig] = useState<FeaturesConfig>(DEFAULT_FEATURES_CONFIG);
   const [darkMode, setDarkMode] = useState<boolean>(() => {
@@ -416,6 +424,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     let hero = { ...DEFAULT_HERO_CONFIG };
     let howItWorks = { ...DEFAULT_HOW_IT_WORKS_CONFIG };
     let store = { ...DEFAULT_STORE_CONFIG };
+    let homepage = { ...DEFAULT_HOMEPAGE_CONFIG };
     let loyalty = { ...DEFAULT_LOYALTY_CONFIG };
     let features = { ...DEFAULT_FEATURES_CONFIG };
     if (siteSettings.features_json) {
@@ -449,6 +458,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (parsed && parsed.storeConfig) {
           store = { ...DEFAULT_STORE_CONFIG, ...parsed.storeConfig };
         }
+        if (parsed && parsed.homepageConfig) {
+          homepage = { ...DEFAULT_HOMEPAGE_CONFIG, ...parsed.homepageConfig };
+        }
         if (parsed && parsed.loyaltyConfig) {
           loyalty = { ...DEFAULT_LOYALTY_CONFIG, ...parsed.loyaltyConfig };
         }
@@ -472,6 +484,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setHeroConfig(hero);
     setHowItWorksConfig(howItWorks);
     setStoreConfig(store);
+    setHomepageConfig(homepage);
     setLoyaltyConfig(loyalty);
     setFeaturesConfig(features);
     setLoading(false);
@@ -530,6 +543,7 @@ return (
         heroConfig,
         howItWorksConfig,
         storeConfig,
+        homepageConfig,
         loyaltyConfig,
         featuresConfig,
         darkMode,

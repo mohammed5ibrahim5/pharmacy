@@ -10,7 +10,7 @@ import {
   Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
+import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_HOMEPAGE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { translateError } from '@/lib/errorMessages';
 import {
@@ -32,7 +32,7 @@ import {
 } from '@/lib/prescriptions';
 import { insertNotification } from '@/lib/notifications';
 import { notifyStockAvailable } from '@/lib/loyalty';
-import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HeroStat, HowItWorksConfig } from '@/types';
+import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HeroStat, HowItWorksConfig, HomepageConfig } from '@/types';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
 
@@ -2514,6 +2514,12 @@ function SettingsTab() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [mockSearch, setMockSearch] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   const settingsNav = [
     { id: 'identity', label: 'الهوية والواجهة', icon: <Cross className="w-4 h-4" /> },
@@ -2658,6 +2664,21 @@ function SettingsTab() {
     return { ...DEFAULT_FEATURES_CONFIG };
   });
 
+  // Initialize homepage config state
+  const [homepageCfg, setHomepageCfg] = useState<HomepageConfig>(() => {
+    if (settings.features_json) {
+      try {
+        const parsed = JSON.parse(settings.features_json);
+        if (parsed && parsed.homepageConfig) {
+          return { ...DEFAULT_HOMEPAGE_CONFIG, ...parsed.homepageConfig };
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return { ...DEFAULT_HOMEPAGE_CONFIG };
+  });
+
   // Sync colors with site settings colors
   useEffect(() => {
     setColors(prev => ({
@@ -2668,7 +2689,18 @@ function SettingsTab() {
     }));
   }, [form.primary_color, form.secondary_color, form.accent_color]);
 
+  // Re-sync form with loaded settings if it mounted before settings arrived
+  useEffect(() => {
+    if (settings.id && form.id === '') {
+      setForm(settings);
+    }
+  }, [settings, form.id]);
+
   const handleSave = async () => {
+    if (!form.id) {
+      showToast('تعذر الحفظ — لم يتم تحميل الإعدادات بعد، أعد المحاولة بعد قليل');
+      return;
+    }
     setSaving(true);
     
 // Save colors and header config inside features_json
@@ -2687,11 +2719,12 @@ function SettingsTab() {
       heroConfig: heroCfg,
       howItWorksConfig: howCfg,
       storeConfig: existingStoreConfig,
+      homepageConfig: homepageCfg,
       loyaltyConfig: loyaltyCfg,
       featuresConfig: featuresCfg,
     });
 
-    await supabase.from('site_settings').update({
+    const { error: saveError } = await supabase.from('site_settings').update({
       site_name: form.site_name,
       site_tagline: form.site_tagline,
       site_description: form.site_description,
@@ -2718,6 +2751,10 @@ function SettingsTab() {
     }).eq('id', form.id);
 
     setSaving(false);
+    if (saveError) {
+      showToast(translateError(saveError.message).ar || 'تعذر حفظ الإعدادات، حاول مرة أخرى');
+      return;
+    }
     setSaved(true);
     refresh();
     setTimeout(() => setSaved(false), 2000);
@@ -3799,7 +3836,7 @@ function SettingsTab() {
                   <div className="rounded-[2rem] bg-slate-900 p-2.5 shadow-2xl border border-slate-700">
                     <div className="relative bg-slate-100 rounded-[1.6rem] overflow-hidden text-slate-900">
                       <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-14 h-3 rounded-full bg-slate-900 z-20" />
-                      <SitePreviewMockup colors={colors} form={form} headerCfg={headerCfg} mockSearch={mockSearch} onSearchChange={setMockSearch} device="mobile" compact />
+                      <SitePreviewMockup colors={colors} form={form} headerCfg={headerCfg} mockSearch={mockSearch} onSearchChange={setMockSearch} device="mobile" compact pharmaciesTitle={homepageCfg.pharmaciesTitle} />
                     </div>
                   </div>
                 </div>
@@ -3910,6 +3947,14 @@ function SettingsTab() {
           <SettingsSection title="قسم من نحن" icon={<Users className="w-5 h-5" />}>
             <Field label="عنوان القسم"><input value={form.about_title || ''} onChange={(e) => setForm({ ...form, about_title: e.target.value })} className={inputClass} /></Field>
             <Field label="نص القسم"><textarea value={form.about_text || ''} onChange={(e) => setForm({ ...form, about_text: e.target.value })} className={inputClass} rows={3} /></Field>
+          </SettingsSection>
+
+          <SettingsSection title="قسم الصيدليات في الصفحة الرئيسية" icon={<Store className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              العنوان والنص الفرعي اللذان يظهران أعلى قسم الصيدليات في الصفحة الرئيسية للموقع.
+            </p>
+            <Field label="العنوان الرئيسي للقسم"><input value={homepageCfg.pharmaciesTitle} onChange={(e) => setHomepageCfg({ ...homepageCfg, pharmaciesTitle: e.target.value })} className={inputClass} placeholder="مثال: الصيدليات المتاحة بجوارك" /></Field>
+            <Field label="النص الفرعي للقسم"><input value={homepageCfg.pharmaciesSubtitle} onChange={(e) => setHomepageCfg({ ...homepageCfg, pharmaciesSubtitle: e.target.value })} className={inputClass} placeholder="مثال: تصفح الصيدليات حسب تصنيف احتياجك" /></Field>
           </SettingsSection>
 
           <SettingsSection title="الشريط الإعلاني" icon={<Megaphone className="w-5 h-5" />}>
@@ -4228,6 +4273,12 @@ function SettingsTab() {
           </button>
         </div>
       </div>
+
+      {toast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-white text-xs font-bold shadow-xl" style={{ backgroundColor: '#dc2626' }}>
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
@@ -4240,6 +4291,7 @@ function SitePreviewMockup({
   onSearchChange,
   device,
   compact = false,
+  pharmaciesTitle = 'الصيدليات الشريكة',
 }: {
   colors: ThemeColors;
   form: SiteSettings;
@@ -4248,6 +4300,7 @@ function SitePreviewMockup({
   onSearchChange: (v: string) => void;
   device: 'desktop' | 'tablet' | 'mobile';
   compact?: boolean;
+  pharmaciesTitle?: string;
 }) {
   const isMobile = device === 'mobile';
   const narrow = isMobile || compact;
@@ -4541,7 +4594,7 @@ function SitePreviewMockup({
       {!compact && (
       <div className="px-[1.2em] py-[1em] bg-white">
         <div className="flex items-center justify-between mb-[0.8em]">
-          <span className="text-[1em] font-black text-gray-800">الصيدليات الشريكة</span>
+          <span className="text-[1em] font-black text-gray-800">{pharmaciesTitle}</span>
           <span className="flex items-center gap-[0.3em] text-[0.72em] font-bold" style={{ color: colors.primaryColor }}>
             عرض الكل
             <ChevronDown className="w-[0.9em] h-[0.9em] -rotate-90" />

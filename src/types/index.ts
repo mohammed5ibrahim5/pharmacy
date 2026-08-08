@@ -124,6 +124,11 @@ export interface StoreConfig {
   catalogWhatsapp: string;
 }
 
+export interface HomepageConfig {
+  pharmaciesTitle: string;
+  pharmaciesSubtitle: string;
+}
+
 export interface SiteSettings {
   id: string;
   site_name: string;
