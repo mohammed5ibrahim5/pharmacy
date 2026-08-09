@@ -96,6 +96,7 @@
   'أكمل {0} نقطة إضافية لتحصل على خصم {1} ج.م على طلبك القادم': 'Earn {0} more points to get a {1} EGP discount on your next order',
   'كل {0} ج.م =': 'Every {0} EGP =',
   '1 نقطة': '1 point',
+  'نقطة': 'point(s)',
   '{0} نقاط لكل طلب': '{0} points per order',
   'احصل عليها تلقائياً بعد تأكيد أي طلب جديد': 'Earn them automatically once any new order is confirmed',
   '{0} نقطة = خصم {1} ج.م': '{0} points = {1} EGP discount',

@@ -136,6 +136,15 @@
   'مكافأة طلب موحّد من {0} صيدلية': 'Reward for a combined order from {0} pharmacies',
   'الطلب لمين؟': 'Who is this order for?',
   'نفسي (أنا)': 'Myself',
+  'نقاطك المتاحة': 'Your available points',
+  'كل {0} نقطة = خصم {1} ج.م على طلبك': 'Every {0} points = {1} EGP discount on your order',
+  '{0} نقطة': '{0} points',
+  'يمكنك استبدال حتى {0} نقطة بخصم {1} ج.م': 'You can redeem up to {0} points for a {1} EGP discount',
+  'استخدم نقاطك للحصول على خصم': 'Use your points to get a discount',
+  'سيتم خصم {0} ج.م من إجمالي طلبك': '{0} EGP will be deducted from your order total',
+  'خصم نقاط الولاء': 'Loyalty points discount',
+  'استبدال {0} نقطة بخصم {1} ج.م': 'Redeemed {0} points for a {1} EGP discount',
+  'تم خصم {0} ج.م من إجمالي طلبك باستخدام نقاط الولاء.': '{0} EGP was deducted from your order total using loyalty points.',
 
   // DoseCalculatorModal
   'حاسبة جرعات الأطفال': 'Kids dose calculator',

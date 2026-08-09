@@ -3,7 +3,7 @@ import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
   Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark,
   Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2, Download, FileText, ZoomIn,
-  Users,
+  Users, Gift,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -48,6 +48,10 @@ export function OrderModal() {
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [selectedFamilyMember, setSelectedFamilyMember] = useState<string>('');
+  const [loyaltyBalance, setLoyaltyBalance] = useState(0);
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
+  const [lastEarnedPoints, setLastEarnedPoints] = useState(0);
+  const [lastRedeemedDiscount, setLastRedeemedDiscount] = useState(0);
   const [address, setAddress] = useState(profile?.phone || '');
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('vodafone_cash');
@@ -89,6 +93,23 @@ export function OrderModal() {
       cancelled = true;
     };
   }, [cartOpen, user, featuresConfig.familyMembers]);
+
+  useEffect(() => {
+    if (!cartOpen || !user || !loyaltyConfig.enabled) return;
+    let cancelled = false;
+    const loadBalance = async () => {
+      const { data } = await supabase.from('customers').select('loyalty_points').eq('id', user.id).maybeSingle();
+      if (!cancelled) {
+        const bal = Number((data as { loyalty_points?: number } | null)?.loyalty_points || 0);
+        setLoyaltyBalance(bal);
+        setPointsToRedeem(0);
+      }
+    };
+    loadBalance();
+    return () => {
+      cancelled = true;
+    };
+  }, [cartOpen, user, loyaltyConfig.enabled]);
 
   useEffect(() => {
     if (!cartOpen) return;
@@ -141,6 +162,18 @@ export function OrderModal() {
 
   const totalDelivery = groups.reduce((sum, g) => sum + groupFee(g), 0);
   const total = subtotal + totalDelivery;
+
+  // ===== Loyalty redemption =====
+  const redeemStep = Math.max(1, loyaltyConfig.redeemThreshold || 1);
+  const redeemValue = Math.max(0, loyaltyConfig.redeemValue || 0);
+  const maxChunksByBalance = Math.floor(loyaltyBalance / redeemStep);
+  const maxChunksBySubtotal = redeemValue > 0 ? Math.floor(subtotal / redeemValue) : 0;
+  const usableChunks = loyaltyConfig.enabled && redeemValue > 0
+    ? Math.max(0, Math.min(maxChunksByBalance, maxChunksBySubtotal))
+    : 0;
+  const redeemChunks = Math.min(usableChunks, Math.floor(pointsToRedeem / redeemStep));
+  const loyaltyDiscount = Math.round(redeemChunks * redeemValue * 100) / 100;
+  const totalAfterDiscount = Math.max(0, total - loyaltyDiscount);
 
   const displayTotal = catalogMode ? subtotal : total;
 
@@ -274,10 +307,16 @@ export function OrderModal() {
               {t('طلبك موحّد من {0} صيدليات في توصيلة واحدة.', [groups.length])}
             </div>
           )}
-          {loyaltyConfig.enabled && loyaltyConfig.pointsPerOrder > 0 && (
+          {lastRedeemedDiscount > 0 && (
+            <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex items-center gap-2 text-xs font-bold text-teal-700 mb-4">
+              <Gift className="w-4 h-4 shrink-0" />
+              {t('تم خصم {0} ج.م من إجمالي طلبك باستخدام نقاط الولاء.', [lastRedeemedDiscount.toFixed(2)])}
+            </div>
+          )}
+          {loyaltyConfig.enabled && lastEarnedPoints > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2 text-xs font-bold text-amber-700 mb-4">
               <Sparkles className="w-4 h-4 shrink-0" />
-              {t('حصلت على {0} نقطة مكافأة أُضيفت لرصيدك!', [loyaltyConfig.pointsPerOrder])}
+              {t('حصلت على {0} نقطة مكافأة أُضيفت لرصيدك!', [lastEarnedPoints])}
             </div>
           )}
           <button
@@ -372,6 +411,7 @@ export function OrderModal() {
 
     try {
       const screenshotUrl = screenshot.startsWith('data:') ? await uploadPaymentScreenshot(screenshot) : screenshot;
+      const redeemedPoints = redeemChunks * redeemStep;
       const { data: groupData, error: groupErr } = await supabase
         .from('order_groups')
         .insert({
@@ -384,7 +424,9 @@ export function OrderModal() {
           payment_number: methodNumber,
           payment_screenshot_url: screenshotUrl,
           delivery_fee: totalDelivery,
-          total_price: total,
+          total_price: totalAfterDiscount,
+          loyalty_discount: loyaltyDiscount,
+          points_used: redeemedPoints,
         })
         .select('id')
         .single();
@@ -394,15 +436,21 @@ export function OrderModal() {
         return;
       }
 
-      const rows = cart.map((entry) => {
-        const price = finalPriceOf(entry.product) * entry.quantity;
+      const lineTotals = cart.map((entry) => finalPriceOf(entry.product) * entry.quantity);
+      const lineSum = lineTotals.reduce((s, v) => s + v, 0) || 1;
+      const rows = cart.map((entry, i) => {
+        const price = lineTotals[i];
+        const share = lineSum > 0 ? (price / lineSum) * loyaltyDiscount : 0;
+        const rounded = i === cart.length - 1
+          ? Math.max(0, Math.round((loyaltyDiscount - lineTotals.slice(0, -1).reduce((s, v) => s + Math.round((v / lineSum) * loyaltyDiscount * 100) / 100, 0)) * 100) / 100)
+          : Math.round(share * 100) / 100;
         return {
           customer_id: user.id,
           family_member_id: selectedFamilyMember || null,
           product_id: entry.product.id,
           pharmacy_id: entry.product.pharmacy_id || null,
           quantity: entry.quantity,
-          total_price: price,
+          total_price: Math.max(0, Math.round((price - rounded) * 100) / 100),
           address: address || null,
           note: note || null,
           status: 'pending' as const,
@@ -417,12 +465,29 @@ export function OrderModal() {
       if (err) {
         setError(localizedError(err.message, lang));
       } else {
-        const earnedPoints = loyaltyConfig.enabled ? loyaltyConfig.pointsPerOrder : 0;
-        if (earnedPoints > 0) {
-          const { data: customer } = await supabase.from('customers').select('loyalty_points').eq('id', user.id).maybeSingle();
-          const current = Number((customer as { loyalty_points?: number } | null)?.loyalty_points || 0);
-          await awardLoyaltyPoints(user.id, current + earnedPoints, t('مكافأة طلب موحّد من {0} صيدلية', [groups.length]));
+        const { data: customer } = await supabase.from('customers').select('loyalty_points').eq('id', user.id).maybeSingle();
+        const current = Number((customer as { loyalty_points?: number } | null)?.loyalty_points || 0);
+
+        if (redeemedPoints > 0) {
+          const newBalance = Math.max(0, current - redeemedPoints);
+          await supabase.from('customers').update({ loyalty_points: newBalance }).eq('id', user.id);
+          await supabase.from('loyalty_transactions').insert({
+            customer_id: user.id,
+            points: -redeemedPoints,
+            reason: t('استبدال {0} نقطة بخصم {1} ج.م', [redeemedPoints, loyaltyDiscount.toFixed(2)]),
+          });
         }
+
+        const earnBase = loyaltyConfig.enabled ? (loyaltyConfig.pointsPerOrder || 0) : 0;
+        const earnSpend = loyaltyConfig.enabled && (loyaltyConfig.pointsPerPound || 0) > 0
+          ? Math.floor(totalAfterDiscount / loyaltyConfig.pointsPerPound)
+          : 0;
+        const earnedPoints = earnBase + earnSpend;
+        if (earnedPoints > 0) {
+          await awardLoyaltyPoints(user.id, current + earnedPoints - redeemedPoints, t('مكافأة طلب موحّد من {0} صيدلية', [groups.length]));
+        }
+        setLastEarnedPoints(earnedPoints);
+        setLastRedeemedDiscount(loyaltyDiscount);
         setSuccess(true);
       }
     } catch {
@@ -996,6 +1061,52 @@ export function OrderModal() {
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={t('أي تفاصيل إضافية...')} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm" style={{ ['--tw-ring-color' as string]: themeColors.priceColor }} />
           </div>
 
+          {loyaltyConfig.enabled && redeemValue > 0 && loyaltyBalance > 0 && (
+            <div className="rounded-2xl border border-dashed p-4 space-y-3" style={{ borderColor: `${themeColors.priceColor}66` }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Gift className="w-4 h-4" style={{ color: themeColors.priceColor }} />
+                  <span className="text-sm font-bold text-gray-800">{t('نقاطك المتاحة')}</span>
+                </div>
+                <span className="text-sm font-extrabold" style={{ color: themeColors.priceColor }}>{loyaltyBalance} {t('نقطة')}</span>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-2">
+                  {t('كل {0} نقطة = خصم {1} ج.م على طلبك', [redeemStep, redeemValue.toFixed(0)])}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    min={0}
+                    max={usableChunks * redeemStep}
+                    step={redeemStep}
+                    value={Math.min(pointsToRedeem, usableChunks * redeemStep)}
+                    onChange={(e) => setPointsToRedeem(Number(e.target.value))}
+                    className="flex-1"
+                  />
+                  <span className="text-xs font-bold text-gray-700 w-16 text-center">{t('{0} نقطة', [Math.min(pointsToRedeem, usableChunks * redeemStep)])}</span>
+                </div>
+                {redeemChunks === 0 && usableChunks > 0 && (
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    {t('يمكنك استبدال حتى {0} نقطة بخصم {1} ج.م', [usableChunks * redeemStep, (usableChunks * redeemValue).toFixed(0)])}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPointsToRedeem(pointsToRedeem >= redeemStep ? 0 : Math.min(usableChunks * redeemStep, loyaltyBalance))}
+                className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                  redeemChunks > 0 ? 'text-white border-transparent' : 'text-gray-600 border-gray-200 bg-white'
+                }`}
+                style={redeemChunks > 0 ? { backgroundColor: themeColors.priceColor } : undefined}
+              >
+                {redeemChunks > 0
+                  ? t('سيتم خصم {0} ج.م من إجمالي طلبك', [loyaltyDiscount.toFixed(2)])
+                  : t('استخدم نقاطك للحصول على خصم')}
+              </button>
+            </div>
+          )}
+
           <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">{t('المجموع الفرعي ({0} منتج)', [cart.reduce((s, i) => s + i.quantity, 0)])}</span>
@@ -1009,10 +1120,18 @@ export function OrderModal() {
                 {totalDelivery === 0 ? (freeThreshold > 0 && subtotal >= freeThreshold ? t('مجاني') : t('بدون رسوم')) : t('{0} ج.م', [totalDelivery.toFixed(0)])}
               </span>
             </div>
+            {loyaltyDiscount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500 flex items-center gap-1">
+                  <Gift className="w-3.5 h-3.5" /> {t('خصم نقاط الولاء')}
+                </span>
+                <span className="font-bold text-teal-600">-{t('{0} ج.م', [loyaltyDiscount.toFixed(2)])}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between pt-2 border-t border-gray-100">
               <span className="text-sm text-gray-500">{t('الإجمالي')}</span>
               <span className="font-extrabold text-lg" style={{ color: themeColors.priceColor }}>
-                {t('{0} ج.م', [total.toFixed(2)])}
+                {t('{0} ج.م', [totalAfterDiscount.toFixed(2)])}
               </span>
             </div>
             {paymentConfig.shippingNote && (
