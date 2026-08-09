@@ -178,10 +178,14 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg"
+                className="w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg"
                 style={{ backgroundColor: primary, boxShadow: `0 8px 20px -4px ${withAlpha(primary, 0.45)}` }}
               >
-                <Cross className="w-6 h-6 text-white" strokeWidth={2.5} />
+                {settings.logo_url ? (
+                  <img src={settings.logo_url} alt={settings.site_name} className="w-full h-full object-cover" />
+                ) : (
+                  <Cross className="w-6 h-6 text-white" strokeWidth={2.5} />
+                )}
               </div>
               <div>
                 <h3 className="text-xl font-black" style={{ color: dark ? '#ffffff' : '#0f172a' }}>

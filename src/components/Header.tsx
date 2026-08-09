@@ -332,13 +332,17 @@ export function Header() {
               className="flex items-center gap-2 sm:gap-3 shrink-0 group text-start min-w-0"
             >
               <div
-                className="relative w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-105 shrink-0"
+                className="relative w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg transition-transform group-hover:scale-105 shrink-0"
                 style={{
                   backgroundColor: themeColors.primaryColor,
                   boxShadow: `0 8px 24px -4px ${themeColors.primaryColor}66`,
                 }}
               >
-                <Cross className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
+                {settings.logo_url ? (
+                  <img src={settings.logo_url} alt={settings.site_name} className="w-full h-full object-cover" />
+                ) : (
+                  <Cross className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
+                )}
                 <span
                   className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 animate-pulse"
                   style={{
