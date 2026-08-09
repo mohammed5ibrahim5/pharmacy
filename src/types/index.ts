@@ -76,6 +76,7 @@ export interface Discount {
 }
 
 export interface HeaderConfig {
+  showTopBar: boolean;
   showLocationBar: boolean;
   locationText: string;
   showServiceBar: boolean;
@@ -84,6 +85,7 @@ export interface HeaderConfig {
   prescriptionBarColor: string;
   topBarColor: string;
   topBarTextColor: string;
+  showContactPhone: boolean;
   showVoiceSearch: boolean;
   showBarcode: boolean;
   showTrendingTags: boolean;

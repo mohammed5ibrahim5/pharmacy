@@ -171,6 +171,7 @@ function toDarkPalette(c: ThemeColors): ThemeColors {
 }
 
 export const DEFAULT_HEADER_CONFIG: HeaderConfig = {
+  showTopBar: true,
   showLocationBar: true,
   locationText: 'القاهرة - المعادي',
   showServiceBar: true,
@@ -179,6 +180,7 @@ export const DEFAULT_HEADER_CONFIG: HeaderConfig = {
   prescriptionBarColor: '#0d9488',
   topBarColor: '#0f172a',
   topBarTextColor: '#cbd5e1',
+  showContactPhone: true,
   showVoiceSearch: true,
   showBarcode: true,
   showTrendingTags: true,

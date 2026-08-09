@@ -3510,6 +3510,21 @@ function SettingsTab() {
               التحكم في عناصر الشريط العلوي للهيدر ("التوصيل إلى" و"خدمة 24/7") — إظهار/إخفاء وتعديل النصوص.
             </p>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+              <Toggle
+                checked={headerCfg.showTopBar}
+                onChange={(v) => setHeaderCfg({ ...headerCfg, showTopBar: v })}
+                label="إظهار الشريط العلوي بالكامل"
+                hint="عند إيقافه يختفي الشريط كله (الموقع + رقم الهاتف + الروشتة)"
+              />
+              <Toggle
+                checked={headerCfg.showContactPhone}
+                onChange={(v) => setHeaderCfg({ ...headerCfg, showContactPhone: v })}
+                label="إظهار رقم الهاتف في الشريط"
+                hint="عرض/إخفاء رقم التواصل داخل الشريط العلوي"
+              />
+            </div>
+
             <div className="space-y-4">
               <div className="border-b border-gray-100 pb-4">
                 <div className="flex items-center justify-between mb-2">
@@ -4813,7 +4828,7 @@ function SitePreviewMockup({
 }: {
   colors: ThemeColors;
   form: SiteSettings;
-  headerCfg: { showLocationBar: boolean; showServiceBar: boolean; locationText: string; serviceText: string; showPrescriptionBar: boolean; prescriptionBarColor: string; topBarColor: string; topBarTextColor: string; showVoiceSearch: boolean; showBarcode: boolean; showTrendingTags: boolean; showWhatsAppButton: boolean; showCategoryPills: boolean };
+  headerCfg: { showTopBar: boolean; showLocationBar: boolean; showServiceBar: boolean; locationText: string; serviceText: string; showPrescriptionBar: boolean; prescriptionBarColor: string; topBarColor: string; topBarTextColor: string; showContactPhone: boolean; showVoiceSearch: boolean; showBarcode: boolean; showTrendingTags: boolean; showWhatsAppButton: boolean; showCategoryPills: boolean };
   mockSearch: string;
   onSearchChange: (v: string) => void;
   device: 'desktop' | 'tablet' | 'mobile';
@@ -4865,6 +4880,7 @@ function SitePreviewMockup({
       )}
 
       {/* Top bar */}
+      {headerCfg.showTopBar && (
       <div
         className="px-[1.2em] py-[0.45em] flex justify-between items-center text-[0.75em] font-semibold"
         style={{ backgroundColor: headerCfg.topBarColor, color: headerCfg.topBarTextColor }}
@@ -4888,7 +4904,14 @@ function SitePreviewMockup({
             رفع روشتة طبية
           </span>
         )}
+        {headerCfg.showContactPhone && (
+          <span className="flex items-center gap-[0.35em]" dir="ltr">
+            <Phone className="w-[0.85em] h-[0.85em]" style={{ color: colors.primaryColor }} />
+            {form.contact_phone || '01XXXXXXXXX'}
+          </span>
+        )}
       </div>
+      )}
 
       {/* Main header */}
       <div

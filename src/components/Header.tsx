@@ -261,7 +261,8 @@ export function Header() {
 
   return (
     <>
-{/* 1. TOP UTILITY BAR */}
+      {/* 1. TOP BAR */}
+      {headerConfig.showTopBar && (
       <div
         className="text-xs py-2 px-4 border-b hidden sm:block transition-all duration-300"
         style={{
@@ -302,7 +303,7 @@ export function Header() {
               </button>
             )}
 
-            {settings.contact_phone && (
+            {settings.contact_phone && headerConfig.showContactPhone && (
               <a
                 href={`tel:${settings.contact_phone}`}
                 className="flex items-center gap-1 hover:brightness-125 transition-all"
@@ -314,6 +315,7 @@ export function Header() {
           </div>
         </div>
       </div>
+      )}
 
       {/* 2. MAIN HEADER BAR */}
       <header
