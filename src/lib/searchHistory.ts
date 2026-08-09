@@ -13,9 +13,13 @@ export function trackSearch(term: string): void {
     // ignore
   }
   // Global counter for the "Most requested" bar (fire-and-forget)
-  supabase.rpc('increment_search_keyword', { p_keyword: trimmed }).catch(() => {
-    // ignore
-  });
+  // Note: postgrest-js builders are thenable but expose no .catch(), so use then(onFulfilled, onRejected)
+  supabase
+    .rpc('increment_search_keyword', { p_keyword: trimmed })
+    .then(
+      () => {},
+      () => {}
+    );
 }
 
 export function readSearchHistory(): string[] {
