@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   isAdmin: boolean;
   loading: boolean;
+  adminChecked: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   isAdmin: false,
   loading: true,
+  adminChecked: false,
   signIn: async () => ({ error: null }),
   signOut: async () => {},
 });
@@ -25,10 +27,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [adminChecked, setAdminChecked] = useState(false);
 
   const checkAdmin = useCallback(async (u: User | null) => {
     if (!u || !u.email) {
       setIsAdmin(false);
+      setAdminChecked(true);
       return;
     }
     try {
@@ -36,30 +40,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(!!(data && data.length > 0));
     } catch {
       setIsAdmin(false);
+    } finally {
+      setAdminChecked(true);
     }
   }, []);
 
   useEffect(() => {
     let active = true;
-    supabase.auth.getSession().then(async ({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      await checkAdmin(data.session?.user ?? null);
       setLoading(false);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
-      checkAdmin(newSession?.user ?? null);
     });
 
     return () => {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, [checkAdmin]);
+  }, []);
+
+  // Run a single admin check only after the session has fully loaded, so the
+  // query always runs authenticated (the site_admins select policy is
+  // "TO authenticated"). This avoids the racing checkAdmin calls that flashed
+  // the "غير مصرح" (forbidden) screen before the real result arrived.
+  useEffect(() => {
+    if (loading) return;
+    setAdminChecked(false);
+    checkAdmin(user);
+  }, [loading, user, checkAdmin]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -71,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, isAdmin, loading, adminChecked, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
