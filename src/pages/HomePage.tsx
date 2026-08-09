@@ -139,7 +139,7 @@ function statDisplayValue(stat: { id: string; value: string; auto?: boolean; aut
 type PharmacyTab = 'nearest' | 'favorite' | 'highest_rated' | 'most_popular' | 'delivery' | '24h';
 
 export function HomePage() {
-  const { settings, themeColors, heroConfig, storeConfig, homepageConfig, featuresConfig } = useSettings();
+  const { settings, themeColors, heroConfig, storeConfig, homepageConfig, featuresConfig, headerConfig } = useSettings();
   const { t, lang, dir } = useLanguage();
   const { navigate } = useRouter();
   const { location, requestLocation, loading, permissionDenied, setUserLocation } = useGeolocation();
@@ -193,7 +193,7 @@ export function HomePage() {
   };
 
   const [userLocationName, setUserLocationName] = useState<string>(() => {
-    return localStorage.getItem('user_delivery_location') || t('القاهرة - المعادي');
+    return localStorage.getItem('user_delivery_location') || '';
   });
 
   useEffect(() => {
@@ -1032,7 +1032,7 @@ export function HomePage() {
       <LocationSelectorModal
         open={locationModalOpen}
         onClose={() => setLocationModalOpen(false)}
-        currentLocation={userLocationName}
+        currentLocation={userLocationName || headerConfig.locationText || t('القاهرة - المعادي')}
         onSelectLocation={handleManualLocation}
       />
       <PrescriptionUploadModal

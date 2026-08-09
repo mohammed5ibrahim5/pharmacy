@@ -108,8 +108,9 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [userLocation, setUserLocation] = useState<string>(() => {
-    return localStorage.getItem('user_delivery_location') || t('القاهرة - المعادي');
+    return localStorage.getItem('user_delivery_location') || '';
   });
+  const displayLocation = userLocation || headerConfig.locationText || t('القاهرة - المعادي');
   const [cartBump, setCartBump] = useState(false);
   const firstCartRender = useRef(true);
 
@@ -237,7 +238,7 @@ export function Header() {
               style={{ color: headerConfig.topBarTextColor }}
             >
               <MapPin className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
-              <span>{t('التوصيل إلى:')} <strong className="text-white font-bold">{t(userLocation)}</strong></span>
+              <span>{t('التوصيل إلى:')} <strong className="text-white font-bold">{t(displayLocation)}</strong></span>
               <ChevronDown className="w-3 h-3 opacity-60" />
             </button>
           )}
@@ -670,7 +671,7 @@ export function Header() {
             >
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
-                <span>{t('موقع التوصيل: {0}', [userLocation])}</span>
+                <span>{t('موقع التوصيل: {0}', [displayLocation])}</span>
               </div>
               <ChevronDown className="w-4 h-4 opacity-55" />
             </button>
@@ -784,7 +785,7 @@ export function Header() {
       <LocationSelectorModal
         open={locationModalOpen}
         onClose={() => setLocationModalOpen(false)}
-        currentLocation={userLocation}
+        currentLocation={displayLocation}
         onSelectLocation={handleLocationChange}
       />
       <PrescriptionUploadModal
