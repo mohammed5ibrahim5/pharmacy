@@ -41,6 +41,7 @@ import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
 import { useOrder } from '@/context/OrderContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { supabase } from '@/lib/supabase';
+import { trackSearch } from '@/lib/searchHistory';
 import type { Product, Category } from '@/types';
 
 interface SpeechRecognitionLike {
@@ -66,6 +67,8 @@ const UNIFIED_TRENDING = [
   'سيتامول',
   'كمامات طبية',
 ];
+
+const TRENDING_LIMIT = 7;
 
 const CATEGORY_STYLES: Record<string, { icon: LucideIcon; color: string }> = {
   painkillers: { icon: Pill, color: '#0d9488' },
@@ -107,10 +110,35 @@ export function Header() {
   const [isListening, setIsListening] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [autoTrending, setAutoTrending] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<string>(() => {
     return localStorage.getItem('user_delivery_location') || '';
   });
   const displayLocation = userLocation || headerConfig.locationText || t('القاهرة - المعادي');
+
+  useEffect(() => {
+    if (headerConfig.trendingMode !== 'auto') return;
+    let cancelled = false;
+    const loadAutoTrending = async () => {
+      const { data } = await supabase
+        .from('search_keywords')
+        .select('keyword')
+        .order('search_count', { ascending: false })
+        .limit(TRENDING_LIMIT);
+      if (!cancelled && data && data.length > 0) {
+        setAutoTrending(data.map((r: { keyword: string }) => r.keyword));
+      }
+    };
+    loadAutoTrending();
+    return () => {
+      cancelled = true;
+    };
+  }, [headerConfig.trendingMode]);
+
+  const trendingTags =
+    headerConfig.trendingMode === 'auto'
+      ? (autoTrending.length > 0 ? autoTrending : headerConfig.trendingKeywords)
+      : (headerConfig.trendingKeywords.length > 0 ? headerConfig.trendingKeywords : UNIFIED_TRENDING);
   const [cartBump, setCartBump] = useState(false);
   const firstCartRender = useRef(true);
 
@@ -174,6 +202,7 @@ export function Header() {
     if (e) e.preventDefault();
     const queryToUse = term || searchQuery;
     if (queryToUse.trim()) {
+      trackSearch(queryToUse.trim());
       navigate({ name: 'search', query: queryToUse.trim() });
       setShowSuggestions(false);
       setMenuOpen(false);
@@ -569,7 +598,7 @@ export function Header() {
                 <Flame className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} fill="currentColor" />
                 {t('الأكثر طلباً:')}
               </span>
-              {UNIFIED_TRENDING.map((tag, i) => (
+              {trendingTags.map((tag, i) => (
                 <button
                   key={tag}
                   onClick={() => {

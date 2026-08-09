@@ -87,6 +87,8 @@ export interface HeaderConfig {
   showVoiceSearch: boolean;
   showBarcode: boolean;
   showTrendingTags: boolean;
+  trendingMode: 'auto' | 'manual';
+  trendingKeywords: string[];
   showWhatsAppButton: boolean;
   showCategoryPills: boolean;
 }

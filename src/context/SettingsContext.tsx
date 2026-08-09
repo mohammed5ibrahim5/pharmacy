@@ -182,6 +182,16 @@ export const DEFAULT_HEADER_CONFIG: HeaderConfig = {
   showVoiceSearch: true,
   showBarcode: true,
   showTrendingTags: true,
+  trendingMode: 'auto',
+  trendingKeywords: [
+    'بنادول اكسترا',
+    'كونجستال',
+    'أوميجا 3 بلس',
+    'سي ريتارد',
+    'أوجمنتين 1 جم',
+    'سيتامول',
+    'كمامات طبية',
+  ],
   showWhatsAppButton: true,
   showCategoryPills: true,
 };

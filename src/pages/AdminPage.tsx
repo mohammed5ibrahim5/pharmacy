@@ -3649,6 +3649,60 @@ function SettingsTab() {
                 hint="أزرار التصنيفات الملونة أسفل الهيدر"
               />
             </div>
+
+            {headerCfg.showTrendingTags && (
+              <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50/50 p-4 space-y-3">
+                <label className="text-xs font-bold text-gray-800 block">طريقة شريط "الأكثر طلباً"</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setHeaderCfg({ ...headerCfg, trendingMode: 'auto' })}
+                    className={`rounded-2xl border-2 p-4 text-start transition-all ${headerCfg.trendingMode === 'auto' ? 'shadow-md' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                    style={headerCfg.trendingMode === 'auto' ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}0a` } : {}}
+                  >
+                    <p className="text-sm font-extrabold text-gray-900">تلقائي (من الأكثر بحثاً فعلياً)</p>
+                    <p className="text-[11px] text-gray-500 mt-1">يعرض تلقائياً الكلمات الأكثر بحثاً من العملاء، ويحدث بمرور الوقت.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHeaderCfg({ ...headerCfg, trendingMode: 'manual' })}
+                    className={`rounded-2xl border-2 p-4 text-start transition-all ${headerCfg.trendingMode === 'manual' ? 'shadow-md' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                    style={headerCfg.trendingMode === 'manual' ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}0a` } : {}}
+                  >
+                    <p className="text-sm font-extrabold text-gray-900">كلمات ثابتة (تحكم كامل)</p>
+                    <p className="text-[11px] text-gray-500 mt-1">اكتب الكلمات التي تريدها كما هي، وعدّل أو أضف في أي وقت.</p>
+                  </button>
+                </div>
+
+                {headerCfg.trendingMode === 'manual' ? (
+                  <Field label="كلمات شريط الأكثر طلباً (افصل بينها بفاصلة)">
+                    <textarea
+                      value={headerCfg.trendingKeywords.join('، ')}
+                      onChange={(e) => setHeaderCfg({ ...headerCfg, trendingKeywords: e.target.value.split(/[،,]/).map((s) => s.trim()).filter(Boolean) })}
+                      className={inputClass}
+                      rows={3}
+                    />
+                  </Field>
+                ) : (
+                  <div>
+                    <Field label="الكلمات الاحتياطية (تظهر إن لم توجد بيانات بحث بعد)">
+                      <textarea
+                        value={headerCfg.trendingKeywords.join('، ')}
+                        onChange={(e) => setHeaderCfg({ ...headerCfg, trendingKeywords: e.target.value.split(/[،,]/).map((s) => s.trim()).filter(Boolean) })}
+                        className={inputClass}
+                        rows={2}
+                      />
+                    </Field>
+                  </div>
+                )}
+
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  {headerCfg.trendingMode === 'auto'
+                    ? 'في الوضع التلقائي تُسجّل كل كلمة يبحث عنها العملاء وتظهر الأكثر تكراراً (حتى 7 كلمات). إن لم توجد بيانات بعد، تظهر الكلمات الاحتياطية.'
+                    : `سيظهر في الشريط: ${headerCfg.trendingKeywords.length > 0 ? headerCfg.trendingKeywords.join('، ') : 'لا توجد كلمات بعد — أضفها من الأعلى.'}`}
+                </p>
+              </div>
+            )}
           </SettingsSection>
         </div>
       )}
