@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, ArrowUp } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 
 export function FloatingActions() {
-  const { settings, themeColors } = useSettings();
+  const { themeColors } = useSettings();
   const { t } = useLanguage();
   const [showTop, setShowTop] = useState(false);
 
@@ -14,8 +14,6 @@ export function FloatingActions() {
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  const whatsappDigits = settings.contact_whatsapp ? settings.contact_whatsapp.replace(/\D/g, '') : null;
 
   return (
     <div className="fixed bottom-24 lg:bottom-5 start-5 z-50 flex flex-col items-center gap-3">
@@ -38,21 +36,6 @@ export function FloatingActions() {
         >
           <ArrowUp className="w-5 h-5" />
         </button>
-      )}
-
-      {whatsappDigits && (
-        <a
-          href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(t('مرحباً، أحتاج مساعدة في الطلب من صيدليتي'))}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="relative w-14 h-14 rounded-2xl text-white shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
-          style={{ backgroundColor: themeColors.whatsappBtnBg }}
-          title={t('تواصل معنا واتساب')}
-          aria-label={t('تواصل معنا واتساب')}
-        >
-          <span className="absolute inset-0 rounded-2xl opacity-60 animate-ping" style={{ backgroundColor: themeColors.whatsappBtnBg }} />
-          <MessageCircle className="w-7 h-7 relative" />
-        </a>
       )}
     </div>
   );
