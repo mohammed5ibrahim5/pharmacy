@@ -104,7 +104,7 @@ function PharmacyAdminRoute() {
 }
 
 function SiteContent() {
-  const { route } = useRouter();
+  const { route, refreshKey } = useRouter();
   const { dir } = useLanguage();
 
   return (
@@ -113,7 +113,7 @@ function SiteContent() {
       <Header />
       <main className="flex-1 pb-20 lg:pb-0">
         {route.name === 'home' && <HomePage />}
-        {route.name === 'search' && <SearchPage query={route.query} />}
+        {route.name === 'search' && <SearchPage key={refreshKey} query={route.query} />}
         {route.name === 'pharmacy' && <PharmacyDetailPage id={route.id} />}
         {route.name === 'category' && <CategoryPage slug={route.slug} />}
         {route.name === 'account' && <AccountPage tab={route.tab} />}

@@ -349,8 +349,12 @@ export function HomePage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      trackSearch(searchQuery.trim());
       navigate({ name: 'search', query: searchQuery.trim() });
+      try {
+        trackSearch(searchQuery.trim());
+      } catch {
+        // tracking must never block the search
+      }
     }
   };
 

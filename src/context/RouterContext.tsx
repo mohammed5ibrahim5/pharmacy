@@ -12,11 +12,13 @@ type Route =
 interface RouterContextType {
   route: Route;
   navigate: (route: Route) => void;
+  refreshKey: number;
 }
 
 const RouterContext = createContext<RouterContextType>({
   route: { name: 'home' },
   navigate: () => {},
+  refreshKey: 0,
 });
 
 function parseAccountTab(tab?: string): AccountTab {
@@ -48,6 +50,7 @@ function routeToHash(route: Route): string {
 
 export function RouterProvider({ children }: { children: ReactNode }) {
   const [route, setRoute] = useState<Route>(() => parseHash());
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const navigate = (newRoute: Route) => {
     const hash = routeToHash(newRoute);
@@ -55,6 +58,9 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       window.location.hash = hash;
     }
     setRoute(newRoute);
+    // Force dependents (e.g. SearchPage) to re-run even when the hash/query
+    // is unchanged, so pressing Enter always re-searches.
+    setRefreshKey((k) => k + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -69,7 +75,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   }, [route]);
 
   return (
-    <RouterContext.Provider value={{ route, navigate }}>
+    <RouterContext.Provider value={{ route, navigate, refreshKey }}>
       {children}
     </RouterContext.Provider>
   );

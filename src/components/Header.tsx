@@ -93,7 +93,7 @@ const FALLBACK_CATEGORIES: { slug: string; name: string; name_en?: string | null
 ];
 
 export function Header() {
-  const { navigate } = useRouter();
+  const { navigate, route } = useRouter();
   const { settings, themeColors, headerConfig, darkMode, toggleDarkMode } = useSettings();
   const { t, lang, toggleLang } = useLanguage();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
@@ -115,6 +115,13 @@ export function Header() {
     return localStorage.getItem('user_delivery_location') || '';
   });
   const displayLocation = userLocation || headerConfig.locationText || t('القاهرة - المعادي');
+
+  useEffect(() => {
+    if (route.name === 'search') {
+      setSearchQuery(route.query);
+      setShowSuggestions(false);
+    }
+  }, [route]);
 
   useEffect(() => {
     if (headerConfig.trendingMode !== 'auto') return;
@@ -202,8 +209,12 @@ export function Header() {
     if (e) e.preventDefault();
     const queryToUse = term || searchQuery;
     if (queryToUse.trim()) {
-      trackSearch(queryToUse.trim());
       navigate({ name: 'search', query: queryToUse.trim() });
+      try {
+        trackSearch(queryToUse.trim());
+      } catch {
+        // tracking must never block the search
+      }
       setShowSuggestions(false);
       setMenuOpen(false);
     }
