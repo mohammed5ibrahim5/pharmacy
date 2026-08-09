@@ -7,10 +7,10 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog, BadgePercent, Baby
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_HOMEPAGE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig } from '@/context/SettingsContext';
+import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_HOMEPAGE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig, type WelcomePopupConfig } from '@/context/SettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { translateError } from '@/lib/errorMessages';
 import {
@@ -952,7 +952,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
 // Dashboard Tab
 // ============================================
 function DashboardTab() {
-  const { settings, storeConfig, refresh } = useSettings();
+  const { settings, storeConfig, welcomeConfig, refresh } = useSettings();
   const [togglingPurchases, setTogglingPurchases] = useState(false);
   const [stats, setStats] = useState({ pharmacies: 0, products: 0, categories: 0, discounts: 0, coupons: 0, customers: 0, orders: 0, revenue: 0, stockAlerts: 0, loyaltyPoints: 0 });
   const [recentPharmacies, setRecentPharmacies] = useState<Pharmacy[]>([]);
@@ -1065,6 +1065,47 @@ function DashboardTab() {
     }
   };
 
+  const [welcomeForm, setWelcomeForm] = useState<WelcomePopupConfig>({ ...welcomeConfig });
+  const [savingWelcome, setSavingWelcome] = useState(false);
+  const [welcomeSavedMsg, setWelcomeSavedMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setWelcomeForm({ ...welcomeConfig });
+  }, [welcomeConfig]);
+
+  const setWelcomeField = <K extends keyof WelcomePopupConfig>(key: K, value: WelcomePopupConfig[K]) => {
+    setWelcomeForm((f) => ({ ...f, [key]: value }));
+  };
+
+  const handleSaveWelcome = async () => {
+    if (savingWelcome) return;
+    setSavingWelcome(true);
+    setWelcomeSavedMsg(null);
+    try {
+      const parsed = settings.features_json ? JSON.parse(settings.features_json) : {};
+      const next = {
+        ...parsed,
+        welcomeConfig: {
+          ...welcomeForm,
+          discountPercent: Math.max(0, Math.min(100, Number(welcomeForm.discountPercent) || 0)),
+          delaySeconds: Math.max(0, Math.min(60, Number(welcomeForm.delaySeconds) || 0)),
+        },
+      };
+      await supabase.from('site_settings').update({
+        features_json: JSON.stringify(next),
+        updated_at: new Date().toISOString(),
+      }).eq('id', settings.id);
+      await refresh();
+      setWelcomeSavedMsg('تم حفظ إعدادات الرسالة الترحيبية');
+      setTimeout(() => setWelcomeSavedMsg(null), 2500);
+    } catch (e) {
+      console.error(e);
+      setWelcomeSavedMsg('حدث خطأ أثناء الحفظ');
+    } finally {
+      setSavingWelcome(false);
+    }
+  };
+
   const cards = [
     { label: 'إجمالي المبيعات', value: `${stats.revenue.toFixed(0)} ج.م`, icon: <Wallet />, color: settings.primary_color },
     { label: 'الطلبات', value: stats.orders, icon: <ShoppingCart />, color: settings.secondary_color },
@@ -1154,6 +1195,139 @@ function DashboardTab() {
             {savingCatalogWhatsapp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             حفظ
           </button>
+        </div>
+      </div>
+
+      {/* Welcome popup config */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${welcomeForm.enabled ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-400'}`}>
+            <BadgePercent className="w-7 h-7" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-gray-900 text-base">
+              {welcomeForm.enabled ? 'الرسالة الترحيبية مفعّلة' : 'الرسالة الترحيبية متوقفة'}
+            </h3>
+            <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+              نافذة الترحيب التي تظهر للعملاء مع كود الخصم عند فتح الموقع. يمكنك التحكم في النصوص ونسبة الخصم والكود.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setWelcomeField('enabled', !welcomeForm.enabled)}
+            className={`relative w-16 h-9 rounded-full transition-colors duration-300 shrink-0 ${welcomeForm.enabled ? 'bg-amber-500' : 'bg-gray-300'}`}
+            aria-pressed={welcomeForm.enabled}
+          >
+            <span
+              className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all duration-300 ${welcomeForm.enabled ? 'right-1' : 'right-8'}`}
+            />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+          <label className="block">
+            <span className="text-xs font-bold text-gray-600">كود الخصم (يظهر للعميل)</span>
+            <input
+              dir="ltr"
+              value={welcomeForm.offerCode}
+              onChange={(e) => setWelcomeField('offerCode', e.target.value.toUpperCase())}
+              placeholder="WELCOME10"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-black tracking-widest text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="block">
+              <span className="text-xs font-bold text-gray-600">نسبة الخصم %</span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={welcomeForm.discountPercent}
+                onChange={(e) => setWelcomeField('discountPercent', Number(e.target.value))}
+                className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-bold text-gray-600">الظهور بعد (ثانية)</span>
+              <input
+                type="number"
+                min={0}
+                max={60}
+                value={welcomeForm.delaySeconds}
+                onChange={(e) => setWelcomeField('delaySeconds', Number(e.target.value))}
+                className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+              />
+            </label>
+          </div>
+          <label className="block sm:col-span-2">
+            <span className="text-xs font-bold text-gray-600">العنوان الرئيسي (اكتب {`{percent}`} لعرض النسبة تلقائياً)</span>
+            <input
+              value={welcomeForm.title}
+              onChange={(e) => setWelcomeField('title', e.target.value)}
+              placeholder="خصم {percent}% على طلبك الأول"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-gray-600">النص الفرعي</span>
+            <input
+              value={welcomeForm.subtitle}
+              onChange={(e) => setWelcomeField('subtitle', e.target.value)}
+              placeholder="ادخل الكود عند إتمام الطلب واستفد بالخصم"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-gray-600">نص الشارة العلوية</span>
+            <input
+              value={welcomeForm.badgeText}
+              onChange={(e) => setWelcomeField('badgeText', e.target.value)}
+              placeholder="عرض ترحيبي خاص"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-gray-600">نص زر «ابدأ التسوق»</span>
+            <input
+              value={welcomeForm.ctaText}
+              onChange={(e) => setWelcomeField('ctaText', e.target.value)}
+              placeholder="ابدأ التسوق الآن"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-gray-600">نص «لاحقاً»</span>
+            <input
+              value={welcomeForm.laterText}
+              onChange={(e) => setWelcomeField('laterText', e.target.value)}
+              placeholder="لاحقاً، لن أشتري الآن"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+            />
+          </label>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-4 mt-5">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={welcomeForm.showCountdown}
+              onChange={(e) => setWelcomeField('showCountdown', e.target.checked)}
+              className="w-4 h-4 accent-amber-500"
+            />
+            <span className="text-xs font-bold text-gray-600">عرض العد التنازلي لنهاية اليوم</span>
+          </label>
+          <div className="flex items-center gap-3">
+            {welcomeSavedMsg && <span className="text-xs font-bold text-green-600">{welcomeSavedMsg}</span>}
+            <button
+              type="button"
+              onClick={handleSaveWelcome}
+              disabled={savingWelcome}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 text-white px-5 py-2.5 text-sm font-bold hover:bg-amber-600 transition-colors disabled:opacity-60"
+            >
+              {savingWelcome ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              حفظ الإعدادات
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1572,11 +1746,13 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
   };
 
   function rpcError(err: { message?: string }): string {
-    const m = err.message || '';
-    if (/already exists|مستخدم بالفعل/i.test(m)) return 'هذا البريد الإلكتروني مستخدم بالفعل لصيدلية أخرى';
-    if (/غير مصرح/i.test(m)) return m;
-    if (/function .* does not exist|could not find the function/i.test(m)) {
+    const m = (err.message || '').trim();
+    if (!m) return 'حدث خطأ غير متوقع، حاول مرة أخرى';
+    if (/function .* does not exist|could not find the function|could not find the table|relation .* not found/i.test(m)) {
       return 'الصلاحية غير موجودة — شغّل ملف المايجرشن supabase/migrations/20260808120000_owner_auth_upgrade.sql في Supabase SQL Editor';
+    }
+    if (/duplicate key value violates unique constraint/i.test(m)) {
+      return 'هذا البريد الإلكتروني مسجل بالفعل كحساب مالك، ولا يمكن استخدامه لصيدلية أخرى';
     }
     return m;
   }
@@ -1922,6 +2098,8 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
     is_available: product?.is_available ?? true, requires_prescription: product?.requires_prescription ?? false,
     active_ingredient: product?.active_ingredient || '', manufacturer: product?.manufacturer || '',
     form_type: product?.form || '', dosage: product?.dosage || '',
+    how_to_use: product?.how_to_use || '', contraindications: product?.contraindications || '',
+    interactions: product?.interactions || '',
     stock_quantity: product?.stock_quantity?.toString() || '0', barcode: product?.barcode || '',
   });
   const [saving, setSaving] = useState(false);
@@ -1937,6 +2115,8 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
       is_available: form.is_available, requires_prescription: form.requires_prescription,
       active_ingredient: form.active_ingredient || null, manufacturer: form.manufacturer || null,
       form: form.form_type || null, dosage: form.dosage || null,
+      how_to_use: form.how_to_use || null, contraindications: form.contraindications || null,
+      interactions: form.interactions || null,
       stock_quantity: parseInt(form.stock_quantity) || 0, barcode: form.barcode || null,
       updated_at: new Date().toISOString(),
     };
@@ -2003,6 +2183,11 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
           <Field label="الكمية في المخزون"><input value={form.stock_quantity} onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })} className={inputClass} dir="ltr" type="number" /></Field>
         </div>
         <Field label="الباركود"><input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} className={inputClass} dir="ltr" placeholder="اختياري" /></Field>
+        <Field label="طريقة الاستخدام (اختياري)"><textarea value={form.how_to_use} onChange={(e) => setForm({ ...form, how_to_use: e.target.value })} className={inputClass} rows={2} placeholder="مثال: قرص واحد بعد الأكل كل 8 ساعات" /></Field>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="متى لا يُستخدم (موانع الاستخدام)"><textarea value={form.contraindications} onChange={(e) => setForm({ ...form, contraindications: e.target.value })} className={inputClass} rows={2} placeholder="مثال: لا يُستخدم لمرضى الكبد أو الحساسية من المادة الفعالة" /></Field>
+          <Field label="التفاعلات الدوائية"><textarea value={form.interactions} onChange={(e) => setForm({ ...form, interactions: e.target.value })} className={inputClass} rows={2} placeholder="مثال: يتعارض مع مميعات الدم" /></Field>
+        </div>
         <ImageUrlField label="رابط صورة المنتج" value={form.image_url} onChange={(v) => setForm({ ...form, image_url: v })} />
         <div className="flex gap-4 pt-2">
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.is_available} onChange={(e) => setForm({ ...form, is_available: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm text-gray-700">متوفر</span></label>
@@ -4262,6 +4447,22 @@ function SettingsTab() {
                 desc="تبويب تذكير الأدوية في حساب العميل + إشعارات في المواعيد المحددة"
                 checked={featuresCfg.reminders}
                 onChange={(v) => setFeaturesCfg((p) => ({ ...p, reminders: v }))}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Users className="w-4 h-4" />}
+                title="الطلب للعيلة"
+                desc="العميل يضيف أفراد عائلته ويحدد كل طلب لمين (تبويب في الحساب + اختيار في إتمام الطلب)"
+                checked={featuresCfg.familyMembers}
+                onChange={(v) => setFeaturesCfg((p) => ({ ...p, familyMembers: v }))}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Baby className="w-4 h-4" />}
+                title="حاسبة جرعات الأطفال"
+                desc="أداة تحسب جرعة آمنة من دواء معين حسب عمر ووزن الطفل"
+                checked={featuresCfg.doseCalculator}
+                onChange={(v) => setFeaturesCfg((p) => ({ ...p, doseCalculator: v }))}
                 color={settings.primary_color}
               />
             </div>

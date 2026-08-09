@@ -134,6 +134,38 @@
 
   // OrderModal
   'مكافأة طلب موحّد من {0} صيدلية': 'Reward for a combined order from {0} pharmacies',
+  'الطلب لمين؟': 'Who is this order for?',
+  'نفسي (أنا)': 'Myself',
+
+  // DoseCalculatorModal
+  'حاسبة جرعات الأطفال': 'Kids dose calculator',
+  'إرشادات تقريبية فقط': 'Approximate guidance only',
+  'اختر الدواء': 'Choose a medicine',
+  'باراسيتامول': 'Paracetamol',
+  'إيبوبروفين': 'Ibuprofen',
+  'أموكسيسيلين': 'Amoxicillin',
+  'أزيثروميسين': 'Azithromycin',
+  'سيتريزين (مضاد حساسية)': 'Cetirizine (antihistamine)',
+  'كل 4-6 ساعات': 'Every 4-6 hours',
+  'كل 6-8 ساعات بعد الأكل': 'Every 6-8 hours after food',
+  'بوصفة طبية فقط': 'Prescription only',
+  'جرعة واحدة يومياً لمدة 3 أيام': 'Once daily for 3 days',
+  'جرعة واحدة يومياً': 'Once daily',
+  'العمر (اختياري)': 'Age (optional)',
+  'بالسنوات': 'in years',
+  'رضيع 0-6 أشهر': 'Infant 0-6 months',
+  'رضيع 6-12 شهر': 'Infant 6-12 months',
+  'طفل 1-2 سنة': 'Child 1-2 years',
+  'طفل 2-4 سنوات': 'Child 2-4 years',
+  'طفل 4-6 سنوات': 'Child 4-6 years',
+  'طفل 6-10 سنوات': 'Child 6-10 years',
+  'طفل 10-13 سنة': 'Child 10-13 years',
+  'مراهق 13+ سنة': 'Teenager 13+ years',
+  'الجرعة الواحدة لـ {0}': 'Single dose for {0}',
+  'بمعدل {0} مرات يومياً كحد أقصى': 'Up to {0} times per day',
+  'الحد الأقصى يومياً': 'Maximum daily dose',
+  'أدخل وزن الطفل بالكيلوجرام لحساب الجرعة التقريبية. الجرعات تحسب عادة على أساس الوزن وليس العمر.': 'Enter the child\'s weight in kilograms to calculate the approximate dose. Doses are usually based on weight, not age.',
+  'هذه الحاسبة لأغراض إرشادية فقط ولا تغني عن استشارة الطبيب أو الصيدلي. لا تعطِ أي دواء لطفل بدون وصفة طبية عند الحاجة، واحفظ الأدوية بعيداً عن متناول الأطفال.': 'This calculator is for guidance only and does not replace a doctor or pharmacist consultation. Never give any medicine to a child without a prescription when needed, and keep medicines out of children\'s reach.',
 
   // PriceCompareModal
   'السعر الحالي': 'Current price',

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Menu, X, LogOut, ArrowLeft, Loader2, Store, Package, ShoppingCart,
   Mail, Lock, Eye, EyeOff, AlertCircle, LayoutDashboard, Settings, ExternalLink,
-  Phone, MapPin, Star, Clock, Truck, Shield,
+  Phone, MapPin, Star, Clock, Truck, Shield, TrendingUp, AlertTriangle, Wallet, PackageCheck,
 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { usePharmacyOwner } from '@/context/PharmacyOwnerContext';
@@ -107,30 +107,84 @@ function OwnerLogin() {
 
 function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigate: (tab: OwnerTab) => void }) {
   const { settings } = useSettings();
-  const [stats, setStats] = useState<{ products: number; available: number; orders: number; pending: number } | null>(null);
+  const [stats, setStats] = useState<{ products: number; available: number; orders: number; pending: number; revenue: number; avgRating: number } | null>(null);
+  const [bestSellers, setBestSellers] = useState<{ name: string; qty: number; revenue: number }[]>([]);
+  const [lowStock, setLowStock] = useState<{ id: string; name: string; stock_quantity: number; is_available: boolean }[]>([]);
+  const [recentOrders, setRecentOrders] = useState<{ id: string; customerName: string; status: string; total_price: number; created_at: string }[]>([]);
 
   useEffect(() => {
     if (!pharmacy) return;
-    Promise.all([
-      supabase.from('products').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id),
-      supabase.from('products').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id).eq('is_available', true),
-      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id),
-      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id).eq('status', 'pending'),
-    ]).then(([p, a, o, pend]) => {
+    let cancelled = false;
+    (async () => {
+      const [p, a, o, pend, revenueRes, ratingRes, sellersRes, lowRes, recentRes] = await Promise.all([
+        supabase.from('products').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id),
+        supabase.from('products').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id).eq('is_available', true),
+        supabase.from('orders').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id),
+        supabase.from('orders').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id).eq('status', 'pending'),
+        supabase.from('orders').select('total_price').eq('pharmacy_id', pharmacy.id).neq('status', 'cancelled'),
+        supabase.from('reviews').select('rating').eq('pharmacy_id', pharmacy.id),
+        supabase.from('orders').select('total_price, quantity, product:products(name)').eq('pharmacy_id', pharmacy.id).limit(1000),
+        supabase.from('products').select('id, name, stock_quantity, is_available').eq('pharmacy_id', pharmacy.id).lte('stock_quantity', 5).order('stock_quantity').limit(8),
+        supabase.from('orders').select('id, status, total_price, created_at, customer:customers(full_name)').eq('pharmacy_id', pharmacy.id).order('created_at', { ascending: false }).limit(5),
+      ]);
+      if (cancelled) return;
+
+      const revenue = (revenueRes.data || []).reduce((sum, r) => sum + (Number(r.total_price) || 0), 0);
+      const ratings = (ratingRes.data || []).map((r) => Number(r.rating)).filter((r) => r > 0);
+      const avgRating = ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0;
+
+      const byProduct: Record<string, { name: string; qty: number; revenue: number }> = {};
+      const sellersData = sellersRes.data as { total_price: number; quantity: number; product: { id: string; name: string } | null }[] | null;
+      (sellersData || []).forEach((r) => {
+        const key = r.product?.id || 'unknown';
+        const name = r.product?.name || 'منتج محذوف';
+        const qty = Number(r.quantity) || 1;
+        const rev = Number(r.total_price) || 0;
+        if (!byProduct[key]) byProduct[key] = { name, qty: 0, revenue: 0 };
+        byProduct[key].qty += qty;
+        byProduct[key].revenue += rev;
+      });
+      const best = Object.values(byProduct).sort((x, y) => y.qty - x.qty).slice(0, 5);
+
       setStats({
         products: p.count || 0,
         available: a.count || 0,
         orders: o.count || 0,
         pending: pend.count || 0,
+        revenue,
+        avgRating: Math.round(avgRating * 10) / 10,
       });
-    });
+      setBestSellers(best);
+      setLowStock((lowRes.data || []) as { id: string; name: string; stock_quantity: number; is_available: boolean }[]);
+      const recentData = recentRes.data as { id: string; status: string; total_price: number; created_at: string; customer: { full_name: string } | null }[] | null;
+      setRecentOrders((recentData || []).map((r) => ({
+        id: r.id,
+        customerName: r.customer?.full_name || 'عميل',
+        status: r.status,
+        total_price: r.total_price,
+        created_at: r.created_at,
+      })));
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [pharmacy]);
+
+  const statusMeta: Record<string, { label: string; className: string }> = {
+    pending: { label: 'قيد المراجعة', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+    confirmed: { label: 'تم التأكيد', className: 'bg-blue-50 text-blue-700 border-blue-200' },
+    shipped: { label: 'في الطريق', className: 'bg-violet-50 text-violet-700 border-violet-200' },
+    delivered: { label: 'تم التسليم', className: 'bg-green-50 text-green-700 border-green-200' },
+    cancelled: { label: 'ملغي', className: 'bg-red-50 text-red-600 border-red-200' },
+  };
 
   const statCards = [
     { label: 'عدد المنتجات', value: stats?.products, icon: <Package className="w-5 h-5" />, bg: 'bg-blue-50 text-blue-600 border-blue-200' },
     { label: 'منتج متوفر', value: stats?.available, icon: <CheckIcon />, bg: 'bg-teal-50 text-teal-600 border-teal-200' },
     { label: 'إجمالي الطلبات', value: stats?.orders, icon: <ShoppingCart className="w-5 h-5" />, bg: 'bg-amber-50 text-amber-600 border-amber-200' },
     { label: 'طلبات قيد المراجعة', value: stats?.pending, icon: <Clock className="w-5 h-5" />, bg: 'bg-violet-50 text-violet-600 border-violet-200' },
+    { label: 'إيرادات مبيعات', value: stats?.revenue != null ? `${Number(stats.revenue).toFixed(0)} ج.م` : '—', icon: <Wallet className="w-5 h-5" />, bg: 'bg-green-50 text-green-600 border-green-200' },
+    { label: 'متوسط التقييم', value: stats?.avgRating ? `${stats.avgRating} / 5` : '—', icon: <Star className="w-5 h-5" />, bg: 'bg-yellow-50 text-yellow-600 border-yellow-200' },
   ];
 
   return (
@@ -178,7 +232,7 @@ function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigat
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {statCards.map((s) => (
           <div key={s.label} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3">
             <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${s.bg}`}>{s.icon}</div>
@@ -188,6 +242,95 @@ function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigat
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Low stock alerts */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-red-50 text-red-500"><AlertTriangle className="w-4 h-4" /></div>
+            <div>
+              <h3 className="font-black text-gray-900 text-sm">تنبيهات المخزون</h3>
+              <p className="text-[11px] font-bold text-gray-400">مخزون منخفض (أقل من 5)</p>
+            </div>
+            {lowStock.length > 0 && <span className="ms-auto text-[11px] font-black text-red-500 bg-red-50 rounded-full px-2 py-0.5">{lowStock.length}</span>}
+          </div>
+          {lowStock.length === 0 ? (
+            <p className="text-xs font-bold text-gray-400 text-center py-6">لا توجد منتجات بمخزون منخفض</p>
+          ) : (
+            <div className="space-y-2 max-h-56 overflow-y-auto">
+              {lowStock.map((item) => (
+                <div key={item.id} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2">
+                  <Package className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <span className="flex-1 min-w-0 text-xs font-bold text-gray-700 truncate">{item.name}</span>
+                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${item.stock_quantity === 0 ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700'}`}>{item.stock_quantity}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={() => onNavigate('products')} className="mt-4 w-full text-xs font-bold text-center py-2.5 rounded-xl border transition-colors" style={{ color: settings.primary_color, borderColor: `${settings.primary_color}33`, backgroundColor: `${settings.primary_color}0d` }}>
+            إدارة المنتجات والمخزون
+          </button>
+        </div>
+
+        {/* Best sellers */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-blue-50 text-blue-500"><TrendingUp className="w-4 h-4" /></div>
+            <div>
+              <h3 className="font-black text-gray-900 text-sm">الأكثر مبيعاً</h3>
+              <p className="text-[11px] font-bold text-gray-400">حسب كمية المبيعات</p>
+            </div>
+          </div>
+          {bestSellers.length === 0 ? (
+            <p className="text-xs font-bold text-gray-400 text-center py-6">لا توجد مبيعات بعد</p>
+          ) : (
+            <div className="space-y-2 max-h-56 overflow-y-auto">
+              {bestSellers.map((item, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2">
+                  <span className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black text-white shrink-0" style={{ backgroundColor: i === 0 ? settings.accent_color : settings.primary_color }}>
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 min-w-0 text-xs font-bold text-gray-700 truncate">{item.name}</span>
+                  <span className="text-[11px] font-black text-gray-900">{item.qty}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={() => onNavigate('orders')} className="mt-4 w-full text-xs font-bold text-center py-2.5 rounded-xl border transition-colors" style={{ color: settings.primary_color, borderColor: `${settings.primary_color}33`, backgroundColor: `${settings.primary_color}0d` }}>
+            عرض كل الطلبات
+          </button>
+        </div>
+
+        {/* Recent orders */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-violet-50 text-violet-500"><PackageCheck className="w-4 h-4" /></div>
+            <div>
+              <h3 className="font-black text-gray-900 text-sm">أحدث الطلبات</h3>
+              <p className="text-[11px] font-bold text-gray-400">آخر 5 طلبات</p>
+            </div>
+          </div>
+          {recentOrders.length === 0 ? (
+            <p className="text-xs font-bold text-gray-400 text-center py-6">لا توجد طلبات بعد</p>
+          ) : (
+            <div className="space-y-2 max-h-56 overflow-y-auto">
+              {recentOrders.map((order) => {
+                const meta = statusMeta[order.status] || statusMeta.pending;
+                return (
+                  <div key={order.id} className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2">
+                    <span className="flex-1 min-w-0 text-xs font-bold text-gray-700 truncate">{order.customerName}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${meta.className}`}>{meta.label}</span>
+                    <span className="text-[11px] font-black text-gray-900">{Number(order.total_price).toFixed(0)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <button onClick={() => onNavigate('orders')} className="mt-4 w-full text-xs font-bold text-center py-2.5 rounded-xl border transition-colors" style={{ color: settings.primary_color, borderColor: `${settings.primary_color}33`, backgroundColor: `${settings.primary_color}0d` }}>
+            متابعة الطلبات
+          </button>
+        </div>
       </div>
 
       {/* Quick actions */}

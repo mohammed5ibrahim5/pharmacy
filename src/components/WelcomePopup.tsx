@@ -6,10 +6,9 @@ import { useCountdown } from '@/hooks/useCountdown';
 import { useLanguage } from '@/context/LanguageContext';
 
 const STORAGE_KEY = 'pharmacy_welcome_popup_seen';
-const OFFER_CODE = 'WELCOME10';
 
 export function WelcomePopup() {
-  const { themeColors, storeConfig } = useSettings();
+  const { themeColors, storeConfig, welcomeConfig } = useSettings();
   const { navigate } = useRouter();
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -20,23 +19,26 @@ export function WelcomePopup() {
     d.setHours(23, 59, 59, 999);
     return d;
   })();
-  const countdown = useCountdown(open ? endOfDay : null);
+  const countdown = useCountdown(open && welcomeConfig.showCountdown ? endOfDay : null);
 
   useEffect(() => {
-    if (!storeConfig.purchasesEnabled) return;
+    if (!storeConfig.purchasesEnabled || !welcomeConfig.enabled) return;
     const seen = sessionStorage.getItem(STORAGE_KEY);
     if (seen) return;
+    const delay = Math.max(0, Number(welcomeConfig.delaySeconds) || 4) * 1000;
     const timer = setTimeout(() => {
       setOpen(true);
       sessionStorage.setItem(STORAGE_KEY, '1');
-    }, 4000);
+    }, delay);
     return () => clearTimeout(timer);
-  }, [storeConfig.purchasesEnabled]);
+  }, [storeConfig.purchasesEnabled, welcomeConfig.enabled, welcomeConfig.delaySeconds]);
 
-  if (!open || !storeConfig.purchasesEnabled) return null;
+  if (!open || !storeConfig.purchasesEnabled || !welcomeConfig.enabled) return null;
+
+  const offerCode = (welcomeConfig.offerCode || '').trim() || 'WELCOME10';
 
   const handleCopy = () => {
-    navigator.clipboard?.writeText(OFFER_CODE).then(() => {
+    navigator.clipboard?.writeText(offerCode).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
@@ -66,9 +68,9 @@ export function WelcomePopup() {
             <div className="w-16 h-16 rounded-3xl bg-white/20 border border-white/30 flex items-center justify-center mx-auto mb-3 animate-float shadow-lg">
               <BadgePercent className="w-8 h-8 text-white" />
             </div>
-            <p className="text-[11px] font-black uppercase tracking-widest text-white/80">{t('عرض ترحيبي خاص')}</p>
-            <h3 className="text-2xl font-black mt-1">{t('خصم 10% على طلبك الأول')}</h3>
-            <p className="text-xs text-white/85 font-bold mt-1.5">{t('ادخل الكود عند إتمام الطلب واستفد بالخصم')}</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-white/80">{t(welcomeConfig.badgeText)}</p>
+            <h3 className="text-2xl font-black mt-1">{t(welcomeConfig.title, { percent: welcomeConfig.discountPercent })}</h3>
+            <p className="text-xs text-white/85 font-bold mt-1.5">{t(welcomeConfig.subtitle)}</p>
           </div>
         </div>
 
@@ -97,7 +99,7 @@ export function WelcomePopup() {
           <div className="flex items-center justify-between gap-2 border-2 border-dashed rounded-2xl p-3" style={{ borderColor: `${themeColors.accentColor}50`, backgroundColor: `${themeColors.accentColor}08` }}>
             <div className="flex items-center gap-2 min-w-0">
               <Ticket className="w-5 h-5 shrink-0" style={{ color: themeColors.accentColor }} />
-              <span className="font-black text-lg tracking-widest text-slate-800" dir="ltr">{OFFER_CODE}</span>
+              <span className="font-black text-lg tracking-widest text-slate-800" dir="ltr">{offerCode}</span>
             </div>
             <button
               onClick={handleCopy}
@@ -119,13 +121,13 @@ export function WelcomePopup() {
             style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 12px 28px -8px ${themeColors.priceColor}99` }}
           >
             <ShoppingBag className="w-4 h-4" />
-            {t('ابدأ التسوق الآن')}
+            {t(welcomeConfig.ctaText)}
           </button>
           <button
             onClick={() => setOpen(false)}
             className="mt-3 w-full text-center text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
           >
-            {t('لاحقاً، لن أشتري الآن')}
+            {t(welcomeConfig.laterText)}
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type AccountTab = 'orders' | 'prescriptions' | 'addresses' | 'favorites' | 'rewards' | 'reminders';
+export type AccountTab = 'orders' | 'prescriptions' | 'addresses' | 'favorites' | 'rewards' | 'reminders' | 'family';
 
 type Route =
   | { name: 'home' }

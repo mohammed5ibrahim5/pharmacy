@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { ProductCard } from '@/components/ProductCard';
+import { OtcFilterToggle } from '@/components/OtcFilterToggle';
 import type { Product, Category } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -18,6 +19,7 @@ export function CategoryPage({ slug }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
+  const [otcOnly, setOtcOnly] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -42,6 +44,8 @@ export function CategoryPage({ slug }: Props) {
     };
     fetch();
   }, [slug]);
+
+  const visibleProducts = otcOnly ? products.filter((p) => !p.requires_prescription) : products;
 
   if (loading) {
     return (
@@ -94,8 +98,14 @@ return (
           <p className="text-gray-500">{t('لا توجد منتجات في هذه الفئة حالياً')}</p>
         </div>
       ) : (
+        <div className="mb-6">
+          <OtcFilterToggle checked={otcOnly} onChange={setOtcOnly} />
+        </div>
+      )}
+
+      {products.length > 0 && visibleProducts.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {products.map((product) => (
+          {visibleProducts.map((product) => (
             <ProductCard
               key={product.id}
               product={product}
@@ -103,6 +113,12 @@ return (
               onClick={product.for_all_pharmacies ? undefined : () => navigate({ name: 'pharmacy', id: product.pharmacy_id })}
             />
           ))}
+        </div>
+      )}
+
+      {products.length > 0 && visibleProducts.length === 0 && (
+        <div className="py-10 text-center bg-white rounded-2xl border border-gray-200">
+          <p className="text-slate-500 text-sm font-extrabold">{t('لا توجد منتجات بدون وصفة طبية')}</p>
         </div>
       )}
     </div>

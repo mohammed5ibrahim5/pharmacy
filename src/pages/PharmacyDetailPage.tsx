@@ -6,6 +6,7 @@ import { useRouter } from '@/context/RouterContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { ProductCard } from '@/components/ProductCard';
 import { ReviewsSection } from '@/components/ReviewsSection';
+import { OtcFilterToggle } from '@/components/OtcFilterToggle';
 import { formatDistance, getPharmacyWithDistance } from '@/lib/distance';
 import { getDirectionsUrl } from '@/lib/directions';
 import type { Pharmacy, Product, Category } from '@/types';
@@ -26,6 +27,7 @@ export function PharmacyDetailPage({ id }: Props) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [otcOnly, setOtcOnly] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -73,8 +75,11 @@ export function PharmacyDetailPage({ id }: Props) {
           (p.name_en?.toLowerCase().includes(q) ?? false)
       );
     }
+    if (otcOnly) {
+      result = result.filter((p) => !p.requires_prescription);
+    }
     return result;
-  }, [products, search, activeCategory]);
+  }, [products, search, activeCategory, otcOnly]);
 
   if (loading) {
     return (
@@ -276,16 +281,19 @@ export function PharmacyDetailPage({ id }: Props) {
               <h2 className="text-xl sm:text-2xl font-black" style={{ color: themeColors.sectionHeadingText }}>{t('المنتجات المتاحة')}</h2>
               <p className="text-sm font-medium mt-0.5" style={{ color: themeColors.sectionSubheadingText }}>{t('{0} منتج في صيدلية {1}', [filteredProducts.length, pharmacy.name])}</p>
             </div>
-            <div className="relative w-full sm:max-w-xs">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('ابحث داخل الصيدلية...')}
-                className="w-full ps-10 pe-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-transparent focus:ring-2 text-sm"
-                style={{ backgroundColor: themeColors.pageSearchBg, color: themeColors.pageSearchText, ['--tw-ring-color' as string]: themeColors.priceColor }}
-              />
-              <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: themeColors.pageSearchText }} />
+            <div className="flex flex-col gap-2 w-full sm:max-w-xs">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t('ابحث داخل الصيدلية...')}
+                  className="w-full ps-10 pe-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:border-transparent focus:ring-2 text-sm"
+                  style={{ backgroundColor: themeColors.pageSearchBg, color: themeColors.pageSearchText, ['--tw-ring-color' as string]: themeColors.priceColor }}
+                />
+                <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: themeColors.pageSearchText }} />
+              </div>
+              <OtcFilterToggle checked={otcOnly} onChange={setOtcOnly} />
             </div>
           </div>
 
@@ -332,17 +340,17 @@ export function PharmacyDetailPage({ id }: Props) {
                 </span>
               </div>
               <h3 className="font-black text-base" style={{ color: themeColors.cardText }}>
-                {search || activeCategory ? t('لا توجد منتجات مطابقة') : t('لا توجد منتجات متاحة حالياً')}
+                {search || activeCategory || otcOnly ? t('لا توجد منتجات مطابقة') : t('لا توجد منتجات متاحة حالياً')}
               </h3>
               <p className="text-xs mt-1.5 font-bold max-w-xs mx-auto" style={{ color: themeColors.cardMutedText }}>
-                {search || activeCategory
+                {search || activeCategory || otcOnly
                   ? t('جرّب كلمة بحث مختلفة أو تصفّح فئة أخرى — قد تجد ما تبحث عنه')
                   : t('الصيدلية لم تُضف منتجات بعد — تابعنا قريباً أو جرّب صيدلية أخرى')}
               </p>
-              {(search || activeCategory) && (
+              {(search || activeCategory || otcOnly) && (
                 <button
                   type="button"
-                  onClick={() => { setSearch(''); setActiveCategory(null); }}
+                  onClick={() => { setSearch(''); setActiveCategory(null); setOtcOnly(false); }}
                   className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-lg"
                   style={{ backgroundColor: themeColors.tabActiveBg, boxShadow: `0 10px 22px -8px ${themeColors.tabActiveBg}77` }}
                 >

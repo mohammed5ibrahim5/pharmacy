@@ -28,6 +28,11 @@ import {
   Wallet,
   Bell,
   Star,
+  Users,
+  Pencil,
+  Save,
+  Baby,
+  X,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useCustomer } from '@/context/CustomerContext';
@@ -37,7 +42,7 @@ import { useRouter } from '@/context/RouterContext';
 import { useOrder } from '@/context/OrderContext';
 import { useLanguage } from '@/context/LanguageContext';
 import type { AccountTab } from '@/context/RouterContext';
-import type { Pharmacy, Product, LoyaltyTransaction, MedicationReminder } from '@/types';
+import type { Pharmacy, Product, LoyaltyTransaction, MedicationReminder, FamilyMember } from '@/types';
 import { ProductCard } from '@/components/ProductCard';
 import { PharmacyCard } from '@/components/PharmacyCard';
 import { OrderReviewModal } from '@/components/OrderReviewModal';
@@ -73,8 +78,10 @@ interface OrderRecord {
   payment_number: string | null;
   payment_screenshot_url: string | null;
   created_at: string;
+  family_member_id: string | null;
   product?: Product;
   pharmacy?: Pharmacy;
+  family_member?: FamilyMember;
 }
 
 interface AddressRecord {
@@ -180,6 +187,164 @@ function OrderProgressTracker({ status, color }: { status: string; color: string
   );
 }
 
+function OrderTrackingModal({ order, onClose }: { order: OrderRecord; onClose: () => void }) {
+  const { t, lang } = useLanguage();
+  const { themeColors } = useSettings();
+  const [status, setStatus] = useState(order.status);
+  const [updatedAt, setUpdatedAt] = useState(order.created_at);
+
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      const { data } = await supabase
+        .from('orders')
+        .select('status, updated_at')
+        .eq('id', order.id)
+        .maybeSingle();
+      if (!cancelled && data) {
+        setStatus(data.status);
+        if (data.updated_at) setUpdatedAt(data.updated_at);
+      }
+    };
+    poll();
+    const timer = setInterval(poll, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [order.id]);
+
+  const currentIdx = ORDER_TRACK_STEPS.findIndex((s) => s.key === status);
+  const current = currentIdx === -1 ? 0 : currentIdx;
+  const cancelled = status === 'cancelled';
+
+  const liveMessages: Record<string, string> = {
+    pending: t('طلبك قيد المراجعة، سنؤكد الدفع خلال دقائق.'),
+    confirmed: t('تم تأكيد الدفع، نجهز طلبك الآن.'),
+    shipped: t('السائق في الطريق إليك الآن، استعد لاستلام طلبك.'),
+    delivered: t('تم تسليم طلبك بنجاح. شكراً لثقتك بنا!'),
+  };
+
+  const progress = Math.min(100, Math.round((current / (ORDER_TRACK_STEPS.length - 1)) * 100));
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}>
+              <Navigation className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-gray-900">{t('تتبع الطلب')}</h3>
+              <p className="text-[11px] text-gray-500 font-bold">{t('تحديث مباشر كل 5 ثوانٍ')}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors" title={t('إغلاق')}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Live progress bar */}
+        <div className="h-2 rounded-full bg-gray-100 overflow-hidden mb-1">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${cancelled ? 'bg-red-400' : ''}`}
+            style={!cancelled ? { width: `${progress}%`, backgroundColor: themeColors.primaryColor } : { width: '100%' }}
+          />
+        </div>
+        <p className={`text-[11px] font-bold mb-5 ${cancelled ? 'text-red-500' : 'text-gray-500'}`}>
+          {cancelled ? t('تم إلغاء هذا الطلب') : t('حالة الطلب الحالية: {0}', [t(ORDER_TRACK_STEPS[current].label)])}
+        </p>
+
+        {!cancelled && (
+          <div className="mb-5 rounded-2xl p-4 flex items-start gap-3 animate-fade-in" style={{ backgroundColor: `${themeColors.primaryColor}12` }}>
+            <span className="flex items-center justify-center relative flex w-3 h-3 mt-1">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: themeColors.primaryColor }} />
+              <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: themeColors.primaryColor }} />
+            </span>
+            <p className="text-xs font-bold text-gray-800 leading-relaxed">{liveMessages[status] || liveMessages.pending}</p>
+          </div>
+        )}
+
+        {/* Steps timeline */}
+        <div className="space-y-1 mb-5">
+          {ORDER_TRACK_STEPS.map((step, i) => {
+            const done = !cancelled && i <= current;
+            return (
+              <div key={step.key} className="flex items-center gap-3 py-2">
+                <span
+                  className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-all ${
+                    done ? 'text-white border-transparent shadow-md' : 'bg-gray-100 text-gray-400 border-gray-200'
+                  }`}
+                  style={done ? { backgroundColor: themeColors.primaryColor } : {}}
+                >
+                  {done ? <CheckCircle2 className="w-5 h-5" /> : step.icon}
+                </span>
+                <div className="flex-1">
+                  <p className={`text-sm font-black ${done ? 'text-gray-900' : 'text-gray-400'}`}>{t(step.label)}</p>
+                  <p className={`text-[11px] font-bold ${done ? 'text-gray-500' : 'text-gray-300'}`}>
+                    {i === current && !cancelled
+                      ? t('الحالة الحالية')
+                      : i < current
+                        ? t('تم')
+                        : t('قادم')}
+                  </p>
+                </div>
+                {done && <CheckCircle2 className="w-4 h-4" style={{ color: themeColors.primaryColor }} />}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Order details */}
+        <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4 space-y-2 text-xs">
+          <div className="flex justify-between gap-3">
+            <span className="text-gray-500 font-bold">{t('المنتج')}</span>
+            <span className="font-black text-gray-900 text-end">{order.product?.name || t('منتج')}</span>
+          </div>
+          <div className="flex justify-between gap-3">
+            <span className="text-gray-500 font-bold">{t('الصيدلية')}</span>
+            <span className="font-bold text-gray-900 text-end">{order.pharmacy?.name || t('صيدلية')}</span>
+          </div>
+          {order.family_member && (
+            <div className="flex justify-between gap-3">
+              <span className="text-gray-500 font-bold">{t('الطلب لأجل')}</span>
+              <span className="font-bold text-gray-900 flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" style={{ color: themeColors.primaryColor }} />
+                {order.family_member.name}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between gap-3">
+            <span className="text-gray-500 font-bold">{t('العنوان')}</span>
+            <span className="font-bold text-gray-900 text-end">{order.address || t('غير محدد')}</span>
+          </div>
+          <div className="flex justify-between gap-3">
+            <span className="text-gray-500 font-bold">{t('الإجمالي')}</span>
+            <span className="font-black" style={{ color: themeColors.primaryColor }}>{Number(order.total_price).toFixed(2)} {t('ج.م')}</span>
+          </div>
+          <div className="flex justify-between gap-3">
+            <span className="text-gray-500 font-bold">{t('آخر تحديث')}</span>
+            <span className="font-bold text-gray-900">{localizedDate(updatedAt, lang, { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+        </div>
+
+        {order.pharmacy?.phone && (
+          <a
+            href={`tel:${order.pharmacy.phone}`}
+            className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-white text-sm font-bold shadow-lg hover:brightness-110 active:scale-[0.98] transition-all"
+            style={{ backgroundColor: themeColors.primaryColor }}
+          >
+            <Phone className="w-4 h-4" />
+            {t('تواصل مع الصيدلية')}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AccountPage({ tab }: { tab: AccountTab }) {
   const { user, profile, setAuthModalOpen, signOut } = useCustomer();
   const { settings, themeColors, loyaltyConfig, featuresConfig } = useSettings();
@@ -196,6 +361,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [reviewOrder, setReviewOrder] = useState<OrderRecord | null>(null);
+  const [trackingOrder, setTrackingOrder] = useState<OrderRecord | null>(null);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [rxLoading, setRxLoading] = useState(false);
   const [rxUploading, setRxUploading] = useState(false);
@@ -279,6 +445,69 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const [rxPhone, setRxPhone] = useState(profile?.phone || '');
   const [rxNotes, setRxNotes] = useState('');
 
+  // Family members state
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [familyLoading, setFamilyLoading] = useState(false);
+  const [familySaving, setFamilySaving] = useState(false);
+  const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
+  const [famForm, setFamForm] = useState({ name: '', relation: '', age: '', weight: '' });
+
+  const fetchFamilyMembers = useCallback(async () => {
+    if (!user || !featuresConfig.familyMembers) return;
+    setFamilyLoading(true);
+    const { data, error } = await supabase
+      .from('family_members')
+      .select('*')
+      .eq('customer_id', user.id)
+      .order('created_at');
+    if (!error) setFamilyMembers((data || []) as FamilyMember[]);
+    setFamilyLoading(false);
+  }, [user, featuresConfig.familyMembers]);
+
+  useEffect(() => {
+    fetchFamilyMembers();
+  }, [fetchFamilyMembers]);
+
+  const handleFamilySave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !famForm.name.trim()) {
+      showToast(t('يرجى إدخال اسم العضو'));
+      return;
+    }
+    setFamilySaving(true);
+    const payload = {
+      customer_id: user.id,
+      name: famForm.name.trim(),
+      relation: famForm.relation.trim() || null,
+      age: famForm.age.trim() ? Number(famForm.age.trim()) : null,
+      weight: famForm.weight.trim() ? Number(famForm.weight.trim()) : null,
+      updated_at: new Date().toISOString(),
+    };
+    if (editingMember) {
+      const { error } = await supabase.from('family_members').update(payload).eq('id', editingMember.id);
+      if (error) showToast(localizedError(error.message, lang));
+    } else {
+      const { error } = await supabase.from('family_members').insert(payload);
+      if (error) showToast(localizedError(error.message, lang));
+    }
+    setFamilySaving(false);
+    setEditingMember(null);
+    setFamForm({ name: '', relation: '', age: '', weight: '' });
+    fetchFamilyMembers();
+  };
+
+  const handleFamilyDelete = async (id: string) => {
+    if (!confirm(t('هل أنت متأكد من حذف هذا العضو؟'))) return;
+    const { error } = await supabase.from('family_members').delete().eq('id', id);
+    if (error) showToast(localizedError(error.message, lang));
+    fetchFamilyMembers();
+  };
+
+  const startEditMember = (m: FamilyMember) => {
+    setEditingMember(m);
+    setFamForm({ name: m.name, relation: m.relation || '', age: m.age?.toString() || '', weight: m.weight?.toString() || '' });
+  };
+
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -348,8 +577,21 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
         .order('created_at', { ascending: false })
         .limit(50);
       if (!cancelled) {
-        setOrders((data || []) as OrderRecord[]);
-        if (error) showToast(localizedError(error.message, lang));
+        let rows = (data || []) as OrderRecord[];
+        if (error) {
+          showToast(localizedError(error.message, lang));
+        } else if (featuresConfig.familyMembers) {
+          const ids = Array.from(new Set(rows.map((o) => o.family_member_id).filter((v): v is string => !!v)));
+          if (ids.length > 0) {
+            const { data: members } = await supabase
+              .from('family_members')
+              .select('*')
+              .in('id', ids);
+            const map = new Map((members || []).map((m: FamilyMember) => [m.id, m]));
+            rows = rows.map((o) => (o.family_member_id && map.get(o.family_member_id) ? { ...o, family_member: map.get(o.family_member_id) } : o));
+          }
+        }
+        setOrders(rows);
         setOrdersLoading(false);
       }
     };
@@ -357,7 +599,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     return () => {
       cancelled = true;
     };
-  }, [user, lang]);
+  }, [user, lang, featuresConfig.familyMembers]);
 
   const activeOrdersCount = useMemo(
     () => orders.filter((o) => o.status === 'pending' || o.status === 'confirmed' || o.status === 'shipped').length,
@@ -527,6 +769,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     { id: 'prescriptions', label: t('الروشتات المحفوظة'), icon: <FileText className="w-4 h-4" />, count: prescriptions.length },
     ...(loyaltyConfig.enabled ? [{ id: 'rewards' as AccountTab, label: t('نقاطي ومكافآتي'), icon: <Sparkles className="w-4 h-4" />, count: loyaltyPoints }] : []),
     ...(featuresConfig.reminders ? [{ id: 'reminders' as AccountTab, label: t('الملف الدوائي'), icon: <Bell className="w-4 h-4" />, count: reminders.length }] : []),
+    ...(featuresConfig.familyMembers ? [{ id: 'family' as AccountTab, label: t('أفراد العائلة'), icon: <Users className="w-4 h-4" />, count: familyMembers.length }] : []),
     { id: 'addresses', label: t('العناوين المسجلة'), icon: <MapPin className="w-4 h-4" />, count: addresses.length },
     { id: 'favorites', label: t('المفضلة'), icon: <Heart className="w-4 h-4" />, count: productFavoritesCount + pharmacyFavoritesCount },
   ];
@@ -760,6 +1003,16 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                         <p className="text-[11px] font-bold text-gray-400">{t('ج.م')}</p>
                       </div>
                       <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+                        {featuresConfig.orderTracking && (
+                          <button
+                            onClick={() => setTrackingOrder(order)}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+                            style={{ borderColor: `${themeColors.primaryColor}55`, color: themeColors.primaryColor }}
+                          >
+                            <Navigation className="w-3.5 h-3.5" />
+                            {t('تتبع الطلب')}
+                          </button>
+                        )}
                         {order.status === 'delivered' && (
                           <button
                             onClick={() => setReviewOrder(order)}
@@ -800,6 +1053,13 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
             setReviewOrder(null);
             showToast(t('شكراً لك! تم نشر تقييمك بنجاح'));
           }}
+        />
+      )}
+
+      {trackingOrder && (
+        <OrderTrackingModal
+          order={trackingOrder}
+          onClose={() => setTrackingOrder(null)}
         />
       )}
 
@@ -1246,6 +1506,127 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Family members tab ===== */}
+      {tab === 'family' && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-black text-gray-900">{t('أفراد العائلة')}</h2>
+            <span className="text-xs font-bold text-gray-500">{t('{0} فرد', [familyMembers.length])}</span>
+          </div>
+          <p className="text-xs text-gray-500 leading-relaxed -mt-2">
+            {t('أضف أفراد عائلتك (الأطفال وكبار السن) لتتمكن من طلب أدويتهم بسهولة وحساب جرعاتهم بشكل آمن.')}
+          </p>
+
+          <div className="grid lg:grid-cols-2 gap-4">
+            <form onSubmit={handleFamilySave} className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm space-y-3 self-start">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}>
+                  {editingMember ? <Pencil className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+                </div>
+                <h3 className="font-black text-gray-900 text-sm">{editingMember ? t('تعديل عضو') : t('إضافة فرد جديد')}</h3>
+              </div>
+              <input
+                type="text"
+                value={famForm.name}
+                onChange={(e) => setFamForm({ ...famForm, name: e.target.value })}
+                placeholder={t('الاسم (مثال: أحمد، 3 سنوات)')}
+                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none focus:ring-2"
+                style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
+              />
+              <div className="grid grid-cols-3 gap-2">
+                <select
+                  value={famForm.relation}
+                  onChange={(e) => setFamForm({ ...famForm, relation: e.target.value })}
+                  className="w-full px-2 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none"
+                >
+                  <option value="">{t('العلاقة')}</option>
+                  <option value="son">{t('ابن')}</option>
+                  <option value="daughter">{t('ابنة')}</option>
+                  <option value="father">{t('الأب')}</option>
+                  <option value="mother">{t('الأم')}</option>
+                  <option value="spouse">{t('زوج/زوجة')}</option>
+                  <option value="other">{t('أخرى')}</option>
+                </select>
+                <input
+                  type="number"
+                  min="0"
+                  max="120"
+                  value={famForm.age}
+                  onChange={(e) => setFamForm({ ...famForm, age: e.target.value })}
+                  placeholder={t('العمر')}
+                  className="w-full px-2 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none"
+                  dir="ltr"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={famForm.weight}
+                  onChange={(e) => setFamForm({ ...famForm, weight: e.target.value })}
+                  placeholder={t('الوزن (كجم)')}
+                  className="w-full px-2 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none"
+                  dir="ltr"
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="submit"
+                  disabled={familySaving}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-xs font-bold disabled:opacity-50 transition-all active:scale-95"
+                  style={{ backgroundColor: themeColors.primaryColor }}
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {familySaving ? t('جاري الحفظ...') : editingMember ? t('حفظ التعديل') : t('إضافة')}
+                </button>
+                {editingMember && (
+                  <button
+                    type="button"
+                    onClick={() => { setEditingMember(null); setFamForm({ name: '', relation: '', age: '', weight: '' }); }}
+                    className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50"
+                  >
+                    {t('إلغاء')}
+                  </button>
+                )}
+              </div>
+            </form>
+
+            <div className="space-y-3">
+              {familyLoading && (
+                <div className="flex items-center justify-center py-10 text-gray-400">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                </div>
+              )}
+              {!familyLoading && familyMembers.length === 0 && (
+                <div className="bg-white rounded-3xl border border-dashed border-gray-200 p-6 text-center text-xs font-bold text-gray-400">
+                  {t('لا يوجد أفراد عائلة بعد. أضف أول فرد من النموذج المجاور.')}
+                </div>
+              )}
+              {familyMembers.map((m) => (
+                <div key={m.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}>
+                    <Baby className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black text-gray-900">{m.name}</p>
+                    <p className="text-[11px] text-gray-500 font-bold mt-0.5">
+                      {m.relation ? t(m.relation) : t('أخرى')}
+                      {m.age != null && ` • ${t('{0} سنة', [m.age])}`}
+                      {m.weight != null && ` • ${m.weight} ${t('كجم')}`}
+                    </p>
+                  </div>
+                  <button onClick={() => startEditMember(m)} className="w-9 h-9 rounded-xl bg-gray-50 text-gray-500 hover:bg-gray-100 flex items-center justify-center" title={t('تعديل')}>
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => handleFamilyDelete(m.id)} className="w-9 h-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center" title={t('حذف')}>
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

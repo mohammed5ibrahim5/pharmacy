@@ -41,12 +41,13 @@ CREATE POLICY "customer_delete_own" ON customers FOR DELETE
   TO authenticated USING (auth.uid() = user_id);
 
 -- معالج تلقائي: إنشاء صف عميل عند إنشاء مستخدم جديد (للمستخدمين القدامى)
+-- يتخطى الإدراج إذا كان الإيميل أو المستخدم مسجلاً بالفعل (تجنب تعارض customers_email_key)
 CREATE OR REPLACE FUNCTION handle_new_customer()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.customers (user_id, email, full_name)
-  VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data->>'full_name')
-  ON CONFLICT (user_id) DO NOTHING;
+  SELECT NEW.id, NEW.email, NEW.raw_user_meta_data->>'full_name'
+  WHERE NOT EXISTS (SELECT 1 FROM public.customers WHERE email = NEW.email OR user_id = NEW.id);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

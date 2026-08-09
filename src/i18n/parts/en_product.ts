@@ -8,6 +8,8 @@
   'نبهني عند توفر الدواء': 'Notify me when available',
   'غير متوفر حالياً': 'Currently unavailable',
   'بوصفة طبية': 'Prescription required',
+  'بدون وصفة طبية فقط': 'Over-the-counter only',
+  'لا توجد منتجات بدون وصفة طبية': 'No over-the-counter products found',
   'إنقاص الكمية': 'Decrease quantity',
   'زيادة الكمية': 'Increase quantity',
   'أضف إلى السلة': 'Add to cart',

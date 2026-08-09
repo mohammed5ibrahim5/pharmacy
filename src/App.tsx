@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react';
 import { SettingsProvider, useSettings } from '@/context/SettingsContext';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { RouterProvider, useRouter } from '@/context/RouterContext';
@@ -140,6 +140,13 @@ function AppContent() {
 
   const isPharmacyAdmin = path.startsWith('/admin/pharmacy');
   const isSiteAdmin = path.startsWith('/admin') && !isPharmacyAdmin;
+
+  // فصل الوضع الليلي: صفحات الأدمن لا تتأثر بوضع الموقع (dark على <html>)
+  useLayoutEffect(() => {
+    if (isSiteAdmin || isPharmacyAdmin) {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [path, isSiteAdmin, isPharmacyAdmin]);
 
   if (isPharmacyAdmin) {
     return (

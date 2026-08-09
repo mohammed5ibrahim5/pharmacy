@@ -27,17 +27,20 @@ import {
   Zap,
   Droplet,
   Baby,
-  Activity
+  Activity,
+  Calculator,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRouter } from '@/context/RouterContext';
+import { useFavorites } from '@/context/FavoritesContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { PharmacyCard } from '@/components/PharmacyCard';
 import { BarcodeScannerModal } from '@/components/BarcodeScannerModal';
 import { LocationSelectorModal } from '@/components/LocationSelectorModal';
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
+import { DoseCalculatorModal } from '@/components/DoseCalculatorModal';
 import { getPharmacyWithDistance, sortPharmaciesByDistance } from '@/lib/distance';
 import { findAreaLocation } from '@/lib/areaLocations';
 import { trackSearch } from '@/lib/searchHistory';
@@ -133,13 +136,14 @@ function statDisplayValue(stat: { id: string; value: string; auto?: boolean; aut
   return stat.value;
 }
 
-type PharmacyTab = 'nearest' | 'highest_rated' | 'most_popular' | 'delivery' | '24h';
+type PharmacyTab = 'nearest' | 'favorite' | 'highest_rated' | 'most_popular' | 'delivery' | '24h';
 
 export function HomePage() {
-  const { settings, themeColors, heroConfig, storeConfig, homepageConfig } = useSettings();
+  const { settings, themeColors, heroConfig, storeConfig, homepageConfig, featuresConfig } = useSettings();
   const { t, lang, dir } = useLanguage();
   const { navigate } = useRouter();
   const { location, requestLocation, loading, permissionDenied, setUserLocation } = useGeolocation();
+  const { favoritePharmacies } = useFavorites();
 
   // State
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,6 +168,7 @@ export function HomePage() {
   const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
+  const [doseModalOpen, setDoseModalOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
 
   // Nearest tab requires the user to set their location in this session
@@ -299,10 +304,27 @@ export function HomePage() {
     return pharmacies.filter((p) => p.is_24h).slice(0, 6);
   }, [pharmacies, pharmacySections, sectionsLoaded]);
 
+  const favoritePharmaciesList = useMemo(
+    () => pharmacies.filter((p) => favoritePharmacies.includes(p.id)),
+    [pharmacies, favoritePharmacies]
+  );
+
+  // Products whose pharmacy is in the customer's favorites show up first
+  const featuredProducts = useMemo(() => {
+    const favSet = new Set(favoritePharmacies);
+    return [...products].sort((a, b) => {
+      const af = a.for_all_pharmacies || (a.pharmacy_id ? favSet.has(a.pharmacy_id) : false) ? 0 : 1;
+      const bf = b.for_all_pharmacies || (b.pharmacy_id ? favSet.has(b.pharmacy_id) : false) ? 0 : 1;
+      return af - bf;
+    });
+  }, [products, favoritePharmacies]);
+
   const displayedPharmacies = useMemo(() => {
     switch (activePharmacyTab) {
       case 'nearest':
         return sortedPharmacies;
+      case 'favorite':
+        return favoritePharmaciesList.length > 0 ? favoritePharmaciesList : sortedPharmacies;
       case 'highest_rated':
         return highestRatedPharmacies;
       case 'most_popular':
@@ -317,6 +339,7 @@ export function HomePage() {
   }, [
     activePharmacyTab,
     sortedPharmacies,
+    favoritePharmaciesList,
     highestRatedPharmacies,
     mostPopularPharmacies,
     deliveryPharmacies,
@@ -762,6 +785,7 @@ export function HomePage() {
         {/* Filters */}
         <div className="flex items-center gap-2 mb-8 overflow-x-auto scrollbar-none">
           {[
+            { id: 'favorite', label: 'صيدلياتي المفضلة' },
             { id: 'nearest', label: 'الأقرب إليك' },
             { id: 'highest_rated', label: 'الأعلى تقييماً' },
             { id: 'most_popular', label: 'الأكثر شعبية' },
@@ -851,10 +875,10 @@ export function HomePage() {
 
       {/* ==================== FEATURED DISCOUNTED PRODUCTS ==================== */}
       {/* ==================== FEATURED PRODUCTS ==================== */}
-      <Reveal><FeaturedProducts products={products} loading={loadingData} popularProductIds={popularProductIds} /></Reveal>
+      <Reveal><FeaturedProducts products={featuredProducts} loading={loadingData} popularProductIds={popularProductIds} /></Reveal>
 
       {/* ==================== MOST SEARCHED ==================== */}
-      <Reveal><MostSearched products={products} popularProductIds={popularProductIds} /></Reveal>
+      <Reveal><MostSearched products={featuredProducts} popularProductIds={popularProductIds} /></Reveal>
 
       {/* ==================== HOW IT WORKS ==================== */}
       <Reveal><HomeHowItWorks /></Reveal>
@@ -967,6 +991,15 @@ export function HomePage() {
                 <Barcode className="w-4 h-4" />
                 {t('امسحلي صندوق الدواء')}
               </button>
+              {featuresConfig.doseCalculator && (
+                <button
+                  onClick={() => setDoseModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-white font-black text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-lg border border-white/40 bg-white/10 backdrop-blur-sm"
+                >
+                  <Calculator className="w-4 h-4" />
+                  {t('حاسبة جرعات الأطفال')}
+                </button>
+              )}
               {settings.contact_whatsapp && (
                 <a
                   href={`https://wa.me/${settings.contact_whatsapp}`}
@@ -1006,6 +1039,9 @@ export function HomePage() {
         open={prescriptionModalOpen}
         onClose={() => setPrescriptionModalOpen(false)}
       />
+      {featuresConfig.doseCalculator && doseModalOpen && (
+        <DoseCalculatorModal onClose={() => setDoseModalOpen(false)} />
+      )}
     </div>
   );
 }

@@ -258,6 +258,8 @@ export interface FeaturesConfig {
   orderTracking: boolean;
   stockAlerts: boolean;
   reminders: boolean;
+  familyMembers: boolean;
+  doseCalculator: boolean;
 }
 
 export const DEFAULT_FEATURES_CONFIG: FeaturesConfig = {
@@ -265,6 +267,34 @@ export const DEFAULT_FEATURES_CONFIG: FeaturesConfig = {
   orderTracking: true,
   stockAlerts: true,
   reminders: true,
+  familyMembers: true,
+  doseCalculator: true,
+};
+
+export interface WelcomePopupConfig {
+  enabled: boolean;
+  badgeText: string;
+  title: string;
+  subtitle: string;
+  offerCode: string;
+  discountPercent: number;
+  delaySeconds: number;
+  showCountdown: boolean;
+  ctaText: string;
+  laterText: string;
+}
+
+export const DEFAULT_WELCOME_POPUP_CONFIG: WelcomePopupConfig = {
+  enabled: true,
+  badgeText: 'عرض ترحيبي خاص',
+  title: 'خصم {percent}% على طلبك الأول',
+  subtitle: 'ادخل الكود عند إتمام الطلب واستفد بالخصم',
+  offerCode: 'WELCOME10',
+  discountPercent: 10,
+  delaySeconds: 4,
+  showCountdown: true,
+  ctaText: 'ابدأ التسوق الآن',
+  laterText: 'لاحقاً، لن أشتري الآن',
 };
 
 export const DEFAULT_HOW_IT_WORKS_CONFIG: HowItWorksConfig = {
@@ -332,6 +362,7 @@ interface SettingsContextType {
   homepageConfig: HomepageConfig;
   loyaltyConfig: LoyaltyConfig;
   featuresConfig: FeaturesConfig;
+  welcomeConfig: WelcomePopupConfig;
   darkMode: boolean;
   toggleDarkMode: () => void;
   loading: boolean;
@@ -378,6 +409,7 @@ const SettingsContext = createContext<SettingsContextType>({
   homepageConfig: DEFAULT_HOMEPAGE_CONFIG,
   loyaltyConfig: DEFAULT_LOYALTY_CONFIG,
   featuresConfig: DEFAULT_FEATURES_CONFIG,
+  welcomeConfig: DEFAULT_WELCOME_POPUP_CONFIG,
   darkMode: false,
   toggleDarkMode: () => {},
   loading: true,
@@ -396,6 +428,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
   const [loyaltyConfig, setLoyaltyConfig] = useState<LoyaltyConfig>(DEFAULT_LOYALTY_CONFIG);
   const [featuresConfig, setFeaturesConfig] = useState<FeaturesConfig>(DEFAULT_FEATURES_CONFIG);
+  const [welcomeConfig, setWelcomeConfig] = useState<WelcomePopupConfig>(DEFAULT_WELCOME_POPUP_CONFIG);
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     try {
       return localStorage.getItem('pharmacy-dark-mode') === '1';
@@ -427,6 +460,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     let homepage = { ...DEFAULT_HOMEPAGE_CONFIG };
     let loyalty = { ...DEFAULT_LOYALTY_CONFIG };
     let features = { ...DEFAULT_FEATURES_CONFIG };
+    let welcome = { ...DEFAULT_WELCOME_POPUP_CONFIG };
     if (siteSettings.features_json) {
       try {
         const parsed = JSON.parse(siteSettings.features_json);
@@ -467,6 +501,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (parsed && parsed.featuresConfig) {
           features = { ...DEFAULT_FEATURES_CONFIG, ...parsed.featuresConfig };
         }
+        if (parsed && parsed.welcomeConfig) {
+          welcome = { ...DEFAULT_WELCOME_POPUP_CONFIG, ...parsed.welcomeConfig };
+        }
       } catch (e) {
         console.error('Error parsing features_json for themeColors:', e);
       }
@@ -487,6 +524,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setHomepageConfig(homepage);
     setLoyaltyConfig(loyalty);
     setFeaturesConfig(features);
+    setWelcomeConfig(welcome);
     setLoading(false);
   };
 
@@ -546,6 +584,7 @@ return (
         homepageConfig,
         loyaltyConfig,
         featuresConfig,
+        welcomeConfig,
         darkMode,
         toggleDarkMode: () => setDarkMode((v) => !v),
         loading,

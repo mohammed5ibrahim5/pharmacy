@@ -1,4 +1,4 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, Flame, Plus, Minus } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, Flame, Plus, Minus, Info, ChevronDown, ShieldAlert, Clock } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -23,6 +23,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { user } = useAuth();
   const [compareOpen, setCompareOpen] = useState(false);
+  const [medInfoOpen, setMedInfoOpen] = useState(false);
   const [alerting, setAlerting] = useState(false);
   const [alerted, setAlerted] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
@@ -367,6 +368,83 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
       </div>
 
       {compareOpen && <PriceCompareModal product={product} onClose={() => setCompareOpen(false)} />}
+
+      {(product.active_ingredient || product.dosage || product.how_to_use || product.contraindications || product.interactions) && (
+        <div className="px-4 pb-4" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => setMedInfoOpen((v) => !v)}
+            className="w-full flex items-center justify-between gap-2 py-2.5 px-3 rounded-xl border text-[11px] font-extrabold transition-all"
+            style={{
+              color: themeColors.cardText,
+              backgroundColor: `${themeColors.priceColor}05`,
+              borderColor: `${themeColors.priceColor}25`,
+            }}
+          >
+            <span className="flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5" style={{ color: themeColors.priceColor }} />
+              {t('معلومات الدواء')}
+            </span>
+            <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${medInfoOpen ? 'rotate-180' : ''}`} style={{ color: themeColors.cardMutedText }} />
+          </button>
+
+          {medInfoOpen && (
+            <div className="mt-2 rounded-xl border border-gray-100 bg-white divide-y divide-gray-50 overflow-hidden animate-fade-in">
+              {product.active_ingredient && (
+                <div className="flex items-start gap-2 p-2.5">
+                  <FlaskConical className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: themeColors.priceColor }} />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>{t('المادة الفعالة')}</p>
+                    <p className="text-[11px] font-bold text-gray-800 mt-0.5">{product.active_ingredient}</p>
+                  </div>
+                </div>
+              )}
+              {product.dosage && (
+                <div className="flex items-start gap-2 p-2.5">
+                  <Pill className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: themeColors.priceColor }} />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>{t('الجرعة')}</p>
+                    <p className="text-[11px] font-bold text-gray-800 mt-0.5">{product.dosage}</p>
+                  </div>
+                </div>
+              )}
+              {product.how_to_use && (
+                <div className="flex items-start gap-2 p-2.5">
+                  <Clock className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: themeColors.priceColor }} />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>{t('طريقة الاستخدام')}</p>
+                    <p className="text-[11px] font-medium text-gray-700 mt-0.5 leading-relaxed">{product.how_to_use}</p>
+                  </div>
+                </div>
+              )}
+              {product.contraindications && (
+                <div className="flex items-start gap-2 p-2.5">
+                  <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: themeColors.accentColor }} />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>{t('متى لا يُستخدم')}</p>
+                    <p className="text-[11px] font-medium text-gray-700 mt-0.5 leading-relaxed">{product.contraindications}</p>
+                  </div>
+                </div>
+              )}
+              {product.interactions && (
+                <div className="flex items-start gap-2 p-2.5">
+                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: themeColors.accentColor }} />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>{t('التفاعلات الدوائية')}</p>
+                    <p className="text-[11px] font-medium text-gray-700 mt-0.5 leading-relaxed">{product.interactions}</p>
+                  </div>
+                </div>
+              )}
+              <div className="p-2.5 bg-amber-50/60">
+                <p className="text-[10px] font-bold text-amber-700 flex items-start gap-1 leading-relaxed">
+                  <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                  {t('المعلومات الإرشادية فقط — استشر طبيبك أو الصيدلي قبل الاستخدام، خاصة للحوامل وكبار السن.')}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

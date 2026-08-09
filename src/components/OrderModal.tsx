@@ -3,6 +3,7 @@ import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
   Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark,
   Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2, Download, FileText, ZoomIn,
+  Users,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -18,7 +19,7 @@ import {
   uploadPaymentScreenshot,
   type PaymentMethod,
 } from '@/lib/orders';
-import type { Pharmacy, Product } from '@/types';
+import type { Pharmacy, Product, FamilyMember } from '@/types';
 
 const METHOD_ICONS: Record<PaymentMethod, React.ReactNode> = {
   vodafone_cash: <Smartphone className="w-5 h-5" />,
@@ -42,9 +43,11 @@ function finalPriceOf(product: Product): number {
 export function OrderModal() {
   const { cart, cartOpen, cartStep, setCartStep, closeCart, updateCartQty, removeFromCart, clearCart } = useOrder();
   const { user, profile, setAuthModalOpen } = useCustomer();
-  const { settings, themeColors, paymentConfig, storeConfig, loyaltyConfig } = useSettings();
+  const { settings, themeColors, paymentConfig, storeConfig, loyaltyConfig, featuresConfig } = useSettings();
   const { t, lang } = useLanguage();
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [selectedFamilyMember, setSelectedFamilyMember] = useState<string>('');
   const [address, setAddress] = useState(profile?.phone || '');
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('vodafone_cash');
@@ -73,6 +76,19 @@ export function OrderModal() {
       cancelled = true;
     };
   }, [cartOpen]);
+
+  useEffect(() => {
+    if (!cartOpen || !user || !featuresConfig.familyMembers) return;
+    let cancelled = false;
+    const loadFamily = async () => {
+      const { data } = await supabase.from('family_members').select('*').eq('customer_id', user.id).order('created_at');
+      if (!cancelled) setFamilyMembers((data || []) as FamilyMember[]);
+    };
+    loadFamily();
+    return () => {
+      cancelled = true;
+    };
+  }, [cartOpen, user, featuresConfig.familyMembers]);
 
   useEffect(() => {
     if (!cartOpen) return;
@@ -360,6 +376,7 @@ export function OrderModal() {
         .from('order_groups')
         .insert({
           customer_id: user.id,
+          family_member_id: selectedFamilyMember || null,
           address: address || null,
           note: note || null,
           status: 'pending',
@@ -381,6 +398,7 @@ export function OrderModal() {
         const price = finalPriceOf(entry.product) * entry.quantity;
         return {
           customer_id: user.id,
+          family_member_id: selectedFamilyMember || null,
           product_id: entry.product.id,
           pharmacy_id: entry.product.pharmacy_id || null,
           quantity: entry.quantity,
@@ -802,6 +820,27 @@ export function OrderModal() {
               </div>
             </div>
           </div>
+
+          {/* For whom */}
+          {featuresConfig.familyMembers && familyMembers.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('الطلب لمين؟')}</label>
+              <div className="relative">
+                <Users className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <select
+                  value={selectedFamilyMember}
+                  onChange={(e) => setSelectedFamilyMember(e.target.value)}
+                  className="w-full ps-11 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
+                  style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
+                >
+                  <option value="">{t('نفسي (أنا)')}</option>
+                  {familyMembers.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}{m.age != null ? ` (${m.age} ${t('سنة')})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           {/* Address */}
           <div>

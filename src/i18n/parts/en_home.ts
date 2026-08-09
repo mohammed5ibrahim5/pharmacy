@@ -188,4 +188,5 @@
   'ارفع روشتتك للصيدلي فورا': 'Upload your prescription to the pharmacist instantly',
   'ارفع رشتك للصيدلي فوراً': 'Upload your prescription to the pharmacist instantly',
   'ارفع رشتك للصيدلي فورا': 'Upload your prescription to the pharmacist instantly',
+  'صيدلياتي المفضلة': 'My favorite pharmacies',
 };

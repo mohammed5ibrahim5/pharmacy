@@ -51,6 +51,11 @@ ALTER TABLE public.pharmacy_owners DROP CONSTRAINT IF EXISTS pharmacy_owners_id_
 ALTER TABLE public.pharmacy_owners ADD CONSTRAINT pharmacy_owners_id_fkey
   FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
+-- كل صيدلية لها حساب مالك واحد فقط
+ALTER TABLE public.pharmacy_owners DROP CONSTRAINT IF EXISTS pharmacy_owners_pharmacy_id_key;
+ALTER TABLE public.pharmacy_owners ADD CONSTRAINT pharmacy_owners_pharmacy_id_key
+  UNIQUE (pharmacy_id);
+
 ALTER TABLE public.pharmacy_owners ENABLE ROW LEVEL SECURITY;
 
 -- سياسات الوصول الجديدة (لم تعد هناك سياسات إدراج/حذف عامة)
@@ -94,25 +99,35 @@ BEGIN
     RAISE EXCEPTION 'بيانات الحساب غير صحيحة (كلمة المرور 6 أحرف على الأقل)';
   END IF;
 
+  -- لا يجوز تكرار البريد الإلكتروني لأكثر من صيدلية
   SELECT id INTO v_user_id FROM auth.users WHERE email = p_email;
   IF v_user_id IS NOT NULL THEN
-    RAISE EXCEPTION 'هذا البريد الإلكتروني مستخدم بالفعل';
+    RAISE EXCEPTION 'هذا البريد الإلكتروني مسجل بالفعل كحساب مالك، ولا يمكن استخدامه لصيدلية أخرى';
+  END IF;
+
+  -- كل صيدلية لها حساب مالك واحد فقط
+  IF EXISTS (SELECT 1 FROM public.pharmacy_owners WHERE pharmacy_id = p_pharmacy_id) THEN
+    RAISE EXCEPTION 'هذه الصيدلية لديها حساب مالك بالفعل';
   END IF;
 
   v_user_id := gen_random_uuid();
-  INSERT INTO auth.users
-    (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-     confirmation_token, recovery_token, email_change, email_change_token_new, email_change_token_current,
-     reauthentication_token,
-     raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
-  VALUES
-    ('00000000-0000-0000-0000-000000000000', v_user_id, 'authenticated', 'authenticated',
-     p_email, crypt(p_password, gen_salt('bf')), now(),
-     '', '', '', '', '',
-     '',
-     '{"provider":"email","providers":["email"]}',
-     jsonb_build_object('full_name', p_full_name),
-     now(), now());
+  BEGIN
+    INSERT INTO auth.users
+      (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+       confirmation_token, recovery_token, email_change, email_change_token_new, email_change_token_current,
+       reauthentication_token,
+       raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+    VALUES
+      ('00000000-0000-0000-0000-000000000000', v_user_id, 'authenticated', 'authenticated',
+       p_email, crypt(p_password, gen_salt('bf')), now(),
+       '', '', '', '', '',
+       '',
+       '{"provider":"email","providers":["email"]}',
+       jsonb_build_object('full_name', p_full_name),
+       now(), now());
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION 'هذا البريد الإلكتروني مسجل بالفعل كحساب مالك، ولا يمكن استخدامه لصيدلية أخرى';
+  END;
 
   -- صف هوية كما ينشئه GoTrue (ضروري لتسجيل الدخول بدون خطأ schema)
   INSERT INTO auth.identities (id, user_id, provider_id, provider, identity_data, last_sign_in_at, created_at, updated_at)
@@ -120,9 +135,14 @@ BEGIN
     jsonb_build_object('sub', v_user_id::text, 'email', p_email, 'email_verified', true, 'phone_verified', false),
     now(), now(), now());
 
-  INSERT INTO public.pharmacy_owners (id, pharmacy_id, full_name, email, phone)
-  VALUES (v_user_id, p_pharmacy_id, p_full_name, p_email, p_phone)
-  RETURNING * INTO v_owner;
+  BEGIN
+    INSERT INTO public.pharmacy_owners (id, pharmacy_id, full_name, email, phone)
+    VALUES (v_user_id, p_pharmacy_id, p_full_name, p_email, p_phone)
+    RETURNING * INTO v_owner;
+  EXCEPTION WHEN unique_violation THEN
+    DELETE FROM auth.users WHERE id = v_user_id;
+    RAISE EXCEPTION 'هذا البريد الإلكتروني أو الصيدلية مسجلة بالفعل، ولا يمكن تكرارها';
+  END;
 
   RETURN v_owner;
 END;

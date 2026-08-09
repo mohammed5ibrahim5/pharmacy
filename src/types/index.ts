@@ -51,6 +51,9 @@ export interface Product {
   manufacturer: string | null;
   form: string | null;
   dosage: string | null;
+  how_to_use: string | null;
+  contraindications: string | null;
+  interactions: string | null;
   stock_quantity: number;
   barcode: string | null;
   for_all_pharmacies?: boolean;
@@ -211,6 +214,16 @@ export interface MedicationReminder {
   days: number[];
   note: string;
   refillDate?: string | null;
+  created_at: string;
+}
+
+export interface FamilyMember {
+  id: string;
+  customer_id: string;
+  name: string;
+  relation: string | null;
+  age: number | null;
+  weight: number | null;
   created_at: string;
 }
 

@@ -6,6 +6,7 @@ import { useRouter } from '@/context/RouterContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { ProductCard } from '@/components/ProductCard';
 import { PharmacyCard } from '@/components/PharmacyCard';
+import { OtcFilterToggle } from '@/components/OtcFilterToggle';
 import { getPharmacyWithDistance, sortPharmaciesByDistance } from '@/lib/distance';
 import { trackSearch } from '@/lib/searchHistory';
 import type { Product, Pharmacy } from '@/types';
@@ -23,6 +24,7 @@ export function SearchPage({ query }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [loading, setLoading] = useState(true);
+  const [otcOnly, setOtcOnly] = useState(false);
 
   useEffect(() => {
     trackSearch(query);
@@ -58,6 +60,11 @@ export function SearchPage({ query }: Props) {
       .map((p) => getPharmacyWithDistance(p, location?.latitude, location?.longitude));
     return sortPharmaciesByDistance(matching);
   }, [products, pharmacies, location]);
+
+  const visibleProducts = useMemo(
+    () => (otcOnly ? products.filter((p) => !p.requires_prescription) : products),
+    [products, otcOnly]
+  );
 
 return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -131,22 +138,31 @@ return (
           {/* Products found */}
           {products.length > 0 && (
             <section>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${themeColors.priceColor}12` }}>
-                  <Package className="w-4 h-4" style={{ color: themeColors.priceColor }} />
+              <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${themeColors.priceColor}12` }}>
+                    <Package className="w-4 h-4" style={{ color: themeColors.priceColor }} />
+                  </div>
+                  <h2 className="text-lg font-bold" style={{ color: themeColors.sectionHeadingText }}>{t('المنتجات ({0})', [visibleProducts.length])}</h2>
                 </div>
-                <h2 className="text-lg font-bold" style={{ color: themeColors.sectionHeadingText }}>{t('المنتجات ({0})', [products.length])}</h2>
+                <OtcFilterToggle checked={otcOnly} onChange={setOtcOnly} />
               </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {products.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    pharmacyName={product.pharmacy?.name}
-                    onClick={product.for_all_pharmacies ? undefined : () => navigate({ name: 'pharmacy', id: product.pharmacy_id })}
-                  />
-                ))}
-              </div>
+              {visibleProducts.length > 0 ? (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {visibleProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      pharmacyName={product.pharmacy?.name}
+                      onClick={product.for_all_pharmacies ? undefined : () => navigate({ name: 'pharmacy', id: product.pharmacy_id })}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="py-10 text-center bg-white rounded-2xl border border-gray-200">
+                  <p className="text-slate-500 text-sm font-extrabold">{t('لا توجد منتجات بدون وصفة طبية')}</p>
+                </div>
+              )}
             </section>
           )}
         </div>

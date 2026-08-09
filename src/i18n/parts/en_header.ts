@@ -120,6 +120,7 @@
   'إغلاق': 'Close',
   'عرض ترحيبي خاص': 'Special welcome offer',
   'خصم 10% على طلبك الأول': '10% off your first order',
+  'خصم {percent}% على طلبك الأول': 'Get {percent}% off your first order',
   'ادخل الكود عند إتمام الطلب واستفد بالخصم': 'Enter the code at checkout and enjoy the discount',
   'ساعة': 'hours',
   'دقيقة': 'minutes',
