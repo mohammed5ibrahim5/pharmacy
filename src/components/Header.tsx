@@ -543,7 +543,6 @@ export function Header() {
                 aria-label={lang === 'ar' ? t('Switch to English') : t('التبديل إلى العربية')}
               >
                 <Languages className="w-4 h-4" />
-                <span className="text-[11px] font-black hidden sm:inline">{lang === 'en' ? 'عربي' : 'EN'}</span>
               </button>
 
               <button
@@ -800,7 +799,6 @@ export function Header() {
                 }}
               >
                 <Languages className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
-                {lang === 'ar' ? t('English') : t('العربية')}
               </button>
               <button
                 onClick={toggleDarkMode}
