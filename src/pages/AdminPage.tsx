@@ -4002,6 +4002,10 @@ function SettingsTab() {
                   <ColorField label="خلفية الهيدر العلوي" value={colors.headerBg} onChange={(v) => setColors({ ...colors, headerBg: v })} />
                   <ColorField label="نصوص وأيقونات الهيدر" value={colors.headerText} onChange={(v) => setColors({ ...colors, headerText: v })} />
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                  <ColorField label="خلفية حقل البحث في الهيدر" value={colors.headerSearchBg} onChange={(v) => setColors({ ...colors, headerSearchBg: v })} />
+                  <ColorField label="نص حقل البحث في الهيدر" value={colors.headerSearchText} onChange={(v) => setColors({ ...colors, headerSearchText: v })} />
+                </div>
               </ColorGroup>
 
               <ColorGroup
@@ -4653,6 +4657,12 @@ function SettingsTab() {
                 label="التنبيه الطبي السفلي"
                 hint="نص: الأدوية تُصرف بناءً على التشخيص الطبي"
               />
+              <Toggle
+                checked={footerCfg.showCopyright}
+                onChange={(v) => setFooterCfg({ ...footerCfg, showCopyright: v })}
+                label="سطر الحقوق أسفل التذييل"
+                hint="اسم الموقع والسنة وحقوق النشر"
+              />
             </div>
           </SettingsSection>
 
@@ -4702,6 +4712,38 @@ function SettingsTab() {
                   onChange={(e) => setFooterCfg({ ...footerCfg, socialText: e.target.value })}
                   className={inputClass}
                   disabled={!footerCfg.showSocialSection}
+                />
+              </Field>
+              <Field label="عنوان الروابط السريعة">
+                <input
+                  value={footerCfg.quickLinksTitle}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, quickLinksTitle: e.target.value })}
+                  className={inputClass}
+                  disabled={!footerCfg.showQuickLinks}
+                />
+              </Field>
+              <Field label="عنوان قسم التواصل والمساعدة">
+                <input
+                  value={footerCfg.contactTitle}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, contactTitle: e.target.value })}
+                  className={inputClass}
+                  disabled={!footerCfg.showContactSection}
+                />
+              </Field>
+              <Field label="عنوان قسم وسائل التواصل">
+                <input
+                  value={footerCfg.socialTitle}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, socialTitle: e.target.value })}
+                  className={inputClass}
+                  disabled={!footerCfg.showSocialSection}
+                />
+              </Field>
+              <Field label="التنبيه الطبي السفلي">
+                <input
+                  value={footerCfg.bottomNoticeText}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, bottomNoticeText: e.target.value })}
+                  className={inputClass}
+                  disabled={!footerCfg.showBottomNotice}
                 />
               </Field>
             </div>

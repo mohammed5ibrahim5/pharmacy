@@ -155,7 +155,7 @@ export function PharmacyDetailPage({ id }: Props) {
 
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900">{pharmacy.name}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.pharmacyHeaderText }}>{pharmacy.name}</h1>
                   {pharmacy.is_24h && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold text-white shadow" style={{ backgroundColor: themeColors.tabActiveBg }}>
                       <Clock className="w-3 h-3" /> {t('24 ساعة')}
@@ -303,10 +303,10 @@ export function PharmacyDetailPage({ id }: Props) {
               <button
                 onClick={() => setActiveCategory(null)}
                 className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
-                  !activeCategory ? 'text-white shadow-md' : 'border border-gray-200 hover:bg-gray-50'
+                  !activeCategory ? 'shadow-md' : 'border border-gray-200 hover:bg-gray-50'
                 }`}
                 style={!activeCategory
-                  ? { backgroundColor: themeColors.tabActiveBg, boxShadow: `0 6px 14px -6px ${themeColors.tabActiveBg}88` }
+                  ? { backgroundColor: themeColors.tabActiveBg, color: themeColors.tabActiveText, boxShadow: `0 6px 14px -6px ${themeColors.tabActiveBg}88` }
                   : { backgroundColor: themeColors.cardBg, color: themeColors.cardMutedText }}
               >
                 {t('الكل')}
@@ -316,10 +316,10 @@ export function PharmacyDetailPage({ id }: Props) {
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
                   className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
-                    activeCategory === cat.id ? 'text-white shadow-md' : 'border border-gray-200 hover:bg-gray-50'
+                    activeCategory === cat.id ? 'shadow-md' : 'border border-gray-200 hover:bg-gray-50'
                   }`}
                   style={activeCategory === cat.id
-                    ? { backgroundColor: themeColors.tabActiveBg, boxShadow: `0 6px 14px -6px ${themeColors.tabActiveBg}88` }
+                    ? { backgroundColor: themeColors.tabActiveBg, color: themeColors.tabActiveText, boxShadow: `0 6px 14px -6px ${themeColors.tabActiveBg}88` }
                     : { backgroundColor: themeColors.cardBg, color: themeColors.cardMutedText }}
                 >
                   {lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}
@@ -352,7 +352,7 @@ export function PharmacyDetailPage({ id }: Props) {
                   type="button"
                   onClick={() => { setSearch(''); setActiveCategory(null); setOtcOnly(false); }}
                   className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white font-black text-xs transition-all hover:scale-105 active:scale-95 shadow-lg"
-                  style={{ backgroundColor: themeColors.tabActiveBg, boxShadow: `0 10px 22px -8px ${themeColors.tabActiveBg}77` }}
+                  style={{ backgroundColor: themeColors.tabActiveBg, color: themeColors.tabActiveText, boxShadow: `0 10px 22px -8px ${themeColors.tabActiveBg}77` }}
                 >
                   <ArrowLeft className={`w-4 h-4 ${dir === 'rtl' ? 'rotate-180' : ''}`} />
                   {t('عرض كل المنتجات')}

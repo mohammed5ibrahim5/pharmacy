@@ -3,7 +3,7 @@ import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
   Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark,
   Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2, Download, FileText, ZoomIn,
-  Users, Gift,
+  Users, Gift, Banknote, BadgeCheck,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -24,6 +24,7 @@ import type { Pharmacy, Product, FamilyMember } from '@/types';
 const METHOD_ICONS: Record<PaymentMethod, React.ReactNode> = {
   vodafone_cash: <Smartphone className="w-5 h-5" />,
   instapay: <Landmark className="w-5 h-5" />,
+  cash_on_delivery: <Banknote className="w-5 h-5" />,
 };
 
 interface CartGroup {
@@ -161,7 +162,9 @@ export function OrderModal() {
   };
 
   const totalDelivery = groups.reduce((sum, g) => sum + groupFee(g), 0);
-  const total = subtotal + totalDelivery;
+  const isCOD = paymentMethod === 'cash_on_delivery';
+  const codFee = isCOD ? Math.max(0, parseFloat(paymentConfig.cashOnDeliveryFee) || 0) : 0;
+  const total = subtotal + totalDelivery + codFee;
 
   // ===== Loyalty redemption =====
   const redeemStep = Math.max(1, loyaltyConfig.redeemThreshold || 1);
@@ -223,8 +226,8 @@ export function OrderModal() {
     };
   }, [catalogMode, cartOpen, cart, subtotal, profile, settings.site_name, lang, t, themeColors.priceColor, catalogTargetName]);
 
-  const methodNumber = paymentMethod === 'vodafone_cash' ? paymentConfig.vodafoneCash : paymentConfig.instapay;
-  const hasMethodNumber = Boolean(methodNumber.trim());
+  const methodNumber = isCOD ? '' : paymentMethod === 'vodafone_cash' ? paymentConfig.vodafoneCash : paymentConfig.instapay;
+  const hasMethodNumber = isCOD || Boolean(methodNumber.trim());
 
   if (!cartOpen) return null;
 
@@ -347,6 +350,7 @@ export function OrderModal() {
   };
 
   const handleCopyNumber = async () => {
+    if (isCOD || !methodNumber) return;
     try {
       await navigator.clipboard.writeText(methodNumber);
       setCopied(true);
@@ -398,19 +402,19 @@ export function OrderModal() {
       setLoading(false);
       return;
     }
-    if (!hasMethodNumber) {
+    if (!isCOD && !hasMethodNumber) {
       setError(t('لم يتم إعداد رقم الدفع من الإدارة بعد، يرجى المحاولة لاحقاً.'));
       setLoading(false);
       return;
     }
-    if (!screenshot) {
+    if (!isCOD && !screenshot) {
       setError(t('يرجى رفع صورة إثبات التحويل (سكرين شوت) حتى يتم تأكيد الطلب.'));
       setLoading(false);
       return;
     }
 
     try {
-      const screenshotUrl = screenshot.startsWith('data:') ? await uploadPaymentScreenshot(screenshot) : screenshot;
+      const screenshotUrl = isCOD ? null : screenshot!.startsWith('data:') ? await uploadPaymentScreenshot(screenshot!) : screenshot;
       const redeemedPoints = redeemChunks * redeemStep;
       const { data: groupData, error: groupErr } = await supabase
         .from('order_groups')
@@ -923,7 +927,7 @@ export function OrderModal() {
               {t('طريقة الدفع')}
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {PAYMENT_METHODS.map((m) => (
+              {PAYMENT_METHODS.filter((m) => m.id !== 'cash_on_delivery' || paymentConfig.showCashOnDelivery).map((m) => (
                 <button
                   key={m.id}
                   type="button"
@@ -959,6 +963,19 @@ export function OrderModal() {
               ))}
             </div>
 
+            {isCOD ? (
+              <div className="mt-3 rounded-2xl border border-teal-200 bg-teal-50/50 p-4">
+                <p className="text-[11px] font-bold text-gray-600 mb-1 flex items-center gap-1.5">
+                  <BadgeCheck className="w-4 h-4" style={{ color: themeColors.priceColor }} />
+                  {t('ادفع نقداً عند استلام طلبك — لا حاجة لتحويل أو صورة إثبات.')}
+                </p>
+                {codFee > 0 && (
+                  <p className="text-xs font-extrabold text-gray-900">
+                    {t('رسوم الدفع عند الاستلام:')} <span dir="ltr">{codFee} {t('ج.م')}</span>
+                  </p>
+                )}
+              </div>
+            ) : (
             <div className={`mt-3 rounded-2xl border p-4 ${hasMethodNumber ? 'bg-teal-50/50 border-teal-200' : 'bg-amber-50 border-amber-200'}`}>
               {hasMethodNumber ? (
                 <>
@@ -985,9 +1002,11 @@ export function OrderModal() {
                 </p>
               )}
             </div>
+            )}
           </div>
 
           {/* Payment screenshot */}
+          {!isCOD && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               {t('صورة إثبات التحويل (سكرين شوت) *')}
@@ -1054,6 +1073,7 @@ export function OrderModal() {
               </div>
             )}
           </div>
+          )}
 
           {/* Note */}
           <div>

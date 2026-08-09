@@ -24,6 +24,7 @@ export const ORDER_STATUS_META: Record<
 export const PAYMENT_METHODS = [
   { id: 'vodafone_cash', label: 'فودافون كاش', description: 'تحويل عبر محفظة فودافون كاش' },
   { id: 'instapay', label: 'انستا باي', description: 'تحويل عبر تطبيق انستا باي' },
+  { id: 'cash_on_delivery', label: 'الدفع عند الاستلام', description: 'ادفع نقداً عند استلام طلبك' },
 ] as const;
 
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number]['id'];
@@ -51,6 +52,7 @@ export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   vodafone_cash: 'فودافون كاش',
   instapay: 'انستا باي',
+  cash_on_delivery: 'الدفع عند الاستلام',
 };
 
 function dataUrlToBlob(dataUrl: string): Blob {

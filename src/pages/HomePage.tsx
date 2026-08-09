@@ -29,6 +29,7 @@ import {
   Baby,
   Activity,
   Calculator,
+  Cross,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
@@ -473,12 +474,14 @@ export function HomePage() {
 
             {/* Main Title */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.2] tracking-tight animate-fade-up" style={{ color: themeColors.heroText, animationDelay: '0.1s' }}>
-              {t('اعثر على')} <span className="text-transparent bg-clip-text bg-gradient-to-l" style={{ backgroundImage: `linear-gradient(to left, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}>{t('دوائك في أقرب صيدلية')}</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-l" style={{ backgroundImage: `linear-gradient(to left, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}>
+                {t(settings.hero_title || 'اعثر على دوائك في أقرب صيدلية')}
+              </span>
             </h1>
 
             {/* Subtitle */}
             <p className="text-sm sm:text-base lg:text-lg max-w-2xl mx-auto leading-relaxed font-bold animate-fade-up opacity-80" style={{ color: themeColors.heroText, animationDelay: '0.2s' }}>
-              {t('ابحث عن الأدوية والمستلزمات الطبية، قارن الأقرب إليك، واطلب التوصيل المباشر لباب المنزل على مدار الساعة.')}
+              {t(settings.hero_subtitle || 'ابحث عن الأدوية والمستلزمات الطبية، قارن الأقرب إليك، واطلب التوصيل المباشر لباب المنزل على مدار الساعة.')}
             </p>
 
             {/* MAIN SEARCH FORM */}
@@ -927,6 +930,41 @@ export function HomePage() {
         </div>
       </section>
       </Reveal>
+
+      {/* ==================== ABOUT ==================== */}
+      {(settings.about_title || settings.about_text) && (
+      <Reveal>
+      <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-center">
+          <div className="lg:col-span-2">
+            <span
+              className="text-xs font-extrabold px-3.5 py-1 rounded-full"
+              style={{ backgroundColor: `${themeColors.primaryColor}15`, color: themeColors.primaryColor }}
+            >
+              {t('من نحن')}
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
+              {t(settings.about_title || 'من نحن')}
+            </h2>
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium mt-4 whitespace-pre-line">
+              {t(settings.about_text || '')}
+            </p>
+          </div>
+          <div
+            className="rounded-3xl p-8 flex items-center justify-center"
+            style={{ backgroundColor: `${themeColors.primaryColor}10` }}
+          >
+            <div
+              className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-xl"
+              style={{ backgroundColor: themeColors.primaryColor }}
+            >
+              <Cross className="w-12 h-12 text-white" strokeWidth={2.5} />
+            </div>
+          </div>
+        </div>
+      </section>
+      </Reveal>
+      )}
 
       {/* ==================== TESTIMONIALS ==================== */}
       <Reveal><HomeTestimonials /></Reveal>
