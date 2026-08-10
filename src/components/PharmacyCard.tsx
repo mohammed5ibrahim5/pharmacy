@@ -80,12 +80,7 @@ export function PharmacyCard({ pharmacy }: Props) {
             </div>
           )}
 
-          {/* Rating Badge on Cover Bottom Right */}
-          <div className="absolute bottom-3 end-3 flex items-center gap-1 px-3 py-1 rounded-2xl bg-black/60 backdrop-blur-md text-white text-xs font-black shadow-md border border-white/20 z-10">
-            <Star className="w-3.5 h-3.5 fill-current" style={{ color: themeColors.ratingColor }} />
-            <span style={{ color: themeColors.ratingColor }}>{pharmacy.rating}</span>
-            <span className="text-[10px] text-slate-300 font-normal">/ 5.0</span>
-          </div>
+          {/* Rating Badge Next to Name (moved out of cover to avoid heart collision) */}
 
           {/* Favorite Heart Button */}
           <button
@@ -94,7 +89,7 @@ export function PharmacyCard({ pharmacy }: Props) {
               e.stopPropagation();
               togglePharmacyFavorite(pharmacy.id);
             }}
-            className={`absolute bottom-3 start-3 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 z-10 active:scale-90 ${
+            className={`absolute bottom-3 end-3 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 z-10 active:scale-90 ${
               isFav
                 ? 'bg-pink-500 border-pink-400'
                 : 'bg-white/90 backdrop-blur-md border-white/40 hover:bg-white'
@@ -135,6 +130,13 @@ export function PharmacyCard({ pharmacy }: Props) {
                 >
                   {pharmacy.name}
                 </h3>
+                <span
+                  className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100"
+                  title={`${t('التقييم')} ${pharmacy.rating}/5`}
+                >
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  <span className="text-[10px] font-black text-slate-700">{pharmacy.rating}</span>
+                </span>
                 <span
                   className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-sm"
                   style={{ backgroundColor: themeColors.inStockColor }}
