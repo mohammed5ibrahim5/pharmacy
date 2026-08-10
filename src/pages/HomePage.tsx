@@ -45,6 +45,7 @@ import { DoseCalculatorModal } from '@/components/DoseCalculatorModal';
 import { getPharmacyWithDistance, sortPharmaciesByDistance } from '@/lib/distance';
 import { findAreaLocation } from '@/lib/areaLocations';
 import { trackSearch } from '@/lib/searchHistory';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import { PHARMACY_SECTIONS_META, type PharmacySectionKey } from '@/lib/pharmacySections';
 import { FeaturedProducts } from '@/components/FeaturedProducts';
 import { HomeHowItWorks } from '@/components/HomeHowItWorks';
@@ -1044,7 +1045,7 @@ export function HomePage() {
               )}
               {settings.contact_whatsapp && (
                 <a
-                  href={`https://wa.me/${settings.contact_whatsapp}`}
+                  href={buildWhatsAppLink(settings.contact_whatsapp, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-white font-black text-xs sm:text-sm hover:brightness-95 hover:scale-105 active:scale-95 transition-all shadow-md"

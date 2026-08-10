@@ -9,6 +9,7 @@ import { ReviewsSection } from '@/components/ReviewsSection';
 import { OtcFilterToggle } from '@/components/OtcFilterToggle';
 import { formatDistance, getPharmacyWithDistance } from '@/lib/distance';
 import { getDirectionsUrl } from '@/lib/directions';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import type { Pharmacy, Product, Category } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -200,7 +201,7 @@ export function PharmacyDetailPage({ id }: Props) {
                 )}
                 {pharmacy.whatsapp && (
                   <a
-                    href={`https://wa.me/${pharmacy.whatsapp}`}
+                    href={buildWhatsAppLink(pharmacy.whatsapp, t('مرحباً، أحتاج الاستفسار عن متوفر عندكم'))}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-white text-sm font-bold transition-all hover:scale-[1.03] active:scale-95 shadow-lg"

@@ -4,6 +4,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { uploadPrescriptionImage, insertPrescription } from '@/lib/prescriptions';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import { localizedError } from '@/lib/errorMessages';
 
 interface PrescriptionUploadModalProps {
@@ -64,10 +65,8 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
       setSentSuccess(true);
       // Notify the pharmacy via WhatsApp (text summary)
       if (settings.contact_whatsapp) {
-        const text = encodeURIComponent(
-          t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [phone, notes || t('لا يوجد')])
-        );
-        window.open(`https://wa.me/${settings.contact_whatsapp}?text=${text}`, '_blank');
+        const text = t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [phone, notes || t('لا يوجد')]);
+        window.open(buildWhatsAppLink(settings.contact_whatsapp, text), '_blank');
       }
       setTimeout(() => {
         setSentSuccess(false);

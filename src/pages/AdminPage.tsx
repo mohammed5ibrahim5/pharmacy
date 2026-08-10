@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_HOMEPAGE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig, type WelcomePopupConfig } from '@/context/SettingsContext';
 import { useAuth } from '@/context/AuthContext';
 import { translateError } from '@/lib/errorMessages';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import {
   ORDER_STATUSES,
   ORDER_STATUS_META,
@@ -424,7 +425,7 @@ function PrescriptionsTab() {
                   <div className="flex items-center gap-2 mt-auto pt-2 border-t border-gray-100">
                     {rx.phone && (
                       <a
-                        href={`https://wa.me/${rx.phone.replace(/\D/g, '')}`}
+                        href={buildWhatsAppLink(rx.phone, 'مرحباً، تم استلام روشتتك وسيتم التواصل معك قريباً')}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-teal-500 text-white text-xs font-bold hover:brightness-110 active:scale-95 transition-all"
@@ -898,7 +899,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
                   })}
                   {order.customer?.phone && (
                     <a
-                      href={`https://wa.me/${order.customer.phone.replace(/\D/g, '')}`}
+                      href={buildWhatsAppLink(order.customer.phone, 'مرحباً، بخصوص طلبك في صيدليتي')}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mr-auto flex items-center gap-1.5 py-2 px-4 rounded-xl bg-teal-500 text-white text-xs font-bold hover:brightness-110 active:scale-95 transition-all"

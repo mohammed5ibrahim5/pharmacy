@@ -1,6 +1,7 @@
 import { PhoneCall, MessageCircle, Mail, ShieldCheck, Clock } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 export function CustomerServiceBanner() {
   const { settings, themeColors } = useSettings();
@@ -51,7 +52,7 @@ export function CustomerServiceBanner() {
             )}
             {settings.contact_whatsapp && (
               <a
-                href={`https://wa.me/${settings.contact_whatsapp}`}
+                href={buildWhatsAppLink(settings.contact_whatsapp, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl font-black text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-lg"

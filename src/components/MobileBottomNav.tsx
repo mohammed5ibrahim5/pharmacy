@@ -4,6 +4,7 @@ import { useRouter } from '@/context/RouterContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useOrder } from '@/context/OrderContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 export function MobileBottomNav() {
   const { settings, themeColors } = useSettings();
@@ -108,7 +109,7 @@ export function MobileBottomNav() {
         {whatsappDigits && (
           <div className="absolute -top-12 end-4">
             <a
-              href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(t('مرحباً، أحتاج مساعدة من صيدليتي'))}`}
+              href={buildWhatsAppLink(whatsappDigits, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
               target="_blank"
               rel="noopener noreferrer"
               className="w-11 h-11 rounded-2xl text-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all"

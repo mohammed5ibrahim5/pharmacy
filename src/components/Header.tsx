@@ -42,6 +42,7 @@ import { useOrder } from '@/context/OrderContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { supabase } from '@/lib/supabase';
 import { trackSearch } from '@/lib/searchHistory';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import type { Product, Category } from '@/types';
 
 interface SpeechRecognitionLike {
@@ -505,7 +506,7 @@ export function Header() {
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               {settings.contact_whatsapp && headerConfig.showWhatsAppButton && (
                 <a
-                  href={`https://wa.me/${settings.contact_whatsapp}`}
+                  href={buildWhatsAppLink(settings.contact_whatsapp, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-extrabold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-md hover:brightness-110"
@@ -779,7 +780,7 @@ export function Header() {
 
             {headerConfig.showWhatsAppButton && settings.contact_whatsapp && (
               <a
-                href={`https://wa.me/${settings.contact_whatsapp}`}
+                href={buildWhatsAppLink(settings.contact_whatsapp, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 p-3 w-full rounded-2xl text-xs font-extrabold text-white"

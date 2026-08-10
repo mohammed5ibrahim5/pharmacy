@@ -11,6 +11,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { localizedError } from '@/lib/errorMessages';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import { awardLoyaltyPoints } from '@/lib/loyalty';
 import { buildInvoiceImage, dataUrlToBlob } from '@/lib/invoice';
 import {
@@ -379,11 +380,7 @@ export function OrderModal() {
       if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: t('فاتورة الطلب') });
       } else if (catalogWhatsapp) {
-        window.open(
-          `https://wa.me/${catalogWhatsapp}?text=${encodeURIComponent(buildWhatsAppMessage())}`,
-          '_blank',
-          'noopener,noreferrer'
-        );
+        window.open(buildWhatsAppLink(catalogWhatsapp, buildWhatsAppMessage()), '_blank', 'noopener,noreferrer');
       }
     } catch {
       // user cancelled the share sheet — nothing to do

@@ -5,6 +5,7 @@ import { useRouter } from '@/context/RouterContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { formatDistance } from '@/lib/distance';
 import { getDirectionsUrl } from '@/lib/directions';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface Props {
@@ -220,7 +221,7 @@ export function PharmacyCard({ pharmacy }: Props) {
           )}
           {pharmacy.whatsapp && (
             <a
-              href={`https://wa.me/${pharmacy.whatsapp}`}
+              href={buildWhatsAppLink(pharmacy.whatsapp, t('مرحباً، أحتاج الاستفسار عن متوفر عندكم'))}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}

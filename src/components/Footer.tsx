@@ -4,6 +4,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 function withAlpha(hex: string, alpha: number): string {
   if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
@@ -297,7 +298,7 @@ export function Footer() {
                     <MessageCircle className="w-4 h-4" />
                   </span>
                   <a
-                    href={`https://wa.me/${settings.contact_whatsapp}`}
+                    href={buildWhatsAppLink(settings.contact_whatsapp, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
                     className="transition-colors"
                     dir="ltr"
                     style={{ color: muted }}

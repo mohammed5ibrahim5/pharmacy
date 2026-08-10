@@ -48,6 +48,7 @@ import { PharmacyCard } from '@/components/PharmacyCard';
 import { OrderReviewModal } from '@/components/OrderReviewModal';
 import { localizedError } from '@/lib/errorMessages';
 import { localizedDate } from '@/lib/format';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 import {
   PRESCRIPTION_STATUS_META,
   type Prescription,
@@ -662,10 +663,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       setRxNotes('');
       showToast(t('تم حفظ وإرسال الروشتة للصيدلية بنجاح'));
       if (settings.contact_whatsapp) {
-        const text = encodeURIComponent(
-          t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [rxPhone, rxNotes || t('لا يوجد')])
-        );
-        window.open(`https://wa.me/${settings.contact_whatsapp}?text=${text}`, '_blank');
+        const text = t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [rxPhone, rxNotes || t('لا يوجد')]);
+        window.open(buildWhatsAppLink(settings.contact_whatsapp, text), '_blank');
       }
     } catch {
       showToast(t('فشل رفع الروشتة، برجاء المحاولة مرة أخرى'));
@@ -713,10 +712,8 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
 
   const handleResendPrescription = (rx: Prescription) => {
     if (!settings.contact_whatsapp) return;
-    const text = encodeURIComponent(
-      t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [rx.phone, rx.notes || t('لا يوجد')])
-    );
-    window.open(`https://wa.me/${settings.contact_whatsapp}?text=${text}`, '_blank');
+    const text = t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [rx.phone, rx.notes || t('لا يوجد')]);
+    window.open(buildWhatsAppLink(settings.contact_whatsapp, text), '_blank');
   };
 
   const handleRxImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
