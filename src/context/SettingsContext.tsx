@@ -242,6 +242,7 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
   purchasesEnabled: true,
   contactMessage: 'للشراء يرجى التواصل مع الصيدلية مباشرة',
   catalogWhatsapp: '',
+  catalogMultiPharmacy: false,
 };
 
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
@@ -357,7 +358,7 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
   stats: [
     { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true, showOnline: true, showOffline: true },
     { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true, autoSource: 'products', visible: true, showOnline: true, showOffline: true },
-    { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: false, visible: true, showOnline: true, showOffline: true },
+    { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: true, autoSource: 'customers', visible: true, showOnline: true, showOffline: true },
     { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck', auto: false, visible: true, showOnline: true, showOffline: true },
   ],
 };
@@ -492,8 +493,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           hero = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
           hero.stats = (hero.stats || []).map((s) => ({
             ...s,
-            auto: s.auto === undefined ? s.id === 'pharmacies' || s.id === 'products' : s.auto,
-            autoSource: s.autoSource || (s.id === 'products' ? 'products' : 'pharmacies'),
+            auto: s.auto === undefined ? s.id === 'pharmacies' || s.id === 'products' || s.id === 'customers' : s.auto,
+            autoSource: s.autoSource || (s.id === 'products' ? 'products' : s.id === 'customers' ? 'customers' : 'pharmacies'),
             showOnline: s.showOnline === undefined ? s.visible !== false : s.showOnline,
             showOffline: s.showOffline === undefined ? s.visible !== false : s.showOffline,
           }));

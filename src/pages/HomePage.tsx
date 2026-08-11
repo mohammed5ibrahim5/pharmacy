@@ -94,10 +94,10 @@ const HERO_TRENDING = [
   'كمامات طبية',
 ];
 
-const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string; auto?: boolean; autoSource?: 'pharmacies' | 'products'; visible?: boolean; showOnline?: boolean; showOffline?: boolean }[] = [
+const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string; auto?: boolean; autoSource?: 'pharmacies' | 'products' | 'customers'; visible?: boolean; showOnline?: boolean; showOffline?: boolean }[] = [
   { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true, showOnline: true, showOffline: true },
   { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true, autoSource: 'products', visible: true, showOnline: true, showOffline: true },
-  { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: false, visible: true, showOnline: true, showOffline: true },
+  { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: true, autoSource: 'customers', visible: true, showOnline: true, showOffline: true },
   { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck', auto: false, visible: true, showOnline: true, showOffline: true },
 ];
 
@@ -130,9 +130,10 @@ function formatStatCount(n: number): string {
   return `${n}+`;
 }
 
-function statDisplayValue(stat: { id: string; value: string; auto?: boolean; autoSource?: 'pharmacies' | 'products' }, pharmacyCount: number, productCount: number): string {
+function statDisplayValue(stat: { id: string; value: string; auto?: boolean; autoSource?: 'pharmacies' | 'products' | 'customers' }, pharmacyCount: number, productCount: number, customerCount: number): string {
   if (stat.auto) {
     if (stat.autoSource === 'products' || stat.id === 'products') return formatStatCount(productCount);
+    if (stat.autoSource === 'customers' || stat.id === 'customers') return formatStatCount(customerCount);
     if (stat.autoSource === 'pharmacies' || stat.id === 'pharmacies') return formatStatCount(pharmacyCount);
   }
   return stat.value;
@@ -155,6 +156,7 @@ export function HomePage() {
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
   const [pharmacyCount, setPharmacyCount] = useState(0);
   const [productCount, setProductCount] = useState(0);
+  const [customerCount, setCustomerCount] = useState(0);
   const [popularProductIds, setPopularProductIds] = useState<string[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [heroFloatingVisible, setHeroFloatingVisible] = useState(true);
@@ -207,7 +209,7 @@ export function HomePage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [pharmRes, prodRes, catRes, ordersRes, sectionsRes, pharmCountRes, prodCountRes] = await Promise.all([
+      const [pharmRes, prodRes, catRes, ordersRes, sectionsRes, pharmCountRes, prodCountRes, customerCountRes] = await Promise.all([
         supabase.from('pharmacies').select('*').eq('is_active', true),
         supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').eq('is_available', true).limit(20),
         supabase.from('categories').select('*').order('name'),
@@ -215,12 +217,14 @@ export function HomePage() {
         supabase.from('pharmacy_sections').select('pharmacy_id, section_key'),
         supabase.from('pharmacies').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('products').select('id', { count: 'exact', head: true }).eq('is_available', true),
+        supabase.from('customers').select('id', { count: 'exact', head: true }),
       ]);
       setPharmacies(pharmRes.data || []);
       setProducts(prodRes.data || []);
       setCategories(catRes.data || []);
       setPharmacyCount(pharmCountRes.count || 0);
       setProductCount(prodCountRes.count || 0);
+      setCustomerCount(customerCountRes.count || 0);
 
       const popularity = new Map<string, number>();
       (ordersRes.data || []).forEach((o) => {
@@ -676,7 +680,7 @@ export function HomePage() {
                 <div>
                   <div className="flex items-baseline gap-1">
                     {(() => {
-                      const parsed = parseStatValue(statDisplayValue(stat, pharmacyCount, productCount));
+                      const parsed = parseStatValue(statDisplayValue(stat, pharmacyCount, productCount, customerCount));
                       return (
                         <p className="text-xl sm:text-2xl font-black tabular-nums">
                           <CountUp target={parsed.target} suffix={parsed.suffix} />
@@ -863,7 +867,7 @@ export function HomePage() {
               <div key={i} className="skeleton rounded-3xl h-72" />
             ))}
           </div>
-        ) : activePharmacyTab === 'favorite' ? (
+        ) : activePharmacyTab === 'favorite' && displayedPharmacies.length === 0 ? (
           <div className="py-16 text-center bg-white rounded-3xl border border-gray-200 animate-fade-in">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"

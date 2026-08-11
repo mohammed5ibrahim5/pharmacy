@@ -87,7 +87,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       return false;
     }
     const catalogMode = !storeConfig.purchasesEnabled;
-    if (catalogMode && !product.for_all_pharmacies) {
+    if (catalogMode && !storeConfig.catalogMultiPharmacy && !product.for_all_pharmacies) {
       const cartPharmacyIds = new Set(
         cart
           .filter((i) => !i.product.for_all_pharmacies && i.product.pharmacy_id)

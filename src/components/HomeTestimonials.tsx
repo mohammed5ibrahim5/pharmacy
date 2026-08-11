@@ -20,6 +20,8 @@ export function HomeTestimonials() {
       const { data } = await supabase
         .from('reviews')
         .select('*')
+        .eq('is_visible', true)
+        .order('sort_order', { ascending: true })
         .order('created_at', { ascending: false })
         .limit(6);
       if (!cancelled) {

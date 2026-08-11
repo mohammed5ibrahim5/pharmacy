@@ -7,7 +7,7 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog, BadgePercent, Baby
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog, BadgePercent, Baby, ChevronUp, MessageSquareQuote
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_HOMEPAGE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig, type WelcomePopupConfig } from '@/context/SettingsContext';
@@ -33,11 +33,12 @@ import {
 } from '@/lib/prescriptions';
 import { insertNotification } from '@/lib/notifications';
 import { notifyStockAvailable } from '@/lib/loyalty';
-import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HeroStat, HowItWorksConfig, HomepageConfig, PharmacyOwner } from '@/types';
+import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HeroStat, HowItWorksConfig, HomepageConfig, PharmacyOwner, Review } from '@/types';
 
-type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
+type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'reviews' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
 
 function statAutoHint(s: HeroStat): string {
+  if (s.autoSource === 'customers' || s.id === 'customers') return 'عدد العملاء تلقائياً';
   return s.autoSource === 'products' ? 'عدد المنتجات تلقائياً' : 'عدد الصيدليات تلقائياً';
 }
 
@@ -61,6 +62,7 @@ export function AdminPage() {
     { id: 'categories', label: 'الفئات', icon: <List className="w-5 h-5" /> },
     { id: 'discounts', label: 'الخصومات', icon: <TrendingDown className="w-5 h-5" /> },
     { id: 'coupons', label: 'أكواد الخصم', icon: <Ticket className="w-5 h-5" /> },
+    { id: 'reviews', label: 'تقييمات العملاء', icon: <MessageSquareQuote className="w-5 h-5" /> },
     { id: 'customers', label: 'العملاء', icon: <Users className="w-5 h-5" /> },
     { id: 'stockAlerts', label: 'تنبيهات التوفر', icon: <BellRing className="w-5 h-5" /> },
     { id: 'loyalty', label: 'نقاط الولاء', icon: <Sparkles className="w-5 h-5" /> },
@@ -197,8 +199,9 @@ export function AdminPage() {
           {activeTab === 'products' && <ProductsTab />}
           {activeTab === 'categories' && <CategoriesTab />}
           {activeTab === 'discounts' && <DiscountsTab />}
-          {activeTab === 'coupons' && <CouponsTab />}
-          {activeTab === 'customers' && <CustomersTab />}
+  {activeTab === 'coupons' && <CouponsTab />}
+  {activeTab === 'reviews' && <ReviewsTab />}
+  {activeTab === 'customers' && <CustomersTab />}
           {activeTab === 'stockAlerts' && <StockAlertsTab />}
           {activeTab === 'loyalty' && <LoyaltyTab />}
           {activeTab === 'subscribers' && <SubscribersTab />}
@@ -955,6 +958,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
 function DashboardTab() {
   const { settings, storeConfig, welcomeConfig, refresh } = useSettings();
   const [togglingPurchases, setTogglingPurchases] = useState(false);
+  const [togglingCatalogMultiPharmacy, setTogglingCatalogMultiPharmacy] = useState(false);
   const [stats, setStats] = useState({ pharmacies: 0, products: 0, categories: 0, discounts: 0, coupons: 0, customers: 0, orders: 0, revenue: 0, stockAlerts: 0, loyaltyPoints: 0 });
   const [recentPharmacies, setRecentPharmacies] = useState<Pharmacy[]>([]);
   const [recentProducts, setRecentProducts] = useState<Product[]>([]);
@@ -1066,6 +1070,27 @@ function DashboardTab() {
     }
   };
 
+  const handleToggleCatalogMultiPharmacy = async () => {
+    if (togglingCatalogMultiPharmacy) return;
+    setTogglingCatalogMultiPharmacy(true);
+    try {
+      const parsed = settings.features_json ? JSON.parse(settings.features_json) : {};
+      const next = {
+        ...parsed,
+        storeConfig: { ...storeConfig, catalogMultiPharmacy: !storeConfig.catalogMultiPharmacy },
+      };
+      await supabase.from('site_settings').update({
+        features_json: JSON.stringify(next),
+        updated_at: new Date().toISOString(),
+      }).eq('id', settings.id);
+      await refresh();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTogglingCatalogMultiPharmacy(false);
+    }
+  };
+
   const [welcomeForm, setWelcomeForm] = useState<WelcomePopupConfig>({ ...welcomeConfig });
   const [savingWelcome, setSavingWelcome] = useState(false);
   const [welcomeSavedMsg, setWelcomeSavedMsg] = useState<string | null>(null);
@@ -1162,6 +1187,35 @@ function DashboardTab() {
             className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all duration-300 ${storeConfig.purchasesEnabled ? 'right-1' : 'right-8'}`}
           />
           {togglingPurchases && <Loader2 className="absolute inset-0 m-auto w-4 h-4 text-white animate-spin" />}
+        </button>
+      </div>
+
+      {/* Catalog cart pharmacies policy */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${storeConfig.catalogMultiPharmacy ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-500'}`}
+        >
+          <Store className="w-7 h-7" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-gray-900 text-base">
+            {storeConfig.catalogMultiPharmacy ? 'السلة تقبل من كل الصيدليات' : 'السلة تقبل من صيدلية واحدة فقط'}
+          </h3>
+          <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+            عند إيقاف الشراء أونلاين، حدّد هل يقبل العملاء إضافة منتجات من كل الصيدليات في سلة واحدة، أم من صيدلية واحدة فقط.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleToggleCatalogMultiPharmacy}
+          disabled={togglingCatalogMultiPharmacy}
+          className={`relative w-16 h-9 rounded-full transition-colors duration-300 shrink-0 disabled:opacity-60 ${storeConfig.catalogMultiPharmacy ? 'bg-indigo-600' : 'bg-gray-300'}`}
+          aria-pressed={storeConfig.catalogMultiPharmacy}
+        >
+          <span
+            className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow transition-all duration-300 ${storeConfig.catalogMultiPharmacy ? 'right-1' : 'right-8'}`}
+          />
+          {togglingCatalogMultiPharmacy && <Loader2 className="absolute inset-0 m-auto w-4 h-4 text-white animate-spin" />}
         </button>
       </div>
 
@@ -2680,6 +2734,247 @@ interface CustomerProfileLike {
 }
 
 // ============================================
+// Reviews Tab
+
+function ReviewsTab() {
+  const { settings } = useSettings();
+  const [list, setList] = useState<Review[]>([]);
+  const [pharmacies, setPharmacies] = useState<Pick<Pharmacy, 'id' | 'name'>[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [form, setForm] = useState({ pharmacy_id: '', customer_name: '', rating: 5, comment: '', is_visible: true });
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2200);
+  };
+
+  const fetchReviews = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('reviews')
+      .select('*, pharmacy:pharmacies(name, is_active)')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false });
+    setList((data || []) as Review[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchReviews();
+    supabase
+      .from('pharmacies')
+      .select('id, name')
+      .order('name', { ascending: true })
+      .then(({ data }) => {
+        const pharms = (data || []) as Pick<Pharmacy, 'id' | 'name'>[];
+        setPharmacies(pharms);
+        setForm((f) => ({ ...f, pharmacy_id: f.pharmacy_id || pharms[0]?.id || '' }));
+      });
+  }, [fetchReviews]);
+
+  const toggleVisible = async (r: Review) => {
+    await supabase.from('reviews').update({ is_visible: !r.is_visible }).eq('id', r.id);
+    fetchReviews();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('حذف هذا التقييم نهائياً؟')) return;
+    await supabase.from('reviews').delete().eq('id', id);
+    showToast('تم حذف التقييم');
+    fetchReviews();
+  };
+
+  const move = async (r: Review, dir: number) => {
+    const idx = list.findIndex((x) => x.id === r.id);
+    const target = list[idx + dir];
+    if (!target) return;
+    await Promise.all([
+      supabase.from('reviews').update({ sort_order: target.sort_order ?? 0 }).eq('id', r.id),
+      supabase.from('reviews').update({ sort_order: r.sort_order ?? 0 }).eq('id', target.id),
+    ]);
+    fetchReviews();
+  };
+
+  const handleAdd = async () => {
+    if (!form.pharmacy_id) return;
+    setSaving(true);
+    const { data } = await supabase
+      .from('reviews')
+      .select('sort_order')
+      .order('sort_order', { ascending: false })
+      .limit(1);
+    const nextOrder = (data && data.length > 0 ? (data[0].sort_order ?? 0) : -1) + 1;
+    await supabase.from('reviews').insert({
+      pharmacy_id: form.pharmacy_id,
+      customer_name: form.customer_name.trim() || 'عميل',
+      rating: form.rating,
+      comment: form.comment.trim() || null,
+      is_visible: form.is_visible,
+      sort_order: nextOrder,
+    });
+    setSaving(false);
+    setShowForm(false);
+    setForm((f) => ({ ...f, customer_name: '', comment: '', rating: 5, is_visible: true }));
+    showToast('تم إضافة التقييم');
+    fetchReviews();
+  };
+
+  return (
+    <div>
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl animate-fade-in">
+          {toast}
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <h2 className="text-sm text-gray-500">إدارة تقييمات العملاء — إظهار/إخفاء وترتيب يظهر كما هو في المتجر</h2>
+        </div>
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-medium"
+          style={{ backgroundColor: settings.primary_color }}
+        >
+          <Plus className="w-4 h-4" /> إضافة تقييم
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-16 bg-white rounded-xl animate-pulse" />)}</div>
+      ) : list.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
+          <MessageSquareQuote className="w-12 h-12 mx-auto text-gray-200 mb-3" />
+          <p className="text-gray-500">لا توجد تقييمات حتى الآن</p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {list.map((r, i) => (
+            <div key={r.id} className="bg-white rounded-xl border border-gray-100 p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col">
+                  <button onClick={() => move(r, -1)} disabled={i === 0} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center disabled:opacity-25 disabled:hover:bg-transparent" title="تحريك لأعلى">
+                    <ChevronUp className="w-4 h-4 text-gray-600" />
+                  </button>
+                  <button onClick={() => move(r, 1)} disabled={i === list.length - 1} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center disabled:opacity-25 disabled:hover:bg-transparent" title="تحريك لأسفل">
+                    <ChevronDown className="w-4 h-4 text-gray-600" />
+                  </button>
+                </div>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-black shrink-0" style={{ backgroundColor: settings.primary_color }}>
+                  {(r.customer_name || '؟').charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold text-gray-800">{r.customer_name}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">{r.pharmacy?.name || 'صيدلية'}</span>
+                    {r.customer_id && <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium">من متجر</span>}
+                  </div>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                    ))}
+                    <span className="text-[11px] text-gray-400 mr-1">{new Date(r.created_at).toLocaleDateString('ar-EG')}</span>
+                  </div>
+                  {r.comment && <p className="text-xs text-gray-600 mt-1 leading-relaxed">{r.comment}</p>}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => toggleVisible(r)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${r.is_visible ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                  >
+                    {r.is_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    {r.is_visible ? 'ظاهر' : 'مخفي'}
+                  </button>
+                  <button onClick={() => handleDelete(r.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center" title="حذف">
+                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showForm && (
+        <div className="fixed inset-0 z-[90] bg-black/40 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-black text-gray-800">إضافة تقييم جديد</h3>
+              <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5">الصيدلية</label>
+                <select
+                  value={form.pharmacy_id}
+                  onChange={(e) => setForm({ ...form, pharmacy_id: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+                >
+                  <option value="" disabled>اختر الصيدلية</option>
+                  {pharmacies.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5">اسم العميل</label>
+                <input
+                  value={form.customer_name}
+                  onChange={(e) => setForm({ ...form, customer_name: e.target.value })}
+                  placeholder="مثال: أحمد محمد"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5">التقييم</label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button key={s} type="button" onClick={() => setForm({ ...form, rating: s })} className="transition-transform hover:scale-125">
+                      <Star className={`w-6 h-6 ${s <= form.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5">التعليق</label>
+                <textarea
+                  value={form.comment}
+                  onChange={(e) => setForm({ ...form, comment: e.target.value })}
+                  rows={3}
+                  placeholder="اكتب نص التقييم (اختياري)..."
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300 resize-none"
+                />
+              </div>
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={form.is_visible}
+                  onChange={(e) => setForm({ ...form, is_visible: e.target.checked })}
+                  className="w-4 h-4 accent-green-600"
+                />
+                <span className="text-sm font-bold text-gray-700">ظاهر للعملاء في المتجر</span>
+              </label>
+              <button
+                onClick={handleAdd}
+                disabled={saving || !form.pharmacy_id}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-bold disabled:opacity-50"
+                style={{ backgroundColor: settings.primary_color }}
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                {saving ? 'جاري الحفظ...' : 'حفظ التقييم'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================
 // Subscribers Tab
 // ============================================
 function SubscribersTab() {
@@ -3054,8 +3349,8 @@ function SettingsTab() {
           const merged = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
           merged.stats = (merged.stats || []).map((s: HeroStat) => ({
             ...s,
-            auto: s.auto === undefined ? s.id === 'pharmacies' || s.id === 'products' : s.auto,
-            autoSource: s.autoSource || (s.id === 'products' ? 'products' : 'pharmacies'),
+            auto: s.auto === undefined ? s.id === 'pharmacies' || s.id === 'products' || s.id === 'customers' : s.auto,
+            autoSource: s.autoSource || (s.id === 'products' ? 'products' : s.id === 'customers' ? 'customers' : 'pharmacies'),
             showOnline: s.showOnline === undefined ? s.visible !== false : s.showOnline,
             showOffline: s.showOffline === undefined ? s.visible !== false : s.showOffline,
           }));
@@ -3825,7 +4120,7 @@ function SettingsTab() {
                           onChange={(e) =>
                             updateHeroStat(s.id, {
                               auto: e.target.checked,
-                              autoSource: e.target.checked ? s.autoSource || (s.id === 'products' ? 'products' : 'pharmacies') : s.autoSource,
+                              autoSource: e.target.checked ? s.autoSource || (s.id === 'products' ? 'products' : s.id === 'customers' ? 'customers' : 'pharmacies') : s.autoSource,
                             })
                           }
                           className="w-4 h-4 rounded"
@@ -3882,12 +4177,13 @@ function SettingsTab() {
                     </select>
                     {s.auto && (
                       <select
-                        value={s.autoSource || (s.id === 'products' ? 'products' : 'pharmacies')}
-                        onChange={(e) => updateHeroStat(s.id, { autoSource: e.target.value as 'pharmacies' | 'products' })}
+                        value={s.autoSource || (s.id === 'products' ? 'products' : s.id === 'customers' ? 'customers' : 'pharmacies')}
+                        onChange={(e) => updateHeroStat(s.id, { autoSource: e.target.value as 'pharmacies' | 'products' | 'customers' })}
                         className={inputClass}
                       >
                         <option value="pharmacies">العد من عدد الصيدليات</option>
                         <option value="products">العد من عدد المنتجات</option>
+                        <option value="customers">العد من عدد العملاء</option>
                       </select>
                     )}
                   </div>

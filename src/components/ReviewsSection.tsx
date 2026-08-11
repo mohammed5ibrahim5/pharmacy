@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Star, MessageSquareQuote, Send, UserRound, PencilLine } from 'lucide-react';
+import { Star, MessageSquareQuote, Send, UserRound, PencilLine, Trash2, X, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -21,12 +21,15 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchReviews = async () => {
     const { data } = await supabase
       .from('reviews')
       .select('*')
       .eq('pharmacy_id', pharmacyId)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false });
     setReviews((data || []) as Review[]);
     setLoading(false);
@@ -44,18 +47,52 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
   const handleSubmit = async () => {
     if (!user) return;
     setSubmitting(true);
-    await supabase.from('reviews').insert({
-      pharmacy_id: pharmacyId,
-      customer_id: user.id,
-      customer_name: user.full_name || t('عميل'),
-      rating,
-      comment: comment.trim() || null,
-    });
+    if (editingId) {
+      await supabase
+        .from('reviews')
+        .update({ rating, comment: comment.trim() || null })
+        .eq('id', editingId)
+        .eq('customer_id', user.id);
+      setEditingId(null);
+    } else {
+      await supabase.from('reviews').insert({
+        pharmacy_id: pharmacyId,
+        customer_id: user.id,
+        customer_name: user.full_name || t('عميل'),
+        rating,
+        comment: comment.trim() || null,
+      });
+    }
     setSubmitting(false);
     setComment('');
     setRating(5);
     await fetchReviews();
   };
+
+  const handleEdit = (review: Review) => {
+    setEditingId(review.id);
+    setRating(review.rating);
+    setComment(review.comment || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (review: Review) => {
+    if (!user || deletingId) return;
+    if (!window.confirm(t('هل أنت متأكد من حذف تقييمك؟'))) return;
+    setDeletingId(review.id);
+    await supabase.from('reviews').delete().eq('id', review.id).eq('customer_id', user.id);
+    setDeletingId(null);
+    if (editingId === review.id) {
+      setEditingId(null);
+      setComment('');
+      setRating(5);
+    }
+    await fetchReviews();
+  };
+
+  const visibleReviews = reviews.filter(
+    (r) => r.is_visible !== false || r.customer_id === user?.id
+  );
 
   return (
     <div className="mt-10 rounded-3xl border border-gray-100 p-5 sm:p-7" style={{ backgroundColor: themeColors.cardBg }}>
@@ -81,85 +118,114 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
         <div className="space-y-3">
           {[...Array(2)].map((_, i) => <div key={i} className="h-20 bg-gray-50 rounded-2xl animate-pulse" />)}
         </div>
-      ) : reviews.length === 0 ? (
+      ) : visibleReviews.length === 0 ? (
           <div className="text-center py-10 rounded-2xl border border-dashed border-gray-200" style={{ backgroundColor: themeColors.sectionAltBg }}>
           <Star className="w-8 h-8 mx-auto mb-2" style={{ color: themeColors.cardMutedText }} />
           <p className="text-sm font-bold" style={{ color: themeColors.cardMutedText }}>{t('لا توجد تقييمات بعد — كن أول من يقيّم هذه الصيدلية')}</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {reviews.map((review) => (
-            <div key={review.id} className="rounded-2xl border border-gray-100 p-4" style={{ backgroundColor: themeColors.sectionAltBg }}>
-              <div className="flex items-center justify-between gap-3 mb-1.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: themeColors.priceColor }}>
-                    {review.customer_name.charAt(0)}
+          {visibleReviews.map((review) => {
+            const isOwn = user && review.customer_id === user.id;
+            return (
+              <div key={review.id} className="rounded-2xl border border-gray-100 p-4" style={{ backgroundColor: themeColors.sectionAltBg }}>
+                <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-black shrink-0" style={{ backgroundColor: themeColors.priceColor }}>
+                      {review.customer_name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-extrabold" style={{ color: themeColors.cardText }}>{review.customer_name}</p>
+                      <p className="text-[10px]" style={{ color: themeColors.cardMutedText }}>{localizedDate(review.created_at, lang)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-extrabold" style={{ color: themeColors.cardText }}>{review.customer_name}</p>
-                    <p className="text-[10px]" style={{ color: themeColors.cardMutedText }}>{localizedDate(review.created_at, lang)}</p>
+                  <div className="flex items-center gap-1">
+                    {isOwn && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(review)}
+                          className="w-8 h-8 rounded-xl flex items-center justify-center border transition-colors"
+                          style={{ borderColor: `${themeColors.priceColor}30`, color: themeColors.priceColor }}
+                          title={t('تعديل التقييم')}
+                          aria-label={t('تعديل التقييم')}
+                        >
+                          <PencilLine className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(review)}
+                          disabled={deletingId === review.id}
+                          className="w-8 h-8 rounded-xl flex items-center justify-center border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                          title={t('حذف التقييم')}
+                          aria-label={t('حذف التقييم')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                    <div className="flex items-center gap-0.5 ms-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className="w-4 h-4"
+                          style={{ color: star <= review.rating ? themeColors.ratingColor : themeColors.cardMutedText, fill: star <= review.rating ? themeColors.ratingColor : 'transparent' }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-0.5">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className="w-4 h-4"
-                      style={{ color: star <= review.rating ? themeColors.ratingColor : themeColors.cardMutedText, fill: star <= review.rating ? themeColors.ratingColor : 'transparent' }}
-                    />
-                  ))}
-                </div>
+                {review.comment && (
+                  <p className="text-sm leading-relaxed font-medium mt-2" style={{ color: themeColors.cardText }}>{review.comment}</p>
+                )}
+                {(review.delivery_rating || review.product_quality_rating || review.value_rating) && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 pt-2.5 border-t border-gray-100">
+                    {typeof review.delivery_rating === 'number' && (
+                      <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
+                        {t('التوصيل')}
+                        <span className="flex items-center gap-0.5" dir="ltr">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className="w-3 h-3" style={{ color: s <= review.delivery_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.delivery_rating! ? themeColors.ratingColor : 'transparent' }} />
+                          ))}
+                        </span>
+                      </span>
+                    )}
+                    {typeof review.product_quality_rating === 'number' && (
+                      <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
+                        {t('الجودة')}
+                        <span className="flex items-center gap-0.5" dir="ltr">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className="w-3 h-3" style={{ color: s <= review.product_quality_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.product_quality_rating! ? themeColors.ratingColor : 'transparent' }} />
+                          ))}
+                        </span>
+                      </span>
+                    )}
+                    {typeof review.value_rating === 'number' && (
+                      <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
+                        {t('القيمة')}
+                        <span className="flex items-center gap-0.5" dir="ltr">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className="w-3 h-3" style={{ color: s <= review.value_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.value_rating! ? themeColors.ratingColor : 'transparent' }} />
+                          ))}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-              {review.comment && (
-                <p className="text-sm leading-relaxed font-medium mt-2" style={{ color: themeColors.cardText }}>{review.comment}</p>
-              )}
-              {(review.delivery_rating || review.product_quality_rating || review.value_rating) && (
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 pt-2.5 border-t border-gray-100">
-                  {typeof review.delivery_rating === 'number' && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
-                      {t('التوصيل')}
-                      <span className="flex items-center gap-0.5" dir="ltr">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} className="w-3 h-3" style={{ color: s <= review.delivery_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.delivery_rating! ? themeColors.ratingColor : 'transparent' }} />
-                        ))}
-                      </span>
-                    </span>
-                  )}
-                  {typeof review.product_quality_rating === 'number' && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
-                      {t('الجودة')}
-                      <span className="flex items-center gap-0.5" dir="ltr">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} className="w-3 h-3" style={{ color: s <= review.product_quality_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.product_quality_rating! ? themeColors.ratingColor : 'transparent' }} />
-                        ))}
-                      </span>
-                    </span>
-                  )}
-                  {typeof review.value_rating === 'number' && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: themeColors.cardMutedText }}>
-                      {t('القيمة')}
-                      <span className="flex items-center gap-0.5" dir="ltr">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} className="w-3 h-3" style={{ color: s <= review.value_rating! ? themeColors.ratingColor : themeColors.cardMutedText, fill: s <= review.value_rating! ? themeColors.ratingColor : 'transparent' }} />
-                        ))}
-                      </span>
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Add review */}
+      {/* Add / edit review */}
       <div className="mt-6 pt-6 border-t border-gray-100">
         {user ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-extrabold flex items-center gap-1.5" style={{ color: themeColors.cardText }}>
                 <PencilLine className="w-4 h-4" style={{ color: themeColors.priceColor }} />
-                {t('أضف تقييمك')}
+                {editingId ? t('تعديل تقييمك') : t('أضف تقييمك')}
               </p>
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -186,15 +252,33 @@ export function ReviewsSection({ pharmacyId, pharmacyName }: Props) {
               className="w-full p-3.5 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 resize-none"
               style={{ backgroundColor: themeColors.pageSearchBg, color: themeColors.pageSearchText, ['--tw-ring-color' as string]: themeColors.priceColor }}
             />
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white text-xs font-bold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60 shadow-md"
-              style={{ backgroundColor: themeColors.priceColor }}
-            >
-              <Send className="w-4 h-4" />
-              {submitting ? t('جاري النشر...') : t('نشر التقييم')}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white text-xs font-bold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-60 shadow-md"
+                style={{ backgroundColor: themeColors.priceColor }}
+              >
+                <Send className="w-4 h-4" />
+                {submitting ? t('جاري النشر...') : editingId ? t('حفظ التعديل') : t('نشر التقييم')}
+              </button>
+              {editingId && (
+                <button
+                  onClick={() => { setEditingId(null); setComment(''); setRating(5); }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold transition-all hover:bg-gray-50 active:scale-95"
+                  style={{ color: themeColors.cardMutedText }}
+                >
+                  <X className="w-4 h-4" />
+                  {t('إلغاء')}
+                </button>
+              )}
+              {editingId && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold" style={{ color: themeColors.inStockColor }}>
+                  <Check className="w-3.5 h-3.5" />
+                  {t('سيتم تحديث تقييمك السابق')}
+                </span>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex items-center gap-3 rounded-2xl border border-gray-100 p-4" style={{ backgroundColor: themeColors.sectionAltBg }}>

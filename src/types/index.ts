@@ -129,6 +129,7 @@ export interface StoreConfig {
   purchasesEnabled: boolean;
   contactMessage: string;
   catalogWhatsapp: string;
+  catalogMultiPharmacy: boolean;
 }
 
 export interface HomepageConfig {
@@ -192,6 +193,9 @@ export interface Review {
   delivery_rating?: number | null;
   product_quality_rating?: number | null;
   value_rating?: number | null;
+  is_visible?: boolean;
+  sort_order?: number;
+  pharmacy?: { name?: string | null; is_active?: boolean | null } | null;
 }
 
 export interface LoyaltyTransaction {
@@ -258,7 +262,7 @@ export interface HeroStat {
   desc: string;
   icon: string;
   auto?: boolean;
-  autoSource?: 'pharmacies' | 'products';
+  autoSource?: 'pharmacies' | 'products' | 'customers';
   visible?: boolean;
   showOnline?: boolean;
   showOffline?: boolean;
