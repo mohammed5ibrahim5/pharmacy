@@ -39,6 +39,7 @@
   'تقييمات العملاء': 'Customer reviews',
   'آراء حقيقية من عملاء صيدلية {0}': 'Real reviews from customers of {0} pharmacy',
   '{0} تقييم': '{0} reviews',
+  'بدون وظيفة طبية': 'Non-medical product',
   'لا توجد تقييمات بعد — كن أول من يقيّم هذه الصيدلية': 'No reviews yet — be the first to review this pharmacy',
   'التوصيل': 'Delivery',
   'الجودة': 'Quality',

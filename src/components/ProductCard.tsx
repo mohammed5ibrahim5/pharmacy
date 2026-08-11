@@ -314,6 +314,20 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
             <p className="text-[11px] line-clamp-1 font-medium" style={{ color: themeColors.cardMutedText }}>{product.description}</p>
           )}
 
+          {product.is_medical === false && (
+            <p
+              className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+              style={{
+                color: themeColors.accent2Color,
+                backgroundColor: `${themeColors.accent2Color}12`,
+                border: `1px solid ${themeColors.accent2Color}25`,
+              }}
+            >
+              <ShieldAlert className="w-3 h-3" />
+              {t('بدون وظيفة طبية')}
+            </p>
+          )}
+
           {(product.form || product.dosage) && (
             <p className="text-[11px] font-bold flex items-center gap-1 truncate" style={{ color: themeColors.cardMutedText }}>
               <FlaskConical className="w-3.5 h-3.5 shrink-0" style={{ color: themeColors.priceColor }} />

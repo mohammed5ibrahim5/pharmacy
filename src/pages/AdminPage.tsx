@@ -2116,7 +2116,10 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
                           <div className="min-w-0">
                             <p className="font-medium text-gray-900 truncate max-w-[160px]">{product.name}</p>
                             {product.active_ingredient && <p className="text-xs text-gray-400 truncate">{product.active_ingredient}</p>}
-                            {product.requires_prescription && <span className="text-xs text-amber-600">يحتاج وصفة</span>}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {product.requires_prescription && <span className="text-xs text-amber-600">يحتاج وصفة</span>}
+                              {product.is_medical === false && <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">بدون وظيفة طبية</span>}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -2151,6 +2154,7 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
     pharmacy_id: lockedPharmacy?.id || product?.pharmacy_id || pharmacies[0]?.id || '', category_id: product?.category_id || '',
     for_all_pharmacies: product?.for_all_pharmacies ?? false,
     is_available: product?.is_available ?? true, requires_prescription: product?.requires_prescription ?? false,
+    is_medical: product?.is_medical ?? true,
     active_ingredient: product?.active_ingredient || '', manufacturer: product?.manufacturer || '',
     form_type: product?.form || '', dosage: product?.dosage || '',
     how_to_use: product?.how_to_use || '', contraindications: product?.contraindications || '',
@@ -2168,6 +2172,7 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
       pharmacy_id: ownerPharmacyId, category_id: form.category_id || null,
       for_all_pharmacies: form.for_all_pharmacies,
       is_available: form.is_available, requires_prescription: form.requires_prescription,
+      is_medical: form.is_medical,
       active_ingredient: form.active_ingredient || null, manufacturer: form.manufacturer || null,
       form: form.form_type || null, dosage: form.dosage || null,
       how_to_use: form.how_to_use || null, contraindications: form.contraindications || null,
@@ -2248,6 +2253,17 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.is_available} onChange={(e) => setForm({ ...form, is_available: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm text-gray-700">متوفر</span></label>
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.requires_prescription} onChange={(e) => setForm({ ...form, requires_prescription: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm text-gray-700">يحتاج وصفة طبية</span></label>
         </div>
+        <Field label="نوع المنتج">
+          <select value={form.is_medical ? 'medical' : 'non_medical'} onChange={(e) => setForm({ ...form, is_medical: e.target.value === 'medical' })} className={inputClass}>
+            <option value="medical">منتج بوظيفة طبية</option>
+            <option value="non_medical">منتج بدون وظيفة طبية</option>
+          </select>
+          {!form.is_medical && (
+            <p className="mt-1.5 text-[11px] font-bold text-amber-600 flex items-center gap-1">
+              <Info className="w-3.5 h-3.5" /> ستظهر عبارة «بدون وظيفة طبية» على بطاقة المنتج ووصفه في المتجر.
+            </p>
+          )}
+        </Field>
         <div className="flex gap-3 pt-4 border-t border-gray-100">
           <button onClick={handleSave} disabled={saving || !form.name || (!form.for_all_pharmacies && !form.pharmacy_id) || !form.price} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50" style={{ backgroundColor: settings.primary_color }}><Save className="w-4 h-4" />{saving ? 'جاري الحفظ...' : 'حفظ'}</button>
           <button onClick={onClose} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">إلغاء</button>

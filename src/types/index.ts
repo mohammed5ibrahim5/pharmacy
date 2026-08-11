@@ -56,6 +56,7 @@ export interface Product {
   interactions: string | null;
   stock_quantity: number;
   barcode: string | null;
+  is_medical?: boolean;
   for_all_pharmacies?: boolean;
   created_at: string;
   updated_at: string;
