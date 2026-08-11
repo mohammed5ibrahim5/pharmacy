@@ -376,6 +376,14 @@ export function OrderModal() {
     setInvoiceLoading(true);
     try {
       if (catalogWhatsapp) {
+        try {
+          const blob = dataUrlToBlob(invoiceUrl);
+          if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          }
+        } catch {
+          // clipboard unavailable — the user can attach the invoice manually
+        }
         window.open(buildWhatsAppLink(catalogWhatsapp, buildWhatsAppMessage()), '_blank', 'noopener,noreferrer');
         return;
       }
@@ -757,7 +765,7 @@ export function OrderModal() {
                 <p className="text-[11px] text-gray-400 text-center leading-relaxed mt-2.5 flex items-center justify-center gap-1">
                   <Info className="w-3 h-3 shrink-0" />
                   {catalogWhatsapp
-                    ? t('سيُفتح واتساب مع صيدلية {0} وفي الشات صورة الفاتورة جاهزة للإرسال.', [catalogTargetName])
+                    ? t('سيُفتح الشات مباشرة مع {0} — صورة الفاتورة منسوخة، اضغط Ctrl+V (أو ضغط مطوّل) للصقها في الشات.', [catalogTargetName])
                     : t('بدون دفع مسبق — أرسل قائمتك للصيدلية وسيتواصل معك الصيدلي.')}
                 </p>
               </>
