@@ -375,12 +375,14 @@ export function OrderModal() {
     if (!invoiceUrl) return;
     setInvoiceLoading(true);
     try {
+      if (catalogWhatsapp) {
+        window.open(buildWhatsAppLink(catalogWhatsapp, buildWhatsAppMessage()), '_blank', 'noopener,noreferrer');
+        return;
+      }
       const blob = dataUrlToBlob(invoiceUrl);
       const file = new File([blob], `invoice-${Date.now()}.png`, { type: 'image/png' });
       if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: t('فاتورة الطلب') });
-      } else if (catalogWhatsapp) {
-        window.open(buildWhatsAppLink(catalogWhatsapp, buildWhatsAppMessage()), '_blank', 'noopener,noreferrer');
       }
     } catch {
       // user cancelled the share sheet — nothing to do
