@@ -326,7 +326,7 @@ export function HomePage() {
       case 'nearest':
         return sortedPharmacies;
       case 'favorite':
-        return favoritePharmaciesList.length > 0 ? favoritePharmaciesList : sortedPharmacies;
+        return favoritePharmaciesList;
       case 'highest_rated':
         return highestRatedPharmacies;
       case 'most_popular':
@@ -862,6 +862,19 @@ export function HomePage() {
             {[...Array(6)].map((_, i) => (
               <div key={i} className="skeleton rounded-3xl h-72" />
             ))}
+          </div>
+        ) : activePharmacyTab === 'favorite' ? (
+          <div className="py-16 text-center bg-white rounded-3xl border border-gray-200 animate-fade-in">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: '#fdf2f8' }}
+            >
+              <Heart className="w-8 h-8 text-pink-500" />
+            </div>
+            <h3 className="text-lg font-black text-slate-900 mb-1.5">{t('لا توجد صيدليات مفضلة بعد')}</h3>
+            <p className="text-sm text-slate-500 font-bold max-w-md mx-auto leading-relaxed">
+              {t('اضغط على علامة القلب ♥ بجانب أي صيدلية لإضافتها إلى مفضلتك هنا.')}
+            </p>
           </div>
         ) : displayedPharmacies.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">

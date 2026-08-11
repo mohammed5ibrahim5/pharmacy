@@ -72,24 +72,22 @@ export function PharmacyCard({ pharmacy }: Props) {
             )}
           </div>
 
-          {/* Top Right: GPS Distance Badge */}
+          {/* Bottom Right: GPS Distance Badge */}
           {pharmacy.distance != null && (
-            <div className="absolute top-3 end-3 bg-slate-950/80 backdrop-blur-md border border-white/20 text-white px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg z-10">
+            <div className="absolute bottom-3 end-3 bg-slate-950/80 backdrop-blur-md border border-white/20 text-white px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg z-10">
               <Navigation className="w-3.5 h-3.5 text-teal-400 animate-pulse" />
               <span dir="ltr">{formatDistance(pharmacy.distance, lang)}</span>
             </div>
           )}
 
-          {/* Rating Badge Next to Name (moved out of cover to avoid heart collision) */}
-
-          {/* Favorite Heart Button */}
+          {/* Favorite Heart Button — top corner */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               togglePharmacyFavorite(pharmacy.id);
             }}
-            className={`absolute bottom-3 end-3 w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 z-10 active:scale-90 ${
+            className={`absolute top-3 end-3 w-10 h-10 rounded-full flex items-center justify-center shadow-lg border transition-all duration-300 z-10 active:scale-90 ${
               isFav
                 ? 'bg-pink-500 border-pink-400'
                 : 'bg-white/90 backdrop-blur-md border-white/40 hover:bg-white'

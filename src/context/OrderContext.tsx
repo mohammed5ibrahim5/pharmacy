@@ -3,6 +3,7 @@ import { AlertCircle } from 'lucide-react';
 import type { Product } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCustomer } from '@/context/CustomerContext';
 
 export interface CartItem {
   key: string;
@@ -61,6 +62,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [notice, setNotice] = useState<string | null>(null);
   const { storeConfig } = useSettings();
   const { t } = useLanguage();
+  const { user, setAuthModalOpen } = useCustomer();
 
   useEffect(() => {
     try {
@@ -79,6 +81,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const notify = (message: string) => setNotice(message);
 
   const addToCart = (product: Product, pharmacyName?: string, quantity = 1): boolean => {
+    if (!user) {
+      notify(t('سجّل دخولك أولاً لإضافة المنتجات إلى السلة.'));
+      setAuthModalOpen(true);
+      return false;
+    }
     const catalogMode = !storeConfig.purchasesEnabled;
     if (catalogMode && !product.for_all_pharmacies) {
       const cartPharmacyIds = new Set(
@@ -105,6 +112,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   };
 
   const updateCartQty = (key: string, quantity: number) => {
+    if (!user) {
+      notify(t('سجّل دخولك أولاً للوصول إلى سلة التسوق.'));
+      setAuthModalOpen(true);
+      return;
+    }
     if (quantity <= 0) {
       removeFromCart(key);
       return;
@@ -119,6 +131,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const clearCart = () => setCart([]);
 
   const openCart = (step: CartStep = 'cart') => {
+    if (!user) {
+      notify(t('سجّل دخولك أولاً للوصول إلى سلة التسوق.'));
+      setAuthModalOpen(true);
+      return;
+    }
     setCartStep(step);
     setCartOpen(true);
   };

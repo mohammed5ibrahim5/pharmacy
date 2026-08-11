@@ -110,4 +110,6 @@
   'سيُفتح واتساب مع صيدلية {0} وفي الشات صورة الفاتورة جاهزة للإرسال.': 'WhatsApp will open with {0} pharmacy and the invoice image will be ready to send in the chat.',
   'اضغط لتكبير الفاتورة': 'Tap to view the invoice full size',
   'لا يمكن إضافة منتجات من أكثر من صيدلية في هذا الوضع، السلة مرتبطة بصيدلية واحدة فقط.': 'You can only add products from one pharmacy in this mode. The cart is linked to a single pharmacy.',
+  'سجّل دخولك أولاً لإضافة المنتجات إلى السلة.': 'Please log in first to add products to your cart.',
+  'سجّل دخولك أولاً للوصول إلى سلة التسوق.': 'Please log in first to access your cart.',
 };
