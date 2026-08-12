@@ -25,6 +25,7 @@ import {
 } from '@/lib/pharmacySections';
 import { ImageUploader } from '@/components/ImageUploader';
 import { InvoiceModal } from '@/components/InvoiceModal';
+import { CATEGORY_ICON_MAP, categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import {
   PRESCRIPTION_STATUSES,
   PRESCRIPTION_STATUS_META,
@@ -2313,17 +2314,21 @@ function CategoriesTab() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">{[...Array(5)].map((_, i) => <div key={i} className="h-24 bg-white rounded-xl animate-pulse" />)}</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {categories.map((cat) => (
-            <div key={cat.id} className="bg-white rounded-xl border border-gray-100 p-4 text-center group">
-              <div className="flex justify-end gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => { setEditing(cat); setShowForm(true); }} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center"><Edit2 className="w-3.5 h-3.5 text-gray-600" /></button>
-                <button onClick={() => handleDelete(cat.id)} className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
+          {categories.map((cat) => {
+            const CatIcon = categoryIcon(cat.slug, cat.icon);
+            const color = categoryColor(cat.slug);
+            return (
+              <div key={cat.id} className="bg-white rounded-xl border border-gray-100 p-4 text-center group">
+                <div className="flex justify-end gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => { setEditing(cat); setShowForm(true); }} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center"><Edit2 className="w-3.5 h-3.5 text-gray-600" /></button>
+                  <button onClick={() => handleDelete(cat.id)} className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
+                </div>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ backgroundColor: `${color}18`, color }}><CatIcon className="w-6 h-6" /></div>
+                <p className="text-sm font-medium text-gray-900">{cat.name}</p>
+                {cat.name_en && <p className="text-xs text-gray-400 mt-0.5">{cat.name_en}</p>}
               </div>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ backgroundColor: `${settings.primary_color}15` }}><List className="w-6 h-6" style={{ color: settings.primary_color }} /></div>
-              <p className="text-sm font-medium text-gray-900">{cat.name}</p>
-              {cat.name_en && <p className="text-xs text-gray-400 mt-0.5">{cat.name_en}</p>}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {showForm && <CategoryForm category={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchCategories(); setShowForm(false); setEditing(null); }} />}
@@ -2348,6 +2353,19 @@ function CategoryForm({ category, onClose, onSaved }: { category: Category | nul
         <Field label="الاسم بالعربية *"><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} /></Field>
         <Field label="الاسم بالإنجليزية"><input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} className={inputClass} dir="ltr" /></Field>
         <Field label="المعرف (slug)"><input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className={inputClass} dir="ltr" placeholder="auto-generated if empty" /></Field>
+        <Field label="الأيقونة">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border" style={{ backgroundColor: `${categoryColor(form.slug)}18`, color: categoryColor(form.slug), borderColor: `${categoryColor(form.slug)}30` }}>
+              {(() => { const IconPreview = categoryIcon(form.slug, form.icon); return <IconPreview className="w-5 h-5" />; })()}
+            </div>
+            <select value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} className={inputClass}>
+              <option value="">تلقائي (حسب الفئة)</option>
+              {Object.keys(CATEGORY_ICON_MAP).map((key) => (
+                <option key={key} value={key}>{key}</option>
+              ))}
+            </select>
+          </div>
+        </Field>
         <Field label="ترتيب الظهور (رقم صغير = الأول)"><input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} className={inputClass} dir="ltr" placeholder="اختياري" /></Field>
         <div className="flex gap-3 pt-4 border-t border-gray-100">
           <button onClick={handleSave} disabled={saving || !form.name} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50" style={{ backgroundColor: settings.primary_color }}><Save className="w-4 h-4" />{saving ? 'جاري الحفظ...' : 'حفظ'}</button>

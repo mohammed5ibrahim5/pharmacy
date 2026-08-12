@@ -9,8 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Stethoscope,
-  Shield,
   Heart,
   Package,
   BadgeCheck,
@@ -25,9 +23,6 @@ import {
   FileText,
   Mic,
   Zap,
-  Droplet,
-  Baby,
-  Activity,
   Calculator,
   Cross,
 } from 'lucide-react';
@@ -58,7 +53,7 @@ import { MostSearched } from '@/components/MostSearched';
 import { Reveal } from '@/components/Reveal';
 import { CountUp, parseStatValue } from '@/components/CountUp';
 import { TrustSignals } from '@/components/TrustSignals';
-import { HealthCategoriesBanner } from '@/components/HealthCategoriesBanner';
+import { categoryColor, categoryGradient, categoryIcon, mergeCategories } from '@/lib/categoryStyles';
 import type { Pharmacy, Product, Category } from '@/types';
 
 interface SpeechRecognitionLike {
@@ -73,17 +68,6 @@ interface SpeechRecognitionLike {
 type SpeechRecognitionWindow = typeof window & {
   SpeechRecognition?: new () => SpeechRecognitionLike;
   webkitSpeechRecognition?: new () => SpeechRecognitionLike;
-};
-
-const CATEGORY_ICONS: Record<string, { icon: React.ReactNode; color: string; count: string }> = {
-  painkillers: { icon: <Pill className="w-7 h-7" />, color: '#0d9488', count: '45+ دواء' },
-  antibiotics: { icon: <Shield className="w-7 h-7" />, color: '#2563eb', count: '30+ منتج' },
-  supplements: { icon: <Sparkles className="w-7 h-7" />, color: '#d97706', count: '60+ مكمل' },
-  'cold-flu': { icon: <Stethoscope className="w-7 h-7" />, color: '#dc2626', count: '25+ علاج' },
-  vitamins: { icon: <Heart className="w-7 h-7" />, color: '#7c3aed', count: '50+ فيتامين' },
-  'skin-care': { icon: <Droplet className="w-7 h-7" />, color: '#db2777', count: '35+ منتج' },
-  'baby-care': { icon: <Baby className="w-7 h-7" />, color: '#e11d48', count: '40+ مستلزم' },
-  digestive: { icon: <Activity className="w-7 h-7" />, color: '#16a34a', count: '30+ دواء' },
 };
 
 const HERO_TRENDING = [
@@ -155,6 +139,7 @@ export function HomePage() {
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
   const [pharmacyCount, setPharmacyCount] = useState(0);
   const [productCount, setProductCount] = useState(0);
@@ -211,7 +196,7 @@ export function HomePage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [pharmRes, prodRes, catRes, ordersRes, sectionsRes, pharmCountRes, prodCountRes, customerCountRes] = await Promise.all([
+      const [pharmRes, prodRes, catRes, ordersRes, sectionsRes, pharmCountRes, prodCountRes, customerCountRes, catCountRes] = await Promise.all([
         supabase.from('pharmacies').select('*').eq('is_active', true),
         supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').eq('is_available', true).limit(20),
         supabase.from('categories').select('*').order('name'),
@@ -220,6 +205,7 @@ export function HomePage() {
         supabase.from('pharmacies').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('products').select('id', { count: 'exact', head: true }).eq('is_available', true),
         supabase.from('customers').select('id', { count: 'exact', head: true }),
+        supabase.from('products').select('category_id').eq('is_available', true),
       ]);
       setPharmacies(pharmRes.data || []);
       setProducts(prodRes.data || []);
@@ -227,6 +213,12 @@ export function HomePage() {
       setPharmacyCount(pharmCountRes.count || 0);
       setProductCount(prodCountRes.count || 0);
       setCustomerCount(customerCountRes.count || 0);
+
+      const catCounts: Record<string, number> = {};
+      (catCountRes.data || []).forEach((r: { category_id: string | null }) => {
+        if (r.category_id) catCounts[r.category_id] = (catCounts[r.category_id] || 0) + 1;
+      });
+      setCategoryCounts(catCounts);
 
       const popularity = new Map<string, number>();
       (ordersRes.data || []).forEach((o) => {
@@ -709,7 +701,7 @@ export function HomePage() {
 
       {/* ==================== CATEGORIES SECTION ==================== */}
       <Reveal>
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
             <div
@@ -720,9 +712,10 @@ export function HomePage() {
               }}
             >
               <ShoppingBag className="w-3.5 h-3.5" />
-              {t('تصفح الأقسام والمجموعات')}
+              {t('تصفح الأقسام الطبية')}
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{t('تسوق حسب الفئة')}</h2>
+            <p className="text-sm text-slate-500 mt-1.5 font-bold">{t('اختر القسم اللي يناسب احتياجك وابدأ التسوق')}</p>
           </div>
 
           <button
@@ -741,38 +734,42 @@ export function HomePage() {
         {loadingData && categories.length === 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="skeleton rounded-3xl h-[6.5rem]" />
+              <div key={i} className="skeleton rounded-3xl h-32" />
             ))}
           </div>
         ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
-          {categories.map((cat) => {
-            const config = CATEGORY_ICONS[cat.slug] || {
-              icon: <Pill className="w-7 h-7" />,
-              color: themeColors.primaryColor,
-              count: 'متوفر الان',
-            };
-
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
+          {mergeCategories(categories).map((cat) => {
+            const color = categoryColor(cat.slug);
+            const gradient = categoryGradient(cat.slug);
+            const Icon = categoryIcon(cat.slug, cat.icon);
+            const count = categoryCounts[cat.id] || 0;
             return (
               <button
                 key={cat.id}
                 onClick={() => navigate({ name: 'category', slug: cat.slug })}
-                className="group relative flex flex-col items-center p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 text-center overflow-hidden"
+                className="group relative flex flex-col items-start justify-between p-4 rounded-3xl text-white overflow-hidden text-start transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl active:scale-95 min-h-[7.5rem]"
+                style={{ background: gradient, boxShadow: `0 12px 28px -14px ${color}cc` }}
               >
+                <span className="absolute -end-6 -top-6 w-24 h-24 rounded-full bg-white/10 blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
                 <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-2.5 shadow-sm transition-transform duration-300 group-hover:scale-110"
-                  style={{
-                    backgroundColor: `${config.color}15`,
-                    color: config.color,
-                    border: `1px solid ${config.color}30`,
-                  }}
+                  className="w-11 h-11 rounded-2xl bg-white/20 border border-white/30 backdrop-blur-sm flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
                 >
-                  {config.icon}
+                  <Icon className="w-5 h-5" />
                 </div>
-
-                <h3 className="text-xs font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors line-clamp-1">
-                  {lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}
-                </h3>
+                <div className="mt-3 w-full">
+                  <h3 className="text-sm font-black leading-tight line-clamp-1 drop-shadow-sm">
+                    {lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}
+                  </h3>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-[11px] font-bold text-white/85">
+                      {count > 0 ? t('{0} منتج', [count]) : t('متوفر الآن')}
+                    </span>
+                    <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:-translate-x-1 opacity-0 group-hover:opacity-100">
+                      {dir === 'ltr' ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+                    </span>
+                  </div>
+                </div>
               </button>
             );
           })}
@@ -905,9 +902,6 @@ export function HomePage() {
 
       {/* ==================== PHARMACIES MAP ==================== */}
       <PharmacyMap pharmacies={sortedPharmacies} loading={loadingData} />
-
-      {/* ==================== HEALTH CATEGORIES BANNER ==================== */}
-      <Reveal><HealthCategoriesBanner /></Reveal>
 
       {/* ==================== FEATURED PRODUCTS ==================== */}
       <Reveal><FeaturedProducts products={featuredProducts} loading={loadingData} popularProductIds={popularProductIds} /></Reveal>

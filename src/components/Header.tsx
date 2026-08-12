@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Search,
   Menu,
@@ -11,13 +11,6 @@ import {
   Mic,
   ChevronDown,
   Pill,
-  Heart,
-  Baby,
-  Activity,
-  Shield,
-  Stethoscope,
-  Sparkles,
-  Droplet,
   Zap,
   PhoneCall,
   Flame,
@@ -25,8 +18,7 @@ import {
   ShoppingCart,
   Moon,
   Sun,
-  Languages,
-  type LucideIcon
+  Languages
 } from 'lucide-react';
 import { useRouter } from '@/context/RouterContext';
 import { useSettings } from '@/context/SettingsContext';
@@ -43,6 +35,7 @@ import { useGeolocation } from '@/hooks/useGeolocation';
 import { supabase } from '@/lib/supabase';
 import { trackSearch } from '@/lib/searchHistory';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
+import { categoryColor, categoryIcon, mergeCategories } from '@/lib/categoryStyles';
 import type { Product, Category } from '@/types';
 
 interface SpeechRecognitionLike {
@@ -70,28 +63,6 @@ const UNIFIED_TRENDING = [
 ];
 
 const TRENDING_LIMIT = 7;
-
-const CATEGORY_STYLES: Record<string, { icon: LucideIcon; color: string }> = {
-  painkillers: { icon: Pill, color: '#0d9488' },
-  antibiotics: { icon: Shield, color: '#2563eb' },
-  supplements: { icon: Sparkles, color: '#d97706' },
-  'cold-flu': { icon: Stethoscope, color: '#dc2626' },
-  vitamins: { icon: Heart, color: '#7c3aed' },
-  'skin-care': { icon: Droplet, color: '#db2777' },
-  'baby-care': { icon: Baby, color: '#e11d48' },
-  digestive: { icon: Activity, color: '#16a34a' },
-};
-
-const FALLBACK_CATEGORIES: { slug: string; name: string; name_en?: string | null }[] = [
-  { slug: 'painkillers', name: 'مسكنات الألم', name_en: 'Pain Relievers' },
-  { slug: 'antibiotics', name: 'مضادات حيوية', name_en: 'Antibiotics' },
-  { slug: 'supplements', name: 'مكملات غذائية', name_en: 'Supplements' },
-  { slug: 'cold-flu', name: 'برد وإنفلونزا', name_en: 'Cold & Flu' },
-  { slug: 'vitamins', name: 'فيتامينات', name_en: 'Vitamins' },
-  { slug: 'skin-care', name: 'العناية بالبشرة', name_en: 'Skin Care' },
-  { slug: 'baby-care', name: 'مستلزمات الأطفال', name_en: 'Baby Care' },
-  { slug: 'digestive', name: 'الجهاز الهضمي', name_en: 'Digestive Health' },
-];
 
 export function Header() {
   const { navigate, route } = useRouter();
@@ -162,6 +133,28 @@ export function Header() {
   }, [cartCount]);
 
   const searchRef = useRef<HTMLDivElement>(null);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const [catScroll, setCatScroll] = useState({ left: 0, width: 100, visible: false });
+
+  const updateCatScroll = useCallback(() => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    if (max <= 4) {
+      setCatScroll((s) => (s.visible ? { left: 0, width: 100, visible: false } : s));
+      return;
+    }
+    const current = Math.abs(el.scrollLeft);
+    const width = Math.max(10, (el.clientWidth / el.scrollWidth) * 100);
+    const left = (current / max) * (100 - width);
+    setCatScroll({ left, width, visible: true });
+  }, []);
+
+  useEffect(() => {
+    updateCatScroll();
+    window.addEventListener('resize', updateCatScroll);
+    return () => window.removeEventListener('resize', updateCatScroll);
+  }, [updateCatScroll, categories.length]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -651,55 +644,73 @@ export function Header() {
         {/* 3. CATEGORY QUICK NAVIGATION BAR */}
         {headerConfig.showCategoryPills && (
           <div
-            className="sticky top-0 z-40 py-1.5 overflow-x-auto scrollbar-none border-b shadow-sm transition-all duration-300"
+            className="sticky top-0 z-40 border-b shadow-sm transition-all duration-300"
             style={{
               backgroundColor: themeColors.headerNavBg,
               color: themeColors.headerNavText,
               borderColor: `${themeColors.headerNavText}15`
             }}
           >
-            <div className="max-w-7xl mx-auto px-4 flex items-center gap-2 min-w-max">
-              <span
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black shrink-0"
-                style={{ color: themeColors.accentColor }}
-              >
-                <Zap className="w-3.5 h-3.5 animate-pulse" />
-                {t('تصفح حسب الفئة')}
-              </span>
-              <div className="w-px h-5 shrink-0" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
-              {(categories.length > 0 ? categories : FALLBACK_CATEGORIES).map((cat) => {
-                const style = CATEGORY_STYLES[cat.slug] || {
-                  icon: Pill,
-                  color: themeColors.accentColor,
-                };
-                const Icon = style.icon;
-                return (
-                  <button
-                    key={cat.slug}
-                    onClick={() => navigate({ name: 'category', slug: cat.slug })}
-                    className="group flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shrink-0"
-                    style={{
-                      backgroundColor: `${themeColors.headerNavText}10`,
-                      color: themeColors.headerNavText,
-                      borderColor: `${themeColors.headerNavText}20`,
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                    }}
-                  >
-                    <span
-                      className="w-6 h-6 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+            <div
+              ref={categoryScrollRef}
+              onScroll={updateCatScroll}
+              className="overflow-x-auto scrollbar-none"
+            >
+              <div className="max-w-7xl mx-auto px-4 flex items-center gap-2 min-w-max py-1.5">
+                <span
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black shrink-0"
+                  style={{ color: themeColors.accentColor }}
+                >
+                  <Zap className="w-3.5 h-3.5 animate-pulse" />
+                  {t('تصفح حسب الفئة')}
+                </span>
+                <div className="w-px h-5 shrink-0" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
+                {mergeCategories(categories).map((cat) => {
+                  const color = categoryColor(cat.slug);
+                  const Icon = categoryIcon(cat.slug, cat.icon);
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => navigate({ name: 'category', slug: cat.slug })}
+                      className="group flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shrink-0"
                       style={{
-                        backgroundColor: `${style.color}22`,
-                        color: style.color
+                        backgroundColor: `${themeColors.headerNavText}10`,
+                        color: themeColors.headerNavText,
+                        borderColor: `${themeColors.headerNavText}20`,
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                       }}
                     >
-                      <Icon className="w-3.5 h-3.5" />
-                    </span>
-                    <span className="text-xs font-extrabold whitespace-nowrap">{lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}</span>
-                    <ArrowUpLeft className="w-3 h-3 opacity-0 group-hover:opacity-60 -mt-1 -ms-0.5 transition-opacity" />
-                  </button>
-                );
-              })}
+                      <span
+                        className="w-6 h-6 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+                        style={{
+                          backgroundColor: `${color}22`,
+                          color
+                        }}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                      </span>
+                      <span className="text-xs font-extrabold whitespace-nowrap">{lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}</span>
+                      <ArrowUpLeft className="w-3 h-3 opacity-0 group-hover:opacity-60 -mt-1 -ms-0.5 transition-opacity" />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {catScroll.visible && (
+              <div className="relative h-1.5">
+                <div className="absolute inset-x-0 top-0 h-full rounded-full" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
+                <div
+                  className="absolute top-0 h-full rounded-full transition-all duration-150"
+                  style={{
+                    left: `${catScroll.left}%`,
+                    width: `${catScroll.width}%`,
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    boxShadow: '0 0 10px rgba(255,255,255,0.55)'
+                  }}
+                />
+              </div>
+            )}
           </div>
         )}
 
