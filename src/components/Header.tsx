@@ -329,7 +329,7 @@ export function Header() {
 
       {/* 2. MAIN HEADER BAR */}
       <header
-        className="sticky top-0 z-50 border-b shadow-sm transition-all duration-300 backdrop-blur-xl"
+        className="border-b shadow-sm transition-all duration-300 backdrop-blur-xl"
         style={{
           backgroundColor: `${themeColors.headerBg}f2`,
           color: themeColors.headerText,
@@ -651,10 +651,11 @@ export function Header() {
         {/* 3. CATEGORY QUICK NAVIGATION BAR */}
         {headerConfig.showCategoryPills && (
           <div
-            className="py-1.5 overflow-x-auto scrollbar-none transition-all duration-300"
+            className="sticky top-0 z-40 py-1.5 overflow-x-auto scrollbar-none border-b shadow-sm transition-all duration-300"
             style={{
               backgroundColor: themeColors.headerNavBg,
-              color: themeColors.headerNavText
+              color: themeColors.headerNavText,
+              borderColor: `${themeColors.headerNavText}15`
             }}
           >
             <div className="max-w-7xl mx-auto px-4 flex items-center gap-2 min-w-max">
