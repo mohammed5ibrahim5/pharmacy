@@ -3,6 +3,7 @@ import type { Pharmacy } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useFavorites } from '@/context/FavoritesContext';
+import { useCustomer } from '@/context/CustomerContext';
 import { formatDistance } from '@/lib/distance';
 import { getDirectionsUrl } from '@/lib/directions';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
@@ -16,8 +17,17 @@ export function PharmacyCard({ pharmacy }: Props) {
   const { t, lang } = useLanguage();
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
+  const { user, setAuthModalOpen } = useCustomer();
   const { isPharmacyFavorite, togglePharmacyFavorite } = useFavorites();
   const isFav = isPharmacyFavorite(pharmacy.id);
+
+  const handleToggleFavorite = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    togglePharmacyFavorite(pharmacy.id);
+  };
 
   return (
     <div
@@ -85,7 +95,7 @@ export function PharmacyCard({ pharmacy }: Props) {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              togglePharmacyFavorite(pharmacy.id);
+              handleToggleFavorite();
             }}
             className={`absolute top-3 end-3 w-10 h-10 rounded-full flex items-center justify-center shadow-lg border transition-all duration-300 z-10 active:scale-90 ${
               isFav
