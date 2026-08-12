@@ -34,7 +34,7 @@ export function MobileBottomNav() {
       id: 'favorites',
       label: t('المفضلة'),
       icon: <Heart className="w-5 h-5" />,
-      active: false,
+      active: route.name === 'account' && route.tab === 'favorites',
       onClick: () => {
         if (user) {
           navigate({ name: 'account', tab: 'favorites' });
@@ -45,13 +45,13 @@ export function MobileBottomNav() {
     },
     {
       id: 'cart',
-      label: t('سلة التسوق'),
+      label: t('السلة'),
       icon: (
         <span className="relative">
           <ShoppingCart className="w-5 h-5" />
           {cartCount > 0 && (
             <span
-              className="absolute -top-2 -start-2.5 min-w-4 h-4 px-0.5 rounded-full text-[9px] font-black text-white flex items-center justify-center"
+              className="absolute -top-2 -start-2.5 min-w-4 h-4 px-0.5 rounded-full text-[9px] font-black text-white flex items-center justify-center animate-bounce-in"
               style={{ backgroundColor: themeColors.priceColor }}
             >
               {cartCount > 99 ? '99+' : cartCount}
@@ -66,7 +66,7 @@ export function MobileBottomNav() {
       id: 'account',
       label: t('حسابي'),
       icon: <User className="w-5 h-5" />,
-      active: route.name === 'account',
+      active: route.name === 'account' && route.tab !== 'favorites',
       onClick: () => {
         if (user) {
           navigate({ name: 'account', tab: 'orders' });
@@ -79,45 +79,48 @@ export function MobileBottomNav() {
 
   return (
     <div className="lg:hidden fixed bottom-0 inset-x-0 z-40">
-      <div className="backdrop-blur-xl border-t border-gray-200 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-2 pb-[env(safe-area-inset-bottom)]"
-        style={{ backgroundColor: themeColors.bottomNavBg }}>
-        <div className="flex items-center justify-between gap-1 max-w-lg mx-auto">
+      <div 
+        className="glass border-t shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-2 pb-[env(safe-area-inset-bottom)]"
+        style={{ 
+          backgroundColor: `${themeColors.bottomNavBg}F0`,
+          borderColor: 'rgba(255,255,255,0.2)' 
+        }}
+      >
+        <div className="flex items-center justify-between gap-1 max-w-lg mx-auto relative pt-1">
           {items.map((item) => (
             <button
               key={item.id}
               onClick={item.onClick}
-              className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl flex-1 min-w-0 transition-colors ${
-                item.active ? 'text-white' : ''
+              className={`relative flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-2xl flex-1 min-w-0 transition-all duration-300 active:scale-90 ${
+                item.active ? 'text-white scale-105' : 'hover:bg-slate-500/5'
               }`}
-              style={item.active ? { backgroundColor: themeColors.bottomNavActiveText } : { color: themeColors.bottomNavText }}
+              style={item.active ? { backgroundColor: themeColors.primaryColor } : { color: themeColors.bottomNavText }}
             >
-              {item.icon}
-              <span className="text-[10px] font-extrabold">{item.label}</span>
+              {item.active && (
+                 <div className="absolute inset-0 rounded-2xl opacity-20 blur-sm" style={{ backgroundColor: themeColors.primaryColor }} />
+              )}
+              <div className={`transition-transform duration-300 ${item.active ? '-translate-y-0.5' : ''}`}>
+                {item.icon}
+              </div>
+              <span className={`text-[10px] font-extrabold transition-all duration-300 ${item.active ? 'opacity-100' : 'opacity-80'}`}>
+                {item.label}
+              </span>
             </button>
           ))}
-
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl flex-1 min-w-0 transition-colors"
-            style={{ color: themeColors.bottomNavText }}
-          >
-            <ArrowUp className="w-5 h-5" />
-            <span className="text-[10px] font-extrabold">{t('الأعلى')}</span>
-          </button>
         </div>
 
         {whatsappDigits && (
-          <div className="absolute -top-12 end-4">
+          <div className="absolute -top-14 end-4">
             <a
               href={buildWhatsAppLink(whatsappDigits, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-11 h-11 rounded-2xl text-white shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+              className="w-12 h-12 rounded-full text-white shadow-[0_8px_20px_rgba(37,211,102,0.4)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all animate-float"
               style={{ backgroundColor: themeColors.whatsappBtnBg }}
               title={t('تواصل معنا واتساب')}
               aria-label={t('تواصل معنا واتساب')}
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-6 h-6" />
             </a>
           </div>
         )}

@@ -33,6 +33,12 @@ import {
   Save,
   Baby,
   X,
+  CreditCard,
+  BellRing,
+  BellOff,
+  ChevronRight,
+  TrendingUp,
+  AlertTriangle,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useCustomer } from '@/context/CustomerContext';
@@ -97,27 +103,27 @@ const ADDRESSES_KEY = 'pharmacy_addresses';
 const STATUS_META: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
   pending: {
     label: 'قيد المعالجة',
-    className: 'bg-amber-50 text-amber-700 border-amber-200',
+    className: 'bg-amber-500/10 text-amber-500 border-amber-500/25',
     icon: <Clock className="w-3.5 h-3.5" />,
   },
   confirmed: {
     label: 'تم تأكيد الدفع',
-    className: 'bg-blue-50 text-blue-700 border-blue-200',
+    className: 'bg-blue-500/10 text-blue-500 border-blue-500/25',
     icon: <CheckCircle2 className="w-3.5 h-3.5" />,
   },
   shipped: {
     label: 'تم الشحن - في الطريق',
-    className: 'bg-violet-50 text-violet-700 border-violet-200',
+    className: 'bg-violet-500/10 text-violet-500 border-violet-500/25',
     icon: <Truck className="w-3.5 h-3.5" />,
   },
   delivered: {
     label: 'تم التسليم',
-    className: 'bg-teal-50 text-teal-700 border-teal-200',
+    className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25',
     icon: <CheckCircle2 className="w-3.5 h-3.5" />,
   },
   cancelled: {
     label: 'ملغي',
-    className: 'bg-red-50 text-red-600 border-red-200',
+    className: 'bg-rose-500/10 text-rose-500 border-rose-500/25',
     icon: <XCircle className="w-3.5 h-3.5" />,
   },
 };
@@ -151,34 +157,42 @@ function OrderProgressTracker({ status, color }: { status: string; color: string
   const { t } = useLanguage();
   if (status === 'cancelled') {
     return (
-      <div className="mt-4 rounded-2xl bg-red-50 border border-red-100 p-3 flex items-center gap-2">
-        <XCircle className="w-4 h-4 text-red-500 shrink-0" />
-        <p className="text-xs font-bold text-red-600">{t('تم إلغاء هذا الطلب')}</p>
+      <div className="mt-5 rounded-2xl bg-rose-500/10 border border-rose-500/20 p-3.5 flex items-center gap-2.5">
+        <XCircle className="w-4.5 h-4.5 text-rose-500 shrink-0" />
+        <p className="text-xs font-bold text-rose-500">{t('تم إلغاء هذا الطلب')}</p>
       </div>
     );
   }
   const currentIdx = ORDER_TRACK_STEPS.findIndex((s) => s.key === status);
   const current = currentIdx === -1 ? 0 : currentIdx;
   return (
-    <div className="mt-4">
-      <div className="flex items-center">
+    <div className="mt-5 relative">
+      <div className="flex items-center justify-between">
         {ORDER_TRACK_STEPS.map((step, i) => {
           const done = i <= current;
           return (
             <div key={step.key} className="flex items-center flex-1 last:flex-none">
-              <div className="flex flex-col items-center gap-1 shrink-0">
+              <div className="flex flex-col items-center gap-1.5 shrink-0 z-10 relative">
                 <span
-                  className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
-                    done ? 'text-white border-transparent shadow-md' : 'bg-gray-100 text-gray-400 border-gray-200'
+                  className={`w-9 h-9 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 ${
+                    done ? 'text-white border-transparent shadow-lg scale-105' : 'bg-slate-50 text-slate-400 border-slate-200'
                   }`}
-                  style={done ? { backgroundColor: color } : {}}
+                  style={done ? { backgroundColor: color, boxShadow: `0 8px 16px ${color}30` } : {}}
                 >
-                  {done ? <CheckCircle2 className="w-4 h-4" /> : step.icon}
+                  {done ? <CheckCircle2 className="w-4.5 h-4.5" /> : step.icon}
                 </span>
-                <span className={`text-[9px] font-bold whitespace-nowrap ${done ? 'text-gray-900' : 'text-gray-400'}`}>{t(step.label)}</span>
+                <span className={`text-[10px] font-black ${done ? 'text-slate-900' : 'text-slate-400'}`}>{t(step.label)}</span>
               </div>
               {i < ORDER_TRACK_STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-1.5 mb-4 rounded-full ${i < current ? 'bg-teal-600' : 'bg-gray-200'}`} />
+                <div className="flex-1 h-1 mx-3 rounded-full bg-slate-100 overflow-hidden relative">
+                  <div 
+                    className="h-full rounded-full transition-all duration-700" 
+                    style={{ 
+                      width: i < current ? '100%' : '0%', 
+                      backgroundColor: color 
+                    }} 
+                  />
+                </div>
               )}
             </div>
           );
@@ -230,61 +244,61 @@ function OrderTrackingModal({ order, onClose }: { order: OrderRecord; onClose: (
 
   return (
     <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}>
-              <Navigation className="w-5 h-5" />
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={onClose} />
+      <div className="relative w-full sm:max-w-lg bg-white rounded-t-[2.5rem] sm:rounded-3xl p-6 sm:p-7 shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-teal-500/10 text-teal-600">
+              <Navigation className="w-5.5 h-5.5 animate-pulse" />
             </div>
             <div>
-              <h3 className="text-base font-black text-gray-900">{t('تتبع الطلب')}</h3>
-              <p className="text-[11px] text-gray-500 font-bold">{t('تحديث مباشر كل 5 ثوانٍ')}</p>
+              <h3 className="text-lg font-black text-slate-900">{t('تتبع الطلب')}</h3>
+              <p className="text-xs text-slate-400 font-bold">{t('تحديث مباشر كل 5 ثوانٍ')}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors" title={t('إغلاق')}>
-            <X className="w-4 h-4" />
+          <button onClick={onClose} className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors">
+            <X className="w-4.5 h-4.5" />
           </button>
         </div>
 
         {/* Live progress bar */}
-        <div className="h-2 rounded-full bg-gray-100 overflow-hidden mb-1">
+        <div className="h-2 rounded-full bg-slate-100 overflow-hidden mb-1.5">
           <div
-            className={`h-full rounded-full transition-all duration-700 ${cancelled ? 'bg-red-400' : ''}`}
+            className={`h-full rounded-full transition-all duration-700 ${cancelled ? 'bg-rose-400' : ''}`}
             style={!cancelled ? { width: `${progress}%`, backgroundColor: themeColors.primaryColor } : { width: '100%' }}
           />
         </div>
-        <p className={`text-[11px] font-bold mb-5 ${cancelled ? 'text-red-500' : 'text-gray-500'}`}>
+        <p className={`text-xs font-black mb-5 ${cancelled ? 'text-rose-500' : 'text-slate-500'}`}>
           {cancelled ? t('تم إلغاء هذا الطلب') : t('حالة الطلب الحالية: {0}', [t(ORDER_TRACK_STEPS[current].label)])}
         </p>
 
         {!cancelled && (
-          <div className="mb-5 rounded-2xl p-4 flex items-start gap-3 animate-fade-in" style={{ backgroundColor: `${themeColors.primaryColor}12` }}>
-            <span className="flex items-center justify-center relative flex w-3 h-3 mt-1">
+          <div className="mb-5 rounded-2xl p-4 flex items-start gap-3.5 animate-pulse-soft" style={{ backgroundColor: `${themeColors.primaryColor}0c` }}>
+            <span className="flex items-center justify-center relative flex w-3.5 h-3.5 mt-1 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: themeColors.primaryColor }} />
-              <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: themeColors.primaryColor }} />
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5" style={{ backgroundColor: themeColors.primaryColor }} />
             </span>
-            <p className="text-xs font-bold text-gray-800 leading-relaxed">{liveMessages[status] || liveMessages.pending}</p>
+            <p className="text-xs font-extrabold text-slate-800 leading-relaxed">{liveMessages[status] || liveMessages.pending}</p>
           </div>
         )}
 
         {/* Steps timeline */}
-        <div className="space-y-1 mb-5">
+        <div className="space-y-2 mb-6">
           {ORDER_TRACK_STEPS.map((step, i) => {
             const done = !cancelled && i <= current;
             return (
-              <div key={step.key} className="flex items-center gap-3 py-2">
+              <div key={step.key} className="flex items-center gap-3.5 py-2.5 px-3 rounded-2xl transition-colors hover:bg-slate-50">
                 <span
                   className={`w-10 h-10 rounded-2xl flex items-center justify-center border-2 shrink-0 transition-all ${
-                    done ? 'text-white border-transparent shadow-md' : 'bg-gray-100 text-gray-400 border-gray-200'
+                    done ? 'text-white border-transparent shadow-md' : 'bg-slate-100 text-slate-400 border-slate-200'
                   }`}
                   style={done ? { backgroundColor: themeColors.primaryColor } : {}}
                 >
                   {done ? <CheckCircle2 className="w-5 h-5" /> : step.icon}
                 </span>
                 <div className="flex-1">
-                  <p className={`text-sm font-black ${done ? 'text-gray-900' : 'text-gray-400'}`}>{t(step.label)}</p>
-                  <p className={`text-[11px] font-bold ${done ? 'text-gray-500' : 'text-gray-300'}`}>
+                  <p className={`text-sm font-black ${done ? 'text-slate-900' : 'text-slate-400'}`}>{t(step.label)}</p>
+                  <p className={`text-xs font-bold ${done ? 'text-slate-500' : 'text-slate-300'}`}>
                     {i === current && !cancelled
                       ? t('الحالة الحالية')
                       : i < current
@@ -292,52 +306,52 @@ function OrderTrackingModal({ order, onClose }: { order: OrderRecord; onClose: (
                         : t('قادم')}
                   </p>
                 </div>
-                {done && <CheckCircle2 className="w-4 h-4" style={{ color: themeColors.primaryColor }} />}
+                {done && <CheckCircle2 className="w-4.5 h-4.5" style={{ color: themeColors.primaryColor }} />}
               </div>
             );
           })}
         </div>
 
         {/* Order details */}
-        <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4 space-y-2 text-xs">
+        <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4.5 space-y-2.5 text-xs font-bold text-slate-600">
           <div className="flex justify-between gap-3">
-            <span className="text-gray-500 font-bold">{t('المنتج')}</span>
-            <span className="font-black text-gray-900 text-end">{order.product?.name || t('منتج')}</span>
+            <span className="text-slate-400">{t('المنتج')}</span>
+            <span className="font-black text-slate-800 text-end">{order.product?.name || t('منتج')}</span>
           </div>
           <div className="flex justify-between gap-3">
-            <span className="text-gray-500 font-bold">{t('الصيدلية')}</span>
-            <span className="font-bold text-gray-900 text-end">{order.pharmacy?.name || t('صيدلية')}</span>
+            <span className="text-slate-400">{t('الصيدلية')}</span>
+            <span className="font-black text-slate-800 text-end">{order.pharmacy?.name || t('صيدلية')}</span>
           </div>
           {order.family_member && (
             <div className="flex justify-between gap-3">
-              <span className="text-gray-500 font-bold">{t('الطلب لأجل')}</span>
-              <span className="font-bold text-gray-900 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5" style={{ color: themeColors.primaryColor }} />
+              <span className="text-slate-400">{t('الطلب لأجل')}</span>
+              <span className="font-black text-slate-800 flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-teal-600" />
                 {order.family_member.name}
               </span>
             </div>
           )}
           <div className="flex justify-between gap-3">
-            <span className="text-gray-500 font-bold">{t('العنوان')}</span>
-            <span className="font-bold text-gray-900 text-end">{order.address || t('غير محدد')}</span>
+            <span className="text-slate-400">{t('العنوان')}</span>
+            <span className="font-black text-slate-800 text-end">{order.address || t('غير محدد')}</span>
           </div>
           <div className="flex justify-between gap-3">
-            <span className="text-gray-500 font-bold">{t('الإجمالي')}</span>
-            <span className="font-black" style={{ color: themeColors.primaryColor }}>{Number(order.total_price).toFixed(2)} {t('ج.م')}</span>
+            <span className="text-slate-400">{t('الإجمالي')}</span>
+            <span className="font-black text-slate-900" style={{ color: themeColors.primaryColor }}>{Number(order.total_price).toFixed(2)} {t('ج.م')}</span>
           </div>
           <div className="flex justify-between gap-3">
-            <span className="text-gray-500 font-bold">{t('آخر تحديث')}</span>
-            <span className="font-bold text-gray-900">{localizedDate(updatedAt, lang, { hour: '2-digit', minute: '2-digit' })}</span>
+            <span className="text-slate-400">{t('آخر تحديث')}</span>
+            <span className="font-black text-slate-800">{localizedDate(updatedAt, lang, { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
         </div>
 
         {order.pharmacy?.phone && (
           <a
             href={`tel:${order.pharmacy.phone}`}
-            className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-white text-sm font-bold shadow-lg hover:brightness-110 active:scale-[0.98] transition-all"
+            className="mt-4 flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-white text-sm font-black shadow-lg hover:brightness-110 active:scale-[0.98] transition-all"
             style={{ backgroundColor: themeColors.primaryColor }}
           >
-            <Phone className="w-4 h-4" />
+            <Phone className="w-4.5 h-4.5" />
             {t('تواصل مع الصيدلية')}
           </a>
         )}
@@ -382,6 +396,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const [remNote, setRemNote] = useState('');
   const [remDaysSupply, setRemDaysSupply] = useState('');
   const [permDenied, setPermDenied] = useState(false);
+  
   const WEEKDAYS = [
     { n: 0, label: 'أحد', short: 'أ' },
     { n: 1, label: 'اثنين', short: 'إ' },
@@ -491,7 +506,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       const { error } = await supabase.from('family_members').insert(payload);
       if (error) showToast(localizedError(error.message, lang));
     }
-    setFamilySaving(false);
+    familySaving(false);
     setEditingMember(null);
     setFamForm({ name: '', relation: '', age: '', weight: '' });
     fetchFamilyMembers();
@@ -731,26 +746,25 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   // ============ Not logged in ============
   if (!user) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-16">
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-xl p-8 text-center relative overflow-hidden">
+      <div className="max-w-lg mx-auto px-4 py-20 animate-fade-up">
+        <div className="bg-white rounded-[2.5rem] border border-slate-200/80 shadow-2xl p-8 sm:p-10 text-center relative overflow-hidden">
           <div
-            className="absolute top-0 right-0 left-0 h-1.5"
-            style={{ background: `linear-gradient(to left, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}
+            className="absolute top-0 right-0 left-0 h-2"
+            style={{ backgroundImage: `linear-gradient(to left, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}
           />
           <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ backgroundColor: `${themeColors.primaryColor}12` }}
+            className="w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-lg bg-teal-500/10 text-teal-600 animate-float"
           >
-            <User className="w-8 h-8" style={{ color: themeColors.primaryColor }} />
+            <User className="w-10 h-10" />
           </div>
-          <h1 className="text-xl font-black text-gray-900 mb-2">{t('سجّل دخولك لمتابعة حسابك')}</h1>
-          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-            {t('تابع طلباتك وروشتاتك المحفوظة وعناوينك وأدويتك وصيدلياتك المفضلة من مكان واحد.')}
+          <h1 className="text-2xl font-black text-slate-900 mb-3">{t('مرحباً بك في صيدليتي')}</h1>
+          <p className="text-sm text-slate-500 mb-8 leading-relaxed font-medium">
+            {t('سجل دخولك الآن لتتمكن من متابعة طلباتك اليومية، وإدارة الروشتات، وملفك الطبي، ونقاط المكافآت المفضلة من مكان واحد بسهولة وأمان.')}
           </p>
           <button
             onClick={() => setAuthModalOpen(true)}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-bold shadow-lg transition-all hover:scale-[1.01] active:scale-95"
-            style={{ backgroundColor: themeColors.primaryColor, boxShadow: `0 8px 20px -6px ${themeColors.primaryColor}88` }}
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-white font-black shadow-lg hover:shadow-xl hover:brightness-105 active:scale-95 transition-all duration-300"
+            style={{ backgroundColor: themeColors.primaryColor }}
           >
             {t('تسجيل الدخول / إنشاء حساب')}
           </button>
@@ -762,73 +776,82 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const initial = (profile?.full_name || user.email || t('عميل')).charAt(0).toUpperCase();
 
   const tabs: { id: AccountTab; label: string; icon: React.ReactNode; count: number }[] = [
-    { id: 'orders', label: t('طلباتي ومتابعة الشحنات'), icon: <PackageCheck className="w-4 h-4" />, count: activeOrdersCount },
+    { id: 'orders', label: t('طلباتي والشحنات'), icon: <PackageCheck className="w-4 h-4" />, count: activeOrdersCount },
     { id: 'prescriptions', label: t('الروشتات المحفوظة'), icon: <FileText className="w-4 h-4" />, count: prescriptions.length },
     ...(loyaltyConfig.enabled ? [{ id: 'rewards' as AccountTab, label: t('نقاطي ومكافآتي'), icon: <Sparkles className="w-4 h-4" />, count: loyaltyPoints }] : []),
-    ...(featuresConfig.reminders ? [{ id: 'reminders' as AccountTab, label: t('الملف الدوائي'), icon: <Bell className="w-4 h-4" />, count: reminders.length }] : []),
+    ...(featuresConfig.reminders ? [{ id: 'reminders' as AccountTab, label: t('ملفي الطبي والدوائي'), icon: <Bell className="w-4 h-4" />, count: reminders.length }] : []),
     ...(featuresConfig.familyMembers ? [{ id: 'family' as AccountTab, label: t('أفراد العائلة'), icon: <Users className="w-4 h-4" />, count: familyMembers.length }] : []),
     { id: 'addresses', label: t('العناوين المسجلة'), icon: <MapPin className="w-4 h-4" />, count: addresses.length },
-    { id: 'favorites', label: t('المفضلة'), icon: <Heart className="w-4 h-4" />, count: productFavoritesCount + pharmacyFavoritesCount },
+    { id: 'favorites', label: t('مفضلتي'), icon: <Heart className="w-4 h-4" />, count: productFavoritesCount + pharmacyFavoritesCount },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl animate-fade-in flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-teal-400" />
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-slate-900 text-white text-xs font-black px-6 py-3.5 rounded-full shadow-2xl animate-bounce-in flex items-center gap-2 border border-slate-800">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-pulse" />
           {toast}
         </div>
       )}
 
-      {/* ===== Header card ===== */}
+      {/* ===== Header Card (Redesigned with glassmorphism details & modern feel) ===== */}
       <div
-        className="rounded-3xl text-white relative overflow-hidden p-6 sm:p-8 mb-6 shadow-xl"
+        className="rounded-[2.5rem] text-white relative overflow-hidden p-6 sm:p-10 mb-8 shadow-xl border border-white/10"
         style={{ background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}
       >
-        <div className="absolute -bottom-10 -start-10 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-        <div className="absolute -top-16 -end-16 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+        {/* Glow orbs background decoration */}
+        <div className="absolute inset-0 bg-mesh opacity-20 pointer-events-none" />
+        <div className="absolute -bottom-16 -start-16 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -end-24 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
 
         <button
           onClick={() => navigate({ name: 'home' })}
-          className="relative flex items-center gap-2 text-white/85 hover:text-white text-xs font-bold mb-4 transition-colors"
+          className="relative flex items-center gap-2 text-white/80 hover:text-white text-xs font-extrabold mb-6 transition-all hover:-translate-x-1"
         >
           <ArrowLeft className="w-4 h-4" />
           {t('العودة للرئيسية')}
         </button>
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex items-center gap-4">
+        <div className="relative flex flex-col md:flex-row md:items-center gap-6 justify-between">
+          <div className="flex items-center gap-5">
             {profile?.avatar_url ? (
               <img
                 src={profile.avatar_url}
                 alt=""
-                className="w-16 h-16 rounded-3xl object-cover border-2 border-white/50 shadow-lg"
+                className="w-20 h-20 rounded-[2rem] object-cover border-4 border-white/20 shadow-xl"
               />
             ) : (
-              <div className="w-16 h-16 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl font-black border border-white/40 shadow-lg">
+              <div className="w-20 h-20 rounded-[2rem] bg-white/15 backdrop-blur-md flex items-center justify-center text-3xl font-black border border-white/20 shadow-xl text-white">
                 {initial}
               </div>
             )}
             <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="text-xl sm:text-2xl font-black">{profile?.full_name || t('عميل صيدليتي')}</h1>
-                <ShieldCheck className="w-5 h-5 text-teal-200" />
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight">{profile?.full_name || t('عميل صيدليتي')}</h1>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-[10px] font-black text-emerald-200">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  {t('حساب موثق')}
+                </span>
               </div>
-              <p className="text-xs text-white/80 font-medium mt-0.5" dir="ltr">{user.email}</p>
+              <p className="text-xs text-white/70 font-bold mt-1" dir="ltr">{user.email}</p>
+              
               {loyaltyConfig.enabled && (
-                <div className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm text-[11px] font-bold text-amber-200">
-                  <Sparkles className="w-3 h-3" />
-                  {t('نقاط المكافآت: {0} نقطة', [loyaltyPoints])}
+                <div 
+                  onClick={() => navigate({ name: 'account', tab: 'rewards' as AccountTab })}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur-md border border-amber-400/30 text-xs font-black text-amber-200 cursor-pointer transition-all active:scale-95"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin-slow" />
+                  {t('المكافآت: {0} نقطة', [loyaltyPoints])}
                 </div>
               )}
             </div>
           </div>
 
-          <div className="sm:ms-auto flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={signOut}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-bold transition-colors"
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-black transition-all duration-300 hover:shadow-lg active:scale-95"
             >
               <LogOut className="w-4 h-4" />
               {t('تسجيل الخروج')}
@@ -837,992 +860,1053 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
         </div>
       </div>
 
-      {/* ===== Quick stats ===== */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      {/* ===== Quick Stats Grid (Aesthetic Glows & Hover Lift) ===== */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { icon: <PackageCheck className="w-5 h-5" />, value: `${orders.length}`, label: t('إجمالي الطلبات'), color: themeColors.primaryColor },
-          { icon: <Truck className="w-5 h-5" />, value: `${activeOrdersCount}`, label: t('طلبات نشطة'), color: themeColors.secondaryColor },
-          { icon: <FileText className="w-5 h-5" />, value: `${prescriptions.length}`, label: t('روشتات محفوظة'), color: themeColors.accentColor },
-          { icon: <Heart className="w-5 h-5" />, value: `${productFavoritesCount + pharmacyFavoritesCount}`, label: t('عنصر مفضل'), color: '#ec4899' },
+          { icon: <PackageCheck className="w-6 h-6" />, value: `${orders.length}`, label: t('إجمالي الطلبات'), color: themeColors.primaryColor },
+          { icon: <Truck className="w-6 h-6" />, value: `${activeOrdersCount}`, label: t('طلبات نشطة ومتابعة'), color: themeColors.secondaryColor },
+          { icon: <FileText className="w-6 h-6" />, value: `${prescriptions.length}`, label: t('روشتات محفوظة'), color: themeColors.accentColor },
+          { icon: <Heart className="w-6 h-6" />, value: `${productFavoritesCount + pharmacyFavoritesCount}`, label: t('العناصر المفضلة'), color: '#ec4899' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-3xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow">
+          <div 
+            key={i} 
+            className="bg-white rounded-3xl border border-slate-200/80 p-5 flex items-center gap-4 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 group cursor-default"
+          >
             <div
-              className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-              style={{ backgroundColor: `${stat.color}12`, color: stat.color }}
+              className="w-13 h-13 rounded-2xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110"
+              style={{ backgroundColor: `${stat.color}10`, color: stat.color, border: `1px solid ${stat.color}20` }}
             >
               {stat.icon}
             </div>
             <div>
-              <p className="text-xl font-black text-gray-900 leading-none">{stat.value}</p>
-              <p className="text-[11px] text-gray-500 font-bold mt-1">{stat.label}</p>
+              <p className="text-2xl font-black text-slate-900 leading-none tabular-nums">{stat.value}</p>
+              <p className="text-xs text-slate-500 font-bold mt-1.5 leading-snug">{stat.label}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* ===== Tabs ===== */}
-      <div className="p-1.5 bg-white border border-gray-100 rounded-2xl shadow-sm mb-6 overflow-x-auto scrollbar-none flex items-center gap-1.5">
-        {tabs.map((t) => {
-          const isActive = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => navigate({ name: 'account', tab: t.id })}
-              className={`flex-1 min-w-[150px] flex items-center justify-center gap-2 py-3 px-3 rounded-xl text-xs font-black transition-all duration-300 ${
-                isActive ? 'text-white shadow-md scale-[1.02]' : 'text-gray-600 hover:bg-slate-50'
-              }`}
-              style={isActive ? { backgroundColor: themeColors.primaryColor } : {}}
-            >
-              {t.icon}
-              <span className="truncate">{t.label}</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-gray-600'
-                }`}
-              >
-                {t.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ===== Orders tab ===== */}
-      {tab === 'orders' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">{t('طلباتي ومتابعة الشحنات')}</h2>
-            <span className="text-xs font-bold text-gray-500">{t('{0} طلب', [orders.length])}</span>
-          </div>
-
-          {ordersLoading ? (
-            <div className="grid gap-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-slate-100 rounded-3xl h-32 animate-pulse" />
-              ))}
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center shadow-sm">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                style={{ backgroundColor: `${themeColors.primaryColor}12` }}
-              >
-                <PackageCheck className="w-8 h-8" style={{ color: themeColors.primaryColor }} />
-              </div>
-              <h3 className="font-black text-gray-900 text-base mb-1">{t('لا توجد طلبات بعد')}</h3>
-              <p className="text-sm text-gray-500 mb-5">{t('ابدأ بطلب أدويتك وسيظهر هنا سجل طلباتك ومتابعة الشحنات.')}</p>
-              <button
-                onClick={() => navigate({ name: 'home' })}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white text-sm font-bold shadow-md hover:scale-[1.02] active:scale-95 transition-all"
-                style={{ backgroundColor: themeColors.primaryColor }}
-              >
-                <Search className="w-4 h-4" />
-                {t('ابحث عن دوائك الآن')}
-              </button>
-            </div>
-          ) : (
-            orders.map((order) => {
-              const meta = STATUS_META[order.status] || STATUS_META.pending;
-              const product = order.product;
-              return (
-                <div key={order.id} className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="w-20 h-20 shrink-0 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
-                      {product?.image_url ? (
-                        <img src={product.image_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <Pill className="w-8 h-8 text-gray-300" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-black text-gray-900">{product?.name || t('منتج')}</p>
-                          <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                            <Store className="w-3.5 h-3.5" />
-                            {order.pharmacy?.name || t('صيدلية')}
-                          </p>
-                        </div>
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold border ${meta.className}`}>
-                          {meta.icon}
-                          {t(meta.label)}
-                        </span>
-                      </div>
-
-                      {featuresConfig.orderTracking && <OrderProgressTracker status={order.status} color={themeColors.primaryColor} />}
-
-                      <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3 text-xs text-gray-500">
-                        <span className="flex items-center gap-1.5">
-                          <Tag className="w-3.5 h-3.5" />
-                          {t('الكمية:')} <strong className="text-gray-800">{order.quantity}</strong>
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5" />
-                          {order.address || t('عنوان التوصيل غير محدد')}
-                        </span>
-                        {order.note && (
-                          <span className="flex items-center gap-1.5">
-                            <Info className="w-3.5 h-3.5" />
-                            {order.note}
-                          </span>
-                        )}
-                        {order.payment_method && (
-                          <span className="flex items-center gap-1.5">
-                            <Wallet className="w-3.5 h-3.5" />
-                            {t('الدفع:')}
-                            <strong className="text-gray-800">
-                              {order.payment_method === 'instapay' ? t('انستا باي') : order.payment_method === 'vodafone_cash' ? t('فودافون كاش') : order.payment_method}
-                            </strong>
-                            {order.payment_screenshot_url && (
-                              <a
-                                href={order.payment_screenshot_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[11px] font-extrabold px-2 py-0.5 rounded-full text-white hover:brightness-110 transition-all"
-                                style={{ backgroundColor: themeColors.primaryColor }}
-                              >
-                                {t('إثبات التحويل')}
-                              </a>
-                            )}
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5" />
-                          {localizedDate(order.created_at, lang, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="sm:ms-auto flex sm:flex-col sm:items-end items-center gap-3 justify-between">
-                      <div>
-                        <p className="text-xl font-black text-gray-900">{Number(order.total_price).toFixed(2)}</p>
-                        <p className="text-[11px] font-bold text-gray-400">{t('ج.م')}</p>
-                      </div>
-                      <div className="flex items-center gap-2 sm:flex-col sm:items-end">
-                        {featuresConfig.orderTracking && (
-                          <button
-                            onClick={() => setTrackingOrder(order)}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold border shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
-                            style={{ borderColor: `${themeColors.primaryColor}55`, color: themeColors.primaryColor }}
-                          >
-                            <Navigation className="w-3.5 h-3.5" />
-                            {t('تتبع الطلب')}
-                          </button>
-                        )}
-                        {order.status === 'delivered' && (
-                          <button
-                            onClick={() => setReviewOrder(order)}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:brightness-110 active:scale-95 transition-all"
-                            style={{ backgroundColor: themeColors.accentColor, color: '#ffffff' }}
-                          >
-                            <Star className="w-3.5 h-3.5 fill-white" />
-                            {t('قيّم طلبك')}
-                          </button>
-                        )}
-                        {product && (
-                          <button
-                            onClick={() => openOrder(product, order.pharmacy?.name)}
-                            className="px-4 py-2 rounded-xl text-white text-xs font-bold shadow-md hover:brightness-110 active:scale-95 transition-all"
-                            style={{ backgroundColor: themeColors.primaryColor }}
-                          >
-                            {t('اطلب مرة أخرى')}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      )}
-
-      {reviewOrder && (
-        <OrderReviewModal
-          orderId={reviewOrder.id}
-          pharmacyId={reviewOrder.pharmacy_id}
-          pharmacyName={reviewOrder.pharmacy?.name || t('الصيدلية')}
-          productName={reviewOrder.product?.name || t('منتج')}
-          onClose={() => setReviewOrder(null)}
-          onSubmitted={() => {
-            setReviewOrder(null);
-            showToast(t('شكراً لك! تم نشر تقييمك بنجاح'));
-          }}
-        />
-      )}
-
-      {trackingOrder && (
-        <OrderTrackingModal
-          order={trackingOrder}
-          onClose={() => setTrackingOrder(null)}
-        />
-      )}
-
-      {/* ===== Prescriptions tab ===== */}
-      {tab === 'prescriptions' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">{t('الروشتات المحفوظة')}</h2>
-            <span className="text-xs font-bold text-gray-500">{t('{0} روشتة', [prescriptions.length])}</span>
-          </div>
-
-          {/* Add new prescription */}
-          <form
-            onSubmit={handleRxSubmit}
-            className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm space-y-4"
-          >
-            <div className="flex items-center gap-2">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: `${themeColors.primaryColor}12` }}
-              >
-                <FileText className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
-              </div>
-              <h3 className="font-black text-gray-900 text-sm">{t('حفظ روشتة جديدة')}</h3>
-            </div>
-
-            {rxImage ? (
-              <div className="relative rounded-2xl overflow-hidden border-2 max-h-64 bg-slate-900 flex items-center justify-center" style={{ borderColor: themeColors.primaryColor }}>
-                <img src={rxImage} alt={t('روشتة')} className="max-h-64 w-auto object-contain mx-auto" />
-                <button
-                  type="button"
-                  onClick={() => setRxImage(null)}
-                  className="absolute top-2 end-2 p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors shadow"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 hover:border-teal-500 rounded-2xl bg-gray-50 hover:bg-teal-50/40 transition-all cursor-pointer group text-center space-y-2">
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md"
-                  style={{ backgroundColor: `${themeColors.primaryColor}15`, color: themeColors.primaryColor }}
-                >
-                  <Camera className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-800">{t('اضغط هنا لالتقاط صورة أو رفع الروشتة')}</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">{t('يدعم صور JPG, PNG حتى 5MB')}</p>
-                </div>
-                <input type="file" accept="image/*" className="hidden" onChange={handleRxImageUpload} />
-              </label>
-            )}
-
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div className="relative">
-                <Phone className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="tel"
-                  value={rxPhone}
-                  onChange={(e) => setRxPhone(e.target.value)}
-                  placeholder={t('رقم الهاتف للتواصل')}
-                  dir="ltr"
-                  className="w-full ps-10 pe-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
-                  style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
-                />
-              </div>
-              <input
-                type="text"
-                value={rxNotes}
-                onChange={(e) => setRxNotes(e.target.value)}
-                placeholder={t('ملاحظات إضافية للصيدلي (اختياري)')}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
-                style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={rxUploading}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-bold shadow-md hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-60"
-              style={{ backgroundColor: themeColors.primaryColor }}
-            >
-              {rxUploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {t('جاري رفع الروشتة...')}
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  {t('حفظ وإرسال الروشتة للصيدلية')}
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Prescription list */}
-          {rxLoading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="bg-slate-100 rounded-3xl h-64 animate-pulse" />
-              ))}
-            </div>
-          ) : prescriptions.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center shadow-sm">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                style={{ backgroundColor: `${themeColors.primaryColor}12` }}
-              >
-                <FileText className="w-8 h-8" style={{ color: themeColors.primaryColor }} />
-              </div>
-              <h3 className="font-black text-gray-900 text-base mb-1">{t('لا توجد روشتات محفوظة')}</h3>
-              <p className="text-sm text-gray-500">{t('ارفع روشتتك أعلاه وسيتم حفظها هنا لسهولة الوصول إليها لاحقاً.')}</p>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {prescriptions.map((rx) => {
-                const meta = PRESCRIPTION_STATUS_META[rx.status] || PRESCRIPTION_STATUS_META.new;
+      {/* ===== Modern Layout: Tabs Sidebar (Desktop) / Carousel Slider (Mobile) ===== */}
+      <div className="grid lg:grid-cols-4 gap-8">
+        
+        {/* Sidebar Navigation */}
+        <div className="lg:col-span-1 space-y-2">
+          <div className="bg-white border border-slate-200/80 rounded-3xl p-3 shadow-sm sticky top-24 hidden lg:block">
+            <p className="text-[11px] font-black text-slate-400 px-4 py-2 uppercase tracking-wider">{t('قائمة التحكم')}</p>
+            <div className="space-y-1.5 mt-1">
+              {tabs.map((t) => {
+                const isActive = tab === t.id;
                 return (
-                  <div key={rx.id} className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                    <div className="h-36 bg-slate-900 relative flex items-center justify-center">
-                      <img src={rx.image_url} alt={t('روشتة')} className="max-h-36 w-auto object-contain" />
-                      <span className="absolute top-2 end-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[10px] font-bold border border-white/20">
-                        <Clock className="w-3 h-3" />
-                        {localizedDate(rx.created_at, lang, { month: 'short', day: 'numeric' })}
-                      </span>
-                      <span className={`absolute bottom-2 end-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${meta.className}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-                        {t(meta.label)}
-                      </span>
-                    </div>
-                    <div className="p-4 space-y-2">
-                      <p className="text-xs text-gray-500 flex items-center gap-1.5">
-                        <Phone className="w-3.5 h-3.5" />
-                        <span dir="ltr">{rx.phone}</span>
-                      </p>
-                      {rx.notes && (
-                        <p className="text-xs text-gray-600 line-clamp-2">{rx.notes}</p>
-                      )}
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          onClick={() => handleResendPrescription(rx)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-white text-xs font-bold transition-colors hover:brightness-110"
-                          style={{ backgroundColor: themeColors.primaryColor }}
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                          {t('إرسال واتساب')}
-                        </button>
-                        <button
-                          onClick={() => handleDeletePrescription(rx)}
-                          className="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors"
-                          title={t('حذف الروشتة')}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <button
+                    key={t.id}
+                    onClick={() => navigate({ name: 'account', tab: t.id })}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all duration-300 relative group ${
+                      isActive ? 'text-white shadow-md' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                    style={isActive ? { backgroundColor: themeColors.primaryColor, boxShadow: `0 8px 16px -4px ${themeColors.primaryColor}40` } : {}}
+                  >
+                    <span className="shrink-0">{t.icon}</span>
+                    <span className="truncate flex-1 text-start">{t.label}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black transition-colors ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
+                      }`}
+                    >
+                      {t.count}
+                    </span>
+                  </button>
                 );
               })}
             </div>
-          )}
-        </div>
-      )}
-
-      {/* ===== Rewards tab ===== */}
-      {tab === 'rewards' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">{t('نقاطي ومكافآتي')}</h2>
-            <span className="text-xs font-bold text-gray-500">{t('{0} نقطة متاحة', [loyaltyPoints])}</span>
           </div>
 
-          {/* Balance hero */}
-          <div
-            className="rounded-3xl text-white relative overflow-hidden p-6 sm:p-8 shadow-xl"
-            style={{ background: `linear-gradient(135deg, ${themeColors.accentColor}, #d97706)` }}
-          >
-            <div className="absolute -bottom-10 -start-10 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-            <div className="absolute -top-16 -end-16 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-            <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
-              <div
-                className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-lg"
-              >
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-amber-100 mb-1">{t('رصيد نقاط المكافآت')}</p>
-                <p className="text-4xl font-black leading-none">{loyaltyPoints}</p>
-                <p className="text-xs font-bold text-amber-100 mt-1.5">
-                  {t('أكمل {0} نقطة إضافية لتحصل على خصم {1} ج.م على طلبك القادم', [Math.max(0, loyaltyConfig.redeemThreshold - loyaltyPoints), loyaltyConfig.redeemValue])}
-                </p>
-              </div>
-              <div className="sm:ms-auto bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20 text-center">
-                <p className="text-[10px] font-bold text-amber-100 mb-0.5">{t('كل {0} ج.م =', [loyaltyConfig.pointsPerPound])}</p>
-                <p className="text-lg font-black">{t('1 نقطة')}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* How to earn */}
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
-              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColors.accentColor}12`, color: themeColors.accentColor }}>
-                <PackageCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-gray-900">{t('{0} نقاط لكل طلب', [loyaltyConfig.pointsPerOrder])}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{t('احصل عليها تلقائياً بعد تأكيد أي طلب جديد')}</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
-              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColors.secondaryColor}12`, color: themeColors.secondaryColor }}>
-                <Wallet className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-gray-900">{t('{0} نقطة = خصم {1} ج.م', [loyaltyConfig.redeemThreshold, loyaltyConfig.redeemValue])}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{t('استبدل نقاطك بخصومات فورية عند الطلب')}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* History */}
-          <div>
-            <h3 className="text-sm font-black text-gray-900 mb-3">{t('سجل النقاط')}</h3>
-            {loyaltyHistory.length === 0 ? (
-              <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
-                <Sparkles className="w-10 h-10 mx-auto text-amber-300 mb-3" />
-                <h4 className="font-black text-gray-900 text-sm mb-1">{t('لا توجد نقاط مكتسبة بعد')}</h4>
-                <p className="text-xs text-gray-500">{t('اطلب أي منتج وسيتم إضافة {0} نقطة لرصيدك تلقائياً.', [loyaltyConfig.pointsPerOrder])}</p>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {loyaltyHistory.map((tx) => (
-                  <div key={tx.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: `${tx.points > 0 ? themeColors.accentColor : '#ef4444'}12`, color: tx.points > 0 ? themeColors.accentColor : '#ef4444' }}
-                    >
-                      <Sparkles className="w-4.5 h-4.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black text-gray-900">{tx.reason}</p>
-                      <p className="text-[11px] text-gray-400 font-bold mt-0.5">
-                        {localizedDate(tx.created_at, lang, { year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
-                    </div>
-                    <span className={`text-sm font-black ${tx.points > 0 ? 'text-amber-600' : 'text-red-500'}`}>
-                      {tx.points > 0 ? `+${tx.points}` : tx.points}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* Horizontal slider for mobile */}
+          <div className="lg:hidden p-1.5 bg-white border border-slate-200/80 rounded-2xl shadow-sm mb-2 overflow-x-auto scrollbar-none flex items-center gap-1.5">
+            {tabs.map((t) => {
+              const isActive = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => navigate({ name: 'account', tab: t.id })}
+                  className={`shrink-0 flex items-center gap-2 py-3 px-4 rounded-xl text-xs font-black transition-all duration-300 ${
+                    isActive ? 'text-white shadow-sm scale-102' : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                  style={isActive ? { backgroundColor: themeColors.primaryColor } : {}}
+                >
+                  {t.icon}
+                  <span className="whitespace-nowrap">{t.label}</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {t.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
-      )}
 
-      {/* ===== Medical file tab ===== */}
-      {tab === 'reminders' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">{t('الملف الدوائي')}</h2>
-            <span className="text-xs font-bold text-gray-500">{t('{0} دواء في ملفك', [reminders.length])}</span>
-          </div>
-
-          {permDenied && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
-              <Bell className="w-5 h-5 text-amber-600 shrink-0" />
-              <p className="text-xs font-bold text-amber-800">
-                {t('الإشعارات معطلة في المتصفح. فعّل الإشعارات من إعدادات المتصفح لتستقبل تذكيرات مواعيد الأدوية وتنبيهات قرب النفاد.')}
-              </p>
-            </div>
-          )}
-
-          {/* Add medication form */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 sm:p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}>
-                <Plus className="w-4.5 h-4.5" />
+        {/* Dashboard Main Area */}
+        <div className="lg:col-span-3 min-w-0">
+          
+          {/* ===== Orders tab ===== */}
+          {tab === 'orders' && (
+            <div className="space-y-5 animate-fade-up">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                  <PackageCheck className="w-5.5 h-5.5 text-teal-600" />
+                  {t('طلباتي والشحنات')}
+                </h2>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-500">{t('{0} طلب مسجل', [orders.length])}</span>
               </div>
-              <h3 className="text-sm font-black text-gray-900">{t('إضافة دواء لملفك الدوائي')}</h3>
-            </div>
-            <form onSubmit={handleAddReminder} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('اسم الدواء *')}</label>
-                  <input
-                    value={remName}
-                    onChange={(e) => setRemName(e.target.value)}
-                    placeholder={t('مثال: بانادول أقراص')}
-                    className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-                  />
+
+              {ordersLoading ? (
+                <div className="grid gap-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-slate-100 border border-slate-200 rounded-3xl h-36 skeleton" />
+                  ))}
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('الجرعة (اختياري)')}</label>
-                  <input
-                    value={remDose}
-                    onChange={(e) => setRemDose(e.target.value)}
-                    placeholder={t('مثال: قرص واحد')}
-                    className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('موعد الجرعة *')}</label>
-                  <input
-                    type="time"
-                    value={remTime}
-                    onChange={(e) => setRemTime(e.target.value)}
-                    className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-                    dir="ltr"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('أيام الأسبوع')}</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {WEEKDAYS.map((d) => {
-                      const active = remDays.includes(d.n);
-                      return (
-                        <button
-                          type="button"
-                          key={d.n}
-                          onClick={() => toggleReminderDay(d.n)}
-                          className={`px-2.5 py-1.5 rounded-xl text-[11px] font-extrabold border transition-all active:scale-95 ${
-                            active
-                              ? 'text-white border-transparent'
-                              : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
-                          }`}
-                          style={active ? { backgroundColor: themeColors.primaryColor } : {}}
-                        >
-                          {t(d.label)}
-                        </button>
-                      );
-                    })}
+              ) : orders.length === 0 ? (
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
+                  <div
+                    className="w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-5 bg-teal-500/10 text-teal-600 animate-float"
+                  >
+                    <PackageCheck className="w-10 h-10" />
                   </div>
+                  <h3 className="font-black text-slate-900 text-lg mb-1.5">{t('سجل الطلبات فارغ')}</h3>
+                  <p className="text-sm font-medium text-slate-500 mb-6 max-w-sm mx-auto leading-relaxed">{t('ابدأ بطلب أدويتك ومنتجات العناية بالبشرة والطفل لتتمكن من تتبع شحنتك لاحقاً.')}</p>
+                  <button
+                    onClick={() => navigate({ name: 'home' })}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-white text-sm font-black shadow-md hover:scale-102 active:scale-95 transition-all"
+                    style={{ backgroundColor: themeColors.primaryColor }}
+                  >
+                    <Search className="w-4 h-4" />
+                    {t('تصفح الصيدليات المتاحة')}
+                  </button>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('كم يوماً سيكفي الدواء؟')}</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={remDaysSupply}
-                    onChange={(e) => setRemDaysSupply(e.target.value)}
-                    placeholder={t('مثال: 15')}
-                    dir="ltr"
-                    className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-                  />
-                  <p className="text-[10px] text-gray-400 font-medium mt-1">{t('سنذكّرك عندما يقترب الدواء من النفاد')}</p>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-600 mb-1.5 block">{t('ملاحظة (اختياري)')}</label>
-                <input
-                  value={remNote}
-                  onChange={(e) => setRemNote(e.target.value)}
-                  placeholder={t('مثال: بعد الأكل')}
-                  className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-bold outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full sm:w-auto px-6 py-3 rounded-2xl text-white text-sm font-black flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all"
-                style={{ backgroundColor: themeColors.primaryColor }}
-              >
-                <Bell className="w-4 h-4" />
-                {t('إضافة إلى الملف الدوائي')}
-              </button>
-            </form>
-          </div>
-
-          {/* Medication list */}
-          <div>
-            <h3 className="text-sm font-black text-gray-900 mb-3">{t('أدويتك ({0})', [reminders.length])}</h3>
-            {reminders.length === 0 ? (
-              <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
-                <Bell className="w-10 h-10 mx-auto text-gray-300 mb-3" />
-                <h4 className="font-black text-gray-900 text-sm mb-1">{t('لا توجد أدوية في ملفك')}</h4>
-                <p className="text-xs text-gray-500">{t('أضف أدويتك الدورية وسنذكّرك بمواعيدها وعند اقترابها من النفاد.')}</p>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {[...reminders]
-                  .sort((a, b) => a.time.localeCompare(b.time))
-                  .map((r) => {
-                    const dayNames = WEEKDAYS.filter((d) => r.days.includes(d.n)).map((d) => d.short);
-                    const isToday = r.days.includes(new Date().getDay());
-                    const dueSoon = isToday && r.time <= new Date().toTimeString().slice(0, 5);
-                    const runOut = medicationRunOutInfo(r);
+              ) : (
+                <div className="space-y-4">
+                  {orders.map((order) => {
+                    const meta = STATUS_META[order.status] || STATUS_META.pending;
+                    const product = order.product;
                     return (
-                      <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-4 flex items-center gap-3 shadow-sm">
-                        <div
-                          className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}
-                        >
-                          <Pill className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-black text-gray-900">{r.name}</p>
-                            {dueSoon && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-600">{t('استُحق موعده اليوم')}</span>
-                            )}
-                            {runOut.status === 'out' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-600">{t('انتهى الدواء')}</span>
-                            )}
-                            {runOut.status === 'soon' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-700">{t('قرب النفاد ({0} يوم)', [runOut.daysLeft!])}</span>
-                            )}
-                            {runOut.status === 'ok' && runOut.daysLeft != null && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-700">{t('متبقي {0} يوم', [runOut.daysLeft])}</span>
+                      <div 
+                        key={order.id} 
+                        className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden"
+                      >
+                        <div className="flex flex-col sm:flex-row gap-5">
+                          {/* Image product wrapper */}
+                          <div className="w-20 h-20 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 flex items-center justify-center p-2 relative">
+                            {product?.image_url ? (
+                              <img src={product.image_url} alt="" className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                            ) : (
+                              <Pill className="w-8 h-8 text-slate-300" />
                             )}
                           </div>
-                          <p className="text-[11px] text-gray-500 font-bold mt-0.5">
-                            {r.dosage ? `${r.dosage} • ` : ''}{t('يومياً في {0}', [r.time])}
-                            {r.note ? ` • ${r.note}` : ''}
-                          </p>
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {dayNames.map((s, i) => (
-                              <span
-                                key={i}
-                                className={`px-1.5 py-0.5 rounded-md text-[9px] font-extrabold ${
-                                  r.days.includes(new Date().getDay()) && s === dayNames[new Date().getDay()]
-                                    ? 'text-white'
-                                    : 'bg-gray-100 text-gray-500'
-                                }`}
-                                style={r.days.includes(new Date().getDay()) && s === dayNames[new Date().getDay()] ? { backgroundColor: themeColors.primaryColor } : {}}
-                              >
-                                {t(s)}
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-black text-base text-slate-900 truncate leading-snug">{product?.name || t('منتج')}</p>
+                                <p className="text-xs text-slate-400 font-bold mt-1 flex items-center gap-1">
+                                  <Store className="w-3.5 h-3.5 text-teal-600" />
+                                  {order.pharmacy?.name || t('صيدلية')}
+                                </p>
+                              </div>
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black border shadow-2xs ${meta.className}`}>
+                                {meta.icon}
+                                {t(meta.label)}
                               </span>
-                            ))}
+                            </div>
+
+                            {featuresConfig.orderTracking && <OrderProgressTracker status={order.status} color={themeColors.primaryColor} />}
+
+                            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-[11px] font-bold text-slate-400 border-t border-slate-100/60 pt-3">
+                              <span className="flex items-center gap-1.5">
+                                <Tag className="w-3.5 h-3.5" />
+                                {t('الكمية:')}&nbsp;<strong className="text-slate-800 tabular-nums">{order.quantity}</strong>
+                              </span>
+                              <span className="flex items-center gap-1.5">
+                                <MapPin className="w-3.5 h-3.5" />
+                                <span className="truncate text-slate-700 max-w-[200px]">{order.address || t('عنوان غير محدد')}</span>
+                              </span>
+                              {order.payment_method && (
+                                <span className="flex items-center gap-1.5">
+                                  <Wallet className="w-3.5 h-3.5" />
+                                  {t('طريقة الدفع:')}&nbsp;
+                                  <strong className="text-slate-800">
+                                    {order.payment_method === 'instapay' ? t('انستا باي') : order.payment_method === 'vodafone_cash' ? t('فودافون كاش') : order.payment_method}
+                                  </strong>
+                                </span>
+                              )}
+                              <span className="flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5" />
+                                {localizedDate(order.created_at, lang, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+
+                            {order.note && (
+                              <div className="mt-2.5 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-[11px] font-medium text-slate-500 flex items-start gap-1.5 leading-relaxed">
+                                <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: themeColors.primaryColor }} />
+                                <span>{order.note}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="sm:ms-auto flex sm:flex-col sm:items-end items-center gap-4 justify-between shrink-0 border-t sm:border-t-0 border-slate-100 pt-4 sm:pt-0">
+                            <div className="sm:text-end">
+                              <p className="text-2xl font-black text-slate-900 leading-none tabular-nums" style={{ color: themeColors.primaryColor }}>
+                                {Number(order.total_price).toFixed(2)}
+                              </p>
+                              <p className="text-[10px] font-black text-slate-400 mt-1">{t('ج.م شامل الضريبة')}</p>
+                            </div>
+                            <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+                              {featuresConfig.orderTracking && (
+                                <button
+                                  onClick={() => setTrackingOrder(order)}
+                                  className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-black border shadow-2xs hover:bg-slate-50 active:scale-95 transition-all"
+                                  style={{ borderColor: `${themeColors.primaryColor}50`, color: themeColors.primaryColor }}
+                                >
+                                  <Navigation className="w-3.5 h-3.5" />
+                                  {t('تتبع الشحنة')}
+                                </button>
+                              )}
+                              {order.status === 'delivered' && (
+                                <button
+                                  onClick={() => setReviewOrder(order)}
+                                  className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-black shadow-md hover:brightness-110 active:scale-95 transition-all text-white bg-amber-500"
+                                >
+                                  <Star className="w-3.5 h-3.5 fill-white" />
+                                  {t('تقييم الطلب')}
+                                </button>
+                              )}
+                              {product && (
+                                <button
+                                  onClick={() => openOrder(product, order.pharmacy?.name)}
+                                  className="px-4.5 py-2.5 rounded-xl text-white text-xs font-black shadow-md hover:brightness-110 active:scale-95 transition-all"
+                                  style={{ backgroundColor: themeColors.primaryColor }}
+                                >
+                                  {t('اطلب مجدداً')}
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleRemoveReminder(r.id)}
-                          className="shrink-0 w-9 h-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-all active:scale-90"
-                          title={t('حذف الدواء من الملف')}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
                     );
                   })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ===== Family members tab ===== */}
-      {tab === 'family' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">{t('أفراد العائلة')}</h2>
-            <span className="text-xs font-bold text-gray-500">{t('{0} فرد', [familyMembers.length])}</span>
-          </div>
-          <p className="text-xs text-gray-500 leading-relaxed -mt-2">
-            {t('أضف أفراد عائلتك (الأطفال وكبار السن) لتتمكن من طلب أدويتهم بسهولة وحساب جرعاتهم بشكل آمن.')}
-          </p>
-
-          <div className="grid lg:grid-cols-2 gap-4">
-            <form onSubmit={handleFamilySave} className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm space-y-3 self-start">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}>
-                  {editingMember ? <Pencil className="w-4 h-4" /> : <Users className="w-4 h-4" />}
-                </div>
-                <h3 className="font-black text-gray-900 text-sm">{editingMember ? t('تعديل عضو') : t('إضافة فرد جديد')}</h3>
-              </div>
-              <input
-                type="text"
-                value={famForm.name}
-                onChange={(e) => setFamForm({ ...famForm, name: e.target.value })}
-                placeholder={t('الاسم (مثال: أحمد، 3 سنوات)')}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none focus:ring-2"
-                style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
-              />
-              <div className="grid grid-cols-3 gap-2">
-                <select
-                  value={famForm.relation}
-                  onChange={(e) => setFamForm({ ...famForm, relation: e.target.value })}
-                  className="w-full px-2 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none"
-                >
-                  <option value="">{t('العلاقة')}</option>
-                  <option value="son">{t('ابن')}</option>
-                  <option value="daughter">{t('ابنة')}</option>
-                  <option value="father">{t('الأب')}</option>
-                  <option value="mother">{t('الأم')}</option>
-                  <option value="spouse">{t('زوج/زوجة')}</option>
-                  <option value="other">{t('أخرى')}</option>
-                </select>
-                <input
-                  type="number"
-                  min="0"
-                  max="120"
-                  value={famForm.age}
-                  onChange={(e) => setFamForm({ ...famForm, age: e.target.value })}
-                  placeholder={t('العمر')}
-                  className="w-full px-2 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none"
-                  dir="ltr"
-                />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={famForm.weight}
-                  onChange={(e) => setFamForm({ ...famForm, weight: e.target.value })}
-                  placeholder={t('الوزن (كجم)')}
-                  className="w-full px-2 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold outline-none"
-                  dir="ltr"
-                />
-              </div>
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="submit"
-                  disabled={familySaving}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-xs font-bold disabled:opacity-50 transition-all active:scale-95"
-                  style={{ backgroundColor: themeColors.primaryColor }}
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  {familySaving ? t('جاري الحفظ...') : editingMember ? t('حفظ التعديل') : t('إضافة')}
-                </button>
-                {editingMember && (
-                  <button
-                    type="button"
-                    onClick={() => { setEditingMember(null); setFamForm({ name: '', relation: '', age: '', weight: '' }); }}
-                    className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50"
-                  >
-                    {t('إلغاء')}
-                  </button>
-                )}
-              </div>
-            </form>
-
-            <div className="space-y-3">
-              {familyLoading && (
-                <div className="flex items-center justify-center py-10 text-gray-400">
-                  <Loader2 className="w-5 h-5 animate-spin" />
                 </div>
               )}
-              {!familyLoading && familyMembers.length === 0 && (
-                <div className="bg-white rounded-3xl border border-dashed border-gray-200 p-6 text-center text-xs font-bold text-gray-400">
-                  {t('لا يوجد أفراد عائلة بعد. أضف أول فرد من النموذج المجاور.')}
-                </div>
-              )}
-              {familyMembers.map((m) => (
-                <div key={m.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ backgroundColor: `${themeColors.primaryColor}12`, color: themeColors.primaryColor }}>
-                    <Baby className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-black text-gray-900">{m.name}</p>
-                    <p className="text-[11px] text-gray-500 font-bold mt-0.5">
-                      {m.relation ? t(m.relation) : t('أخرى')}
-                      {m.age != null && ` • ${t('{0} سنة', [m.age])}`}
-                      {m.weight != null && ` • ${m.weight} ${t('كجم')}`}
-                    </p>
-                  </div>
-                  <button onClick={() => startEditMember(m)} className="w-9 h-9 rounded-xl bg-gray-50 text-gray-500 hover:bg-gray-100 flex items-center justify-center" title={t('تعديل')}>
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleFamilyDelete(m.id)} className="w-9 h-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center" title={t('حذف')}>
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* ===== Addresses tab ===== */}
-      {tab === 'addresses' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">{t('العناوين المسجلة')}</h2>
-            <span className="text-xs font-bold text-gray-500">{t('{0} عنوان', [addresses.length])}</span>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-4">
-            {/* Add form */}
-            <form onSubmit={handleAddAddress} className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm space-y-3 self-start">
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: `${themeColors.primaryColor}12` }}
-                >
-                  <MapPin className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
-                </div>
-                <h3 className="font-black text-gray-900 text-sm">{t('إضافة عنوان جديد')}</h3>
+          {/* ===== Prescriptions tab ===== */}
+          {tab === 'prescriptions' && (
+            <div className="space-y-5 animate-fade-up">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                  <FileText className="w-5.5 h-5.5 text-teal-600" />
+                  {t('الروشتات الطبية المحفوظة')}
+                </h2>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-500">{t('{0} روشتة', [prescriptions.length])}</span>
               </div>
 
-              <input
-                type="text"
-                value={addrTitle}
-                onChange={(e) => setAddrTitle(e.target.value)}
-                placeholder={t('اسم العنوان (مثال: المنزل، العمل)')}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
-                style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
-              />
-              <textarea
-                value={addrText}
-                onChange={(e) => setAddrText(e.target.value)}
-                rows={2}
-                placeholder={t('العنوان بالتفصيل (المنطقة، الشارع، رقم العمارة)')}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 resize-none"
-                style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
-              />
-              <input
-                type="tel"
-                value={addrPhone}
-                onChange={(e) => setAddrPhone(e.target.value)}
-                placeholder={t('رقم الهاتف (اختياري)')}
-                dir="ltr"
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2"
-                style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
-              />
-
-              <button
-                type="submit"
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-bold shadow-md hover:scale-[1.01] active:scale-95 transition-all"
-                style={{ backgroundColor: themeColors.primaryColor }}
+              {/* Add Prescription form */}
+              <form
+                onSubmit={handleRxSubmit}
+                className="bg-white rounded-[2rem] border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-4 relative overflow-hidden"
               >
-                <Plus className="w-4 h-4" />
-                {t('حفظ العنوان')}
-              </button>
-            </form>
-
-            {/* Address list */}
-            <div className="space-y-3">
-              {addresses.length === 0 ? (
-                <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm h-full flex flex-col items-center justify-center">
-                  <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                    style={{ backgroundColor: `${themeColors.primaryColor}12` }}
-                  >
-                    <MapPin className="w-8 h-8" style={{ color: themeColors.primaryColor }} />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-teal-500/10 text-teal-600">
+                    <FileText className="w-5 h-5" />
                   </div>
-                  <h3 className="font-black text-gray-900 text-base mb-1">{t('لا توجد عناوين مسجلة')}</h3>
-                  <p className="text-sm text-gray-500">{t('أضف عناوينك المفضلة للتوصيل لتظهر هنا.')}</p>
+                  <div>
+                    <h3 className="font-black text-slate-900 text-base leading-none">{t('حفظ وإرسال روشتة جديدة')}</h3>
+                    <p className="text-[11px] text-slate-400 font-bold mt-1">{t('ارفع صورة الروشتة وسنقوم بتوصيل الأدوية فوراً')}</p>
+                  </div>
                 </div>
-              ) : (
-                addresses.map((addr) => (
-                  <div key={addr.id} className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm flex items-start gap-3">
-                    <div
-                      className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: `${themeColors.accentColor}12` }}
-                    >
-                      <Navigation className="w-5 h-5" style={{ color: themeColors.accentColor }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-black text-gray-900 text-sm">{addr.title}</h4>
-                        {addr.phone && (
-                          <span className="text-[10px] text-gray-400 font-bold" dir="ltr">{addr.phone}</span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">{addr.address}</p>
-                    </div>
+
+                {rxImage ? (
+                  <div className="relative rounded-2xl overflow-hidden border-2 max-h-64 bg-slate-950 flex items-center justify-center border-teal-500">
+                    <img src={rxImage} alt={t('روشتة')} className="max-h-64 w-auto object-contain mx-auto" />
                     <button
-                      onClick={() => handleDeleteAddress(addr.id)}
-                      className="w-8 h-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors shrink-0"
-                      title={t('حذف العنوان')}
+                      type="button"
+                      onClick={() => setRxImage(null)}
+                      className="absolute top-3 end-3 p-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-lg transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                ))
+                ) : (
+                  <label className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-300 hover:border-teal-500 rounded-2xl bg-slate-50/50 hover:bg-teal-50/20 transition-all cursor-pointer group text-center space-y-3">
+                    <div
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-md bg-white border border-slate-100 text-teal-600"
+                    >
+                      <Camera className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-slate-800">{t('اضغط هنا لالتقاط أو رفع صورة الروشتة')}</p>
+                      <p className="text-[11px] text-slate-400 font-bold mt-1">{t('يدعم صيغ الصور JPG, PNG حتى حجم 5 ميجابايت')}</p>
+                    </div>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleRxImageUpload} />
+                  </label>
+                )}
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Phone className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="tel"
+                      value={rxPhone}
+                      onChange={(e) => setRxPhone(e.target.value)}
+                      placeholder={t('رقم الهاتف للتأكيد والتواصل')}
+                      dir="ltr"
+                      className="w-full ps-10 pe-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:bg-white"
+                      style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={rxNotes}
+                    onChange={(e) => setRxNotes(e.target.value)}
+                    placeholder={t('ملاحظات للصيدلي (نوع الجرعة، بدائل مقبولة)')}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:bg-white"
+                    style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={rxUploading}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white text-sm font-black shadow-md hover:brightness-105 active:scale-95 transition-all disabled:opacity-60"
+                  style={{ backgroundColor: themeColors.primaryColor }}
+                >
+                  {rxUploading ? (
+                    <>
+                      <Loader2 className="w-4.5 h-4.5 animate-spin" />
+                      {t('جاري رفع وتأمين الروشتة...')}
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4.5 h-4.5" />
+                      {t('حفظ الروشتة وإرسالها للصيدلي')}
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Prescription list */}
+              {rxLoading ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-slate-100 rounded-3xl h-64 skeleton" />
+                  ))}
+                </div>
+              ) : prescriptions.length === 0 ? (
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-teal-500/10 text-teal-600">
+                    <FileText className="w-8 h-8" />
+                  </div>
+                  <h3 className="font-black text-slate-900 text-base mb-1.5">{t('لا توجد روشتات محفوظة')}</h3>
+                  <p className="text-xs text-slate-500 font-bold max-w-sm mx-auto leading-relaxed">{t('قم برفع الروشتة الطبية الخاصة بك للاحتفاظ بنسخة رقمية مشفرة منها للتأمين وسهولة تكرار الطلب.')}</p>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {prescriptions.map((rx) => {
+                    const meta = PRESCRIPTION_STATUS_META[rx.status] || PRESCRIPTION_STATUS_META.new;
+                    return (
+                      <div key={rx.id} className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
+                        <div>
+                          <div className="h-40 bg-slate-950 relative flex items-center justify-center overflow-hidden">
+                            <img src={rx.image_url} alt={t('روشتة')} className="max-h-full w-auto object-contain transition-transform duration-500 group-hover:scale-105" />
+                            <span className="absolute top-3.5 start-3.5 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-[10px] font-black border border-white/10">
+                              <Clock className="w-3 h-3" />
+                              {localizedDate(rx.created_at, lang, { month: 'short', day: 'numeric' })}
+                            </span>
+                            <span className={`absolute bottom-3.5 end-3.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black border ${meta.className}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+                              {t(meta.label)}
+                            </span>
+                          </div>
+                          <div className="p-4.5 space-y-2">
+                            <p className="text-xs text-slate-500 flex items-center gap-1.5 font-bold">
+                              <Phone className="w-4 h-4 text-teal-600" />
+                              <span dir="ltr">{rx.phone}</span>
+                            </p>
+                            {rx.notes && (
+                              <p className="text-xs text-slate-600 font-bold line-clamp-2 leading-relaxed bg-slate-50 p-2 rounded-xl">{rx.notes}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="p-4.5 pt-0 flex items-center gap-2">
+                          <button
+                            onClick={() => handleResendPrescription(rx)}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-xs font-black transition-colors hover:brightness-110 shadow-sm"
+                            style={{ backgroundColor: themeColors.primaryColor }}
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            {t('إرسال واتساب')}
+                          </button>
+                          <button
+                            onClick={() => handleDeletePrescription(rx)}
+                            className="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shrink-0"
+                            title={t('حذف الروشتة')}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* ===== Favorites tab ===== */}
-      {tab === 'favorites' && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-gray-900">{t('مفضلتي')}</h2>
-            <span className="text-xs font-bold text-gray-500">
-              {t('{0} دواء · {1} صيدلية', [productFavoritesCount, pharmacyFavoritesCount])}
-            </span>
-          </div>
+          {/* ===== Rewards tab ===== */}
+          {tab === 'rewards' && (
+            <div className="space-y-5 animate-fade-up">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                  <Sparkles className="w-5.5 h-5.5 text-amber-500" />
+                  {t('نقاطي ومكافآتي')}
+                </h2>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-500">{t('{0} نقطة صالحة للاستخدام', [loyaltyPoints])}</span>
+              </div>
 
-          {/* Favorite products */}
-          <section>
-            <div className="flex items-center gap-2 mb-3">
+              {/* Balance Hero (Redesigned like a premium card) */}
               <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: `${themeColors.primaryColor}12` }}
+                className="rounded-[2.5rem] text-white relative overflow-hidden p-6 sm:p-8 shadow-xl border border-white/10"
+                style={{ background: `linear-gradient(135deg, ${themeColors.accentColor}, #d97706)` }}
               >
-                <Pill className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
+                <div className="absolute inset-0 bg-mesh opacity-20 pointer-events-none" />
+                <div className="absolute -bottom-16 -start-16 w-56 h-56 rounded-full bg-white/15 blur-2xl pointer-events-none" />
+                <div className="absolute -top-16 -end-16 w-56 h-56 rounded-full bg-white/15 blur-2xl pointer-events-none" />
+                <div className="relative flex flex-col sm:flex-row sm:items-center gap-6">
+                  <div
+                    className="w-16 h-16 rounded-[1.5rem] bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-lg"
+                  >
+                    <Sparkles className="w-8 h-8 text-amber-200 animate-pulse" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[11px] font-black text-amber-100 uppercase tracking-wider mb-1">{t('رصيد نقاط المكافآت الحالي')}</p>
+                    <p className="text-4xl font-black leading-none tabular-nums">{loyaltyPoints}</p>
+                    <p className="text-xs font-bold text-amber-100/90 mt-2 leading-relaxed">
+                      {t('تبقت لك {0} نقطة إضافية للوصول للحد الأدنى وتطبيق خصم مباشر بقيمة {1} ج.م على طلبك القادم.', [Math.max(0, loyaltyConfig.redeemThreshold - loyaltyPoints), loyaltyConfig.redeemValue])}
+                    </p>
+                  </div>
+                  <div className="sm:ms-auto bg-white/15 backdrop-blur-md rounded-2xl px-5 py-4 border border-white/20 text-center shrink-0">
+                    <p className="text-[10px] font-black text-amber-100/90 uppercase tracking-wider mb-1">{t('التحويل المباشر')}</p>
+                    <p className="text-xl font-black">{t('1 نقطة لكل {0} ج.م', [loyaltyConfig.pointsPerPound])}</p>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-black text-gray-900 text-sm">{t('الأدوية المفضلة')}</h3>
-              <span className="px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 text-[10px] font-extrabold">
-                {productFavoritesCount}
-              </span>
-            </div>
 
-            {favLoading ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="bg-slate-100 rounded-3xl h-64 animate-pulse" />
-                ))}
+              {/* How to earn */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 flex items-center gap-4 shadow-sm">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600">
+                    <PackageCheck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900">{t('{0} نقاط مع كل أوردر', [loyaltyConfig.pointsPerOrder])}</p>
+                    <p className="text-xs text-slate-500 font-bold mt-1.5 leading-relaxed">{t('تضاف تلقائياً بعد تأكيد واستلام الشحنة')}</p>
+                  </div>
+                </div>
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 flex items-center gap-4 shadow-sm">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-teal-500/10 text-teal-600">
+                    <Wallet className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900">{t('استبدال {0} نقطة = {1} ج.م خصم', [loyaltyConfig.redeemThreshold, loyaltyConfig.redeemValue])}</p>
+                    <p className="text-xs text-slate-500 font-bold mt-1.5 leading-relaxed">{t('اختر تطبيق الخصم بضغطة زر عند الدفع')}</p>
+                  </div>
+                </div>
               </div>
-            ) : favProducts.length === 0 ? (
-              <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
-                <Heart className="w-10 h-10 mx-auto text-pink-300 mb-3" />
-                <h4 className="font-black text-gray-900 text-sm mb-1">{t('لا توجد أدوية مفضلة بعد')}</h4>
-                <p className="text-xs text-gray-500">
-                  {t('اضغط على علامة القلب ♥ بجانب أي دواء لإضافته إلى مفضلتك هنا.')}
-                </p>
+
+              {/* History */}
+              <div>
+                <h3 className="text-base font-black text-slate-955 mb-3.5 flex items-center gap-1.5">
+                  <TrendingUp className="w-5 h-5 text-amber-500" />
+                  {t('سجل حركات النقاط والمكافآت')}
+                </h3>
+                {loyaltyHistory.length === 0 ? (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
+                    <Sparkles className="w-12 h-12 mx-auto text-amber-300 mb-4 animate-float" />
+                    <h4 className="font-black text-slate-900 text-base mb-1">{t('سجل المكافآت فارغ')}</h4>
+                    <p className="text-xs text-slate-500 font-bold max-w-sm mx-auto leading-relaxed">{t('أكمل طلبك الأول عبر الموقع وسوف تبدأ بالحصول على نقاط ترحيبية مكافأة لك.')}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {loyaltyHistory.map((tx) => (
+                      <div key={tx.id} className="bg-white rounded-2xl border border-slate-200/80 p-4.5 flex items-center justify-between gap-4 shadow-2xs hover:shadow-sm transition-shadow">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                              tx.points > 0 ? 'bg-amber-500/10 text-amber-600' : 'bg-rose-500/10 text-rose-600'
+                            }`}
+                          >
+                            <Sparkles className="w-4.5 h-4.5" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-black text-slate-900 leading-snug">{tx.reason}</p>
+                            <p className="text-[11px] text-slate-400 font-bold mt-0.5">
+                              {localizedDate(tx.created_at, lang, { year: 'numeric', month: 'long', day: 'numeric' })}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`text-base font-black tabular-nums ${tx.points > 0 ? 'text-amber-600' : 'text-rose-500'}`}>
+                          {tx.points > 0 ? `+${tx.points}` : tx.points}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {favProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    pharmacyName={product.pharmacy?.name}
-                    onClick={product.for_all_pharmacies ? undefined : () => product.pharmacy_id && navigate({ name: 'pharmacy', id: product.pharmacy_id })}
+            </div>
+          )}
+
+          {/* ===== Reminders (Medical File) tab ===== */}
+          {tab === 'reminders' && (
+            <div className="space-y-5 animate-fade-up">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                  <Bell className="w-5.5 h-5.5 text-teal-600" />
+                  {t('ملفي الطبي وجدول الأدوية')}
+                </h2>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-500">{t('{0} دواء مسجل', [reminders.length])}</span>
+              </div>
+
+              {permDenied && (
+                <div className="bg-amber-50 border border-amber-200/60 rounded-2xl p-4.5 flex items-start gap-3">
+                  <Bell className="w-5.5 h-5.5 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="text-xs font-bold text-amber-800 leading-relaxed">
+                    <p className="font-black">{t('تنبيه: الإشعارات معطلة')}</p>
+                    <p className="mt-1 font-medium">{t('يرجى تفعيل صلاحية الإشعارات من إعدادات المتصفح لكي نتمكن من تنبيهك بمواعيد جرعات الدواء وتذكيرك بقرب نفاد العلبة.')}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Add medication form */}
+              <div className="bg-white rounded-[2rem] border border-slate-200/80 shadow-sm p-5 sm:p-6">
+                <div className="flex items-center gap-2.5 mb-5">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-teal-500/10 text-teal-600">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 leading-none">{t('إضافة دواء لجدول التذكيرات')}</h3>
+                    <p className="text-[11px] text-slate-400 font-bold mt-1">{t('سجل مواعيد الجرعات لتذكيرك بها تلقائياً')}</p>
+                  </div>
+                </div>
+                <form onSubmit={handleAddReminder} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-black text-slate-700 mb-1.5 block">{t('اسم الدواء والمواصفات *')}</label>
+                      <input
+                        value={remName}
+                        onChange={(e) => setRemName(e.target.value)}
+                        placeholder={t('مثال: كونكور 5 ملغ')}
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-xs font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 bg-slate-50/50 focus:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-black text-slate-700 mb-1.5 block">{t('الجرعة وطريقة أخذها (اختياري)')}</label>
+                      <input
+                        value={remDose}
+                        onChange={(e) => setRemDose(e.target.value)}
+                        placeholder={t('مثال: نصف قرص صباحاً')}
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-xs font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 bg-slate-50/50 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-black text-slate-700 mb-1.5 block">{t('توقيت المنبه الأول *')}</label>
+                      <input
+                        type="time"
+                        value={remTime}
+                        onChange={(e) => setRemTime(e.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-xs font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 bg-slate-50/50 focus:bg-white"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-black text-slate-700 mb-1.5 block">{t('أيام الأسبوع')}</label>
+                      <div className="flex flex-wrap gap-1">
+                        {WEEKDAYS.map((d) => {
+                          const active = remDays.includes(d.n);
+                          return (
+                            <button
+                              type="button"
+                              key={d.n}
+                              onClick={() => toggleReminderDay(d.n)}
+                              className={`w-7 h-7 rounded-xl text-[10px] font-black border transition-all active:scale-90 ${
+                                active
+                                  ? 'text-white border-transparent'
+                                  : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
+                              }`}
+                              style={active ? { backgroundColor: themeColors.primaryColor } : {}}
+                            >
+                              {t(d.short)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-black text-slate-700 mb-1.5 block">{t('كم يوماً تكفي العبوة الحالية؟')}</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={remDaysSupply}
+                        onChange={(e) => setRemDaysSupply(e.target.value)}
+                        placeholder={t('مثال: 30')}
+                        dir="ltr"
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-xs font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 bg-slate-50/50 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-black text-slate-700 mb-1.5 block">{t('إرشادات وتنبيهات الاستخدام (اختياري)')}</label>
+                    <input
+                      value={remNote}
+                      onChange={(e) => setRemNote(e.target.value)}
+                      placeholder={t('مثال: يؤخذ قبل الوجبات بـ 30 دقيقة')}
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-xs font-bold outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100 bg-slate-50/50 focus:bg-white"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full sm:w-auto px-6 py-3 rounded-2xl text-white text-xs font-black flex items-center justify-center gap-2 hover:brightness-105 active:scale-95 transition-all"
+                    style={{ backgroundColor: themeColors.primaryColor }}
+                  >
+                    <Bell className="w-4 h-4" />
+                    {t('حفظ في الملف الدوائي')}
+                  </button>
+                </form>
+              </div>
+
+              {/* Medication list */}
+              <div>
+                <h3 className="text-base font-black text-slate-900 mb-3.5">{t('الأدوية الدورية والجدول')}</h3>
+                {reminders.length === 0 ? (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
+                    <Bell className="w-12 h-12 mx-auto text-slate-300 mb-4 animate-float" />
+                    <h4 className="font-black text-slate-900 text-base mb-1.5">{t('جدول التنبيهات خالي')}</h4>
+                    <p className="text-xs text-slate-500 font-bold max-w-sm mx-auto leading-relaxed">{t('قم بإضافة أدويتك اليومية للحفاظ على صحتك وسيقوم صيدليتي بتذكيرك بجرعتك بانتظام وبقرب نفاد علبة الدواء.')}</p>
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {[...reminders]
+                      .sort((a, b) => a.time.localeCompare(b.time))
+                      .map((r) => {
+                        const dayNames = WEEKDAYS.filter((d) => r.days.includes(d.n)).map((d) => d.short);
+                        const isToday = r.days.includes(new Date().getDay());
+                        const runOut = medicationRunOutInfo(r);
+                        return (
+                          <div key={r.id} className="bg-white rounded-3xl border border-slate-200/80 p-5 flex flex-col justify-between shadow-2xs hover:shadow-md transition-all group">
+                            <div className="flex items-start gap-3.5">
+                              <div
+                                className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-teal-500/10 text-teal-600"
+                              >
+                                <Pill className="w-5.5 h-5.5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p className="text-sm font-black text-slate-900 truncate">{r.name}</p>
+                                  {isToday && (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-500/10 text-blue-600">{t('اليوم')}</span>
+                                  )}
+                                </div>
+                                <p className="text-xs font-bold text-slate-400 mt-1 flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  {t('التوقيت:')} <strong className="text-slate-800 leading-none">{r.time}</strong>
+                                </p>
+                                {r.dosage && (
+                                  <p className="text-xs font-bold text-slate-500 mt-1">{t('الجرعة:')} <span className="text-slate-700">{r.dosage}</span></p>
+                                )}
+                                {r.note && (
+                                  <p className="text-[11px] text-slate-400 font-medium mt-1 leading-relaxed italic bg-slate-50 p-1.5 rounded-lg">"{r.note}"</p>
+                                )}
+
+                                <div className="flex flex-wrap gap-1 mt-2.5">
+                                  {dayNames.map((s, i) => (
+                                    <span
+                                      key={i}
+                                      className="px-1.5 py-0.5 rounded-md text-[9px] font-black bg-slate-100 text-slate-500"
+                                    >
+                                      {t(s)}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="border-t border-slate-100/80 pt-3 mt-4 flex items-center justify-between">
+                              <div>
+                                {runOut.status === 'out' && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black bg-rose-500/10 text-rose-600">
+                                    <XCircle className="w-3.5 h-3.5" />
+                                    {t('انتهى المخزون')}
+                                  </span>
+                                )}
+                                {runOut.status === 'soon' && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black bg-amber-500/10 text-amber-600 animate-pulse">
+                                    <AlertTriangle className="w-3.5 h-3.5" />
+                                    {t('ينفد خلال {0} يوم', [runOut.daysLeft!])}
+                                  </span>
+                                )}
+                                {runOut.status === 'ok' && runOut.daysLeft != null && (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] font-black bg-emerald-500/10 text-emerald-600">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    {t('متبقي {0} يوم', [runOut.daysLeft])}
+                                  </span>
+                                )}
+                              </div>
+
+                              <button
+                                onClick={() => handleRemoveReminder(r.id)}
+                                className="w-8.5 h-8.5 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors active:scale-95 shrink-0"
+                                title={t('حذف التذكير')}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ===== Family members tab ===== */}
+          {tab === 'family' && (
+            <div className="space-y-5 animate-fade-up">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                  <Users className="w-5.5 h-5.5 text-teal-600" />
+                  {t('ملفات أفراد العائلة')}
+                </h2>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-500">{t('{0} فرد مسجل', [familyMembers.length])}</span>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed font-bold -mt-2">
+                {t('أضف كبار السن، الأطفال أو زوجتك لتتمكن من إنشاء ملفات طبية لهم ومتابعة طلباتهم وصرف أدويتهم بشكل أسهل ومنفصل.')}
+              </p>
+
+              <div className="grid lg:grid-cols-2 gap-5 items-start">
+                <form onSubmit={handleFamilySave} className="bg-white rounded-[2rem] border border-slate-200/80 p-5 shadow-sm space-y-3.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-teal-500/10 text-teal-600">
+                      {editingMember ? <Pencil className="w-4.5 h-4.5" /> : <Users className="w-4.5 h-4.5" />}
+                    </div>
+                    <h3 className="font-black text-slate-900 text-sm">{editingMember ? t('تعديل الملف العائلي') : t('إضافة فرد جديد')}</h3>
+                  </div>
+                  <input
+                    type="text"
+                    value={famForm.name}
+                    onChange={(e) => setFamForm({ ...famForm, name: e.target.value })}
+                    placeholder={t('اسم العضو بالكامل')}
+                    className="w-full px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-teal-100"
+                    style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
                   />
-                ))}
-              </div>
-            )}
-          </section>
+                  <div className="grid grid-cols-3 gap-2">
+                    <select
+                      value={famForm.relation}
+                      onChange={(e) => setFamForm({ ...famForm, relation: e.target.value })}
+                      className="w-full px-2 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold outline-none"
+                    >
+                      <option value="">{t('العلاقة')}</option>
+                      <option value="son">{t('ابن')}</option>
+                      <option value="daughter">{t('ابنة')}</option>
+                      <option value="father">{t('الأب')}</option>
+                      <option value="mother">{t('الأم')}</option>
+                      <option value="spouse">{t('زوج/زوجة')}</option>
+                      <option value="other">{t('أخرى')}</option>
+                    </select>
+                    <input
+                      type="number"
+                      min="0"
+                      max="120"
+                      value={famForm.age}
+                      onChange={(e) => setFamForm({ ...famForm, age: e.target.value })}
+                      placeholder={t('العمر')}
+                      className="w-full px-2 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold outline-none"
+                      dir="ltr"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={famForm.weight}
+                      onChange={(e) => setFamForm({ ...famForm, weight: e.target.value })}
+                      placeholder={t('الوزن (كجم)')}
+                      className="w-full px-2 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold outline-none"
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="submit"
+                      disabled={familySaving}
+                      className="flex items-center gap-2 px-5 py-3 rounded-2xl text-white text-xs font-black disabled:opacity-50 transition-all active:scale-95 shadow-sm"
+                      style={{ backgroundColor: themeColors.primaryColor }}
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      {familySaving ? t('جاري الحفظ...') : editingMember ? t('حفظ التعديل') : t('إضافة الفرد')}
+                    </button>
+                    {editingMember && (
+                      <button
+                        type="button"
+                        onClick={() => { setEditingMember(null); setFamForm({ name: '', relation: '', age: '', weight: '' }); }}
+                        className="px-4 py-3 rounded-2xl border border-slate-200 text-xs font-black text-slate-500 hover:bg-slate-50"
+                      >
+                        {t('إلغاء')}
+                      </button>
+                    )}
+                  </div>
+                </form>
 
-          {/* Favorite pharmacies */}
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <div
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: `${themeColors.secondaryColor}12` }}
-              >
-                <Store className="w-4 h-4" style={{ color: themeColors.secondaryColor }} />
+                <div className="space-y-3">
+                  {familyLoading && (
+                    <div className="flex items-center justify-center py-10 text-slate-400">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  )}
+                  {!familyLoading && familyMembers.length === 0 && (
+                    <div className="bg-white rounded-3xl border border-dashed border-slate-200/80 p-6 text-center text-xs font-bold text-slate-400">
+                      {t('لم تقم بإضافة أي من أفراد العائلة بعد.')}
+                    </div>
+                  )}
+                  {familyMembers.map((m) => (
+                    <div key={m.id} className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4.5 flex items-center gap-3.5">
+                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-teal-500/10 text-teal-600 shrink-0">
+                        <Baby className="w-5.5 h-5.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-slate-900 truncate">{m.name}</p>
+                        <p className="text-[11px] text-slate-500 font-bold mt-1">
+                          {m.relation ? t(m.relation) : t('أخرى')}
+                          {m.age != null && ` • ${t('{0} سنة', [m.age])}`}
+                          {m.weight != null && ` • ${m.weight} ${t('كجم')}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => startEditMember(m)} className="w-8.5 h-8.5 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-100 flex items-center justify-center transition-colors" title={t('تعديل')}>
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleFamilyDelete(m.id)} className="w-8.5 h-8.5 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors" title={t('حذف')}>
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <h3 className="font-black text-gray-900 text-sm">{t('الصيدليات المفضلة')}</h3>
-              <span className="px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 text-[10px] font-extrabold">
-                {pharmacyFavoritesCount}
-              </span>
             </div>
+          )}
 
-            {favLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="bg-slate-100 rounded-3xl h-72 animate-pulse" />
-                ))}
+          {/* ===== Addresses tab ===== */}
+          {tab === 'addresses' && (
+            <div className="space-y-5 animate-fade-up">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                  <MapPin className="w-5.5 h-5.5 text-teal-600" />
+                  {t('عناوين التوصيل المسجلة')}
+                </h2>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-500">{t('{0} عنوان مسجل', [addresses.length])}</span>
               </div>
-            ) : favPharmacies.length === 0 ? (
-              <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
-                <Store className="w-10 h-10 mx-auto text-gray-300 mb-3" />
-                <h4 className="font-black text-gray-900 text-sm mb-1">{t('لا توجد صيدليات مفضلة بعد')}</h4>
-                <p className="text-xs text-gray-500">
-                  {t('اضغط على علامة القلب ♥ بجانب أي صيدلية لإضافتها إلى مفضلتك هنا.')}
-                </p>
+
+              <div className="grid lg:grid-cols-2 gap-5 items-start">
+                <form onSubmit={handleAddAddress} className="bg-white rounded-[2rem] border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="w-10 h-10 rounded-2xl flex items-center justify-center bg-teal-500/10 text-teal-600"
+                    >
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-black text-slate-900 text-sm">{t('حفظ عنوان توصيل جديد')}</h3>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={addrTitle}
+                    onChange={(e) => setAddrTitle(e.target.value)}
+                    placeholder={t('اسم العنوان (مثال: المنزل، العمل)')}
+                    className="w-full px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-teal-100"
+                    style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
+                  />
+                  <textarea
+                    value={addrText}
+                    onChange={(e) => setAddrText(e.target.value)}
+                    rows={2}
+                    placeholder={t('العنوان بالتفصيل (المنطقة، الشارع، الطابق، الشقة)')}
+                    className="w-full px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-teal-100 resize-none"
+                    style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
+                  />
+                  <input
+                    type="tel"
+                    value={addrPhone}
+                    onChange={(e) => setAddrPhone(e.target.value)}
+                    placeholder={t('رقم الهاتف للتواصل عند التوصيل (اختياري)')}
+                    dir="ltr"
+                    className="w-full px-4 py-3 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-teal-100"
+                    style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
+                  />
+
+                  <button
+                    type="submit"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-xs font-black shadow-md hover:brightness-105 active:scale-95 transition-all"
+                    style={{ backgroundColor: themeColors.primaryColor }}
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('حفظ العنوان')}
+                  </button>
+                </form>
+
+                {/* Address list */}
+                <div className="space-y-3">
+                  {addresses.length === 0 ? (
+                    <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm h-full flex flex-col items-center justify-center">
+                      <div
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-teal-500/10 text-teal-600"
+                      >
+                        <MapPin className="w-8 h-8" />
+                      </div>
+                      <h3 className="font-black text-slate-900 text-base mb-1.5">{t('لا توجد عناوين محفوظة')}</h3>
+                      <p className="text-xs text-slate-500 font-bold max-w-xs mx-auto leading-relaxed">{t('قم بحفظ العناوين الأكثر استخداماً لسرعة إتمام طلب الأدوية مستقبلاً.')}</p>
+                    </div>
+                  ) : (
+                    addresses.map((addr) => (
+                      <div key={addr.id} className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-sm flex items-start gap-3.5 relative hover:shadow-md transition-shadow group">
+                        <div
+                          className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-amber-500/10 text-amber-600"
+                        >
+                          <Navigation className="w-5.5 h-5.5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-black text-slate-950 text-sm leading-none">{addr.title}</h4>
+                            {addr.phone && (
+                              <span className="text-[10px] text-slate-400 font-bold" dir="ltr">{addr.phone}</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 font-bold mt-2 leading-relaxed">{addr.address}</p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteAddress(addr.id)}
+                          className="w-8.5 h-8.5 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shrink-0 active:scale-95"
+                          title={t('حذف العنوان')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {favPharmacies.map((pharmacy) => (
-                  <PharmacyCard key={pharmacy.id} pharmacy={pharmacy} />
-                ))}
+            </div>
+          )}
+
+          {/* ===== Favorites tab ===== */}
+          {tab === 'favorites' && (
+            <div className="space-y-6 animate-fade-up">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
+                <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                  <Heart className="w-5.5 h-5.5 text-pink-500" />
+                  {t('المفضلة والمحفوظات')}
+                </h2>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-500">
+                  {t('{0} دواء · {1} صيدلية', [productFavoritesCount, pharmacyFavoritesCount])}
+                </span>
               </div>
-            )}
-          </section>
+
+              {/* Favorite products */}
+              <section className="space-y-3.5">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center bg-teal-500/10 text-teal-600"
+                  >
+                    <Pill className="w-4.5 h-4.5" />
+                  </div>
+                  <h3 className="font-black text-slate-900 text-sm">{t('الأدوية المفضلة')}</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 text-[10px] font-black">
+                    {productFavoritesCount}
+                  </span>
+                </div>
+
+                {favLoading ? (
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="bg-slate-100 rounded-3xl h-64 skeleton" />
+                    ))}
+                  </div>
+                ) : favProducts.length === 0 ? (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-10 text-center shadow-sm">
+                    <Heart className="w-12 h-12 mx-auto text-pink-400 mb-3.5 animate-float" />
+                    <h4 className="font-black text-slate-900 text-base mb-1">{t('لا توجد أدوية في المفضلة')}</h4>
+                    <p className="text-xs text-slate-500 font-bold max-w-xs mx-auto leading-relaxed">
+                      {t('اضغط على علامة القلب ♥ بجانب أي منتج من منتجات الأدوية والصحة ليظهر هنا.')}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    {favProducts.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        pharmacyName={product.pharmacy?.name}
+                        onClick={product.for_all_pharmacies ? undefined : () => product.pharmacy_id && navigate({ name: 'pharmacy', id: product.pharmacy_id })}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Favorite pharmacies */}
+              <section className="space-y-3.5 pt-6 border-t border-slate-200/60">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center bg-teal-500/10 text-teal-600"
+                  >
+                    <Store className="w-4.5 h-4.5" />
+                  </div>
+                  <h3 className="font-black text-slate-900 text-sm">{t('الصيدليات المفضلة')}</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 text-[10px] font-black">
+                    {pharmacyFavoritesCount}
+                  </span>
+                </div>
+
+                {favLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[...Array(2)].map((_, i) => (
+                      <div key={i} className="bg-slate-100 rounded-3xl h-72 skeleton" />
+                    ))}
+                  </div>
+                ) : favPharmacies.length === 0 ? (
+                  <div className="bg-white rounded-3xl border border-slate-200/80 p-10 text-center shadow-sm">
+                    <Store className="w-12 h-12 mx-auto text-slate-300 mb-3.5" />
+                    <h4 className="font-black text-slate-900 text-base mb-1">{t('لا توجد صيدليات مفضلة')}</h4>
+                    <p className="text-xs text-slate-500 font-bold max-w-sm mx-auto leading-relaxed">
+                      {t('اختر صيدليتك المفضلة وسجلها بالضغط على زر القلب لتتمكن من التصفح السريع للأدوية والخصومات.')}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {favPharmacies.map((pharmacy) => (
+                      <PharmacyCard key={pharmacy.id} pharmacy={pharmacy} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

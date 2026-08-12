@@ -57,6 +57,8 @@ import { PharmacyMap } from '@/components/PharmacyMap';
 import { MostSearched } from '@/components/MostSearched';
 import { Reveal } from '@/components/Reveal';
 import { CountUp, parseStatValue } from '@/components/CountUp';
+import { TrustSignals } from '@/components/TrustSignals';
+import { HealthCategoriesBanner } from '@/components/HealthCategoriesBanner';
 import type { Pharmacy, Product, Category } from '@/types';
 
 interface SpeechRecognitionLike {
@@ -410,6 +412,12 @@ export function HomePage() {
             style={{ backgroundColor: themeColors.secondaryColor }}
           />
           <div className="absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.04)_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-20" />
+          {/* Floating Medical Emojis */}
+          <div className="absolute top-[15%] start-[8%] text-4xl opacity-20 animate-float hidden lg:block" style={{ animationDelay: '0s' }}>💊</div>
+          <div className="absolute top-[30%] end-[10%] text-3xl opacity-15 animate-float hidden lg:block" style={{ animationDelay: '1.5s' }}>🩺</div>
+          <div className="absolute bottom-[25%] start-[15%] text-3xl opacity-15 animate-float-slow hidden lg:block" style={{ animationDelay: '0.8s' }}>🏥</div>
+          <div className="absolute top-[60%] end-[6%] text-2xl opacity-10 animate-float hidden lg:block" style={{ animationDelay: '2.2s' }}>💉</div>
+          <div className="absolute top-[10%] end-[25%] text-2xl opacity-10 animate-float-slow hidden xl:block" style={{ animationDelay: '3s' }}>🧬</div>
         </div>
 
         {/* Floating Decorative Elements — single tidy trust bar that hides on scroll */}
@@ -898,7 +906,9 @@ export function HomePage() {
       {/* ==================== PHARMACIES MAP ==================== */}
       <PharmacyMap pharmacies={sortedPharmacies} loading={loadingData} />
 
-      {/* ==================== FEATURED DISCOUNTED PRODUCTS ==================== */}
+      {/* ==================== HEALTH CATEGORIES BANNER ==================== */}
+      <Reveal><HealthCategoriesBanner /></Reveal>
+
       {/* ==================== FEATURED PRODUCTS ==================== */}
       <Reveal><FeaturedProducts products={featuredProducts} loading={loadingData} popularProductIds={popularProductIds} /></Reveal>
 
@@ -983,6 +993,9 @@ export function HomePage() {
       </section>
       </Reveal>
       )}
+
+      {/* ==================== TRUST SIGNALS ==================== */}
+      <Reveal><TrustSignals /></Reveal>
 
       {/* ==================== TESTIMONIALS ==================== */}
       <Reveal><HomeTestimonials /></Reveal>
