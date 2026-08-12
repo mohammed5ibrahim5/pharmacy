@@ -40,12 +40,17 @@ export function AuthModal({ open, onClose }: Props) {
     reader.readAsDataURL(file);
   };
 
+  const handlePhoneChange = (value: string) => {
+    setPhone(value.replace(/\D/g, '').slice(0, 11));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (mode === 'signup') {
       if (!name.trim()) { setError(t('يرجى إدخال الاسم')); return; }
       if (!phone.trim()) { setError(t('يرجى إدخال رقم الهاتف')); return; }
+      if (!/^01[0125]\d{8}$/.test(phone.trim())) { setError('PHONE_INVALID'); return; }
     }
     setLoading(true);
     try {
@@ -210,9 +215,11 @@ export function AuthModal({ open, onClose }: Props) {
                     <input
                       type="tel"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
                       required
                       dir="ltr"
+                      inputMode="numeric"
+                      maxLength={11}
                       className="w-full ps-11 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
                       style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
                       placeholder="01XXXXXXXXX"

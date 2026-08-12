@@ -102,6 +102,13 @@ const ERROR_MAP: { pattern: RegExp; ar: string; en: string; hint?: string; hintE
     hintEn: 'Use another number or sign in',
   },
   {
+    pattern: /PHONE_INVALID/i,
+    ar: 'يرجى إدخال رقم هاتف مصري صحيح (11 رقماً يبدأ بـ 01)',
+    en: 'Please enter a valid Egyptian mobile number (11 digits starting with 01)',
+    hint: 'مثال: 01012345678',
+    hintEn: 'Example: 01012345678',
+  },
+  {
     pattern: /duplicate key|already exists/i,
     ar: 'البيانات مسجلة بالفعل',
     en: 'This data is already saved',
