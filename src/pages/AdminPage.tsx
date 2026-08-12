@@ -2759,6 +2759,7 @@ function ReviewsTab() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [form, setForm] = useState({ pharmacy_id: '', customer_name: '', rating: 5, comment: '', is_visible: true });
 
@@ -2792,7 +2793,22 @@ function ReviewsTab() {
   }, [fetchReviews]);
 
   const toggleVisible = async (r: Review) => {
-    await supabase.from('reviews').update({ is_visible: !r.is_visible }).eq('id', r.id);
+    if (togglingId) return;
+    setTogglingId(r.id);
+    const next = !r.is_visible;
+    setList((prev) => prev.map((x) => (x.id === r.id ? { ...x, is_visible: next } : x)));
+    const { error } = await supabase.from('reviews').update({ is_visible: next }).eq('id', r.id);
+    setTogglingId(null);
+    if (error) {
+      setList((prev) => prev.map((x) => (x.id === r.id ? { ...x, is_visible: r.is_visible } : x)));
+      showToast(
+        String(error.message).includes('is_visible')
+          ? 'عمود is_visible غير موجود — شغّل ملف 20260811000000_reviews_management.sql في Supabase SQL Editor أولاً'
+          : `فشل التحديث: ${error.message}`
+      );
+      return;
+    }
+    showToast(next ? 'تم إظهار التقييم في المتجر' : 'تم إخفاء التقييم من المتجر');
     fetchReviews();
   };
 
@@ -2899,9 +2915,12 @@ function ReviewsTab() {
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => toggleVisible(r)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors ${r.is_visible ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                    disabled={togglingId === r.id}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors disabled:opacity-60 ${r.is_visible ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}
                   >
-                    {r.is_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    {togglingId === r.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : r.is_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     {r.is_visible ? 'ظاهر' : 'مخفي'}
                   </button>
                   <button onClick={() => handleDelete(r.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center" title="حذف">
