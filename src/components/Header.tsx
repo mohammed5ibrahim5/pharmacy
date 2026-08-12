@@ -657,13 +657,14 @@ export function Header() {
               className="overflow-x-auto scrollbar-none"
             >
               <div className="max-w-7xl mx-auto px-4 flex items-center gap-2 min-w-max py-1.5">
-                <span
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black shrink-0"
+                <button
+                  onClick={() => navigate({ name: 'categories' })}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black shrink-0 transition-all hover:-translate-y-0.5"
                   style={{ color: themeColors.accentColor }}
                 >
                   <Zap className="w-3.5 h-3.5 animate-pulse" />
                   {t('تصفح حسب الفئة')}
-                </span>
+                </button>
                 <div className="w-px h-5 shrink-0" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
                 {mergeCategories(categories).map((cat) => {
                   const color = categoryColor(cat.slug);

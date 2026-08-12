@@ -26,6 +26,8 @@
   'تصفح الأقسام والمجموعات': 'Browse sections & collections',
   'تسوق حسب الفئة': 'Shop by category',
   'عرض جميع الأقسام': 'View all sections',
+  'جميع الأقسام': 'All categories',
+  'تصفح جميع الأقسام الطبية في مكان واحد واختر ما يناسبك': 'Browse all medical sections in one place and pick what suits you',
   'الصيدليات المتاحة بجوارك': 'Pharmacies near you',
   'تصفح الصيدليات حسب تصنيف احتياجك': 'Browse pharmacies based on your needs',
   '{0} صيدلية معتمدة': '{0} certified pharmacies',

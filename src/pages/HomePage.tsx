@@ -53,7 +53,7 @@ import { MostSearched } from '@/components/MostSearched';
 import { Reveal } from '@/components/Reveal';
 import { CountUp, parseStatValue } from '@/components/CountUp';
 import { TrustSignals } from '@/components/TrustSignals';
-import { categoryColor, categoryGradient, categoryIcon, mergeCategories } from '@/lib/categoryStyles';
+import { categoryColor, categoryGradient, categoryIcon, mergeCategories, orderedCategories } from '@/lib/categoryStyles';
 import type { Pharmacy, Product, Category } from '@/types';
 
 interface SpeechRecognitionLike {
@@ -86,30 +86,6 @@ const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string
   { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: true, autoSource: 'customers', visible: true, showOnline: true, showOffline: true },
   { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck', auto: false, visible: true, showOnline: true, showOffline: true },
 ];
-
-const CATEGORY_PRIORITY: Record<string, number> = {
-  painkillers: 1,
-  'cold-flu': 2,
-  antibiotics: 3,
-  vitamins: 4,
-  supplements: 5,
-  digestive: 6,
-  'skin-care': 7,
-  'baby-care': 8,
-  ophthalmology: 9,
-  orthopedic: 10,
-  'mental-health': 11,
-  general: 12,
-};
-
-function orderedCategories(cats: Category[]): Category[] {
-  return [...cats].sort((a, b) => {
-    const pa = CATEGORY_PRIORITY[a.slug] ?? 100;
-    const pb = CATEGORY_PRIORITY[b.slug] ?? 100;
-    if (pa !== pb) return pa - pb;
-    return (a.name || '').localeCompare(b.name || '', 'ar');
-  });
-}
 
 function statIcon(key: string): React.ReactNode {
   switch (key) {
@@ -173,6 +149,17 @@ export function HomePage() {
   const [heroFloatingVisible, setHeroFloatingVisible] = useState(true);
 
   const categoriesScrollRef = useRef<HTMLDivElement>(null);
+  const [categoriesScrollable, setCategoriesScrollable] = useState(false);
+  const [categoriesProgress, setCategoriesProgress] = useState(0);
+
+  const updateCategoriesScrollState = () => {
+    const el = categoriesScrollRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setCategoriesScrollable(max > 4);
+    setCategoriesProgress(max > 4 ? Math.min(100, Math.max(0, (Math.abs(el.scrollLeft) / max) * 100)) : 0);
+  };
+
   const scrollCategories = (direction: 'left' | 'right') => {
     if (!categoriesScrollRef.current) return;
     categoriesScrollRef.current.scrollBy({
@@ -180,6 +167,15 @@ export function HomePage() {
       behavior: 'smooth',
     });
   };
+
+  useEffect(() => {
+    updateCategoriesScrollState();
+  }, [loadingData, categories]);
+
+  useEffect(() => {
+    window.addEventListener('resize', updateCategoriesScrollState);
+    return () => window.removeEventListener('resize', updateCategoriesScrollState);
+  }, []);
 
   // Manual section membership from admin (pharmacy_sections)
   const [pharmacySections, setPharmacySections] = useState<Record<string, string[]>>({});
@@ -759,22 +755,32 @@ export function HomePage() {
               <div className="hidden md:flex items-center gap-1.5">
                 <button
                   onClick={() => scrollCategories('left')}
+                  disabled={!categoriesScrollable}
                   aria-label="Scroll categories"
-                  className="w-9 h-9 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-300 hover:shadow-sm transition-all"
+                  className="w-9 h-9 rounded-full text-white flex items-center justify-center transition-all duration-300 disabled:opacity-35 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:active:scale-90"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
+                    boxShadow: `0 8px 18px -8px ${themeColors.primaryColor}cc`,
+                  }}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => scrollCategories('right')}
+                  disabled={!categoriesScrollable}
                   aria-label="Scroll categories"
-                  className="w-9 h-9 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:text-slate-900 hover:border-slate-300 hover:shadow-sm transition-all"
+                  className="w-9 h-9 rounded-full text-white flex items-center justify-center transition-all duration-300 disabled:opacity-35 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:active:scale-90"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
+                    boxShadow: `0 8px 18px -8px ${themeColors.primaryColor}cc`,
+                  }}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
 
               <button
-                onClick={() => navigate({ name: 'search', query: '' })}
+                onClick={() => navigate({ name: 'categories' })}
                 className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-extrabold text-white transition-all duration-300 hover:brightness-110"
                 style={{
                   backgroundColor: themeColors.primaryColor,
@@ -799,42 +805,60 @@ export function HomePage() {
               ))}
             </div>
           ) : (
-          <div
-            ref={categoriesScrollRef}
-            className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
-            style={{ scrollSnapType: 'x mandatory' }}
-          >
-            {orderedCategories(mergeCategories(categories)).map((cat) => {
-              const color = categoryColor(cat.slug);
-              const gradient = categoryGradient(cat.slug);
-              const Icon = categoryIcon(cat.slug, cat.icon);
-              const count = categoryCounts[cat.id] || 0;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => navigate({ name: 'category', slug: cat.slug })}
-                  className="group relative flex flex-col items-center justify-center shrink-0 w-[110px] sm:w-[120px] min-h-[104px] rounded-2xl text-white text-center overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-95"
-                  style={{
-                    background: gradient,
-                    boxShadow: `0 10px 22px -14px ${color}dd`,
-                    scrollSnapAlign: 'start',
-                  }}
-                >
-                  <span className="absolute -end-6 -top-6 w-20 h-20 rounded-full bg-white/15 blur-xl pointer-events-none group-hover:scale-150 transition-transform duration-500" />
-                  <span className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-white/0 via-white/60 to-white/0 opacity-60 pointer-events-none" />
+          <div className="relative">
+            <div
+              ref={categoriesScrollRef}
+              onScroll={updateCategoriesScrollState}
+              className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
+              style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {orderedCategories(mergeCategories(categories)).map((cat) => {
+                const color = categoryColor(cat.slug);
+                const gradient = categoryGradient(cat.slug);
+                const Icon = categoryIcon(cat.slug, cat.icon);
+                const count = categoryCounts[cat.id] || 0;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => navigate({ name: 'category', slug: cat.slug })}
+                    className="group relative flex flex-col items-center justify-center shrink-0 w-[110px] sm:w-[120px] min-h-[104px] rounded-2xl text-white text-center overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-95"
+                    style={{
+                      background: gradient,
+                      boxShadow: `0 10px 22px -14px ${color}dd`,
+                      scrollSnapAlign: 'start',
+                    }}
+                  >
+                    <span className="absolute -end-6 -top-6 w-20 h-20 rounded-full bg-white/15 blur-xl pointer-events-none group-hover:scale-150 transition-transform duration-500" />
+                    <span className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-white/0 via-white/60 to-white/0 opacity-60 pointer-events-none" />
 
-                  <div className="w-10 h-10 rounded-xl bg-white/20 border border-white/30 backdrop-blur-sm flex items-center justify-center shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <h3 className="mt-2 w-full px-2 text-[11px] font-extrabold leading-tight line-clamp-1 drop-shadow-sm">
-                    {lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}
-                  </h3>
-                  <span className="mt-1 text-[9px] font-bold text-white/80 whitespace-nowrap">
-                    {count > 0 ? t('{0} منتج', [count]) : t('متوفر الآن')}
-                  </span>
-                </button>
-              );
-            })}
+                    <div className="w-10 h-10 rounded-xl bg-white/20 border border-white/30 backdrop-blur-sm flex items-center justify-center shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="mt-2 w-full px-2 text-[11px] font-extrabold leading-tight line-clamp-1 drop-shadow-sm">
+                      {lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}
+                    </h3>
+                    <span className="mt-1 text-[9px] font-bold text-white/80 whitespace-nowrap">
+                      {count > 0 ? t('{0} منتج', [count]) : t('متوفر الآن')}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Scroll progress indicator */}
+            {categoriesScrollable && (
+              <div className="flex items-center gap-3 mt-3.5 max-w-xs mx-auto">
+                <span className="h-1 flex-1 rounded-full bg-slate-200/80 overflow-hidden">
+                  <span
+                    className="block h-full rounded-full transition-[width] duration-200 ease-out"
+                    style={{
+                      width: `${categoriesProgress}%`,
+                      background: `linear-gradient(90deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
+                    }}
+                  />
+                </span>
+              </div>
+            )}
           </div>
           )}
         </div>

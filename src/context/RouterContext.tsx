@@ -7,6 +7,7 @@ type Route =
   | { name: 'search'; query: string }
   | { name: 'pharmacy'; id: string }
   | { name: 'category'; slug: string }
+  | { name: 'categories' }
   | { name: 'account'; tab: AccountTab };
 
 interface RouterContextType {
@@ -34,6 +35,7 @@ function parseHash(): Route {
   if (parts[0] === 'search' && parts[1]) return { name: 'search', query: decodeURIComponent(parts[1]) };
   if (parts[0] === 'pharmacy' && parts[1]) return { name: 'pharmacy', id: parts[1] };
   if (parts[0] === 'category' && parts[1]) return { name: 'category', slug: parts[1] };
+  if (parts[0] === 'categories') return { name: 'categories' };
   if (parts[0] === 'account') return { name: 'account', tab: parseAccountTab(parts[1]) };
   return { name: 'home' };
 }
@@ -44,6 +46,7 @@ function routeToHash(route: Route): string {
     case 'search': return `#/search/${encodeURIComponent(route.query)}`;
     case 'pharmacy': return `#/pharmacy/${route.id}`;
     case 'category': return `#/category/${route.slug}`;
+    case 'categories': return '#/categories';
     case 'account': return `#/account/${route.tab}`;
   }
 }

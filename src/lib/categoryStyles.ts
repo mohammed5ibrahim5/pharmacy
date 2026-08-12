@@ -71,6 +71,30 @@ const FALLBACK_ICONS: LucideIcon[] = [
   Pill, Shield, Sparkles, Stethoscope, Heart, Droplet, Baby, Activity, Brain, Bone, Eye, Thermometer,
 ];
 
+export const CATEGORY_PRIORITY: Record<string, number> = {
+  painkillers: 1,
+  'cold-flu': 2,
+  antibiotics: 3,
+  vitamins: 4,
+  supplements: 5,
+  digestive: 6,
+  'skin-care': 7,
+  'baby-care': 8,
+  ophthalmology: 9,
+  orthopedic: 10,
+  'mental-health': 11,
+  general: 12,
+};
+
+export function orderedCategories(cats: Category[]): Category[] {
+  return [...cats].sort((a, b) => {
+    const pa = CATEGORY_PRIORITY[a.slug] ?? 100;
+    const pb = CATEGORY_PRIORITY[b.slug] ?? 100;
+    if (pa !== pb) return pa - pb;
+    return (a.name || '').localeCompare(b.name || '', 'ar');
+  });
+}
+
 export interface KnownCategory {
   slug: string;
   name: string;

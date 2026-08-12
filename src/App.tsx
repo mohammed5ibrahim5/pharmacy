@@ -19,6 +19,7 @@ import { HomePage } from '@/pages/HomePage';
 import { SearchPage } from '@/pages/SearchPage';
 import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
 import { CategoryPage } from '@/pages/CategoryPage';
+import { AllCategoriesPage } from '@/pages/AllCategoriesPage';
 import { AccountPage } from '@/pages/AccountPage';
 import { Loader2, Cross, ShieldAlert } from 'lucide-react';
 
@@ -116,6 +117,7 @@ function SiteContent() {
         {route.name === 'search' && <SearchPage key={refreshKey} query={route.query} />}
         {route.name === 'pharmacy' && <PharmacyDetailPage id={route.id} />}
         {route.name === 'category' && <CategoryPage slug={route.slug} />}
+        {route.name === 'categories' && <AllCategoriesPage />}
         {route.name === 'account' && <AccountPage tab={route.tab} />}
       </main>
       <Footer />
