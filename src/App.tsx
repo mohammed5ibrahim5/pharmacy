@@ -9,7 +9,6 @@ import { FavoritesProvider } from '@/context/FavoritesContext';
 import { OrderProvider } from '@/context/OrderContext';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { CategoryNavBar } from '@/components/CategoryNavBar';
 import { OrderModal } from '@/components/OrderModal';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
 import { FloatingActions } from '@/components/FloatingActions';
@@ -107,13 +106,11 @@ function PharmacyAdminRoute() {
 function SiteContent() {
   const { route, refreshKey } = useRouter();
   const { dir } = useLanguage();
-  const { headerConfig } = useSettings();
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50" dir={dir}>
       <AnnouncementBar />
       <Header />
-      {headerConfig.showCategoryPills && <CategoryNavBar />}
       <main className="flex-1 pb-20 lg:pb-0">
         {route.name === 'home' && <HomePage />}
         {route.name === 'search' && <SearchPage key={refreshKey} query={route.query} />}
