@@ -1,4 +1,4 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, Factory, FlaskConical, AlertTriangle, Scale, BellRing, BellOff, Flame, Plus, Minus, Info, ChevronDown, ShieldAlert, Clock, Eye } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, FlaskConical, BellRing, BellOff, Flame, Plus, Minus, Eye } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -6,7 +6,6 @@ import { useFavorites } from '@/context/FavoritesContext';
 import { useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { addStockAlert, removeStockAlert } from '@/lib/loyalty';
-import { PriceCompareModal } from '@/components/PriceCompareModal';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface Props {
@@ -22,8 +21,6 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
   const { cart, openOrder, addToCart, updateCartQty } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { user } = useAuth();
-  const [compareOpen, setCompareOpen] = useState(false);
-  const [medInfoOpen, setMedInfoOpen] = useState(false);
   const [alerting, setAlerting] = useState(false);
   const [alerted, setAlerted] = useState(false);
   const [justAdded, setJustAdded] = useState(false);

@@ -1,4 +1,4 @@
-import { Home, Search, User, Heart, ArrowUp, MessageCircle, ShoppingCart } from 'lucide-react';
+import { Home, Search, User, Heart, MessageCircle, ShoppingCart } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useCustomer } from '@/context/CustomerContext';

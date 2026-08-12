@@ -33,10 +33,6 @@ import {
   Save,
   Baby,
   X,
-  CreditCard,
-  BellRing,
-  BellOff,
-  ChevronRight,
   TrendingUp,
   AlertTriangle,
 } from 'lucide-react';
@@ -506,7 +502,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       const { error } = await supabase.from('family_members').insert(payload);
       if (error) showToast(localizedError(error.message, lang));
     }
-    familySaving(false);
+    setFamilySaving(false);
     setEditingMember(null);
     setFamForm({ name: '', relation: '', age: '', weight: '' });
     fetchFamilyMembers();
@@ -1907,6 +1903,20 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
           )}
         </div>
       </div>
+
+      {reviewOrder && (
+        <OrderReviewModal
+          orderId={reviewOrder.id}
+          pharmacyId={reviewOrder.pharmacy_id}
+          pharmacyName={reviewOrder.pharmacy?.name || ''}
+          productName={reviewOrder.product?.name || ''}
+          onClose={() => setReviewOrder(null)}
+          onSubmitted={() => setReviewOrder(null)}
+        />
+      )}
+      {trackingOrder && (
+        <OrderTrackingModal order={trackingOrder} onClose={() => setTrackingOrder(null)} />
+      )}
     </div>
   );
 }

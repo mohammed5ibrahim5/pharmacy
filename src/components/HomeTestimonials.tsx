@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Star, Quote, BadgeCheck, MessageSquareQuote, ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguage, type Lang, type TranslateArgs } from '@/context/LanguageContext';
 import { localizedDate } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import type { Review } from '@/types';
@@ -210,8 +210,8 @@ function ReviewCard({
   review: Review;
   index: number;
   themeColors: ReturnType<typeof useSettings>['themeColors'];
-  lang: string;
-  t: (key: string, vars?: unknown[]) => string;
+  lang: Lang;
+  t: (str: string, args?: TranslateArgs) => string;
 }) {
   return (
     <div

@@ -2285,8 +2285,13 @@ function CategoriesTab() {
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from('categories').select('*').order('name');
-    setCategories((data || []) as Category[]);
+    const { data, error } = await supabase.from('categories').select('*').order('sort_order', { ascending: true, nullsFirst: false });
+    if (error || !data) {
+      const { data: fallback } = await supabase.from('categories').select('*').order('name');
+      setCategories((fallback || []) as Category[]);
+    } else {
+      setCategories((data || []) as Category[]);
+    }
     setLoading(false);
   }, []);
 
@@ -2328,12 +2333,12 @@ function CategoriesTab() {
 
 function CategoryForm({ category, onClose, onSaved }: { category: Category | null; onClose: () => void; onSaved: () => void }) {
   const { settings } = useSettings();
-  const [form, setForm] = useState({ name: category?.name || '', name_en: category?.name_en || '', slug: category?.slug || '', icon: category?.icon || '' });
+  const [form, setForm] = useState({ name: category?.name || '', name_en: category?.name_en || '', slug: category?.slug || '', icon: category?.icon || '', sort_order: category?.sort_order?.toString() || '' });
   const [saving, setSaving] = useState(false);
   const handleSave = async () => {
     setSaving(true);
     const slug = form.slug || form.name_en?.toLowerCase().replace(/\s+/g, '-') || form.name.trim().replace(/\s+/g, '-');
-    const payload = { ...form, slug };
+    const payload = { ...form, slug, sort_order: form.sort_order.trim() ? Number(form.sort_order.trim()) : null };
     if (category) { await supabase.from('categories').update(payload).eq('id', category.id); } else { await supabase.from('categories').insert(payload); }
     setSaving(false); onSaved();
   };
@@ -2343,6 +2348,7 @@ function CategoryForm({ category, onClose, onSaved }: { category: Category | nul
         <Field label="الاسم بالعربية *"><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} /></Field>
         <Field label="الاسم بالإنجليزية"><input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} className={inputClass} dir="ltr" /></Field>
         <Field label="المعرف (slug)"><input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className={inputClass} dir="ltr" placeholder="auto-generated if empty" /></Field>
+        <Field label="ترتيب الظهور (رقم صغير = الأول)"><input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} className={inputClass} dir="ltr" placeholder="اختياري" /></Field>
         <div className="flex gap-3 pt-4 border-t border-gray-100">
           <button onClick={handleSave} disabled={saving || !form.name} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-50" style={{ backgroundColor: settings.primary_color }}><Save className="w-4 h-4" />{saving ? 'جاري الحفظ...' : 'حفظ'}</button>
           <button onClick={onClose} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50">إلغاء</button>
