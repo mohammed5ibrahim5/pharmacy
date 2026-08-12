@@ -701,80 +701,120 @@ export function HomePage() {
 
       {/* ==================== CATEGORIES SECTION ==================== */}
       <Reveal>
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-          <div>
-            <div
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold mb-2"
+      <section className="relative overflow-hidden py-12 sm:py-14">
+        {/* Section background */}
+        <div
+          className="absolute inset-0 -z-10 pointer-events-none"
+          style={{
+            background: `radial-gradient(60rem 20rem at 12% 0%, ${themeColors.primaryColor}0d 0%, transparent 55%), radial-gradient(60rem 20rem at 88% 100%, ${themeColors.secondaryColor}0d 0%, transparent 55%)`,
+          }}
+        />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-9">
+            <div>
+              <div
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold mb-2.5 shadow-sm"
+                style={{
+                  backgroundColor: `${themeColors.primaryColor}12`,
+                  color: themeColors.primaryColor,
+                  border: `1px solid ${themeColors.primaryColor}26`,
+                }}
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                {t('تصفح الأقسام الطبية')}
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">{t('تسوق حسب الفئة')}</h2>
+              <div className="mt-3 flex items-center gap-1.5">
+                <span
+                  className="h-1.5 w-10 rounded-full"
+                  style={{ background: `linear-gradient(90deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}
+                />
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: themeColors.accent2Color }} />
+              </div>
+              <p className="text-sm text-slate-500 mt-2.5 font-bold">{t('اختر القسم اللي يناسب احتياجك وابدأ التسوق')}</p>
+            </div>
+
+            <button
+              onClick={() => navigate({ name: 'search', query: '' })}
+              className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-extrabold text-white transition-all duration-300 hover:-translate-y-0.5 self-start sm:self-auto"
               style={{
-                backgroundColor: `${themeColors.primaryColor}15`,
-                color: themeColors.primaryColor
+                backgroundColor: themeColors.primaryColor,
+                boxShadow: `0 12px 24px -10px ${themeColors.primaryColor}cc`,
               }}
             >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              {t('تصفح الأقسام الطبية')}
+              <span>{t('عرض جميع الأقسام')}</span>
+              {dir === 'ltr' ? (
+                <ChevronRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+              ) : (
+                <ChevronLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
+              )}
+            </button>
+          </div>
+
+          {loadingData && categories.length === 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="skeleton rounded-[1.6rem] h-40" />
+              ))}
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{t('تسوق حسب الفئة')}</h2>
-            <p className="text-sm text-slate-500 mt-1.5 font-bold">{t('اختر القسم اللي يناسب احتياجك وابدأ التسوق')}</p>
-          </div>
-
-          <button
-            onClick={() => navigate({ name: 'search', query: '' })}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-xs font-extrabold text-gray-800 hover:bg-slate-50 transition-all shadow-2xs group"
-          >
-            <span>{t('عرض جميع الأقسام')}</span>
-            {dir === 'ltr' ? (
-              <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:translate-x-1" />
-            ) : (
-              <ChevronLeft className="w-4 h-4 text-gray-400 group-hover:text-teal-600 transition-transform group-hover:-translate-x-1" />
-            )}
-          </button>
-        </div>
-
-        {loadingData && categories.length === 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="skeleton rounded-3xl h-32" />
-            ))}
-          </div>
-        ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
-          {mergeCategories(categories).map((cat) => {
-            const color = categoryColor(cat.slug);
-            const gradient = categoryGradient(cat.slug);
-            const Icon = categoryIcon(cat.slug, cat.icon);
-            const count = categoryCounts[cat.id] || 0;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => navigate({ name: 'category', slug: cat.slug })}
-                className="group relative flex flex-col items-start justify-between p-4 rounded-3xl text-white overflow-hidden text-start transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl active:scale-95 min-h-[7.5rem]"
-                style={{ background: gradient, boxShadow: `0 12px 28px -14px ${color}cc` }}
-              >
-                <span className="absolute -end-6 -top-6 w-24 h-24 rounded-full bg-white/10 blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
-                <div
-                  className="w-11 h-11 rounded-2xl bg-white/20 border border-white/30 backdrop-blur-sm flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+          ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
+            {mergeCategories(categories).map((cat) => {
+              const color = categoryColor(cat.slug);
+              const gradient = categoryGradient(cat.slug);
+              const Icon = categoryIcon(cat.slug, cat.icon);
+              const count = categoryCounts[cat.id] || 0;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => navigate({ name: 'category', slug: cat.slug })}
+                  className="group relative flex flex-col justify-between p-4 rounded-[1.6rem] text-white overflow-hidden text-start transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl active:scale-95 min-h-[10rem]"
+                  style={{
+                    background: gradient,
+                    boxShadow: `0 14px 30px -16px ${color}dd`,
+                  }}
                 >
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div className="mt-3 w-full">
-                  <h3 className="text-sm font-black leading-tight line-clamp-1 drop-shadow-sm">
-                    {lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}
-                  </h3>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[11px] font-bold text-white/85">
-                      {count > 0 ? t('{0} منتج', [count]) : t('متوفر الآن')}
-                    </span>
-                    <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:-translate-x-1 opacity-0 group-hover:opacity-100">
-                      {dir === 'ltr' ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+                  {/* top shine line */}
+                  <span className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-white/0 via-white/60 to-white/0 opacity-70 pointer-events-none" />
+                  {/* soft glow blob */}
+                  <span className="absolute -end-8 -top-8 w-28 h-28 rounded-full bg-white/15 blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-700" />
+                  {/* decorative ring */}
+                  <span className="absolute start-1/2 -bottom-5 w-16 h-16 rounded-full border border-white/20 pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+                  {/* plus watermark */}
+                  <span
+                    className="absolute -end-1 -bottom-2.5 opacity-15 pointer-events-none select-none leading-none"
+                    style={{ fontSize: 44, fontFamily: 'Arial, sans-serif' }}
+                  >
+                    +
+                  </span>
+
+                  <div className="flex items-start justify-between">
+                    <div className="w-11 h-11 rounded-2xl bg-white/20 border border-white/30 backdrop-blur-sm flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center transition-all duration-300 opacity-80 group-hover:opacity-100 group-hover:bg-white group-hover:-translate-x-0.5 shrink-0">
+                      {dir === 'ltr' ? <ChevronRight className="w-3.5 h-3.5 group-hover:text-slate-900" /> : <ChevronLeft className="w-3.5 h-3.5 group-hover:text-slate-900" />}
                     </span>
                   </div>
-                </div>
-              </button>
-            );
-          })}
+
+                  <div className="mt-3">
+                    <h3 className="text-sm font-black leading-tight line-clamp-2 drop-shadow-sm">
+                      {lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}
+                    </h3>
+                    <div className="mt-1.5 inline-flex items-center rounded-full bg-white/15 px-2 py-0.5 border border-white/20">
+                      <span className="text-[10px] font-bold text-white/90 whitespace-nowrap">
+                        {count > 0 ? t('{0} منتج', [count]) : t('متوفر الآن')}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          )}
         </div>
-        )}
       </section>
       </Reveal>
 
