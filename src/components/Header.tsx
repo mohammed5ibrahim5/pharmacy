@@ -161,11 +161,11 @@ export function Header() {
   }, [cartCount]);
 
   const searchRef = useRef<HTMLDivElement>(null);
-  const categoryScrollRef = useRef<HTMLDivElement>(null);
-  const categoryTrackRef = useRef<HTMLDivElement>(null);
-  const catDragStart = useRef({ x: 0, ratio: 0 });
-  const [catDragging, setCatDragging] = useState(false);
+  const categoryScrollRef = useRef<HTMLDivElement | null>(null);
+  const catWheelCleanupRef = useRef<(() => void) | null>(null);
   const [catScroll, setCatScroll] = useState({ left: 0, width: 100, visible: false });
+  const [catIndicatorHidden, setCatIndicatorHidden] = useState(false);
+  const [catHovered, setCatHovered] = useState(false);
 
   const updateCatScroll = useCallback(() => {
     const el = categoryScrollRef.current;
@@ -181,43 +181,45 @@ export function Header() {
     setCatScroll({ left, width, visible: true });
   }, []);
 
-  const setCatScrollRatio = useCallback((ratio: number) => {
-    const el = categoryScrollRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    if (max <= 4) return;
-    const clamped = Math.min(1, Math.max(0, ratio));
-    const isRTL = getComputedStyle(el).direction === 'rtl';
-    el.scrollLeft = (isRTL ? -1 : 1) * clamped * max;
+  const categoryScrollRefCallback = useCallback((node: HTMLDivElement | null) => {
+    categoryScrollRef.current = node;
+    if (catWheelCleanupRef.current) {
+      catWheelCleanupRef.current();
+      catWheelCleanupRef.current = null;
+    }
+    if (!node) return;
+    const onWheel = (e: WheelEvent) => {
+      const max = node.scrollWidth - node.clientWidth;
+      if (max <= 4) return;
+      e.preventDefault();
+      const dir = getComputedStyle(node).direction === 'rtl' ? -1 : 1;
+      node.scrollLeft += dir * (e.deltaY + e.deltaX);
+      setCatIndicatorHidden(false);
+    };
+    node.addEventListener('wheel', onWheel, { passive: false });
+    catWheelCleanupRef.current = () => node.removeEventListener('wheel', onWheel);
   }, []);
 
-  const handleCatTrackPointerDown = useCallback((e: React.PointerEvent) => {
-    const el = categoryScrollRef.current;
-    const track = categoryTrackRef.current;
-    if (!el || !track) return;
-    const max = el.scrollWidth - el.clientWidth;
-    if (max <= 4) return;
-    const rect = track.getBoundingClientRect();
-    const tw = catScroll.width / 100;
-    const clickFrac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    const ratio = (clickFrac - tw / 2) / (1 - tw);
-    setCatScrollRatio(ratio);
-    catDragStart.current = { x: e.clientX, ratio };
-    setCatDragging(true);
-    track.setPointerCapture?.(e.pointerId);
-  }, [catScroll.width, setCatScrollRatio]);
-
-  const handleCatTrackPointerMove = useCallback((e: React.PointerEvent) => {
-    const track = categoryTrackRef.current;
-    if (!track || !catDragging) return;
-    const rect = track.getBoundingClientRect();
-    const delta = (e.clientX - catDragStart.current.x) / rect.width;
-    setCatScrollRatio(catDragStart.current.ratio + delta);
-  }, [catDragging, setCatScrollRatio]);
-
-  const handleCatTrackPointerEnd = useCallback(() => {
-    setCatDragging(false);
-  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!catHovered) return;
+      const el = categoryScrollRef.current;
+      if (!el) return;
+      const dir = getComputedStyle(el).direction === 'rtl' ? -1 : 1;
+      const step = Math.min(320, Math.max(120, el.clientWidth * 0.8));
+      const move = (delta: number) => {
+        e.preventDefault();
+        el.scrollBy({ left: delta, behavior: 'smooth' });
+        setCatIndicatorHidden(false);
+      };
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(dir * step);
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') move(-dir * step);
+      else if (e.key === 'Home') move(-el.scrollLeft);
+      else if (e.key === 'End') move(dir * (el.scrollWidth - el.clientWidth) - el.scrollLeft);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [catHovered]);
 
   useEffect(() => {
     updateCatScroll();
@@ -725,8 +727,13 @@ export function Header() {
             }}
           >
             <div
-              ref={categoryScrollRef}
+              ref={categoryScrollRefCallback}
               onScroll={updateCatScroll}
+              onMouseEnter={() => {
+                setCatHovered(true);
+                setCatIndicatorHidden(false);
+              }}
+              onMouseLeave={() => setCatHovered(false)}
               className="overflow-x-auto scrollbar-none"
             >
               <div className="max-w-7xl mx-auto px-4 flex items-center gap-2 min-w-max py-1.5">
@@ -771,20 +778,15 @@ export function Header() {
               </div>
             </div>
 
-            {catScroll.visible && (
+            {catScroll.visible && !catIndicatorHidden && (
               <div
-                ref={categoryTrackRef}
-                onPointerDown={handleCatTrackPointerDown}
-                onPointerMove={handleCatTrackPointerMove}
-                onPointerUp={handleCatTrackPointerEnd}
-                onPointerCancel={handleCatTrackPointerEnd}
-                className={`relative h-2.5 select-none ${catDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                style={{ touchAction: 'none' }}
-                title={t('اسحب أو اضغط للتنقل بين الفئات')}
+                onClick={() => setCatIndicatorHidden(true)}
+                className="relative h-2.5 select-none cursor-default"
+                title={t('دوس عليه للاختفاء — حرك الفئات بالعجلة أو أسهم الكيبورد')}
               >
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full" style={{ backgroundColor: `${themeColors.headerNavText}20` }}>
                   <div
-                    className={`absolute top-0 h-full rounded-full ${catDragging ? '' : 'transition-all duration-150'}`}
+                    className="absolute top-0 h-full rounded-full transition-all duration-150"
                     style={{
                       left: `${catScroll.left}%`,
                       width: `${catScroll.width}%`,
