@@ -146,5 +146,6 @@
   'لا تملك صلاحية لهذه العملية': 'You do not have permission for this action',
   'خطأ في قاعدة البيانات': 'Database error',
   'حدث خطأ غير متوقع': 'An unexpected error occurred',
-  'دوس عليه للاختفاء — حرك الفئات بالعجلة أو أسهم الكيبورد': 'Click to hide — move categories with the mouse wheel or arrow keys',
+  'تحريك الفئات للبداية': 'Move categories to the start',
+  'تحريك الفئات للنهاية': 'Move categories to the end',
 };

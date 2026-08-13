@@ -18,7 +18,9 @@ import {
   ShoppingCart,
   Moon,
   Sun,
-  Languages
+  Languages,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useRouter } from '@/context/RouterContext';
 import { useSettings } from '@/context/SettingsContext';
@@ -163,8 +165,7 @@ export function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
   const categoryScrollRef = useRef<HTMLDivElement | null>(null);
   const catWheelCleanupRef = useRef<(() => void) | null>(null);
-  const [catScroll, setCatScroll] = useState({ left: 0, width: 100, visible: false });
-  const [catIndicatorHidden, setCatIndicatorHidden] = useState(false);
+  const [catScroll, setCatScroll] = useState({ visible: false, atStart: true, atEnd: false });
   const [catHovered, setCatHovered] = useState(false);
 
   const updateCatScroll = useCallback(() => {
@@ -172,13 +173,22 @@ export function Header() {
     if (!el) return;
     const max = el.scrollWidth - el.clientWidth;
     if (max <= 4) {
-      setCatScroll((s) => (s.visible ? { left: 0, width: 100, visible: false } : s));
+      setCatScroll({ visible: false, atStart: true, atEnd: false });
       return;
     }
     const current = Math.abs(el.scrollLeft);
-    const width = Math.max(10, (el.clientWidth / el.scrollWidth) * 100);
-    const left = (current / max) * (100 - width);
-    setCatScroll({ left, width, visible: true });
+    setCatScroll({ visible: true, atStart: current <= 2, atEnd: max - current <= 2 });
+  }, []);
+
+  const scrollCatTo = useCallback((dir: 'start' | 'end') => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    if (max <= 4) return;
+    const step = Math.min(400, Math.max(120, el.clientWidth * 0.8));
+    const isRTL = getComputedStyle(el).direction === 'rtl';
+    const target = dir === 'end' ? Math.min(max, Math.abs(el.scrollLeft) + step) : Math.max(0, Math.abs(el.scrollLeft) - step);
+    el.scrollTo({ left: (isRTL ? -1 : 1) * target, behavior: 'smooth' });
   }, []);
 
   const categoryScrollRefCallback = useCallback((node: HTMLDivElement | null) => {
@@ -194,7 +204,6 @@ export function Header() {
       e.preventDefault();
       const dir = getComputedStyle(node).direction === 'rtl' ? -1 : 1;
       node.scrollLeft += dir * (e.deltaY + e.deltaX);
-      setCatIndicatorHidden(false);
     };
     node.addEventListener('wheel', onWheel, { passive: false });
     catWheelCleanupRef.current = () => node.removeEventListener('wheel', onWheel);
@@ -210,7 +219,6 @@ export function Header() {
       const move = (delta: number) => {
         e.preventDefault();
         el.scrollBy({ left: delta, behavior: 'smooth' });
-        setCatIndicatorHidden(false);
       };
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(dir * step);
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') move(-dir * step);
@@ -726,77 +734,99 @@ export function Header() {
               borderColor: `${themeColors.headerNavText}15`
             }}
           >
-            <div
-              ref={categoryScrollRefCallback}
-              onScroll={updateCatScroll}
-              onMouseEnter={() => {
-                setCatHovered(true);
-                setCatIndicatorHidden(false);
-              }}
-              onMouseLeave={() => setCatHovered(false)}
-              className="overflow-x-auto scrollbar-none"
-            >
-              <div className="max-w-7xl mx-auto px-4 flex items-center gap-2 min-w-max py-1.5">
-                <button
-                  onClick={() => navigate({ name: 'categories' })}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black shrink-0 transition-all hover:-translate-y-0.5"
-                  style={{ color: themeColors.accentColor }}
-                >
-                  <Zap className="w-3.5 h-3.5 animate-pulse" />
-                  {t('تصفح حسب الفئة')}
-                </button>
-                <div className="w-px h-5 shrink-0" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
-                {mergeCategories(categories).map((cat) => {
-                  const color = categoryColor(cat.slug);
-                  const Icon = categoryIcon(cat.slug, cat.icon);
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => navigate({ name: 'category', slug: cat.slug })}
-                      className="group flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shrink-0"
-                      style={{
-                        backgroundColor: `${themeColors.headerNavText}10`,
-                        color: themeColors.headerNavText,
-                        borderColor: `${themeColors.headerNavText}20`,
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                      }}
-                    >
-                      <span
-                        className="w-6 h-6 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+            <div className="relative">
+              <div
+                ref={categoryScrollRefCallback}
+                onScroll={updateCatScroll}
+                onMouseEnter={() => setCatHovered(true)}
+                onMouseLeave={() => setCatHovered(false)}
+                className="overflow-x-auto scrollbar-none"
+                style={
+                  catScroll.visible
+                    ? {
+                        WebkitMaskImage: 'linear-gradient(to right, transparent 0, black 40px, black calc(100% - 40px), transparent 100%)',
+                        maskImage: 'linear-gradient(to right, transparent 0, black 40px, black calc(100% - 40px), transparent 100%)'
+                      }
+                    : undefined
+                }
+              >
+                <div className="max-w-7xl mx-auto px-10 sm:px-12 flex items-center gap-2 min-w-max py-1.5">
+                  <button
+                    onClick={() => navigate({ name: 'categories' })}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black shrink-0 transition-all hover:-translate-y-0.5"
+                    style={{ color: themeColors.accentColor }}
+                  >
+                    <Zap className="w-3.5 h-3.5 animate-pulse" />
+                    {t('تصفح حسب الفئة')}
+                  </button>
+                  <div className="w-px h-5 shrink-0" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
+                  {mergeCategories(categories).map((cat) => {
+                    const color = categoryColor(cat.slug);
+                    const Icon = categoryIcon(cat.slug, cat.icon);
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => navigate({ name: 'category', slug: cat.slug })}
+                        className="group flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shrink-0"
                         style={{
-                          backgroundColor: `${color}22`,
-                          color
+                          backgroundColor: `${themeColors.headerNavText}10`,
+                          color: themeColors.headerNavText,
+                          borderColor: `${themeColors.headerNavText}20`,
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                         }}
                       >
-                        <Icon className="w-3.5 h-3.5" />
-                      </span>
-                      <span className="text-xs font-extrabold whitespace-nowrap">{lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}</span>
-                      <ArrowUpLeft className="w-3 h-3 opacity-0 group-hover:opacity-60 -mt-1 -ms-0.5 transition-opacity" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {catScroll.visible && !catIndicatorHidden && (
-              <div
-                onClick={() => setCatIndicatorHidden(true)}
-                className="relative h-2.5 select-none cursor-default"
-                title={t('دوس عليه للاختفاء — حرك الفئات بالعجلة أو أسهم الكيبورد')}
-              >
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full" style={{ backgroundColor: `${themeColors.headerNavText}20` }}>
-                  <div
-                    className="absolute top-0 h-full rounded-full transition-all duration-150"
-                    style={{
-                      left: `${catScroll.left}%`,
-                      width: `${catScroll.width}%`,
-                      backgroundColor: 'rgba(255,255,255,0.95)',
-                      boxShadow: '0 0 10px rgba(255,255,255,0.55), 0 1px 3px rgba(0,0,0,0.25)'
-                    }}
-                  />
+                        <span
+                          className="w-6 h-6 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+                          style={{
+                            backgroundColor: `${color}22`,
+                            color
+                          }}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                        </span>
+                        <span className="text-xs font-extrabold whitespace-nowrap">{lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}</span>
+                        <ArrowUpLeft className="w-3 h-3 opacity-0 group-hover:opacity-60 -mt-1 -ms-0.5 transition-opacity" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            )}
+
+              {catScroll.visible && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => scrollCatTo('start')}
+                    disabled={catScroll.atStart}
+                    aria-label={t('تحريك الفئات للبداية')}
+                    className="absolute top-1/2 -translate-y-1/2 start-1 z-10 flex items-center justify-center w-8 h-8 rounded-full border backdrop-blur transition-all duration-300 disabled:opacity-0 disabled:cursor-default enabled:hover:shadow-lg enabled:active:scale-90"
+                    style={{
+                      backgroundColor: `${themeColors.headerNavBg}e6`,
+                      borderColor: `${themeColors.headerNavText}25`,
+                      color: themeColors.headerNavText,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.18)'
+                    }}
+                  >
+                    {lang === 'en' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollCatTo('end')}
+                    disabled={catScroll.atEnd}
+                    aria-label={t('تحريك الفئات للنهاية')}
+                    className="absolute top-1/2 -translate-y-1/2 end-1 z-10 flex items-center justify-center w-8 h-8 rounded-full border backdrop-blur transition-all duration-300 disabled:opacity-0 disabled:cursor-default enabled:hover:shadow-lg enabled:active:scale-90"
+                    style={{
+                      backgroundColor: `${themeColors.headerNavBg}e6`,
+                      borderColor: `${themeColors.headerNavText}25`,
+                      color: themeColors.headerNavText,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.18)'
+                    }}
+                  >
+                    {lang === 'en' ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         )}
 
