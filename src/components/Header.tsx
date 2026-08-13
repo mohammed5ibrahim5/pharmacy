@@ -322,7 +322,7 @@ export function Header() {
 
       {/* 2. MAIN HEADER BAR */}
       <header
-        className="border-b shadow-sm transition-all duration-300 backdrop-blur-xl"
+        className="sticky top-0 z-50 border-b shadow-sm transition-all duration-300 backdrop-blur-xl"
         style={{
           backgroundColor: `${themeColors.headerBg}f2`,
           color: themeColors.headerText,
@@ -644,7 +644,7 @@ export function Header() {
         {/* 3. CATEGORY QUICK NAVIGATION BAR */}
         {headerConfig.showCategoryPills && (
           <div
-            className="sticky top-0 z-40 border-b shadow-sm transition-all duration-300"
+            className="border-b shadow-sm transition-all duration-300"
             style={{
               backgroundColor: themeColors.headerNavBg,
               color: themeColors.headerNavText,
