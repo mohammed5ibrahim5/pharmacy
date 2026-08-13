@@ -754,18 +754,6 @@ export function HomePage() {
               {/* Scroll controls */}
               <div className="hidden md:flex items-center gap-1.5">
                 <button
-                  onClick={() => scrollCategories('left')}
-                  disabled={!categoriesScrollable}
-                  aria-label="Scroll categories"
-                  className="w-9 h-9 rounded-full text-white flex items-center justify-center transition-all duration-300 disabled:opacity-35 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:active:scale-90"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
-                    boxShadow: `0 8px 18px -8px ${themeColors.primaryColor}cc`,
-                  }}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
                   onClick={() => scrollCategories('right')}
                   disabled={!categoriesScrollable}
                   aria-label="Scroll categories"
@@ -776,6 +764,18 @@ export function HomePage() {
                   }}
                 >
                   <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => scrollCategories('left')}
+                  disabled={!categoriesScrollable}
+                  aria-label="Scroll categories"
+                  className="w-9 h-9 rounded-full text-white flex items-center justify-center transition-all duration-300 disabled:opacity-35 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:active:scale-90"
+                  style={{
+                    background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
+                    boxShadow: `0 8px 18px -8px ${themeColors.primaryColor}cc`,
+                  }}
+                >
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
               </div>
 
