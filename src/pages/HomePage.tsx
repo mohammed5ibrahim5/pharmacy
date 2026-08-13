@@ -1056,28 +1056,43 @@ export function HomePage() {
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{t('لماذا نعتبر اختيارك الأول؟')}</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { icon: <MapPin className="w-6 h-6" />, title: 'أقرب صيدلية', desc: 'نحدد موقعك ونعرض الصيدليات الأقرب إليك بالمسافة والوقت', color: themeColors.primaryColor },
-            { icon: <Search className="w-6 h-6" />, title: 'بحث بالباركود والصوت', desc: 'امسح الباركود، صور الروشتة، أو ابحث بالاسم بالصوت بسهولة', color: themeColors.secondaryColor },
-            { icon: <TrendingDown className="w-6 h-6" />, title: 'مقارنة وتوفير', desc: 'قارن الأسعار بين الصيدليات واستفد من العروض والتخفيضات', color: themeColors.accentColor },
-            { icon: <Truck className="w-6 h-6" />, title: 'توصيل مباشر 24/7', desc: 'اطلب الدواء واستلمه فوراً لباب البيت بتغليف محكم وآمن', color: '#0d9488' },
-          ].map((feature, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs hover:shadow-lg transition-all duration-300 group"
-            >
+        {(() => {
+          const features = [
+            { icon: <MapPin className="w-6 h-6" />, title: 'أقرب صيدلية', desc: 'نحدد موقعك ونعرض الصيدليات الأقرب إليك بالمسافة والوقت', color: themeColors.primaryColor, delivery: false },
+            { icon: <Search className="w-6 h-6" />, title: 'بحث بالباركود والصوت', desc: 'امسح الباركود، صور الروشتة، أو ابحث بالاسم بالصوت بسهولة', color: themeColors.secondaryColor, delivery: false },
+            { icon: <TrendingDown className="w-6 h-6" />, title: 'مقارنة وتوفير', desc: 'قارن الأسعار بين الصيدليات واستفد من العروض والتخفيضات', color: themeColors.accentColor, delivery: false },
+            { icon: <Truck className="w-6 h-6" />, title: 'توصيل مباشر 24/7', desc: 'اطلب الدواء واستلمه فوراً لباب البيت بتغليف محكم وآمن', color: '#0d9488', delivery: true },
+          ].filter((f) => !f.delivery || storeConfig.purchasesEnabled);
+          if (features.length === 0) return null;
+          const count = features.length;
+          const gridClass =
+            count <= 1
+              ? 'grid-cols-1 max-w-sm mx-auto'
+              : count === 2
+              ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto'
+              : count === 3
+              ? 'grid-cols-1 sm:grid-cols-3 max-w-4xl mx-auto'
+              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+          return (
+          <div className={`grid ${gridClass} gap-4`}>
+            {features.map((feature, i) => (
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
-                style={{ backgroundColor: `${feature.color}15`, color: feature.color }}
+                key={i}
+                className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs hover:shadow-lg transition-all duration-300 group"
               >
-                {feature.icon}
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
+                  style={{ backgroundColor: `${feature.color}15`, color: feature.color }}
+                >
+                  {feature.icon}
+                </div>
+                <h3 className="font-extrabold text-slate-900 text-base mb-1.5">{t(feature.title)}</h3>
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">{t(feature.desc)}</p>
               </div>
-              <h3 className="font-extrabold text-slate-900 text-base mb-1.5">{t(feature.title)}</h3>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">{t(feature.desc)}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          );
+        })()}
       </section>
       </Reveal>
 
