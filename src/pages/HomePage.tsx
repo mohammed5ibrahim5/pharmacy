@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Search,
   MapPin,
@@ -148,34 +148,84 @@ export function HomePage() {
   const [loadingData, setLoadingData] = useState(true);
   const [heroFloatingVisible, setHeroFloatingVisible] = useState(true);
 
-  const categoriesScrollRef = useRef<HTMLDivElement>(null);
-  const [categoriesScrollable, setCategoriesScrollable] = useState(false);
+  const categoriesScrollRef = useRef<HTMLDivElement | null>(null);
+  const categoriesWheelCleanupRef = useRef<(() => void) | null>(null);
+  const [categoriesScroll, setCategoriesScroll] = useState({ scrollable: false, atStart: true, atEnd: false });
   const [categoriesProgress, setCategoriesProgress] = useState(0);
+  const [categoriesHovered, setCategoriesHovered] = useState(false);
 
-  const updateCategoriesScrollState = () => {
+  const updateCategoriesScrollState = useCallback(() => {
     const el = categoriesScrollRef.current;
     if (!el) return;
     const max = el.scrollWidth - el.clientWidth;
-    setCategoriesScrollable(max > 4);
-    setCategoriesProgress(max > 4 ? Math.min(100, Math.max(0, (Math.abs(el.scrollLeft) / max) * 100)) : 0);
-  };
-
-  const scrollCategories = (direction: 'left' | 'right') => {
-    if (!categoriesScrollRef.current) return;
-    categoriesScrollRef.current.scrollBy({
-      left: direction === 'left' ? -360 : 360,
-      behavior: 'smooth',
+    const scrollable = max > 4;
+    const current = Math.abs(el.scrollLeft);
+    setCategoriesScroll({
+      scrollable,
+      atStart: current <= 2,
+      atEnd: max - current <= 2,
     });
-  };
+    setCategoriesProgress(scrollable ? Math.min(100, Math.max(0, (current / max) * 100)) : 0);
+  }, []);
+
+  const scrollCategoriesToEdge = useCallback((edge: 'start' | 'end') => {
+    const el = categoriesScrollRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    if (max <= 4) return;
+    const isRTL = getComputedStyle(el).direction === 'rtl';
+    const step = Math.min(360, Math.max(140, el.clientWidth * 0.8));
+    const current = Math.abs(el.scrollLeft);
+    const target = edge === 'end' ? Math.min(max, current + step) : Math.max(0, current - step);
+    el.scrollTo({ left: (isRTL ? -1 : 1) * target, behavior: 'smooth' });
+  }, []);
+
+  const categoriesScrollRefCallback = useCallback((node: HTMLDivElement | null) => {
+    categoriesScrollRef.current = node;
+    if (categoriesWheelCleanupRef.current) {
+      categoriesWheelCleanupRef.current();
+      categoriesWheelCleanupRef.current = null;
+    }
+    if (!node) return;
+    const onWheel = (e: WheelEvent) => {
+      const max = node.scrollWidth - node.clientWidth;
+      if (max <= 4) return;
+      e.preventDefault();
+      const dir = getComputedStyle(node).direction === 'rtl' ? -1 : 1;
+      node.scrollLeft += dir * (e.deltaY + e.deltaX);
+    };
+    node.addEventListener('wheel', onWheel, { passive: false });
+    categoriesWheelCleanupRef.current = () => node.removeEventListener('wheel', onWheel);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!categoriesHovered) return;
+      const el = categoriesScrollRef.current;
+      if (!el) return;
+      const dir = getComputedStyle(el).direction === 'rtl' ? -1 : 1;
+      const step = Math.min(320, Math.max(120, el.clientWidth * 0.8));
+      const move = (delta: number) => {
+        e.preventDefault();
+        el.scrollBy({ left: delta, behavior: 'smooth' });
+      };
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(dir * step);
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') move(-dir * step);
+      else if (e.key === 'Home') move(-el.scrollLeft);
+      else if (e.key === 'End') move(dir * (el.scrollWidth - el.clientWidth) - el.scrollLeft);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [categoriesHovered]);
 
   useEffect(() => {
     updateCategoriesScrollState();
-  }, [loadingData, categories]);
+  }, [loadingData, categories, updateCategoriesScrollState]);
 
   useEffect(() => {
     window.addEventListener('resize', updateCategoriesScrollState);
     return () => window.removeEventListener('resize', updateCategoriesScrollState);
-  }, []);
+  }, [updateCategoriesScrollState]);
 
   // Manual section membership from admin (pharmacy_sections)
   const [pharmacySections, setPharmacySections] = useState<Record<string, string[]>>({});
@@ -751,34 +801,6 @@ export function HomePage() {
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
-              {/* Scroll controls */}
-              <div className="hidden md:flex items-center gap-1.5">
-                <button
-                  onClick={() => scrollCategories('right')}
-                  disabled={!categoriesScrollable}
-                  aria-label="Scroll categories"
-                  className="w-9 h-9 rounded-full text-white flex items-center justify-center transition-all duration-300 disabled:opacity-35 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:active:scale-90"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
-                    boxShadow: `0 8px 18px -8px ${themeColors.primaryColor}cc`,
-                  }}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => scrollCategories('left')}
-                  disabled={!categoriesScrollable}
-                  aria-label="Scroll categories"
-                  className="w-9 h-9 rounded-full text-white flex items-center justify-center transition-all duration-300 disabled:opacity-35 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:active:scale-90"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
-                    boxShadow: `0 8px 18px -8px ${themeColors.primaryColor}cc`,
-                  }}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-              </div>
-
               <button
                 onClick={() => navigate({ name: 'categories' })}
                 className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-extrabold text-white transition-all duration-300 hover:brightness-110"
@@ -807,10 +829,22 @@ export function HomePage() {
           ) : (
           <div className="relative">
             <div
-              ref={categoriesScrollRef}
+              ref={categoriesScrollRefCallback}
               onScroll={updateCategoriesScrollState}
+              onMouseEnter={() => setCategoriesHovered(true)}
+              onMouseLeave={() => setCategoriesHovered(false)}
               className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
-              style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              style={{
+                scrollSnapType: 'x mandatory',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                ...(categoriesScroll.scrollable
+                  ? {
+                      WebkitMaskImage: 'linear-gradient(to right, transparent 0, black 36px, black calc(100% - 36px), transparent 100%)',
+                      maskImage: 'linear-gradient(to right, transparent 0, black 36px, black calc(100% - 36px), transparent 100%)'
+                    }
+                  : {}),
+              }}
             >
               {orderedCategories(mergeCategories(categories)).map((cat) => {
                 const color = categoryColor(cat.slug);
@@ -845,8 +879,43 @@ export function HomePage() {
               })}
             </div>
 
+            {categoriesScroll.scrollable && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => scrollCategoriesToEdge('start')}
+                  disabled={categoriesScroll.atStart}
+                  aria-label={t('تحريك الفئات للبداية')}
+                  className="absolute top-1/2 -translate-y-1/2 start-1 z-10 flex items-center justify-center w-9 h-9 rounded-full border backdrop-blur-md transition-all duration-300 disabled:opacity-0 disabled:cursor-default enabled:hover:scale-105 enabled:active:scale-90 enabled:hover:shadow-lg"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.85)',
+                    borderColor: 'rgba(15,23,42,0.12)',
+                    color: themeColors.primaryColor,
+                    boxShadow: '0 6px 16px -8px rgba(15,23,42,0.35)',
+                  }}
+                >
+                  {dir === 'ltr' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollCategoriesToEdge('end')}
+                  disabled={categoriesScroll.atEnd}
+                  aria-label={t('تحريك الفئات للنهاية')}
+                  className="absolute top-1/2 -translate-y-1/2 end-1 z-10 flex items-center justify-center w-9 h-9 rounded-full border backdrop-blur-md transition-all duration-300 disabled:opacity-0 disabled:cursor-default enabled:hover:scale-105 enabled:active:scale-90 enabled:hover:shadow-lg"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.85)',
+                    borderColor: 'rgba(15,23,42,0.12)',
+                    color: themeColors.primaryColor,
+                    boxShadow: '0 6px 16px -8px rgba(15,23,42,0.35)',
+                  }}
+                >
+                  {dir === 'ltr' ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                </button>
+              </>
+            )}
+
             {/* Scroll progress indicator */}
-            {categoriesScrollable && (
+            {categoriesScroll.scrollable && (
               <div className="flex items-center gap-3 mt-3.5 max-w-xs mx-auto">
                 <span className="h-1 flex-1 rounded-full bg-slate-200/80 overflow-hidden">
                   <span

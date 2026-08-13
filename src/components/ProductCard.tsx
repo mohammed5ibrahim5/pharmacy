@@ -4,7 +4,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useRef, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useCustomer } from '@/context/CustomerContext';
 import { addStockAlert, removeStockAlert } from '@/lib/loyalty';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -20,7 +20,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
   const { themeColors, featuresConfig } = useSettings();
   const { cart, openOrder, addToCart, updateCartQty } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
-  const { user } = useAuth();
+  const { user, setAuthModalOpen } = useCustomer();
   const [alerting, setAlerting] = useState(false);
   const [alerted, setAlerted] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
@@ -46,6 +46,10 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
   };
 
   const handleToggleFavorite = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     toggleProductFavorite(product.id);
     setHeartPop(true);
     if (heartTimer.current) window.clearTimeout(heartTimer.current);
@@ -162,7 +166,10 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               type="button"
               onClick={async (e) => {
                 e.stopPropagation();
-                if (!user) return;
+                if (!user) {
+                  setAuthModalOpen(true);
+                  return;
+                }
                 setAlerting(true);
                 try {
                   if (alerted) {

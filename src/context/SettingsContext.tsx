@@ -422,6 +422,45 @@ const DEFAULT_SETTINGS: SiteSettings = {
   updated_at: '',
 };
 
+const SETTINGS_CACHE_KEY = 'pharmacy-settings-cache-v1';
+
+interface SettingsCache {
+  settings: SiteSettings;
+  themeColors: ThemeColors;
+  headerConfig: HeaderConfig;
+  footerConfig: FooterConfig;
+  paymentConfig: PaymentConfig;
+  heroConfig: HeroConfig;
+  howItWorksConfig: HowItWorksConfig;
+  storeConfig: StoreConfig;
+  homepageConfig: HomepageConfig;
+  loyaltyConfig: LoyaltyConfig;
+  featuresConfig: FeaturesConfig;
+  welcomeConfig: WelcomePopupConfig;
+}
+
+function loadSettingsCache(): SettingsCache | null {
+  try {
+    const raw = localStorage.getItem(SETTINGS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SettingsCache;
+    if (!parsed || !parsed.themeColors || !parsed.settings) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function saveSettingsCache(cache: SettingsCache) {
+  try {
+    localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+const settingsCache = loadSettingsCache();
+
 const SettingsContext = createContext<SettingsContextType>({
   settings: DEFAULT_SETTINGS,
   themeColors: DEFAULT_THEME_COLORS,
@@ -442,18 +481,40 @@ const SettingsContext = createContext<SettingsContextType>({
 });
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
-  const [themeColors, setThemeColors] = useState<ThemeColors>(DEFAULT_THEME_COLORS);
-  const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(DEFAULT_HEADER_CONFIG);
-  const [footerConfig, setFooterConfig] = useState<FooterConfig>(DEFAULT_FOOTER_CONFIG);
-  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(DEFAULT_PAYMENT_CONFIG);
-  const [heroConfig, setHeroConfig] = useState<HeroConfig>(DEFAULT_HERO_CONFIG);
-  const [howItWorksConfig, setHowItWorksConfig] = useState<HowItWorksConfig>(DEFAULT_HOW_IT_WORKS_CONFIG);
-  const [storeConfig, setStoreConfig] = useState<StoreConfig>(DEFAULT_STORE_CONFIG);
-  const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(DEFAULT_HOMEPAGE_CONFIG);
-  const [loyaltyConfig, setLoyaltyConfig] = useState<LoyaltyConfig>(DEFAULT_LOYALTY_CONFIG);
-  const [featuresConfig, setFeaturesConfig] = useState<FeaturesConfig>(DEFAULT_FEATURES_CONFIG);
-  const [welcomeConfig, setWelcomeConfig] = useState<WelcomePopupConfig>(DEFAULT_WELCOME_POPUP_CONFIG);
+  const [settings, setSettings] = useState<SiteSettings | null>(settingsCache?.settings ?? null);
+  const [themeColors, setThemeColors] = useState<ThemeColors>(
+    settingsCache?.themeColors ?? DEFAULT_THEME_COLORS,
+  );
+  const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(
+    settingsCache ? { ...DEFAULT_HEADER_CONFIG, ...settingsCache.headerConfig } : DEFAULT_HEADER_CONFIG,
+  );
+  const [footerConfig, setFooterConfig] = useState<FooterConfig>(
+    settingsCache ? { ...DEFAULT_FOOTER_CONFIG, ...settingsCache.footerConfig } : DEFAULT_FOOTER_CONFIG,
+  );
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(
+    settingsCache ? { ...DEFAULT_PAYMENT_CONFIG, ...settingsCache.paymentConfig } : DEFAULT_PAYMENT_CONFIG,
+  );
+  const [heroConfig, setHeroConfig] = useState<HeroConfig>(
+    settingsCache ? { ...DEFAULT_HERO_CONFIG, ...settingsCache.heroConfig } : DEFAULT_HERO_CONFIG,
+  );
+  const [howItWorksConfig, setHowItWorksConfig] = useState<HowItWorksConfig>(
+    settingsCache ? { ...DEFAULT_HOW_IT_WORKS_CONFIG, ...settingsCache.howItWorksConfig } : DEFAULT_HOW_IT_WORKS_CONFIG,
+  );
+  const [storeConfig, setStoreConfig] = useState<StoreConfig>(
+    settingsCache ? { ...DEFAULT_STORE_CONFIG, ...settingsCache.storeConfig } : DEFAULT_STORE_CONFIG,
+  );
+  const [homepageConfig, setHomepageConfig] = useState<HomepageConfig>(
+    settingsCache ? { ...DEFAULT_HOMEPAGE_CONFIG, ...settingsCache.homepageConfig } : DEFAULT_HOMEPAGE_CONFIG,
+  );
+  const [loyaltyConfig, setLoyaltyConfig] = useState<LoyaltyConfig>(
+    settingsCache ? { ...DEFAULT_LOYALTY_CONFIG, ...settingsCache.loyaltyConfig } : DEFAULT_LOYALTY_CONFIG,
+  );
+  const [featuresConfig, setFeaturesConfig] = useState<FeaturesConfig>(
+    settingsCache ? { ...DEFAULT_FEATURES_CONFIG, ...settingsCache.featuresConfig } : DEFAULT_FEATURES_CONFIG,
+  );
+  const [welcomeConfig, setWelcomeConfig] = useState<WelcomePopupConfig>(
+    settingsCache ? { ...DEFAULT_WELCOME_POPUP_CONFIG, ...settingsCache.welcomeConfig } : DEFAULT_WELCOME_POPUP_CONFIG,
+  );
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     try {
       return localStorage.getItem('pharmacy-dark-mode') === '1';
@@ -551,6 +612,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setFeaturesConfig(features);
     setWelcomeConfig(welcome);
     setLoading(false);
+
+    saveSettingsCache({
+      settings: siteSettings,
+      themeColors: colors,
+      headerConfig: header,
+      footerConfig: footer,
+      paymentConfig: payment,
+      heroConfig: hero,
+      howItWorksConfig: howItWorks,
+      storeConfig: store,
+      homepageConfig: homepage,
+      loyaltyConfig: loyalty,
+      featuresConfig: features,
+      welcomeConfig: welcome,
+    });
   };
 
   useEffect(() => {
@@ -566,14 +642,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [darkMode]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (settings) {
       const root = document.documentElement;
       // Set all custom CSS variables dynamically
       root.style.setProperty('--color-primary', resolvedThemeColors.primaryColor);
       root.style.setProperty('--color-secondary', resolvedThemeColors.secondaryColor);
       root.style.setProperty('--color-accent', resolvedThemeColors.accentColor);
-      
+
       root.style.setProperty('--header-bg', resolvedThemeColors.headerBg);
       root.style.setProperty('--header-text', resolvedThemeColors.headerText);
       root.style.setProperty('--header-nav-bg', resolvedThemeColors.headerNavBg);

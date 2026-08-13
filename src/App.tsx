@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react';
-import { SettingsProvider, useSettings } from '@/context/SettingsContext';
+import { SettingsProvider } from '@/context/SettingsContext';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { RouterProvider, useRouter } from '@/context/RouterContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -21,29 +21,11 @@ import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
 import { CategoryPage } from '@/pages/CategoryPage';
 import { AllCategoriesPage } from '@/pages/AllCategoriesPage';
 import { AccountPage } from '@/pages/AccountPage';
-import { Loader2, Cross, ShieldAlert } from 'lucide-react';
+import { Loader2, ShieldAlert } from 'lucide-react';
 
 const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
 const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage').then((m) => ({ default: m.AdminLoginPage })));
 const PharmacyAdminPage = lazy(() => import('@/pages/PharmacyAdminPage').then((m) => ({ default: m.PharmacyAdminPage })));
-
-function SiteLoading() {
-  const { loading, themeColors } = useSettings();
-  const { t } = useLanguage();
-  if (!loading) return null;
-
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-      <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl animate-pulse"
-        style={{ backgroundColor: themeColors.priceColor }}
-      >
-        <Cross className="w-9 h-9 text-white" strokeWidth={2.5} />
-      </div>
-      <p className="mt-4 text-sm font-bold text-gray-500">{t('جاري تحميل الصيدليتي...')}</p>
-    </div>
-  );
-}
 
 function AdminForbidden() {
   const { signOut } = useAuth();
@@ -155,7 +137,6 @@ function AppContent() {
       <LanguageProvider>
         <SettingsProvider>
           <PharmacyOwnerProvider>
-            <SiteLoading />
             <PharmacyAdminRoute />
           </PharmacyOwnerProvider>
         </SettingsProvider>
@@ -168,7 +149,6 @@ function AppContent() {
       <LanguageProvider>
         <AuthProvider>
           <SettingsProvider>
-            <SiteLoading />
             <AdminRoute />
           </SettingsProvider>
         </AuthProvider>
@@ -180,7 +160,6 @@ function AppContent() {
     <LanguageProvider>
       <SettingsProvider>
         <RouterProvider>
-          <SiteLoading />
           <CustomerProvider>
             <FavoritesProvider>
               <OrderProvider>
