@@ -145,6 +145,7 @@ export function HomePage() {
   const [customerCount, setCustomerCount] = useState(0);
   const [popularProductIds, setPopularProductIds] = useState<string[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [heroScrollY, setHeroScrollY] = useState(0);
 
   const categoriesScrollRef = useRef<HTMLDivElement | null>(null);
   const categoriesWheelCleanupRef = useRef<(() => void) | null>(null);
@@ -263,6 +264,13 @@ export function HomePage() {
   const [userLocationName, setUserLocationName] = useState<string>(() => {
     return localStorage.getItem('user_delivery_location') || '';
   });
+
+  useEffect(() => {
+    const onScroll = () => setHeroScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -480,6 +488,35 @@ export function HomePage() {
           <div className="absolute bottom-[25%] start-[15%] text-3xl opacity-15 animate-float-slow hidden lg:block" style={{ animationDelay: '0.8s' }}>🏥</div>
           <div className="absolute top-[60%] end-[6%] text-2xl opacity-10 animate-float hidden lg:block" style={{ animationDelay: '2.2s' }}>💉</div>
           <div className="absolute top-[10%] end-[25%] text-2xl opacity-10 animate-float-slow hidden xl:block" style={{ animationDelay: '3s' }}>🧬</div>
+
+          {/* Floating Trust Badges — parallax with scroll */}
+          {(() => {
+            const badges = homepageConfig.heroBadges.badges.filter((b) => b.enabled);
+            if (!homepageConfig.heroBadges.showBadges || badges.length === 0) return null;
+            const spots = [
+              { cls: 'top-[13%] start-[5%]', delay: '0s', speed: 0.22 },
+              { cls: 'top-[26%] end-[6%]', delay: '1.2s', speed: 0.3 },
+              { cls: 'bottom-[20%] start-[8%]', delay: '0.6s', speed: 0.16 },
+              { cls: 'bottom-[26%] end-[5%]', delay: '1.8s', speed: 0.26 },
+            ];
+            return spots.slice(0, badges.length).map((spot, i) => {
+              const badge = badges[i];
+              const BadgeIcon = heroBadgeIcon(badge.icon);
+              return (
+                <div key={badge.id} className={`absolute ${spot.cls} hidden lg:block`} style={{ transform: `translateY(${(heroScrollY * spot.speed).toFixed(1)}px)` }}>
+                  <div className="flex items-center gap-2.5 rounded-full px-4 py-2.5 backdrop-blur-md shadow-xl border animate-float" style={{ animationDelay: spot.delay, backgroundColor: `${themeColors.headerBg}e6`, borderColor: `${badge.color}45` }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${badge.color}22`, color: badge.color }}>
+                      <BadgeIcon className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="leading-tight">
+                      <p className="text-[11px] font-black whitespace-nowrap" style={{ color: themeColors.heroText }}>{t(badge.title)}</p>
+                      <p className="text-[9px] font-bold whitespace-nowrap" style={{ color: badge.color }}>{t(badge.subtitle)}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -653,36 +690,6 @@ export function HomePage() {
               </p>
             )}
           </div>
-
-          {(() => {
-            const badges = homepageConfig.heroBadges.badges.filter((b) => b.enabled);
-            if (!homepageConfig.heroBadges.showBadges || badges.length === 0) return null;
-            return (
-              <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {badges.map((badge) => {
-                  const BadgeIcon = heroBadgeIcon(badge.icon);
-                  return (
-                    <div
-                      key={badge.id}
-                      className="flex items-center gap-3 rounded-2xl px-4 py-3.5 backdrop-blur-md border shadow-lg animate-fade-up"
-                      style={{ backgroundColor: `${themeColors.headerBg}e6`, borderColor: `${themeColors.primaryColor}22` }}
-                    >
-                      <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: `${badge.color}18`, color: badge.color, border: `1px solid ${badge.color}30` }}
-                      >
-                        <BadgeIcon className="w-5 h-5" />
-                      </div>
-                      <div className="leading-tight min-w-0">
-                        <p className="text-xs font-black truncate" style={{ color: themeColors.heroText }}>{t(badge.title)}</p>
-                        <p className="text-[11px] font-bold truncate" style={{ color: themeColors.primaryColor }}>{t(badge.subtitle)}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
         </div>
       </section>
 
