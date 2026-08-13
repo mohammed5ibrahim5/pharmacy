@@ -260,6 +260,15 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
       support: true,
     },
   },
+  heroBadges: {
+    showBadges: true,
+    badges: [
+      { id: 'delivery', icon: 'truck', title: 'توصيل فوري', subtitle: 'أقل من 30 دقيقة', color: '#f59e0b', enabled: true },
+      { id: 'discounts', icon: 'badgepercent', title: 'خصومات وتخفيضات', subtitle: 'عروض تصل إلى 30%', color: '#ec4899', enabled: true },
+      { id: 'certified', icon: 'badgecheck', title: 'صيدليات معتمدة 100%', subtitle: 'مرخّصة من هيئة الدواء', color: '#10b981', enabled: true },
+      { id: 'support', icon: 'phone', title: 'دعم فوري 24/7', subtitle: 'متاح دائماً لمساعدتك', color: '#3b82f6', enabled: true },
+    ],
+  },
 };
 
 export interface LoyaltyConfig {

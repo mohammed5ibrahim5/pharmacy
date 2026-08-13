@@ -26,6 +26,7 @@ import {
 import { ImageUploader } from '@/components/ImageUploader';
 import { InvoiceModal } from '@/components/InvoiceModal';
 import { CATEGORY_ICON_MAP, categoryColor, categoryIcon } from '@/lib/categoryStyles';
+import { HERO_BADGE_ICON_MAP, heroBadgeIcon } from '@/lib/heroBadges';
 import {
   PRESCRIPTION_STATUSES,
   PRESCRIPTION_STATUS_META,
@@ -4903,6 +4904,83 @@ function SettingsTab() {
                 onChange={(v) => setHomepageCfg({ ...homepageCfg, trust: { ...homepageCfg.trust, cards: { ...homepageCfg.trust.cards, support: v } } })}
                 color={settings.primary_color}
               />
+            </div>
+          </SettingsSection>
+
+          <SettingsSection title="شارات الثقة في الهيرو (أعلى الصفحة الرئيسية)" icon={<Zap className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              الشارات الزجاجية التي تظهر أسفل محتوى قسم الهيرو في الصفحة الرئيسية (توصيل فوري أقل من 30 دقيقة، خصومات وعروض، صيدليات معتمدة...). تحكم كامل في إظهار كل شارة ونصوصها وأيقونتها ولونها.
+            </p>
+            <FeatureToggle
+              icon={<Zap className="w-4 h-4" />}
+              title="إظهار شارات الثقة في الهيرو"
+              desc="إظهار أو إخفاء شريط الشارات كاملاً أسفل محتوى الهيرو"
+              checked={homepageCfg.heroBadges.showBadges}
+              onChange={(v) => setHomepageCfg({ ...homepageCfg, heroBadges: { ...homepageCfg.heroBadges, showBadges: v } })}
+              color={settings.primary_color}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+              {homepageCfg.heroBadges.badges.map((badge) => {
+                const updateBadge = (patch: Partial<typeof badge>) =>
+                  setHomepageCfg({
+                    ...homepageCfg,
+                    heroBadges: {
+                      ...homepageCfg.heroBadges,
+                      badges: homepageCfg.heroBadges.badges.map((b) => (b.id === badge.id ? { ...b, ...patch } : b)),
+                    },
+                  });
+                const BadgeIcon = heroBadgeIcon(badge.icon);
+                return (
+                  <div key={badge.id} className={`p-4 rounded-2xl border-2 space-y-3 transition-colors ${badge.enabled ? 'border-teal-200 bg-teal-50/30' : 'border-gray-200 bg-white'}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${badge.color}18`, color: badge.color, border: `1px solid ${badge.color}30` }}
+                        >
+                          <BadgeIcon className="w-5 h-5" />
+                        </div>
+                        <p className="text-sm font-bold text-gray-900 truncate">{badge.title || 'شارة'}</p>
+                      </div>
+                      <label className="flex items-center gap-2 cursor-pointer shrink-0">
+                        <span className="text-[11px] font-bold text-gray-600">{badge.enabled ? 'ظاهرة' : 'مخفية'}</span>
+                        <input
+                          type="checkbox"
+                          checked={badge.enabled}
+                          onChange={(e) => updateBadge({ enabled: e.target.checked })}
+                          className="w-4 h-4 accent-teal-500"
+                        />
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2.5">
+                      <Field label="العنوان الرئيسي">
+                        <input value={badge.title} onChange={(e) => updateBadge({ title: e.target.value })} className={inputClass} placeholder="مثال: توصيل فوري" />
+                      </Field>
+                      <Field label="النص الفرعي">
+                        <input value={badge.subtitle} onChange={(e) => updateBadge({ subtitle: e.target.value })} className={inputClass} placeholder="مثال: أقل من 30 دقيقة" />
+                      </Field>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <Field label="الأيقونة">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: `${badge.color}18`, color: badge.color }}
+                            >
+                              <BadgeIcon className="w-5 h-5" />
+                            </div>
+                            <select value={badge.icon} onChange={(e) => updateBadge({ icon: e.target.value })} className={inputClass}>
+                              {Object.keys(HERO_BADGE_ICON_MAP).map((key) => (
+                                <option key={key} value={key}>{key}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </Field>
+                        <ColorField label="لون الأيقونة" value={badge.color} onChange={(v) => updateBadge({ color: v })} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </SettingsSection>
 

@@ -147,10 +147,25 @@ export interface TrustSignalsConfig {
   };
 }
 
+export interface HeroBadge {
+  id: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+  color: string;
+  enabled: boolean;
+}
+
+export interface HeroBadgesConfig {
+  showBadges: boolean;
+  badges: HeroBadge[];
+}
+
 export interface HomepageConfig {
   pharmaciesTitle: string;
   pharmaciesSubtitle: string;
   trust: TrustSignalsConfig;
+  heroBadges: HeroBadgesConfig;
 }
 
 export interface SiteSettings {
