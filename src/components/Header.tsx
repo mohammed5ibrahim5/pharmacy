@@ -162,6 +162,9 @@ export function Header() {
 
   const searchRef = useRef<HTMLDivElement>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const categoryTrackRef = useRef<HTMLDivElement>(null);
+  const catDragStart = useRef({ x: 0, ratio: 0 });
+  const [catDragging, setCatDragging] = useState(false);
   const [catScroll, setCatScroll] = useState({ left: 0, width: 100, visible: false });
 
   const updateCatScroll = useCallback(() => {
@@ -176,6 +179,44 @@ export function Header() {
     const width = Math.max(10, (el.clientWidth / el.scrollWidth) * 100);
     const left = (current / max) * (100 - width);
     setCatScroll({ left, width, visible: true });
+  }, []);
+
+  const setCatScrollRatio = useCallback((ratio: number) => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    if (max <= 4) return;
+    const clamped = Math.min(1, Math.max(0, ratio));
+    const isRTL = getComputedStyle(el).direction === 'rtl';
+    el.scrollLeft = (isRTL ? -1 : 1) * clamped * max;
+  }, []);
+
+  const handleCatTrackPointerDown = useCallback((e: React.PointerEvent) => {
+    const el = categoryScrollRef.current;
+    const track = categoryTrackRef.current;
+    if (!el || !track) return;
+    const max = el.scrollWidth - el.clientWidth;
+    if (max <= 4) return;
+    const rect = track.getBoundingClientRect();
+    const tw = catScroll.width / 100;
+    const clickFrac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    const ratio = (clickFrac - tw / 2) / (1 - tw);
+    setCatScrollRatio(ratio);
+    catDragStart.current = { x: e.clientX, ratio };
+    setCatDragging(true);
+    track.setPointerCapture?.(e.pointerId);
+  }, [catScroll.width, setCatScrollRatio]);
+
+  const handleCatTrackPointerMove = useCallback((e: React.PointerEvent) => {
+    const track = categoryTrackRef.current;
+    if (!track || !catDragging) return;
+    const rect = track.getBoundingClientRect();
+    const delta = (e.clientX - catDragStart.current.x) / rect.width;
+    setCatScrollRatio(catDragStart.current.ratio + delta);
+  }, [catDragging, setCatScrollRatio]);
+
+  const handleCatTrackPointerEnd = useCallback(() => {
+    setCatDragging(false);
   }, []);
 
   useEffect(() => {
@@ -731,17 +772,27 @@ export function Header() {
             </div>
 
             {catScroll.visible && (
-              <div className="relative h-1.5">
-                <div className="absolute inset-x-0 top-0 h-full rounded-full" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
-                <div
-                  className="absolute top-0 h-full rounded-full transition-all duration-150"
-                  style={{
-                    left: `${catScroll.left}%`,
-                    width: `${catScroll.width}%`,
-                    backgroundColor: 'rgba(255,255,255,0.95)',
-                    boxShadow: '0 0 10px rgba(255,255,255,0.55)'
-                  }}
-                />
+              <div
+                ref={categoryTrackRef}
+                onPointerDown={handleCatTrackPointerDown}
+                onPointerMove={handleCatTrackPointerMove}
+                onPointerUp={handleCatTrackPointerEnd}
+                onPointerCancel={handleCatTrackPointerEnd}
+                className={`relative h-2.5 select-none ${catDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                style={{ touchAction: 'none' }}
+                title={t('اسحب أو اضغط للتنقل بين الفئات')}
+              >
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full" style={{ backgroundColor: `${themeColors.headerNavText}20` }}>
+                  <div
+                    className={`absolute top-0 h-full rounded-full ${catDragging ? '' : 'transition-all duration-150'}`}
+                    style={{
+                      left: `${catScroll.left}%`,
+                      width: `${catScroll.width}%`,
+                      backgroundColor: 'rgba(255,255,255,0.95)',
+                      boxShadow: '0 0 10px rgba(255,255,255,0.55), 0 1px 3px rgba(0,0,0,0.25)'
+                    }}
+                  />
+                </div>
               </div>
             )}
           </div>
