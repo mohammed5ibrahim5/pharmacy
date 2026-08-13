@@ -687,10 +687,10 @@ export function Header() {
             </div>
           </div>
 
-          {/* TRENDING QUICK SEARCH TAGS — secondary "suggestions" strip */}
+          {/* TRENDING QUICK SEARCH TAGS — desktop only (mobile has hero trending chips) */}
           {headerConfig.showTrendingTags && (
             <div
-              className="flex items-center gap-2 py-1.5 px-4 lg:px-0 overflow-x-auto scrollbar-none"
+              className="hidden lg:flex items-center gap-2 py-1.5 px-4 lg:px-0 overflow-x-auto scrollbar-none"
               style={{
                 backgroundColor: `${themeColors.accentColor}0a`,
                 borderBottom: `1px solid ${themeColors.accentColor}22`
@@ -724,10 +724,10 @@ export function Header() {
           )}
         </div>
 
-        {/* 3. CATEGORY QUICK NAVIGATION BAR */}
+        {/* 3. CATEGORY QUICK NAVIGATION BAR — desktop only; mobile uses the home categories section */}
         {headerConfig.showCategoryPills && (
           <div
-            className="border-b shadow-sm transition-all duration-300"
+            className="hidden lg:block border-b shadow-sm transition-all duration-300"
             style={{
               backgroundColor: themeColors.headerNavBg,
               color: themeColors.headerNavText,
