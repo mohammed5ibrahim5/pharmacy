@@ -87,6 +87,34 @@ export function Header() {
     return localStorage.getItem('user_delivery_location') || '';
   });
   const displayLocation = userLocation || headerConfig.locationText || t('القاهرة - المعادي');
+  const isAccount = route.name === 'account';
+  const [headerHidden, setHeaderHidden] = useState(false);
+
+  useEffect(() => {
+    if (!isAccount) {
+      setHeaderHidden(false);
+      return;
+    }
+    let lastY = window.scrollY;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        const y = window.scrollY;
+        setHeaderHidden((prev) => {
+          if (y <= 80) return false;
+          if (y > lastY) return true;
+          if (y < lastY) return false;
+          return prev;
+        });
+        lastY = y;
+        ticking = false;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isAccount]);
 
   useEffect(() => {
     if (route.name === 'search') {
@@ -264,6 +292,10 @@ export function Header() {
 
   return (
     <>
+      <div
+        className={isAccount ? 'sticky top-0 z-50 transition-transform duration-300 will-change-transform' : ''}
+        style={isAccount ? { transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)' } : undefined}
+      >
       {/* 1. TOP BAR */}
       {headerConfig.showTopBar && (
       <div
@@ -322,7 +354,7 @@ export function Header() {
 
       {/* 2. MAIN HEADER BAR */}
       <header
-        className="sticky top-0 z-50 border-b shadow-sm transition-all duration-300 backdrop-blur-xl"
+        className="border-b shadow-sm transition-all duration-300 backdrop-blur-xl"
         style={{
           backgroundColor: `${themeColors.headerBg}f2`,
           color: themeColors.headerText,
@@ -841,6 +873,7 @@ export function Header() {
           </div>
         )}
       </header>
+      </div>
 
       {/* ALL MODALS */}
       <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />

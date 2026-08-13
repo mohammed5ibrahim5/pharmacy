@@ -25,6 +25,7 @@ import { useFavorites } from '@/context/FavoritesContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { localizedError } from '@/lib/errorMessages';
+import { fetchLoyaltyBalance } from '@/lib/loyalty';
 
 export function UserMenu() {
   const { user, profile, signOut, setAuthModalOpen, loading, refreshProfile } = useCustomer();
@@ -43,6 +44,7 @@ export function UserMenu() {
   const [activeOrders, setActiveOrders] = useState(0);
   const [prescriptionsCount, setPrescriptionsCount] = useState(0);
   const [savedAddresses, setSavedAddresses] = useState<string[]>([]);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -106,6 +108,20 @@ export function UserMenu() {
       if (!cancelled) setActiveOrders((data || []).length);
     };
     fetchOrders();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, open]);
+
+  useEffect(() => {
+    if (!user) {
+      setLoyaltyPoints(0);
+      return;
+    }
+    let cancelled = false;
+    fetchLoyaltyBalance(user.id).then((points) => {
+      if (!cancelled) setLoyaltyPoints(points);
+    });
     return () => {
       cancelled = true;
     };
@@ -279,7 +295,7 @@ export function UserMenu() {
                 <p className="text-[11px] text-white/80 truncate" dir="ltr">{user.email}</p>
                 <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-[10px] font-bold text-amber-200">
                   <Sparkles className="w-3 h-3" />
-                  {t('نقاط المكافآت: 120 نقطة')}
+                  {t('نقاط المكافآت: {0} نقطة', [loyaltyPoints])}
                 </div>
                 <div className="mt-1 flex items-center gap-2">
                   {!avatarLinkMode ? (
