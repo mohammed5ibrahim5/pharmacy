@@ -4834,6 +4834,78 @@ function SettingsTab() {
             <Field label="النص الفرعي للقسم"><input value={homepageCfg.pharmaciesSubtitle} onChange={(e) => setHomepageCfg({ ...homepageCfg, pharmaciesSubtitle: e.target.value })} className={inputClass} placeholder="مثال: تصفح الصيدليات حسب تصنيف احتياجك" /></Field>
           </SettingsSection>
 
+          <SettingsSection title="شريط الثقة (لماذا تثق بنا؟)" icon={<ShieldCheck className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+              كروت الثقة التي تظهر في الصفحة الرئيسية (صيدليات مرخصة، توصيل أقل من 30 دقيقة، ضمان الأصالة...). يمكنك إخفاء القسم بالكامل أو إظهار/إخفاء كل كارت على حدة بمفتاح التشغيل.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FeatureToggle
+                icon={<ShieldCheck className="w-4 h-4" />}
+                title="إظهار قسم كروت الثقة"
+                desc="إظهار أو إخفاء القسم كاملاً في الصفحة الرئيسية"
+                checked={homepageCfg.trust.showSection}
+                onChange={(v) => setHomepageCfg({ ...homepageCfg, trust: { ...homepageCfg.trust, showSection: v } })}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Star className="w-4 h-4" />}
+                title="الشريط السفلي للثقة"
+                desc="الشريط الصغير أسفل الكروت (توصيل آمن، استرداد كامل...)"
+                checked={homepageCfg.trust.showBottomBar}
+                onChange={(v) => setHomepageCfg({ ...homepageCfg, trust: { ...homepageCfg.trust, showBottomBar: v } })}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Shield className="w-4 h-4" />}
+                title="كارت: صيدليات مرخّصة 100%"
+                desc="جميع الصيدليات الشريكة معتمدة من هيئة الدواء"
+                checked={homepageCfg.trust.cards.licensed}
+                onChange={(v) => setHomepageCfg({ ...homepageCfg, trust: { ...homepageCfg.trust, cards: { ...homepageCfg.trust.cards, licensed: v } } })}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<ShieldCheck className="w-4 h-4" />}
+                title="كارت: بيانات آمنة ومشفّرة"
+                desc="بيانات العميل محمية بتشفير SSL"
+                checked={homepageCfg.trust.cards.secure}
+                onChange={(v) => setHomepageCfg({ ...homepageCfg, trust: { ...homepageCfg.trust, cards: { ...homepageCfg.trust.cards, secure: v } } })}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Users className="w-4 h-4" />}
+                title="كارت: صيادلة معتمدون"
+                desc="فريق من الصيادلة المرخّصين يراجع كل طلب"
+                checked={homepageCfg.trust.cards.pharmacists}
+                onChange={(v) => setHomepageCfg({ ...homepageCfg, trust: { ...homepageCfg.trust, cards: { ...homepageCfg.trust.cards, pharmacists: v } } })}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Truck className="w-4 h-4" />}
+                title="كارت: توصيل أقل من 30 دقيقة"
+                desc="خدمة التوصيل السريع متاحة على مدار الساعة"
+                checked={homepageCfg.trust.cards.fastDelivery}
+                onChange={(v) => setHomepageCfg({ ...homepageCfg, trust: { ...homepageCfg.trust, cards: { ...homepageCfg.trust.cards, fastDelivery: v } } })}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<BadgePercent className="w-4 h-4" />}
+                title="كارت: ضمان الأصالة 100%"
+                desc="جميع المنتجات أصلية ومعتمدة من الجهات الرسمية"
+                checked={homepageCfg.trust.cards.authentic}
+                onChange={(v) => setHomepageCfg({ ...homepageCfg, trust: { ...homepageCfg.trust, cards: { ...homepageCfg.trust.cards, authentic: v } } })}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Phone className="w-4 h-4" />}
+                title="كارت: دعم فوري 24/7"
+                desc="فريق الدعم متاح دائماً للمساعدة في أي وقت"
+                checked={homepageCfg.trust.cards.support}
+                onChange={(v) => setHomepageCfg({ ...homepageCfg, trust: { ...homepageCfg.trust, cards: { ...homepageCfg.trust.cards, support: v } } })}
+                color={settings.primary_color}
+              />
+            </div>
+          </SettingsSection>
+
           <SettingsSection title="الشريط الإعلاني" icon={<Megaphone className="w-5 h-5" />}>
             <label className="flex items-center gap-2 cursor-pointer mb-3"><input type="checkbox" checked={form.announcement_active} onChange={(e) => setForm({ ...form, announcement_active: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm text-gray-700">تفعيل الشريط الإعلاني</span></label>
             <Field label="نص الإعلان"><input value={form.announcement_text || ''} onChange={(e) => setForm({ ...form, announcement_text: e.target.value })} className={inputClass} placeholder="نص الإعلان الذي يظهر أعلى الموقع" /></Field>

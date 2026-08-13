@@ -134,9 +134,23 @@ export interface StoreConfig {
   catalogMultiPharmacy: boolean;
 }
 
+export interface TrustSignalsConfig {
+  showSection: boolean;
+  showBottomBar: boolean;
+  cards: {
+    licensed: boolean;
+    secure: boolean;
+    pharmacists: boolean;
+    fastDelivery: boolean;
+    authentic: boolean;
+    support: boolean;
+  };
+}
+
 export interface HomepageConfig {
   pharmaciesTitle: string;
   pharmaciesSubtitle: string;
+  trust: TrustSignalsConfig;
 }
 
 export interface SiteSettings {

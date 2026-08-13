@@ -3,11 +3,17 @@ import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 
 export function TrustSignals() {
-  const { themeColors } = useSettings();
+  const { themeColors, homepageConfig } = useSettings();
   const { t } = useLanguage();
+
+  const trust = homepageConfig.trust;
+  if (!trust.showSection) return null;
+
+  const cards = trust.cards;
 
   const signals = [
     {
+      key: 'licensed',
       icon: <ShieldCheck className="w-6 h-6" />,
       title: 'صيدليات مرخّصة 100%',
       desc: 'جميع الصيدليات الشريكة معتمدة من هيئة الدواء',
@@ -15,6 +21,7 @@ export function TrustSignals() {
       delay: '0s',
     },
     {
+      key: 'secure',
       icon: <Lock className="w-6 h-6" />,
       title: 'بيانات آمنة ومشفّرة',
       desc: 'بياناتك محمية بتشفير SSL 256-bit',
@@ -22,6 +29,7 @@ export function TrustSignals() {
       delay: '0.1s',
     },
     {
+      key: 'pharmacists',
       icon: <Stethoscope className="w-6 h-6" />,
       title: 'صيادلة معتمدون',
       desc: 'فريق من الصيادلة المرخّصين يراجع كل طلب',
@@ -29,6 +37,7 @@ export function TrustSignals() {
       delay: '0.15s',
     },
     {
+      key: 'fastDelivery',
       icon: <Clock className="w-6 h-6" />,
       title: 'توصيل أقل من 30 دقيقة',
       desc: 'خدمة التوصيل السريع متاحة على مدار الساعة',
@@ -36,6 +45,7 @@ export function TrustSignals() {
       delay: '0.2s',
     },
     {
+      key: 'authentic',
       icon: <BadgeCheck className="w-6 h-6" />,
       title: 'ضمان الأصالة 100%',
       desc: 'جميع المنتجات أصلية ومعتمدة من الجهات الرسمية',
@@ -43,13 +53,14 @@ export function TrustSignals() {
       delay: '0.25s',
     },
     {
+      key: 'support',
       icon: <Phone className="w-6 h-6" />,
       title: 'دعم فوري 24/7',
       desc: 'فريق الدعم متاح دائماً للمساعدة في أي وقت',
       color: '#ec4899',
       delay: '0.3s',
     },
-  ];
+  ].filter((s) => cards[s.key as keyof typeof cards]);
 
   return (
     <section className="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -99,6 +110,7 @@ export function TrustSignals() {
       </div>
 
       {/* Bottom trust bar */}
+      {trust.showBottomBar && (
       <div
         className="mt-8 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 border"
         style={{
@@ -122,6 +134,7 @@ export function TrustSignals() {
           </div>
         ))}
       </div>
+      )}
     </section>
   );
 }

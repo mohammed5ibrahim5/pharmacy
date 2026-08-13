@@ -248,6 +248,18 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   pharmaciesTitle: 'الصيدليات المتاحة بجوارك',
   pharmaciesSubtitle: 'تصفح الصيدليات حسب تصنيف احتياجك',
+  trust: {
+    showSection: true,
+    showBottomBar: true,
+    cards: {
+      licensed: true,
+      secure: true,
+      pharmacists: true,
+      fastDelivery: true,
+      authentic: true,
+      support: true,
+    },
+  },
 };
 
 export interface LoyaltyConfig {
