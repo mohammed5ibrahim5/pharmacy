@@ -799,9 +799,9 @@ export function HomePage() {
 
           {/* Categories strip */}
           {loadingData && categories.length === 0 ? (
-            <div className="flex gap-4 overflow-hidden">
+            <div className="flex gap-2.5 overflow-hidden">
               {[...Array(10)].map((_, i) => (
-                <div key={i} className="skeleton rounded-2xl w-[110px] sm:w-[120px] h-[104px] shrink-0" />
+                <div key={i} className="skeleton rounded-2xl w-[130px] sm:w-[140px] h-[118px] shrink-0" />
               ))}
             </div>
           ) : (
@@ -811,17 +811,11 @@ export function HomePage() {
               onScroll={updateCategoriesScrollState}
               onMouseEnter={() => setCategoriesHovered(true)}
               onMouseLeave={() => setCategoriesHovered(false)}
-              className="flex gap-4 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
+              className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
               style={{
                 scrollSnapType: 'x mandatory',
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
-                ...(categoriesScroll.scrollable
-                  ? {
-                      WebkitMaskImage: 'linear-gradient(to right, transparent 0, black 36px, black calc(100% - 36px), transparent 100%)',
-                      maskImage: 'linear-gradient(to right, transparent 0, black 36px, black calc(100% - 36px), transparent 100%)'
-                    }
-                  : {}),
               }}
             >
               {orderedCategories(mergeCategories(categories)).map((cat) => {
@@ -833,7 +827,7 @@ export function HomePage() {
                   <button
                     key={cat.id}
                     onClick={() => navigate({ name: 'category', slug: cat.slug })}
-                    className="group relative flex flex-col items-center justify-center shrink-0 w-[110px] sm:w-[120px] min-h-[104px] rounded-2xl text-white text-center overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-95"
+                    className="group relative flex flex-col items-center justify-center shrink-0 w-[130px] sm:w-[140px] min-h-[118px] rounded-2xl text-white text-center overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-95"
                     style={{
                       background: gradient,
                       boxShadow: `0 10px 22px -14px ${color}dd`,
