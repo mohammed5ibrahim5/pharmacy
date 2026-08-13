@@ -799,7 +799,7 @@ export function HomePage() {
 
           {/* Categories strip */}
           {loadingData && categories.length === 0 ? (
-            <div className="flex gap-2.5 overflow-hidden">
+            <div className="flex gap-4 overflow-hidden">
               {[...Array(10)].map((_, i) => (
                 <div key={i} className="skeleton rounded-2xl w-[110px] sm:w-[120px] h-[104px] shrink-0" />
               ))}
@@ -811,7 +811,7 @@ export function HomePage() {
               onScroll={updateCategoriesScrollState}
               onMouseEnter={() => setCategoriesHovered(true)}
               onMouseLeave={() => setCategoriesHovered(false)}
-              className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
+              className="flex gap-4 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
               style={{
                 scrollSnapType: 'x mandatory',
                 scrollbarWidth: 'none',
