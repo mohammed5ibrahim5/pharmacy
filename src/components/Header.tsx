@@ -293,8 +293,8 @@ export function Header() {
   return (
     <>
       <div
-        className={isAccount ? 'sticky top-0 z-50 transition-transform duration-300 will-change-transform' : ''}
-        style={isAccount ? { transform: headerHidden ? 'translateY(-100%)' : 'translateY(0)' } : undefined}
+        className="sticky top-0 z-50 transition-transform duration-300 will-change-transform"
+        style={{ transform: isAccount && headerHidden ? 'translateY(-100%)' : 'translateY(0)' }}
       >
       {/* 1. TOP BAR */}
       {headerConfig.showTopBar && (
