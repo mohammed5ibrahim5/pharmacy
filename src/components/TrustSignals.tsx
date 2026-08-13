@@ -3,7 +3,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 
 export function TrustSignals() {
-  const { themeColors, homepageConfig } = useSettings();
+  const { themeColors, homepageConfig, storeConfig } = useSettings();
   const { t } = useLanguage();
 
   const trust = homepageConfig.trust;
@@ -60,7 +60,7 @@ export function TrustSignals() {
       color: '#ec4899',
       delay: '0.3s',
     },
-  ].filter((s) => cards[s.key as keyof typeof cards]);
+  ].filter((s) => cards[s.key as keyof typeof cards] && (s.key !== 'fastDelivery' || storeConfig.purchasesEnabled));
 
   return (
     <section className="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -81,36 +81,53 @@ export function TrustSignals() {
         </p>
       </div>
 
-      {/* Trust Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {signals.map((signal, i) => (
-          <div
-            key={i}
-            className="group flex flex-col items-center text-center p-5 rounded-3xl bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-default animate-fade-up"
-            style={{ animationDelay: signal.delay }}
-          >
+      {/* Trust Grid — auto-adjusts columns to the number of visible cards */}
+      {(() => {
+        const count = signals.length;
+        const gridClass =
+          count <= 1
+            ? 'grid-cols-1 max-w-sm mx-auto'
+            : count === 2
+            ? 'grid-cols-2 max-w-xl mx-auto'
+            : count === 3
+            ? 'grid-cols-1 sm:grid-cols-3 max-w-3xl mx-auto'
+            : count === 4
+            ? 'grid-cols-2 lg:grid-cols-4 max-w-4xl mx-auto'
+            : count === 5
+            ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 max-w-5xl mx-auto'
+            : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6';
+        return (
+        <div className={`grid ${gridClass} gap-4`}>
+          {signals.map((signal, i) => (
             <div
-              className="w-13 h-13 w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110"
-              style={{
-                backgroundColor: `${signal.color}15`,
-                color: signal.color,
-                border: `1px solid ${signal.color}30`,
-              }}
+              key={i}
+              className="group flex flex-col items-center text-center p-5 rounded-3xl bg-white border border-slate-200/80 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-default animate-fade-up"
+              style={{ animationDelay: signal.delay }}
             >
-              {signal.icon}
+              <div
+                className="w-13 h-13 w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110"
+                style={{
+                  backgroundColor: `${signal.color}15`,
+                  color: signal.color,
+                  border: `1px solid ${signal.color}30`,
+                }}
+              >
+                {signal.icon}
+              </div>
+              <h3 className="text-xs font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors leading-tight mb-1">
+                {t(signal.title)}
+              </h3>
+              <p className="text-[10px] text-slate-500 leading-snug font-medium">
+                {t(signal.desc)}
+              </p>
             </div>
-            <h3 className="text-xs font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors leading-tight mb-1">
-              {t(signal.title)}
-            </h3>
-            <p className="text-[10px] text-slate-500 leading-snug font-medium">
-              {t(signal.desc)}
-            </p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+        );
+      })()}
 
-      {/* Bottom trust bar */}
-      {trust.showBottomBar && (
+      {/* Bottom trust bar — shows only when online purchases are enabled */}
+      {trust.showBottomBar && storeConfig.purchasesEnabled && (
       <div
         className="mt-8 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 border"
         style={{
