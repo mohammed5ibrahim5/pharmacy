@@ -68,7 +68,7 @@ const TRENDING_LIMIT = 7;
 
 export function Header() {
   const { navigate, route } = useRouter();
-  const { settings, themeColors, headerConfig, darkMode, toggleDarkMode } = useSettings();
+  const { settings, themeColors, headerConfig, storeConfig, darkMode, toggleDarkMode } = useSettings();
   const { t, lang, toggleLang } = useLanguage();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
@@ -358,7 +358,7 @@ export function Header() {
         }}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {headerConfig.showLocationBar && (
+          {headerConfig.showLocationBar && storeConfig.purchasesEnabled && (
             <button
               onClick={() => setLocationModalOpen(true)}
               className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/20 hover:bg-black/35 transition-all border border-white/10 shadow-inner group"
@@ -650,7 +650,7 @@ export function Header() {
 
               <button
                 onClick={() => openCart('cart')}
-                className={`relative p-2 md:p-2.5 rounded-2xl border transition-colors ${cartBump ? 'animate-cart-bump' : ''}`}
+                className={`hidden lg:flex relative p-2 md:p-2.5 rounded-2xl border transition-colors ${cartBump ? 'animate-cart-bump' : ''}`}
                 style={{
                   backgroundColor: `${themeColors.headerText}08`,
                   color: themeColors.headerText,
@@ -840,6 +840,7 @@ export function Header() {
               color: themeColors.headerText
             }}
           >
+            {storeConfig.purchasesEnabled && (
             <button
               onClick={() => {
                 setMenuOpen(false);
@@ -858,6 +859,7 @@ export function Header() {
               </div>
               <ChevronDown className="w-4 h-4 opacity-55" />
             </button>
+            )}
 
             <form onSubmit={handleSearchSubmit}>
               <div className="relative">

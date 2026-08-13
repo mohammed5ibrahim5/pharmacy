@@ -465,7 +465,7 @@ export function HomePage() {
     <div className="overflow-hidden bg-slate-50/60">
       {/* ==================== HERO SECTION ==================== */}
       <section
-        className="relative overflow-hidden pt-10 sm:pt-16 pb-28 sm:pb-32 border-b transition-all duration-300"
+        className="relative overflow-hidden pt-10 sm:pt-16 pb-12 lg:pb-32 border-b transition-all duration-300"
         style={{
           background: `linear-gradient(135deg, ${themeColors.heroBgStart}, ${themeColors.heroBgMiddle}, ${themeColors.heroBgEnd})`,
           borderColor: `${themeColors.primaryColor}15`
@@ -709,7 +709,7 @@ export function HomePage() {
             : 'grid-cols-2 lg:grid-cols-4';
         if (!heroConfig.showStats || count === 0) return null;
         return (
-        <section className="relative z-20 -mt-14 sm:-mt-16 mb-8">
+        <section className="relative z-20 -mt-14 sm:-mt-16 mb-8 hidden lg:block">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div
               className={`rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border p-4 sm:p-6 grid ${gridClass} gap-3 sm:gap-4 transition-all duration-300`}
@@ -1029,19 +1029,19 @@ export function HomePage() {
       </Reveal>
 
       {/* ==================== PHARMACIES MAP ==================== */}
-      <PharmacyMap pharmacies={sortedPharmacies} loading={loadingData} />
+      <div className="hidden lg:block"><PharmacyMap pharmacies={sortedPharmacies} loading={loadingData} /></div>
 
       {/* ==================== FEATURED PRODUCTS ==================== */}
       <Reveal><FeaturedProducts products={featuredProducts} loading={loadingData} popularProductIds={popularProductIds} /></Reveal>
 
       {/* ==================== MOST SEARCHED ==================== */}
-      <Reveal><MostSearched products={featuredProducts} popularProductIds={popularProductIds} /></Reveal>
+      <Reveal className="hidden lg:block"><MostSearched products={featuredProducts} popularProductIds={popularProductIds} /></Reveal>
 
       {/* ==================== HOW IT WORKS ==================== */}
-      <Reveal><HomeHowItWorks /></Reveal>
+      <Reveal className="hidden lg:block"><HomeHowItWorks /></Reveal>
 
       {/* ==================== WHY US SECTION ==================== */}
-      <Reveal>
+      <Reveal className="hidden lg:block">
       <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <span
@@ -1098,7 +1098,7 @@ export function HomePage() {
 
       {/* ==================== ABOUT ==================== */}
       {(settings.about_title || settings.about_text) && (
-      <Reveal>
+      <Reveal className="hidden lg:block">
       <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-center">
           <div className="lg:col-span-2">
@@ -1138,17 +1138,17 @@ export function HomePage() {
       <Reveal><HomeTestimonials /></Reveal>
 
       {/* ==================== HEALTH TIPS ==================== */}
-      <Reveal><HomeHealthTips /></Reveal>
+      <Reveal className="hidden lg:block"><HomeHealthTips /></Reveal>
 
       {/* ==================== FAQ ==================== */}
       <Reveal><HomeFAQ /></Reveal>
 
       {/* ==================== CUSTOMER SERVICE ==================== */}
-      <Reveal><CustomerServiceBanner /></Reveal>
+      <Reveal className="hidden lg:block"><CustomerServiceBanner /></Reveal>
 
       {/* ==================== EMERGENCY CTA BANNER ==================== */}
       {storeConfig.purchasesEnabled && (
-      <Reveal>
+      <Reveal className="hidden lg:block">
       <section className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           className="rounded-[2rem] relative overflow-hidden text-center text-white"
