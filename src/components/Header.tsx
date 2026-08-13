@@ -10,6 +10,8 @@ import {
   FileText,
   Mic,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Pill,
   Zap,
   PhoneCall,
@@ -162,61 +164,29 @@ export function Header() {
 
   const searchRef = useRef<HTMLDivElement>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
-  const categoryTrackRef = useRef<HTMLDivElement>(null);
-  const catDragStart = useRef({ x: 0, ratio: 0 });
-  const [catDragging, setCatDragging] = useState(false);
-  const [catScroll, setCatScroll] = useState({ left: 0, width: 100, visible: false });
+  const [catScroll, setCatScroll] = useState({ visible: false, atStart: true, atEnd: false });
 
   const updateCatScroll = useCallback(() => {
     const el = categoryScrollRef.current;
     if (!el) return;
     const max = el.scrollWidth - el.clientWidth;
     if (max <= 4) {
-      setCatScroll((s) => (s.visible ? { left: 0, width: 100, visible: false } : s));
+      setCatScroll({ visible: false, atStart: true, atEnd: false });
       return;
     }
     const current = Math.abs(el.scrollLeft);
-    const width = Math.max(10, (el.clientWidth / el.scrollWidth) * 100);
-    const left = (current / max) * (100 - width);
-    setCatScroll({ left, width, visible: true });
+    setCatScroll({
+      visible: true,
+      atStart: current <= 2,
+      atEnd: max - current <= 2,
+    });
   }, []);
 
-  const setCatScrollRatio = useCallback((ratio: number) => {
+  const scrollCatTo = useCallback((dir: 'left' | 'right') => {
     const el = categoryScrollRef.current;
     if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    if (max <= 4) return;
-    const clamped = Math.min(1, Math.max(0, ratio));
-    const isRTL = getComputedStyle(el).direction === 'rtl';
-    el.scrollLeft = (isRTL ? -1 : 1) * clamped * max;
-  }, []);
-
-  const handleCatTrackPointerDown = useCallback((e: React.PointerEvent) => {
-    const el = categoryScrollRef.current;
-    const track = categoryTrackRef.current;
-    if (!el || !track) return;
-    const max = el.scrollWidth - el.clientWidth;
-    if (max <= 4) return;
-    const rect = track.getBoundingClientRect();
-    const tw = catScroll.width / 100;
-    const clickFrac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    const ratio = (clickFrac - tw / 2) / (1 - tw);
-    setCatScrollRatio(ratio);
-    catDragStart.current = { x: e.clientX, ratio };
-    setCatDragging(true);
-    track.setPointerCapture?.(e.pointerId);
-  }, [catScroll.width, setCatScrollRatio]);
-
-  const handleCatTrackPointerMove = useCallback((e: React.PointerEvent) => {
-    const track = categoryTrackRef.current;
-    if (!track || !catDragging) return;
-    const rect = track.getBoundingClientRect();
-    const delta = (e.clientX - catDragStart.current.x) / rect.width;
-    setCatScrollRatio(catDragStart.current.ratio + delta);
-  }, [catDragging, setCatScrollRatio]);
-
-  const handleCatTrackPointerEnd = useCallback(() => {
-    setCatDragging(false);
+    const step = Math.min(400, el.clientWidth * 0.8);
+    el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
   }, []);
 
   useEffect(() => {
@@ -724,77 +694,80 @@ export function Header() {
               borderColor: `${themeColors.headerNavText}15`
             }}
           >
-            <div
-              ref={categoryScrollRef}
-              onScroll={updateCatScroll}
-              className="overflow-x-auto scrollbar-none"
-            >
-              <div className="max-w-7xl mx-auto px-4 flex items-center gap-2 min-w-max py-1.5">
-                <button
-                  onClick={() => navigate({ name: 'categories' })}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black shrink-0 transition-all hover:-translate-y-0.5"
-                  style={{ color: themeColors.accentColor }}
-                >
-                  <Zap className="w-3.5 h-3.5 animate-pulse" />
-                  {t('تصفح حسب الفئة')}
-                </button>
-                <div className="w-px h-5 shrink-0" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
-                {mergeCategories(categories).map((cat) => {
-                  const color = categoryColor(cat.slug);
-                  const Icon = categoryIcon(cat.slug, cat.icon);
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => navigate({ name: 'category', slug: cat.slug })}
-                      className="group flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shrink-0"
-                      style={{
-                        backgroundColor: `${themeColors.headerNavText}10`,
-                        color: themeColors.headerNavText,
-                        borderColor: `${themeColors.headerNavText}20`,
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                      }}
-                    >
-                      <span
-                        className="w-6 h-6 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+            <div className="max-w-7xl mx-auto px-2 sm:px-4 flex items-center gap-2">
+              <button
+                onClick={() => scrollCatTo('left')}
+                disabled={!catScroll.visible || (lang !== 'en' ? catScroll.atEnd : catScroll.atStart)}
+                aria-label={t('تحريك الفئات لليسار')}
+                className="hidden md:flex shrink-0 items-center justify-center w-8 h-8 rounded-full text-white transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:active:scale-90"
+                style={{
+                  background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
+                  boxShadow: `0 8px 18px -8px ${themeColors.primaryColor}cc`,
+                }}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <div
+                ref={categoryScrollRef}
+                onScroll={updateCatScroll}
+                className="flex-1 overflow-x-auto scrollbar-none"
+              >
+                <div className="flex items-center gap-2 min-w-max py-1.5">
+                  <button
+                    onClick={() => navigate({ name: 'categories' })}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black shrink-0 transition-all hover:-translate-y-0.5"
+                    style={{ color: themeColors.accentColor }}
+                  >
+                    <Zap className="w-3.5 h-3.5 animate-pulse" />
+                    {t('تصفح حسب الفئة')}
+                  </button>
+                  <div className="w-px h-5 shrink-0" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
+                  {mergeCategories(categories).map((cat) => {
+                    const color = categoryColor(cat.slug);
+                    const Icon = categoryIcon(cat.slug, cat.icon);
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => navigate({ name: 'category', slug: cat.slug })}
+                        className="group flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shrink-0"
                         style={{
-                          backgroundColor: `${color}22`,
-                          color
+                          backgroundColor: `${themeColors.headerNavText}10`,
+                          color: themeColors.headerNavText,
+                          borderColor: `${themeColors.headerNavText}20`,
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                         }}
                       >
-                        <Icon className="w-3.5 h-3.5" />
-                      </span>
-                      <span className="text-xs font-extrabold whitespace-nowrap">{lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}</span>
-                      <ArrowUpLeft className="w-3 h-3 opacity-0 group-hover:opacity-60 -mt-1 -ms-0.5 transition-opacity" />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {catScroll.visible && (
-              <div
-                ref={categoryTrackRef}
-                onPointerDown={handleCatTrackPointerDown}
-                onPointerMove={handleCatTrackPointerMove}
-                onPointerUp={handleCatTrackPointerEnd}
-                onPointerCancel={handleCatTrackPointerEnd}
-                className={`relative h-2.5 select-none ${catDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                style={{ touchAction: 'none' }}
-                title={t('اسحب أو اضغط للتنقل بين الفئات')}
-              >
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full" style={{ backgroundColor: `${themeColors.headerNavText}20` }}>
-                  <div
-                    className={`absolute top-0 h-full rounded-full ${catDragging ? '' : 'transition-all duration-150'}`}
-                    style={{
-                      left: `${catScroll.left}%`,
-                      width: `${catScroll.width}%`,
-                      backgroundColor: 'rgba(255,255,255,0.95)',
-                      boxShadow: '0 0 10px rgba(255,255,255,0.55), 0 1px 3px rgba(0,0,0,0.25)'
-                    }}
-                  />
+                        <span
+                          className="w-6 h-6 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+                          style={{
+                            backgroundColor: `${color}22`,
+                            color
+                          }}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                        </span>
+                        <span className="text-xs font-extrabold whitespace-nowrap">{lang === 'en' ? (cat.name_en || t(cat.name)) : cat.name}</span>
+                        <ArrowUpLeft className="w-3 h-3 opacity-0 group-hover:opacity-60 -mt-1 -ms-0.5 transition-opacity" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            )}
+
+              <button
+                onClick={() => scrollCatTo('right')}
+                disabled={!catScroll.visible || (lang !== 'en' ? catScroll.atStart : catScroll.atEnd)}
+                aria-label={t('تحريك الفئات لليمين')}
+                className="hidden md:flex shrink-0 items-center justify-center w-8 h-8 rounded-full text-white transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed enabled:hover:shadow-lg enabled:active:scale-90"
+                style={{
+                  background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})`,
+                  boxShadow: `0 8px 18px -8px ${themeColors.primaryColor}cc`,
+                }}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
