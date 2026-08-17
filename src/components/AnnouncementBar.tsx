@@ -15,7 +15,7 @@ function withAlpha(hex: string, alpha: number): string {
 
 export function AnnouncementBar() {
   const { settings, themeColors } = useSettings();
-  const { t } = useLanguage();
+  const { t, p } = useLanguage();
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export function AnnouncementBar() {
         >
           <Megaphone className="w-4 h-4" />
         </span>
-        <span className="font-medium">{t(settings.announcement_text)}</span>
+        <span className="font-medium">{p(settings.announcement_text, settings.announcement_text_en)}</span>
       </div>
       <button
         onClick={dismiss}

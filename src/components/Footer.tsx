@@ -27,7 +27,7 @@ function isDarkColor(hex: string): boolean {
 export function Footer() {
   const { settings, themeColors, footerConfig } = useSettings();
   const { navigate } = useRouter();
-  const { t } = useLanguage();
+  const { t, p } = useLanguage();
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -136,8 +136,8 @@ export function Footer() {
                 <Sparkles className="w-6 h-6" style={{ color: newsletterText }} />
               </div>
               <div>
-                <h4 className="text-lg font-black" style={{ color: newsletterText }}>{t(footerConfig.newsletterTitle)}</h4>
-                <p className="text-xs mt-0.5 font-medium" style={{ color: newsletterFaint }}>{t(footerConfig.newsletterSubtitle)}</p>
+                <h4 className="text-lg font-black" style={{ color: newsletterText }}>{p(footerConfig.newsletterTitle, footerConfig.newsletterTitle_en)}</h4>
+                <p className="text-xs mt-0.5 font-medium" style={{ color: newsletterFaint }}>{p(footerConfig.newsletterSubtitle, footerConfig.newsletterSubtitle_en)}</p>
               </div>
             </div>
 
@@ -145,7 +145,7 @@ export function Footer() {
               {subscribed ? (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold w-full backdrop-blur-sm" style={{ backgroundColor: newsletterInputBg, color: newsletterText, border: `1px solid ${newsletterFaint}` }}>
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  {t(footerConfig.newsletterSuccessText)}
+                  {p(footerConfig.newsletterSuccessText, footerConfig.newsletterSuccessText_en)}
                 </div>
               ) : (
                 <>
@@ -153,7 +153,7 @@ export function Footer() {
                     type="email"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
-                    placeholder={t(footerConfig.newsletterInputPlaceholder)}
+                    placeholder={p(footerConfig.newsletterInputPlaceholder, footerConfig.newsletterInputPlaceholder_en)}
                     required
                     aria-label={t('البريد الإلكتروني')}
                     className="flex-1 min-w-0 px-4 py-2.5 rounded-2xl text-xs focus:outline-none backdrop-blur-sm placeholder:opacity-70"
@@ -165,7 +165,7 @@ export function Footer() {
                     style={{ backgroundColor: newsletterBtnBg, color: newsletterBtnText }}
                   >
                     <Send className="w-3.5 h-3.5" />
-                    {t(footerConfig.newsletterButtonText)}
+                    {p(footerConfig.newsletterButtonText, footerConfig.newsletterButtonText_en)}
                   </button>
                 </>
               )}
@@ -190,14 +190,14 @@ export function Footer() {
               </div>
               <div>
                 <h3 className="text-xl font-black" style={{ color: dark ? '#ffffff' : '#0f172a' }}>
-                  {t(settings.site_name)}
+                  {p(settings.site_name, settings.site_name_en)}
                 </h3>
-                <p className="text-xs font-medium" style={{ color: muted }}>{t(footerConfig.footerTagline)}</p>
+                <p className="text-xs font-medium" style={{ color: muted }}>{p(footerConfig.footerTagline, footerConfig.footerTagline_en)}</p>
               </div>
             </div>
 
             <p className="text-xs leading-relaxed font-medium" style={{ color: muted }}>
-              {t(settings.site_description || settings.site_tagline)}
+              {p(settings.site_description || settings.site_tagline, settings.site_description_en || settings.site_tagline_en)}
             </p>
 
             {footerConfig.showTrustBadges && (
@@ -207,21 +207,21 @@ export function Footer() {
                   style={{ backgroundColor: chipBg, borderColor: withAlpha(primary, 0.25), color: footerText }}
                 >
                   <Shield className="w-3.5 h-3.5" style={{ color: primary }} />
-                  {t(footerConfig.trustBadge1)}
+                  {p(footerConfig.trustBadge1, footerConfig.trustBadge1_en)}
                 </span>
                 <span
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border"
                   style={{ backgroundColor: chipBg, borderColor: withAlpha(primary, 0.25), color: footerText }}
                 >
                   <Truck className="w-3.5 h-3.5" style={{ color: primary }} />
-                  {t(footerConfig.trustBadge2)}
+                  {p(footerConfig.trustBadge2, footerConfig.trustBadge2_en)}
                 </span>
                 <span
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border"
                   style={{ backgroundColor: chipBg, borderColor: withAlpha(primary, 0.25), color: footerText }}
                 >
                   <Clock className="w-3.5 h-3.5" style={{ color: primary }} />
-                  {t(footerConfig.trustBadge3)}
+                  {p(footerConfig.trustBadge3, footerConfig.trustBadge3_en)}
                 </span>
               </div>
             )}
@@ -230,7 +230,7 @@ export function Footer() {
           {/* Quick Links */}
           {footerConfig.showQuickLinks && (
             <div>
-              {sectionTitle(t(footerConfig.quickLinksTitle))}
+              {sectionTitle(p(footerConfig.quickLinksTitle, footerConfig.quickLinksTitle_en))}
               <ul className="space-y-3 text-xs font-semibold">
                 {quickLinks.map((link, i) => (
                   <li key={i}>
@@ -256,7 +256,7 @@ export function Footer() {
           {/* Contact */}
           {footerConfig.showContactSection && (
             <div>
-              {sectionTitle(t(footerConfig.contactTitle))}
+              {sectionTitle(p(footerConfig.contactTitle, footerConfig.contactTitle_en))}
               <ul className="space-y-3.5 text-xs font-semibold">
               {settings.contact_address && (
                 <li className="flex items-start gap-3">
@@ -266,7 +266,7 @@ export function Footer() {
                   >
                     <MapPin className="w-4 h-4" />
                   </span>
-                  <span className="pt-1.5 leading-relaxed" style={{ color: muted }}>{t(settings.contact_address)}</span>
+                  <span className="pt-1.5 leading-relaxed" style={{ color: muted }}>{p(settings.contact_address, settings.contact_address_en)}</span>
                 </li>
               )}
               {settings.contact_phone && (
@@ -336,7 +336,7 @@ export function Footer() {
           {/* Social */}
           {footerConfig.showSocialSection && (
             <div>
-              {sectionTitle(t(footerConfig.socialTitle))}
+              {sectionTitle(p(footerConfig.socialTitle, footerConfig.socialTitle_en))}
               <div className="flex gap-2.5 mb-5">
                 {settings.facebook_url && (
                   <a
@@ -382,7 +382,7 @@ export function Footer() {
                 )}
               </div>
               <p className="text-xs font-medium leading-relaxed" style={{ color: faint }}>
-                {t(footerConfig.socialText)}
+                {p(footerConfig.socialText, footerConfig.socialText_en)}
               </p>
             </div>
           )}
@@ -397,12 +397,12 @@ export function Footer() {
             <p className="flex items-center gap-1.5">
               <Heart className="w-4 h-4" style={{ color: primary }} fill={primary} />
               <span>
-                {t(settings.footer_text)} © {new Date().getFullYear()} {t(settings.site_name)} - {t('جميع الحقوق محفوظة')}
+                {p(settings.footer_text, settings.footer_text_en)} © {new Date().getFullYear()} {p(settings.site_name, settings.site_name_en)} - {t('جميع الحقوق محفوظة')}
               </span>
             </p>
           )}
           {footerConfig.showBottomNotice && (
-            <p className="text-[11px]">{t(footerConfig.bottomNoticeText)}</p>
+            <p className="text-[11px]">{p(footerConfig.bottomNoticeText, footerConfig.bottomNoticeText_en)}</p>
           )}
         </div>
       </div>

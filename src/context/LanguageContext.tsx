@@ -14,6 +14,7 @@ interface LanguageContextType {
   lang: Lang;
   dir: 'rtl' | 'ltr';
   t: (str: string, args?: TranslateArgs) => string;
+  p: (ar: string, enText?: string | null) => string;
   toggleLang: () => void;
 }
 
@@ -21,6 +22,7 @@ const LanguageContext = createContext<LanguageContextType>({
   lang: 'ar',
   dir: 'rtl',
   t: (s) => s,
+  p: (s) => s,
   toggleLang: () => {},
 });
 
@@ -79,12 +81,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [lang],
   );
 
+  const p = useCallback(
+    (ar: string, enText?: string | null): string =>
+      lang === 'en' ? (enText && enText.trim() ? enText : t(ar)) : ar,
+    [lang, t],
+  );
+
   return (
     <LanguageContext.Provider
       value={{
         lang,
         dir: lang === 'en' ? 'ltr' : 'rtl',
         t,
+        p,
         toggleLang: () => setLang((v) => (v === 'ar' ? 'en' : 'ar')),
       }}
     >

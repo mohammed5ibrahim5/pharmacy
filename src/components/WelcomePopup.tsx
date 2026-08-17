@@ -10,7 +10,7 @@ const STORAGE_KEY = 'pharmacy_welcome_popup_seen';
 export function WelcomePopup() {
   const { themeColors, storeConfig, welcomeConfig } = useSettings();
   const { navigate } = useRouter();
-  const { t } = useLanguage();
+  const { t, p } = useLanguage();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -68,9 +68,9 @@ export function WelcomePopup() {
             <div className="w-16 h-16 rounded-3xl bg-white/20 border border-white/30 flex items-center justify-center mx-auto mb-3 animate-float shadow-lg">
               <BadgePercent className="w-8 h-8 text-white" />
             </div>
-            <p className="text-[11px] font-black uppercase tracking-widest text-white/80">{t(welcomeConfig.badgeText)}</p>
-            <h3 className="text-2xl font-black mt-1">{t(welcomeConfig.title, { percent: welcomeConfig.discountPercent })}</h3>
-            <p className="text-xs text-white/85 font-bold mt-1.5">{t(welcomeConfig.subtitle)}</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-white/80">{p(welcomeConfig.badgeText, welcomeConfig.badgeText_en)}</p>
+            <h3 className="text-2xl font-black mt-1">{p(welcomeConfig.title, welcomeConfig.title_en).replace('{percent}', String(welcomeConfig.discountPercent))}</h3>
+            <p className="text-xs text-white/85 font-bold mt-1.5">{p(welcomeConfig.subtitle, welcomeConfig.subtitle_en)}</p>
           </div>
         </div>
 
@@ -121,13 +121,13 @@ export function WelcomePopup() {
             style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 12px 28px -8px ${themeColors.priceColor}99` }}
           >
             <ShoppingBag className="w-4 h-4" />
-            {t(welcomeConfig.ctaText)}
+            {p(welcomeConfig.ctaText, welcomeConfig.ctaText_en)}
           </button>
           <button
             onClick={() => setOpen(false)}
             className="mt-3 w-full text-center text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
           >
-            {t(welcomeConfig.laterText)}
+            {p(welcomeConfig.laterText, welcomeConfig.laterText_en)}
           </button>
         </div>
       </div>

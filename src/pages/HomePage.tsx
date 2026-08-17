@@ -53,7 +53,7 @@ import { CountUp, parseStatValue } from '@/components/CountUp';
 import { TrustSignals } from '@/components/TrustSignals';
 import { categoryColor, categoryGradient, categoryIcon, mergeCategories, orderedCategories } from '@/lib/categoryStyles';
 import { heroBadgeIcon } from '@/lib/heroBadges';
-import type { Pharmacy, Product, Category } from '@/types';
+import type { Pharmacy, Product, Category, HeroStat } from '@/types';
 
 interface SpeechRecognitionLike {
   lang: string;
@@ -79,11 +79,11 @@ const HERO_TRENDING = [
   'كمامات طبية',
 ];
 
-const DEFAULT_HERO_STATS: { id: string; value: string; sub: string; desc: string; icon: string; auto?: boolean; autoSource?: 'pharmacies' | 'products' | 'customers'; visible?: boolean; showOnline?: boolean; showOffline?: boolean }[] = [
-  { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true, showOnline: true, showOffline: true },
-  { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true, autoSource: 'products', visible: true, showOnline: true, showOffline: true },
-  { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: true, autoSource: 'customers', visible: true, showOnline: true, showOffline: true },
-  { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck', auto: false, visible: true, showOnline: true, showOffline: true },
+const DEFAULT_HERO_STATS: HeroStat[] = [
+  { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', sub_en: 'Partner pharmacy', desc: 'معتمدة ومجاوِرة لك', desc_en: 'Accredited & nearby', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true, showOnline: true, showOffline: true },
+  { id: 'products', value: '8+', sub: 'منتج متاح', sub_en: 'Products available', desc: 'تحديث يومي للأسعار', desc_en: 'Daily price updates', icon: 'package', auto: true, autoSource: 'products', visible: true, showOnline: true, showOffline: true },
+  { id: 'customers', value: '10k+', sub: 'عميل سعيد', sub_en: 'Happy customers', desc: 'تقييم ممتاز 4.9⭐', desc_en: 'Excellent 4.9 rating', icon: 'users', auto: true, autoSource: 'customers', visible: true, showOnline: true, showOffline: true },
+  { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', sub_en: 'Delivery service', desc: 'شحن آمن وسريع', desc_en: 'Safe & fast shipping', icon: 'truck', auto: false, visible: true, showOnline: true, showOffline: true },
 ];
 
 function statIcon(key: string): React.ReactNode {
@@ -128,7 +128,7 @@ type PharmacyTab = 'nearest' | 'favorite' | 'highest_rated' | 'most_popular' | '
 
 export function HomePage() {
   const { settings, themeColors, heroConfig, storeConfig, homepageConfig, featuresConfig, headerConfig } = useSettings();
-  const { t, lang, dir } = useLanguage();
+  const { t, lang, dir, p } = useLanguage();
   const { navigate } = useRouter();
   const { location, requestLocation, loading, permissionDenied, setUserLocation } = useGeolocation();
   const { favoritePharmacies } = useFavorites();
@@ -509,8 +509,8 @@ export function HomePage() {
                       <BadgeIcon className="w-3.5 h-3.5" />
                     </div>
                     <div className="leading-tight">
-                      <p className="text-[11px] font-black whitespace-nowrap" style={{ color: themeColors.heroText }}>{t(badge.title)}</p>
-                      <p className="text-[9px] font-bold whitespace-nowrap" style={{ color: badge.color }}>{t(badge.subtitle)}</p>
+                      <p className="text-[11px] font-black whitespace-nowrap" style={{ color: themeColors.heroText }}>{p(badge.title, badge.title_en)}</p>
+                      <p className="text-[9px] font-bold whitespace-nowrap" style={{ color: badge.color }}>{p(badge.subtitle, badge.subtitle_en)}</p>
                     </div>
                   </div>
                 </div>
@@ -537,13 +537,13 @@ export function HomePage() {
             {/* Main Title */}
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black leading-[1.2] tracking-tight animate-fade-up" style={{ color: themeColors.heroText, animationDelay: '0.1s' }}>
               <span className="text-transparent bg-clip-text bg-gradient-to-l" style={{ backgroundImage: `linear-gradient(to left, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}>
-                {t(settings.hero_title || 'اعثر على دوائك في أقرب صيدلية')}
+                {p(settings.hero_title || 'اعثر على دوائك في أقرب صيدلية', settings.hero_title_en)}
               </span>
             </h1>
 
             {/* Subtitle */}
             <p className="text-sm sm:text-base lg:text-lg max-w-2xl mx-auto leading-relaxed font-bold animate-fade-up opacity-80" style={{ color: themeColors.heroText, animationDelay: '0.2s' }}>
-              {t(settings.hero_subtitle || 'ابحث عن الأدوية والمستلزمات الطبية، قارن الأقرب إليك، واطلب التوصيل المباشر لباب المنزل على مدار الساعة.')}
+              {p(settings.hero_subtitle || 'ابحث عن الأدوية والمستلزمات الطبية، قارن الأقرب إليك، واطلب التوصيل المباشر لباب المنزل على مدار الساعة.', settings.hero_subtitle_en)}
             </p>
 
             {/* MAIN SEARCH FORM */}
@@ -587,7 +587,7 @@ export function HomePage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t(heroConfig.searchPlaceholder)}
+                    placeholder={p(heroConfig.searchPlaceholder, heroConfig.searchPlaceholder_en)}
                     className="flex-1 min-w-0 px-3 py-3.5 text-slate-900 text-sm sm:text-base font-bold placeholder:font-normal placeholder:text-gray-400 focus:outline-none bg-transparent"
                   />
 
@@ -610,7 +610,7 @@ export function HomePage() {
               <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-xs font-bold">
                 <span className="opacity-60 font-bold flex items-center gap-1" style={{ color: themeColors.heroText }}>
                   <Sparkles className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
-                  {t(heroConfig.trendingLabel)}
+                  {p(heroConfig.trendingLabel, heroConfig.trendingLabel_en)}
                 </span>
                 {(heroConfig.trendingKeywords.length > 0 ? heroConfig.trendingKeywords : HERO_TRENDING).map((item) => (
                   <button
@@ -642,7 +642,7 @@ export function HomePage() {
                 style={{ backgroundColor: themeColors.primaryColor }}
               >
                 <FileText className="w-4 h-4 shrink-0" />
-                <span className="truncate">{t(heroConfig.prescriptionButtonText)}</span>
+                <span className="truncate">{p(heroConfig.prescriptionButtonText, heroConfig.prescriptionButtonText_en)}</span>
               </button>
               )}
 
@@ -662,7 +662,7 @@ export function HomePage() {
                   }}
                 >
                   <Navigation className="w-4 h-4 animate-spin-slow shrink-0" />
-                  <span className="truncate">{loading ? t('جاري تحديد موقعك...') : permissionDenied ? t('حدد الموقع يدوياً') : t(heroConfig.locationButtonText)}</span>
+                  <span className="truncate">{loading ? t('جاري تحديد موقعك...') : permissionDenied ? t('حدد الموقع يدوياً') : p(heroConfig.locationButtonText, heroConfig.locationButtonText_en)}</span>
                 </button>
               ) : (
                 <button
@@ -676,7 +676,7 @@ export function HomePage() {
                 >
                   <span className="w-2.5 h-2.5 rounded-full animate-ping shrink-0" style={{ backgroundColor: themeColors.primaryColor }} />
                   <MapPin className="w-4 h-4 shrink-0" style={{ color: themeColors.primaryColor }} />
-                  <span className="truncate">{t(heroConfig.locationSetText)}</span>
+                  <span className="truncate">{p(heroConfig.locationSetText, heroConfig.locationSetText_en)}</span>
                 </button>
               )}
               </>
@@ -744,9 +744,9 @@ export function HomePage() {
                         </p>
                       );
                     })()}
-                    <span className="text-xs font-bold opacity-80">{t(stat.sub)}</span>
+                    <span className="text-xs font-bold opacity-80">{p(stat.sub, stat.sub_en)}</span>
                   </div>
-                  <p className="text-[11px] opacity-60 mt-0.5 font-bold">{t(stat.desc)}</p>
+                  <p className="text-[11px] opacity-60 mt-0.5 font-bold">{p(stat.desc, stat.desc_en)}</p>
                 </div>
               </div>
             ))}
@@ -913,10 +913,10 @@ export function HomePage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              {t(homepageConfig.pharmaciesTitle)}
+              {p(homepageConfig.pharmaciesTitle, homepageConfig.pharmaciesTitle_en)}
             </h2>
             <p className="text-sm text-slate-500 mt-1.5 font-bold">
-              {t(homepageConfig.pharmaciesSubtitle)}
+              {p(homepageConfig.pharmaciesSubtitle, homepageConfig.pharmaciesSubtitle_en)}
             </p>
           </div>
           <span
@@ -1109,10 +1109,10 @@ export function HomePage() {
               {t('من نحن')}
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
-              {t(settings.about_title || 'من نحن')}
+              {p(settings.about_title || 'من نحن', settings.about_title_en)}
             </h2>
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium mt-4 whitespace-pre-line">
-              {t(settings.about_text || '')}
+              {p(settings.about_text || '', settings.about_text_en)}
             </p>
           </div>
           <div

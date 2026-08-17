@@ -69,7 +69,7 @@ const TRENDING_LIMIT = 7;
 export function Header() {
   const { navigate, route } = useRouter();
   const { settings, themeColors, headerConfig, storeConfig, darkMode, toggleDarkMode } = useSettings();
-  const { t, lang, toggleLang } = useLanguage();
+  const { t, p, lang, toggleLang } = useLanguage();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
   const { setUserLocation: setGeoLocation } = useGeolocation();
@@ -88,7 +88,7 @@ export function Header() {
   const [userLocation, setUserLocation] = useState<string>(() => {
     return localStorage.getItem('user_delivery_location') || '';
   });
-  const displayLocation = userLocation || headerConfig.locationText || t('القاهرة - المعادي');
+  const displayLocation = userLocation || p(headerConfig.locationText, headerConfig.locationText_en) || t('القاهرة - المعادي');
   const isAccount = route.name === 'account';
   const [headerHidden, setHeaderHidden] = useState(false);
 
@@ -374,7 +374,7 @@ export function Header() {
             {headerConfig.showServiceBar && (
               <span className="flex items-center gap-1.5 font-bold" style={{ color: themeColors.accentColor }}>
                 <Zap className="w-3.5 h-3.5 animate-pulse" />
-                {t(headerConfig.serviceText)}
+                {p(headerConfig.serviceText, headerConfig.serviceText_en)}
               </span>
             )}
 
@@ -441,10 +441,10 @@ export function Header() {
               </div>
               <div className="min-w-0">
                 <h1 className="text-base sm:text-xl font-black leading-tight truncate" style={{ color: themeColors.headerText }}>
-                  {t(settings.site_name)}
+                  {p(settings.site_name, settings.site_name_en)}
                 </h1>
                 <p className="text-[10px] sm:text-xs font-bold hidden sm:block opacity-80" style={{ color: themeColors.primaryColor }}>
-                  {t(settings.site_tagline)}
+                  {p(settings.site_tagline, settings.site_tagline_en)}
                 </p>
               </div>
             </button>

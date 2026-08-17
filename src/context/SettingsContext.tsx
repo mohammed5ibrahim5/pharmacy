@@ -174,8 +174,10 @@ export const DEFAULT_HEADER_CONFIG: HeaderConfig = {
   showTopBar: true,
   showLocationBar: true,
   locationText: 'القاهرة - المعادي',
+  locationText_en: 'Cairo - Maadi',
   showServiceBar: true,
   serviceText: 'خدمة 24/7 طوارئ ودعم صيدلي مباشر',
+  serviceText_en: '24/7 emergency service with direct pharmacist support',
   showPrescriptionBar: true,
   prescriptionBarColor: '#0d9488',
   topBarColor: '#0f172a',
@@ -201,10 +203,15 @@ export const DEFAULT_HEADER_CONFIG: HeaderConfig = {
 export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   showNewsletter: true,
   newsletterTitle: 'اشترك في النشرة الطبية وخصومات الأدوية',
+  newsletterTitle_en: 'Subscribe to medical news and medicine discounts',
   newsletterSubtitle: 'احصل على أحدث عروض الصيدليات والبدائل المتاحة أولاً بأول',
+  newsletterSubtitle_en: 'Get the latest pharmacy offers and available alternatives first',
   newsletterButtonText: 'اشترك',
+  newsletterButtonText_en: 'Subscribe',
   newsletterInputPlaceholder: 'أدخل بريدك الإلكتروني...',
+  newsletterInputPlaceholder_en: 'Enter your email...',
   newsletterSuccessText: 'تم الاشتراك بنجاح في النشرة!',
+  newsletterSuccessText_en: 'Successfully subscribed to the newsletter!',
   newsletterBgStart: '#0d9488',
   newsletterBgEnd: '#0f766e',
   newsletterTextColor: '#ffffff',
@@ -213,19 +220,28 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   newsletterBgImage: '',
   showQuickLinks: true,
   quickLinksTitle: 'روابط المنصة',
+  quickLinksTitle_en: 'Platform links',
   showContactSection: true,
   contactTitle: 'تواصل ومساعدة',
+  contactTitle_en: 'Contact & help',
   showSocialSection: true,
   socialTitle: 'تابعنا على التواصل',
+  socialTitle_en: 'Follow us',
   socialText: 'تصفح آخر الأدوية، الإرشادات الصحية والعروض الدورية عبر منصاتنا.',
+  socialText_en: 'Browse the latest medicines, health tips and recurring offers through our platforms.',
   showTrustBadges: true,
   trustBadge1: 'طبي موثوق',
+  trustBadge1_en: 'Trusted medical',
   trustBadge2: 'توصيل 24 ساعة',
+  trustBadge2_en: '24-hour delivery',
   trustBadge3: 'خدمة على مدار اليوم',
+  trustBadge3_en: 'Service around the clock',
   footerTagline: 'صيدليتك الأقرب أينما كنت',
+  footerTagline_en: 'Your nearest pharmacy, wherever you are',
   showCopyright: true,
   showBottomNotice: true,
   bottomNoticeText: 'الأدوية تُصرف بناءً على التشخيص الطبي والاشتراطات الصحية',
+  bottomNoticeText_en: 'Medicines are dispensed based on medical diagnosis and health requirements',
 };
 
 export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
@@ -241,13 +257,16 @@ export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
 export const DEFAULT_STORE_CONFIG: StoreConfig = {
   purchasesEnabled: true,
   contactMessage: 'للشراء يرجى التواصل مع الصيدلية مباشرة',
+  contactMessage_en: 'To purchase, please contact the pharmacy directly',
   catalogWhatsapp: '',
   catalogMultiPharmacy: false,
 };
 
 export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   pharmaciesTitle: 'الصيدليات المتاحة بجوارك',
+  pharmaciesTitle_en: 'Pharmacies near you',
   pharmaciesSubtitle: 'تصفح الصيدليات حسب تصنيف احتياجك',
+  pharmaciesSubtitle_en: 'Browse pharmacies by your needs',
   trust: {
     showSection: true,
     showBottomBar: true,
@@ -263,10 +282,10 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageConfig = {
   heroBadges: {
     showBadges: true,
     badges: [
-      { id: 'delivery', icon: 'truck', title: 'توصيل فوري', subtitle: 'أقل من 30 دقيقة', color: '#f59e0b', enabled: true },
-      { id: 'discounts', icon: 'badgepercent', title: 'خصومات وتخفيضات', subtitle: 'عروض تصل إلى 30%', color: '#ec4899', enabled: true },
-      { id: 'certified', icon: 'badgecheck', title: 'صيدليات معتمدة 100%', subtitle: 'مرخّصة من هيئة الدواء', color: '#10b981', enabled: true },
-      { id: 'support', icon: 'phone', title: 'دعم فوري 24/7', subtitle: 'متاح دائماً لمساعدتك', color: '#3b82f6', enabled: true },
+      { id: 'delivery', icon: 'truck', title: 'توصيل فوري', title_en: 'Instant delivery', subtitle: 'أقل من 30 دقيقة', subtitle_en: 'In less than 30 minutes', color: '#f59e0b', enabled: true },
+      { id: 'discounts', icon: 'badgepercent', title: 'خصومات وتخفيضات', title_en: 'Discounts and offers', subtitle: 'عروض تصل إلى 30%', subtitle_en: 'Deals up to 30% off', color: '#ec4899', enabled: true },
+      { id: 'certified', icon: 'badgecheck', title: 'صيدليات معتمدة 100%', title_en: '100% certified pharmacies', subtitle: 'مرخّصة من هيئة الدواء', subtitle_en: 'Licensed by the Drug Authority', color: '#10b981', enabled: true },
+      { id: 'support', icon: 'phone', title: 'دعم فوري 24/7', title_en: '24/7 instant support', subtitle: 'متاح دائماً لمساعدتك', subtitle_en: 'Always available to help you', color: '#3b82f6', enabled: true },
     ],
   },
 };
@@ -308,50 +327,71 @@ export const DEFAULT_FEATURES_CONFIG: FeaturesConfig = {
 export interface WelcomePopupConfig {
   enabled: boolean;
   badgeText: string;
+  badgeText_en: string | null;
   title: string;
+  title_en: string | null;
   subtitle: string;
+  subtitle_en: string | null;
   offerCode: string;
   discountPercent: number;
   delaySeconds: number;
   showCountdown: boolean;
   ctaText: string;
+  ctaText_en: string | null;
   laterText: string;
+  laterText_en: string | null;
 }
 
 export const DEFAULT_WELCOME_POPUP_CONFIG: WelcomePopupConfig = {
   enabled: true,
   badgeText: 'عرض ترحيبي خاص',
+  badgeText_en: 'Special welcome offer',
   title: 'خصم {percent}% على طلبك الأول',
+  title_en: '{percent}% off your first order',
   subtitle: 'ادخل الكود عند إتمام الطلب واستفد بالخصم',
+  subtitle_en: 'Enter the code at checkout and enjoy your discount',
   offerCode: 'WELCOME10',
   discountPercent: 10,
   delaySeconds: 4,
   showCountdown: true,
   ctaText: 'ابدأ التسوق الآن',
+  ctaText_en: 'Start shopping now',
   laterText: 'لاحقاً، لن أشتري الآن',
+  laterText_en: 'Maybe later',
 };
 
 export const DEFAULT_HOW_IT_WORKS_CONFIG: HowItWorksConfig = {
   enabled: true,
   badge: 'خطوات بسيطة وسريعة',
+  badge_en: 'Simple and fast steps',
   title: 'كيف تعمل منصتنا؟',
+  title_en: 'How does our platform work?',
   subtitle: 'من البحث حتى الاستلام في 4 خطوات فقط',
+  subtitle_en: 'From search to delivery in just 4 steps',
   steps: [
     {
       title: 'ابحث عن دوائك',
+      title_en: 'Search for your medicine',
       desc: 'ابحث بالاسم، امسح الباركود، استخدم البحث الصوتي، أو ارفع صورة الروشتة.',
+      desc_en: 'Search by name, scan a barcode, use voice search, or upload a prescription photo.',
     },
     {
       title: 'قارن الصيدليات',
+      title_en: 'Compare pharmacies',
       desc: 'راجع الأسعار والتقييمات واختر الصيدلية الأقرب إليك والأكثر ملاءمة.',
+      desc_en: 'Review prices and ratings, and choose the closest and most suitable pharmacy.',
     },
     {
       title: 'اطلب بأمان',
+      title_en: 'Order safely',
       desc: 'اختر الكمية والطريقة، وادفع إلكترونياً عبر فودافون كاش أو إينستاباي.',
+      desc_en: 'Choose quantity and method, and pay electronically via Vodafone Cash or InstaPay.',
     },
     {
       title: 'استلم في دقائق',
+      title_en: 'Receive in minutes',
       desc: 'توصيل مباشر وسريع حتى باب منزلك بتغليف محكم وآمن على مدار الساعة.',
+      desc_en: 'Fast direct delivery to your door with secure packaging around the clock.',
     },
   ],
 };
@@ -363,10 +403,15 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
   showPrescriptionButton: true,
   showLocationButton: true,
   searchPlaceholder: 'ابحث عن اسم الدواء، المادة الفعالة، أو المنتج...',
+  searchPlaceholder_en: 'Search by medicine name, active ingredient, or product...',
   prescriptionButtonText: 'ارفع صورة الروشتة — يراجعها صيدلي حقيقي',
+  prescriptionButtonText_en: 'Upload a prescription photo — reviewed by a real pharmacist',
   locationButtonText: 'حدد موقعك لأقرب صيدلية',
+  locationButtonText_en: 'Set your location for the nearest pharmacy',
   locationSetText: 'تم تحديد موقعك - أقرب الصيدليات أولاً',
+  locationSetText_en: 'Location set - nearest pharmacies first',
   trendingLabel: 'الأكثر بحثاً:',
+  trendingLabel_en: 'Trending now:',
   trendingKeywords: [
     'بنادول اكسترا',
     'كونجستال',
@@ -377,10 +422,10 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
     'كمامات طبية',
   ],
   stats: [
-    { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', desc: 'معتمدة ومجاوِرة لك', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true, showOnline: true, showOffline: true },
-    { id: 'products', value: '8+', sub: 'منتج متاح', desc: 'تحديث يومي للأسعار', icon: 'package', auto: true, autoSource: 'products', visible: true, showOnline: true, showOffline: true },
-    { id: 'customers', value: '10k+', sub: 'عميل سعيد', desc: 'تقييم ممتاز 4.9⭐', icon: 'users', auto: true, autoSource: 'customers', visible: true, showOnline: true, showOffline: true },
-    { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', desc: 'شحن آمن وسريع', icon: 'truck', auto: false, visible: true, showOnline: true, showOffline: true },
+    { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', sub_en: 'Partner pharmacy', desc: 'معتمدة ومجاوِرة لك', desc_en: 'Accredited & nearby', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true, showOnline: true, showOffline: true },
+    { id: 'products', value: '8+', sub: 'منتج متاح', sub_en: 'Products available', desc: 'تحديث يومي للأسعار', desc_en: 'Daily price updates', icon: 'package', auto: true, autoSource: 'products', visible: true, showOnline: true, showOffline: true },
+    { id: 'customers', value: '10k+', sub: 'عميل سعيد', sub_en: 'Happy customers', desc: 'تقييم ممتاز 4.9⭐', desc_en: 'Excellent 4.9 rating', icon: 'users', auto: true, autoSource: 'customers', visible: true, showOnline: true, showOffline: true },
+    { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', sub_en: 'Delivery service', desc: 'شحن آمن وسريع', desc_en: 'Safe & fast shipping', icon: 'truck', auto: false, visible: true, showOnline: true, showOffline: true },
   ],
 };
 
@@ -406,8 +451,11 @@ interface SettingsContextType {
 const DEFAULT_SETTINGS: SiteSettings = {
   id: '',
   site_name: 'صيدليتي',
+  site_name_en: 'Dawai',
   site_tagline: 'صيدلياتك القريبة منك في مكان واحد',
+  site_tagline_en: 'Your nearest pharmacy, wherever you are',
   site_description: null,
+  site_description_en: null,
   logo_url: null,
   primary_color: '#0d9488',
   secondary_color: '#0f766e',
@@ -416,16 +464,23 @@ const DEFAULT_SETTINGS: SiteSettings = {
   contact_email: null,
   contact_whatsapp: null,
   contact_address: null,
+  contact_address_en: null,
   footer_text: 'جميع الحقوق محفوظة',
+  footer_text_en: 'All rights reserved',
   hero_title: 'اعثر على دوائك في أقرب صيدلية',
+  hero_title_en: 'Find your medicine at the nearest pharmacy',
   hero_subtitle: 'ابحث عن الأدوية واعثر على أقرب صيدلية توفرها',
+  hero_subtitle_en: 'Search for medicines and find the nearest pharmacy that stocks them',
   facebook_url: null,
   instagram_url: null,
   twitter_url: null,
   about_title: 'من نحن',
+  about_title_en: 'About us',
   about_text: 'منصة صيدليتي تجمع الصيدليات القريبة منك في مكان واحد',
+  about_text_en: 'Dawai platform brings the nearest pharmacies to you in one place',
   features_json: null,
   announcement_text: null,
+  announcement_text_en: null,
   announcement_active: false,
   created_at: '',
   updated_at: '',

@@ -82,8 +82,10 @@ export interface HeaderConfig {
   showTopBar: boolean;
   showLocationBar: boolean;
   locationText: string;
+  locationText_en: string | null;
   showServiceBar: boolean;
   serviceText: string;
+  serviceText_en: string | null;
   showPrescriptionBar: boolean;
   prescriptionBarColor: string;
   topBarColor: string;
@@ -101,10 +103,15 @@ export interface HeaderConfig {
 export interface FooterConfig {
   showNewsletter: boolean;
   newsletterTitle: string;
+  newsletterTitle_en: string | null;
   newsletterSubtitle: string;
+  newsletterSubtitle_en: string | null;
   newsletterButtonText: string;
+  newsletterButtonText_en: string | null;
   newsletterInputPlaceholder: string;
+  newsletterInputPlaceholder_en: string | null;
   newsletterSuccessText: string;
+  newsletterSuccessText_en: string | null;
   newsletterBgStart: string;
   newsletterBgEnd: string;
   newsletterTextColor: string;
@@ -113,24 +120,34 @@ export interface FooterConfig {
   newsletterBgImage: string;
   showQuickLinks: boolean;
   quickLinksTitle: string;
+  quickLinksTitle_en: string | null;
   showContactSection: boolean;
   contactTitle: string;
+  contactTitle_en: string | null;
   showSocialSection: boolean;
   socialTitle: string;
+  socialTitle_en: string | null;
   socialText: string;
+  socialText_en: string | null;
   showTrustBadges: boolean;
   trustBadge1: string;
+  trustBadge1_en: string | null;
   trustBadge2: string;
+  trustBadge2_en: string | null;
   trustBadge3: string;
+  trustBadge3_en: string | null;
   footerTagline: string;
+  footerTagline_en: string | null;
   showCopyright: boolean;
   showBottomNotice: boolean;
   bottomNoticeText: string;
+  bottomNoticeText_en: string | null;
 }
 
 export interface StoreConfig {
   purchasesEnabled: boolean;
   contactMessage: string;
+  contactMessage_en: string | null;
   catalogWhatsapp: string;
   catalogMultiPharmacy: boolean;
 }
@@ -152,7 +169,9 @@ export interface HeroBadge {
   id: string;
   icon: string;
   title: string;
+  title_en: string | null;
   subtitle: string;
+  subtitle_en: string | null;
   color: string;
   enabled: boolean;
 }
@@ -164,7 +183,9 @@ export interface HeroBadgesConfig {
 
 export interface HomepageConfig {
   pharmaciesTitle: string;
+  pharmaciesTitle_en: string | null;
   pharmaciesSubtitle: string;
+  pharmaciesSubtitle_en: string | null;
   trust: TrustSignalsConfig;
   heroBadges: HeroBadgesConfig;
 }
@@ -172,8 +193,11 @@ export interface HomepageConfig {
 export interface SiteSettings {
   id: string;
   site_name: string;
+  site_name_en: string | null;
   site_tagline: string;
+  site_tagline_en: string | null;
   site_description: string | null;
+  site_description_en: string | null;
   logo_url: string | null;
   primary_color: string;
   secondary_color: string;
@@ -182,16 +206,23 @@ export interface SiteSettings {
   contact_email: string | null;
   contact_whatsapp: string | null;
   contact_address: string | null;
+  contact_address_en: string | null;
   footer_text: string;
+  footer_text_en: string | null;
   hero_title: string;
+  hero_title_en: string | null;
   hero_subtitle: string;
+  hero_subtitle_en: string | null;
   facebook_url: string | null;
   instagram_url: string | null;
   twitter_url: string | null;
   about_title: string | null;
+  about_title_en: string | null;
   about_text: string | null;
+  about_text_en: string | null;
   features_json: string | null;
   announcement_text: string | null;
+  announcement_text_en: string | null;
   announcement_active: boolean;
   headerConfig?: HeaderConfig;
   created_at: string;
@@ -291,7 +322,9 @@ export interface HeroStat {
   id: string;
   value: string;
   sub: string;
+  sub_en: string | null;
   desc: string;
+  desc_en: string | null;
   icon: string;
   auto?: boolean;
   autoSource?: 'pharmacies' | 'products' | 'customers';
@@ -307,24 +340,34 @@ export interface HeroConfig {
   showPrescriptionButton: boolean;
   showLocationButton: boolean;
   searchPlaceholder: string;
+  searchPlaceholder_en: string | null;
   prescriptionButtonText: string;
+  prescriptionButtonText_en: string | null;
   locationButtonText: string;
+  locationButtonText_en: string | null;
   locationSetText: string;
+  locationSetText_en: string | null;
   trendingLabel: string;
+  trendingLabel_en: string | null;
   trendingKeywords: string[];
   stats: HeroStat[];
 }
 
 export interface HowItWorksStep {
   title: string;
+  title_en: string | null;
   desc: string;
+  desc_en: string | null;
 }
 
 export interface HowItWorksConfig {
   enabled: boolean;
   badge: string;
+  badge_en: string | null;
   title: string;
+  title_en: string | null;
   subtitle: string;
+  subtitle_en: string | null;
   steps: HowItWorksStep[];
 }
 

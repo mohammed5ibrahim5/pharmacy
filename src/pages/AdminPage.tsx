@@ -1326,12 +1326,32 @@ function DashboardTab() {
             />
           </label>
           <label className="block">
+            <span className="text-xs font-bold text-gray-600">العنوان الرئيسي (English — استخدم {`{percent}`} للنسبة)</span>
+            <input
+              value={welcomeForm.title_en || ''}
+              onChange={(e) => setWelcomeField('title_en', e.target.value)}
+              placeholder="Get {percent}% off your first order"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+              dir="ltr"
+            />
+          </label>
+          <label className="block">
             <span className="text-xs font-bold text-gray-600">النص الفرعي</span>
             <input
               value={welcomeForm.subtitle}
               onChange={(e) => setWelcomeField('subtitle', e.target.value)}
               placeholder="ادخل الكود عند إتمام الطلب واستفد بالخصم"
               className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-gray-600">النص الفرعي (English)</span>
+            <input
+              value={welcomeForm.subtitle_en || ''}
+              onChange={(e) => setWelcomeField('subtitle_en', e.target.value)}
+              placeholder="Use the code at checkout to get your discount"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+              dir="ltr"
             />
           </label>
           <label className="block">
@@ -1344,6 +1364,16 @@ function DashboardTab() {
             />
           </label>
           <label className="block">
+            <span className="text-xs font-bold text-gray-600">نص الشارة العلوية (English)</span>
+            <input
+              value={welcomeForm.badgeText_en || ''}
+              onChange={(e) => setWelcomeField('badgeText_en', e.target.value)}
+              placeholder="Special welcome offer"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+              dir="ltr"
+            />
+          </label>
+          <label className="block">
             <span className="text-xs font-bold text-gray-600">نص زر «ابدأ التسوق»</span>
             <input
               value={welcomeForm.ctaText}
@@ -1353,12 +1383,32 @@ function DashboardTab() {
             />
           </label>
           <label className="block">
+            <span className="text-xs font-bold text-gray-600">نص زر «ابدأ التسوق» (English)</span>
+            <input
+              value={welcomeForm.ctaText_en || ''}
+              onChange={(e) => setWelcomeField('ctaText_en', e.target.value)}
+              placeholder="Start shopping now"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+              dir="ltr"
+            />
+          </label>
+          <label className="block">
             <span className="text-xs font-bold text-gray-600">نص «لاحقاً»</span>
             <input
               value={welcomeForm.laterText}
               onChange={(e) => setWelcomeField('laterText', e.target.value)}
               placeholder="لاحقاً، لن أشتري الآن"
               className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-gray-600">نص «لاحقاً» (English)</span>
+            <input
+              value={welcomeForm.laterText_en || ''}
+              onChange={(e) => setWelcomeField('laterText_en', e.target.value)}
+              placeholder="Later, maybe next time"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500"
+              dir="ltr"
             />
           </label>
         </div>
@@ -3531,8 +3581,11 @@ function SettingsTab() {
 
     const { error: saveError } = await supabase.from('site_settings').update({
       site_name: form.site_name,
+      site_name_en: form.site_name_en || null,
       site_tagline: form.site_tagline,
+      site_tagline_en: form.site_tagline_en || null,
       site_description: form.site_description,
+      site_description_en: form.site_description_en || null,
       logo_url: form.logo_url,
       primary_color: colors.primaryColor,
       secondary_color: colors.secondaryColor,
@@ -3541,15 +3594,22 @@ function SettingsTab() {
       contact_email: form.contact_email,
       contact_whatsapp: form.contact_whatsapp,
       contact_address: form.contact_address,
+      contact_address_en: form.contact_address_en || null,
       footer_text: form.footer_text,
+      footer_text_en: form.footer_text_en || null,
       hero_title: form.hero_title,
+      hero_title_en: form.hero_title_en || null,
       hero_subtitle: form.hero_subtitle,
+      hero_subtitle_en: form.hero_subtitle_en || null,
       facebook_url: form.facebook_url,
       instagram_url: form.instagram_url,
       twitter_url: form.twitter_url,
       about_title: form.about_title,
+      about_title_en: form.about_title_en || null,
       about_text: form.about_text,
+      about_text_en: form.about_text_en || null,
       announcement_text: form.announcement_text,
+      announcement_text_en: form.announcement_text_en || null,
       announcement_active: form.announcement_active,
       features_json: updatedFeaturesJson,
       updated_at: new Date().toISOString(),
@@ -3847,14 +3907,19 @@ function SettingsTab() {
         <div className="space-y-6">
           <SettingsSection title="هوية الموقع الأساسية" icon={<Cross className="w-5 h-5" />}>
             <Field label="اسم الموقع"><input value={form.site_name} onChange={(e) => setForm({ ...form, site_name: e.target.value })} className={inputClass} /></Field>
+            <Field label="اسم الموقع (English)"><input value={form.site_name_en || ''} onChange={(e) => setForm({ ...form, site_name_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Site name" /></Field>
             <Field label="الشعار النصي (Tagline)"><input value={form.site_tagline} onChange={(e) => setForm({ ...form, site_tagline: e.target.value })} className={inputClass} /></Field>
+            <Field label="الشعار النصي (English)"><input value={form.site_tagline_en || ''} onChange={(e) => setForm({ ...form, site_tagline_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Tagline" /></Field>
             <Field label="وصف الموقع"><textarea value={form.site_description || ''} onChange={(e) => setForm({ ...form, site_description: e.target.value })} className={inputClass} rows={2} /></Field>
+            <Field label="وصف الموقع (English)"><textarea value={form.site_description_en || ''} onChange={(e) => setForm({ ...form, site_description_en: e.target.value })} className={inputClass} rows={2} dir="ltr" placeholder="Site description" /></Field>
             <ImageUrlField label="شعار الموقع (Logo)" value={form.logo_url || ''} onChange={(v) => setForm({ ...form, logo_url: v })} />
           </SettingsSection>
 
 <SettingsSection title="القسم الرئيسي (Hero)" icon={<LayoutDashboard className="w-5 h-5" />}>
             <Field label="العنوان الرئيسي"><input value={form.hero_title} onChange={(e) => setForm({ ...form, hero_title: e.target.value })} className={inputClass} /></Field>
+            <Field label="العنوان الرئيسي (English)"><input value={form.hero_title_en || ''} onChange={(e) => setForm({ ...form, hero_title_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Hero title" /></Field>
             <Field label="النص الفرعي"><textarea value={form.hero_subtitle} onChange={(e) => setForm({ ...form, hero_subtitle: e.target.value })} className={inputClass} rows={2} /></Field>
+            <Field label="النص الفرعي (English)"><textarea value={form.hero_subtitle_en || ''} onChange={(e) => setForm({ ...form, hero_subtitle_en: e.target.value })} className={inputClass} rows={2} dir="ltr" placeholder="Hero subtitle" /></Field>
           </SettingsSection>
         </div>
       )}
@@ -3904,6 +3969,15 @@ function SettingsTab() {
                     placeholder="مثال: القاهرة - المعادي"
                   />
                 </Field>
+                <Field label="نص الموقع الافتراضي (English)">
+                  <input
+                    value={headerCfg.locationText_en || ''}
+                    onChange={(e) => setHeaderCfg({ ...headerCfg, locationText_en: e.target.value })}
+                    className={inputClass}
+                    dir="ltr"
+                    placeholder="e.g. Cairo - Maadi"
+                  />
+                </Field>
               </div>
 
               <div>
@@ -3925,6 +3999,15 @@ function SettingsTab() {
                     onChange={(e) => setHeaderCfg({ ...headerCfg, serviceText: e.target.value })}
                     className={inputClass}
                     placeholder="مثال: خدمة 24/7 طوارئ ودعم صيدلي مباشر"
+                  />
+                </Field>
+                <Field label="نص شريط الخدمة (English)">
+                  <input
+                    value={headerCfg.serviceText_en || ''}
+                    onChange={(e) => setHeaderCfg({ ...headerCfg, serviceText_en: e.target.value })}
+                    className={inputClass}
+                    dir="ltr"
+                    placeholder="e.g. 24/7 emergency pharmacy support"
                   />
                 </Field>
               </div>
@@ -4126,19 +4209,34 @@ function SettingsTab() {
               <Field label="نص البحث الافتراضي (Placeholder)">
                 <input value={heroCfg.searchPlaceholder} onChange={(e) => setHeroCfg({ ...heroCfg, searchPlaceholder: e.target.value })} className={inputClass} />
               </Field>
+              <Field label="نص البحث الافتراضي (English)">
+                <input value={heroCfg.searchPlaceholder_en || ''} onChange={(e) => setHeroCfg({ ...heroCfg, searchPlaceholder_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Placeholder" />
+              </Field>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="نص زر رفع الروشتة">
                   <input value={heroCfg.prescriptionButtonText} onChange={(e) => setHeroCfg({ ...heroCfg, prescriptionButtonText: e.target.value })} className={inputClass} />
                 </Field>
+                <Field label="نص زر رفع الروشتة (English)">
+                  <input value={heroCfg.prescriptionButtonText_en || ''} onChange={(e) => setHeroCfg({ ...heroCfg, prescriptionButtonText_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Upload prescription" />
+                </Field>
                 <Field label="نص زر تحديد الموقع">
                   <input value={heroCfg.locationButtonText} onChange={(e) => setHeroCfg({ ...heroCfg, locationButtonText: e.target.value })} className={inputClass} />
+                </Field>
+                <Field label="نص زر تحديد الموقع (English)">
+                  <input value={heroCfg.locationButtonText_en || ''} onChange={(e) => setHeroCfg({ ...heroCfg, locationButtonText_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Set location" />
                 </Field>
               </div>
               <Field label="نص بعد تحديد الموقع">
                 <input value={heroCfg.locationSetText} onChange={(e) => setHeroCfg({ ...heroCfg, locationSetText: e.target.value })} className={inputClass} />
               </Field>
+              <Field label="نص بعد تحديد الموقع (English)">
+                <input value={heroCfg.locationSetText_en || ''} onChange={(e) => setHeroCfg({ ...heroCfg, locationSetText_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Location set" />
+              </Field>
               <Field label="عنوان قائمة الأكثر بحثاً">
                 <input value={heroCfg.trendingLabel} onChange={(e) => setHeroCfg({ ...heroCfg, trendingLabel: e.target.value })} className={inputClass} />
+              </Field>
+              <Field label="عنوان قائمة الأكثر بحثاً (English)">
+                <input value={heroCfg.trendingLabel_en || ''} onChange={(e) => setHeroCfg({ ...heroCfg, trendingLabel_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Trending now:" />
               </Field>
               <Field label="كلمات الأكثر بحثاً (افصل بينها بفاصلة)">
                 <textarea
@@ -4220,10 +4318,24 @@ function SettingsTab() {
                       placeholder="العنوان"
                     />
                     <input
+                      value={s.sub_en || ''}
+                      onChange={(e) => updateHeroStat(s.id, { sub_en: e.target.value })}
+                      className={inputClass}
+                      dir="ltr"
+                      placeholder="Title (EN)"
+                    />
+                    <input
                       value={s.desc}
                       onChange={(e) => updateHeroStat(s.id, { desc: e.target.value })}
                       className={inputClass}
                       placeholder="الوصف"
+                    />
+                    <input
+                      value={s.desc_en || ''}
+                      onChange={(e) => updateHeroStat(s.id, { desc_en: e.target.value })}
+                      className={inputClass}
+                      dir="ltr"
+                      placeholder="Description (EN)"
                     />
                     <select
                       value={s.icon}
@@ -4252,7 +4364,7 @@ function SettingsTab() {
               ))}
               <button
                 type="button"
-                onClick={() => setHeroCfg({ ...heroCfg, stats: [...heroCfg.stats, { id: `stat_${Date.now()}`, value: '0', sub: 'عنوان جديد', desc: 'وصف جديد', icon: 'store', auto: false, showOnline: true, showOffline: true }] })}
+                onClick={() => setHeroCfg({ ...heroCfg, stats: [...heroCfg.stats, { id: `stat_${Date.now()}`, value: '0', sub: 'عنوان جديد', sub_en: '', desc: 'وصف جديد', desc_en: '', icon: 'store', auto: false, showOnline: true, showOffline: true }] })}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-gray-300 text-xs font-bold text-gray-500 hover:bg-gray-50"
               >
                 <Plus className="w-4 h-4" /> إضافة بطاقة جديدة
@@ -4282,11 +4394,20 @@ function SettingsTab() {
               <Field label="النص العلوي (الشارة)">
                 <input value={howCfg.badge} onChange={(e) => setHowCfg({ ...howCfg, badge: e.target.value })} className={inputClass} />
               </Field>
+              <Field label="النص العلوي (English)">
+                <input value={howCfg.badge_en || ''} onChange={(e) => setHowCfg({ ...howCfg, badge_en: e.target.value })} className={inputClass} dir="ltr" />
+              </Field>
               <Field label="العنوان الرئيسي">
                 <input value={howCfg.title} onChange={(e) => setHowCfg({ ...howCfg, title: e.target.value })} className={inputClass} />
               </Field>
+              <Field label="العنوان الرئيسي (English)">
+                <input value={howCfg.title_en || ''} onChange={(e) => setHowCfg({ ...howCfg, title_en: e.target.value })} className={inputClass} dir="ltr" />
+              </Field>
               <Field label="العنوان الفرعي">
                 <input value={howCfg.subtitle} onChange={(e) => setHowCfg({ ...howCfg, subtitle: e.target.value })} className={inputClass} />
+              </Field>
+              <Field label="العنوان الفرعي (English)">
+                <input value={howCfg.subtitle_en || ''} onChange={(e) => setHowCfg({ ...howCfg, subtitle_en: e.target.value })} className={inputClass} dir="ltr" />
               </Field>
             </div>
           </SettingsSection>
@@ -4309,10 +4430,24 @@ function SettingsTab() {
                       placeholder="عنوان الخطوة"
                     />
                     <input
+                      value={step.title_en || ''}
+                      onChange={(e) => setHowCfg({ ...howCfg, steps: howCfg.steps.map((s, j) => (j === i ? { ...s, title_en: e.target.value } : s)) })}
+                      className={inputClass}
+                      dir="ltr"
+                      placeholder="Step title (EN)"
+                    />
+                    <input
                       value={step.desc}
                       onChange={(e) => setHowCfg({ ...howCfg, steps: howCfg.steps.map((s, j) => (j === i ? { ...s, desc: e.target.value } : s)) })}
                       className={inputClass}
                       placeholder="وصف الخطوة"
+                    />
+                    <input
+                      value={step.desc_en || ''}
+                      onChange={(e) => setHowCfg({ ...howCfg, steps: howCfg.steps.map((s, j) => (j === i ? { ...s, desc_en: e.target.value } : s)) })}
+                      className={inputClass}
+                      dir="ltr"
+                      placeholder="Step description (EN)"
                     />
                   </div>
                 </div>
@@ -4825,7 +4960,9 @@ function SettingsTab() {
         <div className="space-y-6">
           <SettingsSection title="قسم من نحن" icon={<Users className="w-5 h-5" />}>
             <Field label="عنوان القسم"><input value={form.about_title || ''} onChange={(e) => setForm({ ...form, about_title: e.target.value })} className={inputClass} /></Field>
+            <Field label="عنوان القسم (English)"><input value={form.about_title_en || ''} onChange={(e) => setForm({ ...form, about_title_en: e.target.value })} className={inputClass} dir="ltr" placeholder="About title" /></Field>
             <Field label="نص القسم"><textarea value={form.about_text || ''} onChange={(e) => setForm({ ...form, about_text: e.target.value })} className={inputClass} rows={3} /></Field>
+            <Field label="نص القسم (English)"><textarea value={form.about_text_en || ''} onChange={(e) => setForm({ ...form, about_text_en: e.target.value })} className={inputClass} rows={3} dir="ltr" placeholder="About text" /></Field>
           </SettingsSection>
 
           <SettingsSection title="قسم الصيدليات في الصفحة الرئيسية" icon={<Store className="w-5 h-5" />}>
@@ -4833,7 +4970,9 @@ function SettingsTab() {
               العنوان والنص الفرعي اللذان يظهران أعلى قسم الصيدليات في الصفحة الرئيسية للموقع.
             </p>
             <Field label="العنوان الرئيسي للقسم"><input value={homepageCfg.pharmaciesTitle} onChange={(e) => setHomepageCfg({ ...homepageCfg, pharmaciesTitle: e.target.value })} className={inputClass} placeholder="مثال: الصيدليات المتاحة بجوارك" /></Field>
+            <Field label="العنوان الرئيسي للقسم (English)"><input value={homepageCfg.pharmaciesTitle_en || ''} onChange={(e) => setHomepageCfg({ ...homepageCfg, pharmaciesTitle_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Pharmacies near you" /></Field>
             <Field label="النص الفرعي للقسم"><input value={homepageCfg.pharmaciesSubtitle} onChange={(e) => setHomepageCfg({ ...homepageCfg, pharmaciesSubtitle: e.target.value })} className={inputClass} placeholder="مثال: تصفح الصيدليات حسب تصنيف احتياجك" /></Field>
+            <Field label="النص الفرعي للقسم (English)"><input value={homepageCfg.pharmaciesSubtitle_en || ''} onChange={(e) => setHomepageCfg({ ...homepageCfg, pharmaciesSubtitle_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Browse pharmacies by your needs" /></Field>
           </SettingsSection>
 
           <SettingsSection title="شريط الثقة (لماذا تثق بنا؟)" icon={<ShieldCheck className="w-5 h-5" />}>
@@ -4957,8 +5096,14 @@ function SettingsTab() {
                       <Field label="العنوان الرئيسي">
                         <input value={badge.title} onChange={(e) => updateBadge({ title: e.target.value })} className={inputClass} placeholder="مثال: توصيل فوري" />
                       </Field>
+                      <Field label="العنوان الرئيسي (English)">
+                        <input value={badge.title_en || ''} onChange={(e) => updateBadge({ title_en: e.target.value })} className={inputClass} dir="ltr" placeholder="e.g. Fast delivery" />
+                      </Field>
                       <Field label="النص الفرعي">
                         <input value={badge.subtitle} onChange={(e) => updateBadge({ subtitle: e.target.value })} className={inputClass} placeholder="مثال: أقل من 30 دقيقة" />
+                      </Field>
+                      <Field label="النص الفرعي (English)">
+                        <input value={badge.subtitle_en || ''} onChange={(e) => updateBadge({ subtitle_en: e.target.value })} className={inputClass} dir="ltr" placeholder="e.g. Under 30 minutes" />
                       </Field>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <Field label="الأيقونة">
@@ -4988,6 +5133,7 @@ function SettingsTab() {
           <SettingsSection title="الشريط الإعلاني" icon={<Megaphone className="w-5 h-5" />}>
             <label className="flex items-center gap-2 cursor-pointer mb-3"><input type="checkbox" checked={form.announcement_active} onChange={(e) => setForm({ ...form, announcement_active: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm text-gray-700">تفعيل الشريط الإعلاني</span></label>
             <Field label="نص الإعلان"><input value={form.announcement_text || ''} onChange={(e) => setForm({ ...form, announcement_text: e.target.value })} className={inputClass} placeholder="نص الإعلان الذي يظهر أعلى الموقع" /></Field>
+            <Field label="نص الإعلان (English)"><input value={form.announcement_text_en || ''} onChange={(e) => setForm({ ...form, announcement_text_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Announcement text" /></Field>
           </SettingsSection>
         </div>
       )}
@@ -5081,6 +5227,7 @@ function SettingsTab() {
             </div>
             <Field label="البريد الإلكتروني"><input value={form.contact_email || ''} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} className={inputClass} dir="ltr" /></Field>
             <Field label="العنوان"><input value={form.contact_address || ''} onChange={(e) => setForm({ ...form, contact_address: e.target.value })} className={inputClass} /></Field>
+            <Field label="العنوان (English)"><input value={form.contact_address_en || ''} onChange={(e) => setForm({ ...form, contact_address_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Address" /></Field>
           </SettingsSection>
 
           <SettingsSection title="روابط التواصل الاجتماعي" icon={<Globe className="w-5 h-5" />}>
@@ -5179,12 +5326,24 @@ function SettingsTab() {
               <Field label="نص حقوق النشر (الأسفل)">
                 <input value={form.footer_text} onChange={(e) => setForm({ ...form, footer_text: e.target.value })} className={inputClass} />
               </Field>
+              <Field label="نص حقوق النشر (English)">
+                <input value={form.footer_text_en || ''} onChange={(e) => setForm({ ...form, footer_text_en: e.target.value })} className={inputClass} dir="ltr" />
+              </Field>
               <Field label="الجملة التعريفية تحت اسم الموقع">
                 <input
                   value={footerCfg.footerTagline}
                   onChange={(e) => setFooterCfg({ ...footerCfg, footerTagline: e.target.value })}
                   className={inputClass}
                   placeholder="مثال: صيدليتك الأقرب أينما كنت"
+                />
+              </Field>
+              <Field label="الجملة التعريفية (English)">
+                <input
+                  value={footerCfg.footerTagline_en || ''}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, footerTagline_en: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
+                  placeholder="Pharmacy tagline"
                 />
               </Field>
             </div>
@@ -5197,11 +5356,29 @@ function SettingsTab() {
                   disabled={!footerCfg.showNewsletter}
                 />
               </Field>
+              <Field label="عنوان صندوق النشرة (English)">
+                <input
+                  value={footerCfg.newsletterTitle_en || ''}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, newsletterTitle_en: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
+                  disabled={!footerCfg.showNewsletter}
+                />
+              </Field>
               <Field label="النص الفرعي للنشرة">
                 <input
                   value={footerCfg.newsletterSubtitle}
                   onChange={(e) => setFooterCfg({ ...footerCfg, newsletterSubtitle: e.target.value })}
                   className={inputClass}
+                  disabled={!footerCfg.showNewsletter}
+                />
+              </Field>
+              <Field label="النص الفرعي للنشرة (English)">
+                <input
+                  value={footerCfg.newsletterSubtitle_en || ''}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, newsletterSubtitle_en: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
                   disabled={!footerCfg.showNewsletter}
                 />
               </Field>
@@ -5213,11 +5390,29 @@ function SettingsTab() {
                   disabled={!footerCfg.showNewsletter}
                 />
               </Field>
+              <Field label="نص زر الاشتراك (English)">
+                <input
+                  value={footerCfg.newsletterButtonText_en || ''}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, newsletterButtonText_en: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
+                  disabled={!footerCfg.showNewsletter}
+                />
+              </Field>
               <Field label="نص قسم التواصل الاجتماعي">
                 <input
                   value={footerCfg.socialText}
                   onChange={(e) => setFooterCfg({ ...footerCfg, socialText: e.target.value })}
                   className={inputClass}
+                  disabled={!footerCfg.showSocialSection}
+                />
+              </Field>
+              <Field label="نص قسم التواصل الاجتماعي (English)">
+                <input
+                  value={footerCfg.socialText_en || ''}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, socialText_en: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
                   disabled={!footerCfg.showSocialSection}
                 />
               </Field>
@@ -5229,11 +5424,29 @@ function SettingsTab() {
                   disabled={!footerCfg.showQuickLinks}
                 />
               </Field>
+              <Field label="عنوان الروابط السريعة (English)">
+                <input
+                  value={footerCfg.quickLinksTitle_en || ''}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, quickLinksTitle_en: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
+                  disabled={!footerCfg.showQuickLinks}
+                />
+              </Field>
               <Field label="عنوان قسم التواصل والمساعدة">
                 <input
                   value={footerCfg.contactTitle}
                   onChange={(e) => setFooterCfg({ ...footerCfg, contactTitle: e.target.value })}
                   className={inputClass}
+                  disabled={!footerCfg.showContactSection}
+                />
+              </Field>
+              <Field label="عنوان قسم التواصل والمساعدة (English)">
+                <input
+                  value={footerCfg.contactTitle_en || ''}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, contactTitle_en: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
                   disabled={!footerCfg.showContactSection}
                 />
               </Field>
@@ -5245,11 +5458,29 @@ function SettingsTab() {
                   disabled={!footerCfg.showSocialSection}
                 />
               </Field>
+              <Field label="عنوان قسم وسائل التواصل (English)">
+                <input
+                  value={footerCfg.socialTitle_en || ''}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, socialTitle_en: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
+                  disabled={!footerCfg.showSocialSection}
+                />
+              </Field>
               <Field label="التنبيه الطبي السفلي">
                 <input
                   value={footerCfg.bottomNoticeText}
                   onChange={(e) => setFooterCfg({ ...footerCfg, bottomNoticeText: e.target.value })}
                   className={inputClass}
+                  disabled={!footerCfg.showBottomNotice}
+                />
+              </Field>
+              <Field label="التنبيه الطبي السفلي (English)">
+                <input
+                  value={footerCfg.bottomNoticeText_en || ''}
+                  onChange={(e) => setFooterCfg({ ...footerCfg, bottomNoticeText_en: e.target.value })}
+                  className={inputClass}
+                  dir="ltr"
                   disabled={!footerCfg.showBottomNotice}
                 />
               </Field>
@@ -5312,8 +5543,14 @@ function SettingsTab() {
               <Field label="نص حقل البريد (Placeholder)">
                 <input value={footerCfg.newsletterInputPlaceholder} onChange={(e) => setFooterCfg({ ...footerCfg, newsletterInputPlaceholder: e.target.value })} className={inputClass} disabled={!footerCfg.showNewsletter} />
               </Field>
+              <Field label="نص حقل البريد (English)">
+                <input value={footerCfg.newsletterInputPlaceholder_en || ''} onChange={(e) => setFooterCfg({ ...footerCfg, newsletterInputPlaceholder_en: e.target.value })} className={inputClass} dir="ltr" disabled={!footerCfg.showNewsletter} />
+              </Field>
               <Field label="رسالة نجاح الاشتراك">
                 <input value={footerCfg.newsletterSuccessText} onChange={(e) => setFooterCfg({ ...footerCfg, newsletterSuccessText: e.target.value })} className={inputClass} disabled={!footerCfg.showNewsletter} />
+              </Field>
+              <Field label="رسالة نجاح الاشتراك (English)">
+                <input value={footerCfg.newsletterSuccessText_en || ''} onChange={(e) => setFooterCfg({ ...footerCfg, newsletterSuccessText_en: e.target.value })} className={inputClass} dir="ltr" disabled={!footerCfg.showNewsletter} />
               </Field>
             </div>
           </SettingsSection>
@@ -5327,11 +5564,20 @@ function SettingsTab() {
               <Field label="الشارة الأولى (الأيقونة: درع)">
                 <input value={footerCfg.trustBadge1} onChange={(e) => setFooterCfg({ ...footerCfg, trustBadge1: e.target.value })} className={inputClass} disabled={!footerCfg.showTrustBadges} />
               </Field>
+              <Field label="الشارة الأولى (English)">
+                <input value={footerCfg.trustBadge1_en || ''} onChange={(e) => setFooterCfg({ ...footerCfg, trustBadge1_en: e.target.value })} className={inputClass} dir="ltr" disabled={!footerCfg.showTrustBadges} />
+              </Field>
               <Field label="الشارة الثانية (الأيقونة: توصيل)">
                 <input value={footerCfg.trustBadge2} onChange={(e) => setFooterCfg({ ...footerCfg, trustBadge2: e.target.value })} className={inputClass} disabled={!footerCfg.showTrustBadges} />
               </Field>
+              <Field label="الشارة الثانية (English)">
+                <input value={footerCfg.trustBadge2_en || ''} onChange={(e) => setFooterCfg({ ...footerCfg, trustBadge2_en: e.target.value })} className={inputClass} dir="ltr" disabled={!footerCfg.showTrustBadges} />
+              </Field>
               <Field label="الشارة الثالثة (الأيقونة: ساعة)">
                 <input value={footerCfg.trustBadge3} onChange={(e) => setFooterCfg({ ...footerCfg, trustBadge3: e.target.value })} className={inputClass} disabled={!footerCfg.showTrustBadges} />
+              </Field>
+              <Field label="الشارة الثالثة (English)">
+                <input value={footerCfg.trustBadge3_en || ''} onChange={(e) => setFooterCfg({ ...footerCfg, trustBadge3_en: e.target.value })} className={inputClass} dir="ltr" disabled={!footerCfg.showTrustBadges} />
               </Field>
             </div>
           </SettingsSection>
