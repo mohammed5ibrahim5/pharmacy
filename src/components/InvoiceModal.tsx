@@ -1,13 +1,14 @@
 import { Printer, X, MapPin, Phone, Wallet } from 'lucide-react';
 import type { SiteSettings } from '@/types';
 import { ORDER_STATUS_META } from '@/lib/orders';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface InvoiceOrderItem {
   id: string;
   quantity: number;
   total_price: number;
-  product?: { name?: string; image_url?: string | null } | null;
-  pharmacy?: { name?: string } | null;
+  product?: { name?: string; name_en?: string | null; image_url?: string | null } | null;
+  pharmacy?: { name?: string; name_en?: string | null } | null;
 }
 
 export interface InvoiceOrderData {
@@ -38,6 +39,7 @@ function paymentLabel(method: string | null): string {
 }
 
 export function InvoiceModal({ open, order, settings, onClose }: InvoiceModalProps) {
+  const { lang } = useLanguage();
   if (!open) return null;
 
   const subtotal = order.orders.reduce((s, o) => s + Number(o.total_price || 0), 0);
@@ -150,8 +152,8 @@ export function InvoiceModal({ open, order, settings, onClose }: InvoiceModalPro
               return (
                 <tr key={o.id} className={`text-[11px] border-b border-gray-100 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}`}>
                   <td className="py-2.5 px-3 text-gray-400 font-bold">{i + 1}</td>
-                  <td className="py-2.5 px-3 font-black text-gray-900">{o.product?.name || 'منتج'}</td>
-                  <td className="py-2.5 px-3 font-bold text-gray-500 hidden sm:table-cell">{o.pharmacy?.name || 'صيدلية'}</td>
+                  <td className="py-2.5 px-3 font-black text-gray-900">{(lang === 'en' ? (o.product?.name_en || o.product?.name) : o.product?.name) || 'منتج'}</td>
+                  <td className="py-2.5 px-3 font-bold text-gray-500 hidden sm:table-cell">{(lang === 'en' ? (o.pharmacy?.name_en || o.pharmacy?.name) : o.pharmacy?.name) || 'صيدلية'}</td>
                   <td className="py-2.5 px-3 font-bold text-gray-600">{o.quantity}</td>
                   <td className="py-2.5 px-3 font-bold text-gray-600">{unitPrice.toFixed(2)}</td>
                   <td className="py-2.5 px-3 font-black text-gray-900">{Number(o.total_price).toFixed(2)}</td>

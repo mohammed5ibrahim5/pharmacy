@@ -312,11 +312,11 @@ function OrderTrackingModal({ order, onClose }: { order: OrderRecord; onClose: (
         <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4.5 space-y-2.5 text-xs font-bold text-slate-600">
           <div className="flex justify-between gap-3">
             <span className="text-slate-400">{t('المنتج')}</span>
-            <span className="font-black text-slate-800 text-end">{order.product?.name || t('منتج')}</span>
+            <span className="font-black text-slate-800 text-end">{lang === 'en' ? (order.product?.name_en || order.product?.name || '') : order.product?.name || t('منتج')}</span>
           </div>
           <div className="flex justify-between gap-3">
             <span className="text-slate-400">{t('الصيدلية')}</span>
-            <span className="font-black text-slate-800 text-end">{order.pharmacy?.name || t('صيدلية')}</span>
+            <span className="font-black text-slate-800 text-end">{lang === 'en' ? (order.pharmacy?.name_en || order.pharmacy?.name || '') : order.pharmacy?.name || t('صيدلية')}</span>
           </div>
           {order.family_member && (
             <div className="flex justify-between gap-3">
@@ -1005,10 +1005,10 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="font-black text-base text-slate-900 truncate leading-snug">{product?.name || t('منتج')}</p>
+                                <p className="font-black text-base text-slate-900 truncate leading-snug">{lang === 'en' ? (product?.name_en || product?.name || '') : product?.name || t('منتج')}</p>
                                 <p className="text-xs text-slate-400 font-bold mt-1 flex items-center gap-1">
                                   <Store className="w-3.5 h-3.5 text-teal-600" />
-                                  {order.pharmacy?.name || t('صيدلية')}
+                                  {lang === 'en' ? (order.pharmacy?.name_en || order.pharmacy?.name || '') : order.pharmacy?.name || t('صيدلية')}
                                 </p>
                               </div>
                               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black border shadow-2xs ${meta.className}`}>
@@ -1855,7 +1855,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                       <ProductCard
                         key={product.id}
                         product={product}
-                        pharmacyName={product.pharmacy?.name}
+                        pharmacyName={lang === 'en' ? (product.pharmacy?.name_en || product.pharmacy?.name || '') : product.pharmacy?.name || ''}
                         onClick={product.for_all_pharmacies ? undefined : () => product.pharmacy_id && navigate({ name: 'pharmacy', id: product.pharmacy_id })}
                       />
                     ))}

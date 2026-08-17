@@ -1,6 +1,11 @@
 import { createContext, useContext, useCallback, useLayoutEffect, useState, ReactNode, useEffect } from 'react';
 import { en } from '@/i18n/en';
 
+// Normalize Arabic hamza variants so lookups work regardless of أ/إ/آ vs ا
+function normalizeAr(s: string): string {
+  return s.replace(/[أإآ]/g, 'ا');
+}
+
 export type Lang = 'ar' | 'en';
 
 export type TranslateArgs = Record<string, string | number> | (string | number)[];
@@ -56,7 +61,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (str: string, args?: TranslateArgs): string => {
-      let out = lang === 'en' ? en[str] ?? str : str;
+      const key = normalizeAr(str);
+      let out = lang === 'en' ? en[key] ?? str : str;
       if (args) {
         if (Array.isArray(args)) {
           args.forEach((v, i) => {

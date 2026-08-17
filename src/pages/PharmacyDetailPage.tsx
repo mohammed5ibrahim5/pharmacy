@@ -156,7 +156,7 @@ export function PharmacyDetailPage({ id }: Props) {
 
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.pharmacyHeaderText }}>{pharmacy.name}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-black" style={{ color: themeColors.pharmacyHeaderText }}>{lang === 'en' ? (pharmacy.name_en || pharmacy.name) : pharmacy.name}</h1>
                   {pharmacy.is_24h && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold text-white shadow" style={{ backgroundColor: themeColors.tabActiveBg }}>
                       <Clock className="w-3 h-3" /> {t('24 ساعة')}
@@ -280,7 +280,7 @@ export function PharmacyDetailPage({ id }: Props) {
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between mb-5">
             <div>
               <h2 className="text-xl sm:text-2xl font-black" style={{ color: themeColors.sectionHeadingText }}>{t('المنتجات المتاحة')}</h2>
-              <p className="text-sm font-medium mt-0.5" style={{ color: themeColors.sectionSubheadingText }}>{t('{0} منتج في صيدلية {1}', [filteredProducts.length, pharmacy.name])}</p>
+              <p className="text-sm font-medium mt-0.5" style={{ color: themeColors.sectionSubheadingText }}>{t('{0} منتج في صيدلية {1}', [filteredProducts.length, lang === 'en' ? (pharmacy.name_en || pharmacy.name) : pharmacy.name])}</p>
             </div>
             <div className="flex flex-col gap-2 w-full sm:max-w-xs">
               <div className="relative">

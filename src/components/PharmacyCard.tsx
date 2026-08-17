@@ -173,7 +173,7 @@ export function PharmacyCard({ pharmacy }: Props) {
                   className="font-black text-base sm:text-lg truncate transition-colors"
                   style={{ color: themeColors.cardText }}
                 >
-                  {pharmacy.name}
+{lang === 'en' ? (pharmacy.name_en || t(pharmacy.name)) : pharmacy.name}
                 </h3>
                 <span
                   className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-sm"

@@ -93,7 +93,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
                       {p.name.charAt(0)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-extrabold text-slate-900 truncate">{p.name}</p>
+                      <p className="text-sm font-extrabold text-slate-900 truncate">{lang === 'en' ? (p.name_en || p.name) : p.name}</p>
                       <p className="text-[11px] text-slate-500 font-medium truncate">{p.area || p.city || p.address}</p>
                     </div>
                     {p.distance != null && (
@@ -126,7 +126,7 @@ export function PharmacyMap({ pharmacies, loading }: Props) {
                       {selected.name.charAt(0)}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-extrabold text-slate-900 truncate">{selected.name}</p>
+                      <p className="text-xs font-extrabold text-slate-900 truncate">{lang === 'en' ? (selected.name_en || selected.name) : selected.name}</p>
                       <p className="text-[10px] text-slate-500 truncate">{selected.address}</p>
                     </div>
                   </div>

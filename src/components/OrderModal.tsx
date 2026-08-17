@@ -138,7 +138,7 @@ export function OrderModal() {
           key,
           label: p.for_all_pharmacies
             ? t('متوفر لدى جميع الصيدليات')
-            : pharmacy?.name || entry.pharmacyName || p.pharmacy?.name || t('الصيدلية'),
+            : (lang === 'en' ? (pharmacy?.name_en || pharmacy?.name) : pharmacy?.name) || entry.pharmacyName || (lang === 'en' ? (p.pharmacy?.name_en || p.pharmacy?.name) : p.pharmacy?.name) || t('الصيدلية'),
           pharmacy,
           subtotal: 0,
         });
@@ -148,7 +148,7 @@ export function OrderModal() {
       group.subtotal += price;
     });
     return Array.from(map.values());
-  }, [cart, pharmacies, t]);
+  }, [cart, pharmacies, t, lang]);
 
   const subtotal = cart.reduce((sum, entry) => sum + finalPriceOf(entry.product) * entry.quantity, 0);
   const freeThreshold = parseFloat(paymentConfig.freeDeliveryThreshold) || 0;
@@ -182,7 +182,7 @@ export function OrderModal() {
   const displayTotal = catalogMode ? subtotal : total;
 
   const cartPharmacy = groups.find((g) => g.key !== '__all__')?.pharmacy || null;
-  const catalogTargetName = cartPharmacy?.name || settings.site_name || 'صيدليتي';
+  const catalogTargetName = (lang === 'en' ? (cartPharmacy?.name_en || cartPharmacy?.name) : cartPharmacy?.name) || settings.site_name || 'صيدليتي';
   const catalogWhatsapp = (storeConfig.catalogWhatsapp || cartPharmacy?.whatsapp || settings.contact_whatsapp || '').replace(/\D/g, '') || null;
   const catalogPhone = cartPharmacy?.phone || settings.contact_phone || null;
 
@@ -203,7 +203,7 @@ export function OrderModal() {
       items: cart.map((entry) => {
         const unit = finalPriceOf(entry.product);
         return {
-          name: entry.product.name,
+          name: lang === 'en' ? (entry.product.name_en || entry.product.name) : entry.product.name,
           quantity: entry.quantity,
           unitPrice: unit,
           lineTotal: unit * entry.quantity,
@@ -242,7 +242,7 @@ export function OrderModal() {
       if (entries.length === 0) return;
       lines.push(`• ${g.label}`);
       entries.forEach((entry) => {
-        lines.push(`    ${entry.product.name} × ${entry.quantity}`);
+        lines.push(`    ${lang === 'en' ? (entry.product.name_en || entry.product.name) : entry.product.name} × ${entry.quantity}`);
       });
     });
     lines.push('');
@@ -582,8 +582,8 @@ export function OrderModal() {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-bold text-gray-900 truncate">{entry.product.name}</p>
-                            <p className="text-[11px] text-gray-500 truncate mt-0.5">{entry.product.unit || t('قطعة')} · {t('{0} ج.م', [price.toFixed(2)])}</p>
+                            <p className="text-[13px] font-bold text-gray-900 truncate">{lang === 'en' ? (entry.product.name_en || entry.product.name) : entry.product.name}</p>
+                            <p className="text-[11px] text-gray-500 truncate mt-0.5">{t(entry.product.unit) || t('قطعة')} · {t('{0} ج.م', [price.toFixed(2)])}</p>
                             <p className="text-sm font-extrabold mt-1" style={{ color: themeColors.priceColor }}>
                               {(price * entry.quantity).toFixed(2)} <span className="text-[10px] text-gray-400 font-medium">{t('ج.م')}</span>
                             </p>

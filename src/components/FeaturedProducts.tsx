@@ -17,7 +17,7 @@ type ProductTab = 'discounts' | 'newest' | 'all';
 
 export function FeaturedProducts({ products, loading, popularProductIds = [] }: Props) {
   const { themeColors } = useSettings();
-  const { t, dir } = useLanguage();
+  const { t, dir, lang } = useLanguage();
   const { navigate } = useRouter();
   const [activeTab, setActiveTab] = useState<ProductTab>('discounts');
 
@@ -162,7 +162,7 @@ export function FeaturedProducts({ products, loading, popularProductIds = [] }: 
               <ProductCard
                 key={product.id}
                 product={product}
-                pharmacyName={product.pharmacy?.name}
+                pharmacyName={lang === 'en' ? (product.pharmacy?.name_en || product.pharmacy?.name || '') : product.pharmacy?.name || ''}
                 popular={popularProductIds.includes(product.id)}
                 onClick={product.for_all_pharmacies ? undefined : () => navigate({ name: 'pharmacy', id: product.pharmacy_id })}
               />

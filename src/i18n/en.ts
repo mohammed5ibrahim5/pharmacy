@@ -6,7 +6,11 @@ import { en_order } from './parts/en_order';
 import { en_pages } from './parts/en_pages';
 import { en_product } from './parts/en_product';
 
-export const en: Record<string, string> = {
+function normalizeAr(s: string): string {
+  return s.replace(/[أإآ]/g, 'ا');
+}
+
+const raw: Record<string, string> = {
   ...en_account,
   ...en_header,
   ...en_home,
@@ -15,3 +19,7 @@ export const en: Record<string, string> = {
   ...en_pages,
   ...en_product,
 };
+
+export const en: Record<string, string> = Object.fromEntries(
+  Object.entries(raw).map(([k, v]) => [normalizeAr(k), v])
+);

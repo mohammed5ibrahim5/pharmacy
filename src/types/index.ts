@@ -11,6 +11,7 @@ export interface Category {
 export interface Pharmacy {
   id: string;
   name: string;
+  name_en: string | null;
   description: string | null;
   logo_url: string | null;
   cover_url: string | null;

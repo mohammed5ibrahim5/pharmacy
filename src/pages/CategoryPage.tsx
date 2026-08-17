@@ -109,7 +109,7 @@ return (
             <ProductCard
               key={product.id}
               product={product}
-              pharmacyName={product.pharmacy?.name}
+              pharmacyName={lang === 'en' ? (product.pharmacy?.name_en || product.pharmacy?.name || '') : product.pharmacy?.name || ''}
               onClick={product.for_all_pharmacies ? undefined : () => navigate({ name: 'pharmacy', id: product.pharmacy_id })}
             />
           ))}

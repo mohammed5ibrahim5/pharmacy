@@ -19,7 +19,7 @@ function finalPrice(p: Product): number {
 export function PriceCompareModal({ product, onClose }: Props) {
   const { themeColors } = useSettings();
   const { addToCart, openCart } = useOrder();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [sameName, setSameName] = useState<Product[]>([]);
   const [alternatives, setAlternatives] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,10 +78,10 @@ export function PriceCompareModal({ product, onClose }: Props) {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-black text-gray-900 truncate">{p.name}</p>
+          <p className="text-sm font-black text-gray-900 truncate">{lang === 'en' ? (p.name_en || p.name) : p.name}</p>
           <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5 truncate">
             <Store className="w-3 h-3 shrink-0" style={{ color: themeColors.priceColor }} />
-            <span className="truncate">{p.pharmacy?.name || t('جميع الصيدليات')}</span>
+            <span className="truncate">{(lang === 'en' ? (p.pharmacy?.name_en || p.pharmacy?.name) : p.pharmacy?.name) || t('جميع الصيدليات')}</span>
           </p>
         </div>
         <div className="text-end shrink-0">
@@ -94,7 +94,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
         </div>
         <button
           onClick={() => {
-            const ok = addToCart(p, p.pharmacy?.name);
+            const ok = addToCart(p, lang === 'en' ? (p.pharmacy?.name_en || p.pharmacy?.name || '') : p.pharmacy?.name || '');
             if (!ok) return;
             onClose();
             openCart('cart');
@@ -123,7 +123,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
             </div>
             <div>
               <h2 className="text-base font-black" style={{ color: themeColors.modalHeaderText }}>{t('قارن الأسعار')}</h2>
-              <p className="text-[11px] font-bold truncate max-w-[220px] sm:max-w-sm" style={{ color: themeColors.modalBodyText }}>{product.name}</p>
+              <p className="text-[11px] font-bold truncate max-w-[220px] sm:max-w-sm" style={{ color: themeColors.modalBodyText }}>{lang === 'en' ? (product.name_en || product.name) : product.name}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ color: themeColors.modalHeaderText }}>

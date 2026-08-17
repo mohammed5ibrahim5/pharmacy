@@ -1909,7 +1909,7 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
 export function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy | null; onClose: () => void; onSaved: () => void }) {
   const { settings } = useSettings();
   const [form, setForm] = useState({
-    name: pharmacy?.name || '', description: pharmacy?.description || '',
+    name: pharmacy?.name || '', name_en: pharmacy?.name_en || '', description: pharmacy?.description || '',
     logo_url: pharmacy?.logo_url || '', cover_url: pharmacy?.cover_url || '',
     phone: pharmacy?.phone || '', whatsapp: pharmacy?.whatsapp || '', email: pharmacy?.email || '',
     address: pharmacy?.address || '', area: pharmacy?.area || '', city: pharmacy?.city || '',
@@ -1961,8 +1961,9 @@ export function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmac
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="اسم الصيدلية *"><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} placeholder="صيدلية..." /></Field>
-          <Field label="المنطقة"><input value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} className={inputClass} placeholder="مثال: المعادي" /></Field>
+          <Field label="الاسم بالإنجليزية"><input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Pharmacy name" /></Field>
         </div>
+        <Field label="المنطقة"><input value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} className={inputClass} placeholder="مثال: المعادي" /></Field>
         <Field label="وصف الصيدلية"><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={inputClass} rows={2} placeholder="نبذة عن الصيدلية..." /></Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="رقم الهاتف"><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} dir="ltr" placeholder="01012345678" /></Field>

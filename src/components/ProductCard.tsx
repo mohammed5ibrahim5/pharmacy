@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function ProductCard({ product, pharmacyName, onClick, popular = false }: Props) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { themeColors, featuresConfig } = useSettings();
   const { cart, openOrder, addToCart, updateCartQty } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
@@ -99,7 +99,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                 style={{ color: themeColors.priceColor, opacity: 0.4 }}
               />
               <span className="text-[11px] font-bold text-gray-500 line-clamp-1">
-                {product.name}
+                {lang === 'en' ? (product.name_en || product.name) : product.name}
               </span>
             </div>
           )}
@@ -283,7 +283,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
             onMouseEnter={(e) => (e.currentTarget.style.color = themeColors.priceColor)}
             onMouseLeave={(e) => (e.currentTarget.style.color = themeColors.cardText)}
           >
-            {product.name}
+            {lang === 'en' ? (product.name_en || product.name) : product.name}
           </h3>
 
           <div className="flex flex-wrap gap-1.5">
@@ -332,7 +332,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
           {(product.form || product.dosage) && (
             <p className="text-[11px] font-bold flex items-center gap-1 truncate" style={{ color: themeColors.cardMutedText }}>
               <FlaskConical className="w-3.5 h-3.5 shrink-0" style={{ color: themeColors.priceColor }} />
-              <span className="truncate">{[product.form, product.dosage].filter(Boolean).join(' • ')}</span>
+              <span className="truncate">{[product.form, product.dosage].filter((x): x is string => !!x).map((x) => t(x)).join(' • ')}</span>
             </p>
           )}
         </div>
@@ -358,7 +358,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
             <div className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg"
               style={{ color: themeColors.cardMutedText, backgroundColor: `${themeColors.cardMutedText}15` }}>
               <Tag className="w-3 h-3" />
-              <span>{product.unit}</span>
+              <span>{t(product.unit)}</span>
             </div>
           </div>
         </div>

@@ -564,11 +564,11 @@ export function Header() {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-extrabold truncate group-hover:opacity-80" style={{ color: themeColors.headerText }}>
-                              {product.name}
+                              {lang === 'en' ? (product.name_en || product.name) : product.name}
                             </p>
                             {product.pharmacy && (
                               <p className="text-[10px] opacity-60 truncate" style={{ color: themeColors.headerText }}>
-                                {t('صيدلية: {0}', [product.pharmacy.name])}
+                                {t('صيدلية: {0}', [lang === 'en' ? (product.pharmacy.name_en || product.pharmacy.name) : product.pharmacy.name])}
                               </p>
                             )}
                           </div>
