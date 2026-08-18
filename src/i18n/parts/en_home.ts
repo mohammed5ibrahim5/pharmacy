@@ -217,4 +217,6 @@
   'ارفع رشتك للصيدلي فوراً': 'Upload your prescription to the pharmacist instantly',
   'ارفع رشتك للصيدلي فورا': 'Upload your prescription to the pharmacist instantly',
   'صيدلياتي المفضلة': 'My favorite pharmacies',
+  'دوائي': 'Dawai',
+  'منصة دوائي هي دليلك الذكي للوصول السريع إلى الأدوية الناقصة، نربطك بأقرب الصيدليات الموثوقة في محيطك لتوفير وقتك وجهدك': 'Dawai is your smart guide to quickly find unavailable medicines — we connect you with trusted pharmacies around you to save you time and effort',
 };
