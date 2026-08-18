@@ -749,7 +749,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
             style={{ backgroundImage: `linear-gradient(to left, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}
           />
           <div
-            className="w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-lg bg-teal-500/10 text-teal-600 animate-float"
+            className="w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-lg bg-teal-500/10 text-teal-600"
           >
             <User className="w-10 h-10" />
           </div>
@@ -837,7 +837,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   onClick={() => navigate({ name: 'account', tab: 'rewards' as AccountTab })}
                   className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur-md border border-amber-400/30 text-xs font-black text-amber-200 cursor-pointer transition-all active:scale-95"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin-slow" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                   {t('المكافآت: {0} نقطة', [loyaltyPoints])}
                 </div>
               )}
@@ -866,10 +866,14 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
         ].map((stat, i) => (
           <div 
             key={i} 
-            className="bg-white rounded-3xl border border-slate-200/80 p-5 flex items-center gap-4 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 group cursor-default"
+            className="relative overflow-hidden bg-white rounded-3xl border border-slate-200/80 p-5 flex items-center gap-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-default"
           >
             <div
-              className="w-13 h-13 rounded-2xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110"
+              className="absolute -top-8 -end-8 w-24 h-24 rounded-full opacity-10 pointer-events-none transition-opacity duration-300 group-hover:opacity-20"
+              style={{ backgroundColor: stat.color }}
+            />
+            <div
+              className="w-13 h-13 rounded-2xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105"
               style={{ backgroundColor: `${stat.color}10`, color: stat.color, border: `1px solid ${stat.color}20` }}
             >
               {stat.icon}
@@ -887,7 +891,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
         
         {/* Sidebar Navigation */}
         <div className="lg:col-span-1 space-y-2">
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-3 shadow-sm sticky top-24 hidden lg:block">
+          <div className="bg-white border border-slate-200/80 rounded-3xl p-3 shadow-sm hidden lg:block">
             <p className="text-[11px] font-black text-slate-400 px-4 py-2 uppercase tracking-wider">{t('قائمة التحكم')}</p>
             <div className="space-y-1.5 mt-1">
               {tabs.map((t) => {
@@ -967,7 +971,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               ) : orders.length === 0 ? (
                 <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
                   <div
-                    className="w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-5 bg-teal-500/10 text-teal-600 animate-float"
+                    className="w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-5 bg-teal-500/10 text-teal-600"
                   >
                     <PackageCheck className="w-10 h-10" />
                   </div>
@@ -1331,7 +1335,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 </h3>
                 {loyaltyHistory.length === 0 ? (
                   <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
-                    <Sparkles className="w-12 h-12 mx-auto text-amber-300 mb-4 animate-float" />
+                    <Sparkles className="w-12 h-12 mx-auto text-amber-300 mb-4" />
                     <h4 className="font-black text-slate-900 text-base mb-1">{t('سجل المكافآت فارغ')}</h4>
                     <p className="text-xs text-slate-500 font-bold max-w-sm mx-auto leading-relaxed">{t('أكمل طلبك الأول عبر الموقع وسوف تبدأ بالحصول على نقاط ترحيبية مكافأة لك.')}</p>
                   </div>
@@ -1490,7 +1494,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <h3 className="text-base font-black text-slate-900 mb-3.5">{t('الأدوية الدورية والجدول')}</h3>
                 {reminders.length === 0 ? (
                   <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
-                    <Bell className="w-12 h-12 mx-auto text-slate-300 mb-4 animate-float" />
+                    <Bell className="w-12 h-12 mx-auto text-slate-300 mb-4" />
                     <h4 className="font-black text-slate-900 text-base mb-1.5">{t('جدول التنبيهات خالي')}</h4>
                     <p className="text-xs text-slate-500 font-bold max-w-sm mx-auto leading-relaxed">{t('قم بإضافة أدويتك اليومية للحفاظ على صحتك وسيقوم صيدليتي بتذكيرك بجرعتك بانتظام وبقرب نفاد علبة الدواء.')}</p>
                   </div>
@@ -1843,7 +1847,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   </div>
                 ) : favProducts.length === 0 ? (
                   <div className="bg-white rounded-3xl border border-slate-200/80 p-10 text-center shadow-sm">
-                    <Heart className="w-12 h-12 mx-auto text-pink-400 mb-3.5 animate-float" />
+                    <Heart className="w-12 h-12 mx-auto text-pink-400 mb-3.5" />
                     <h4 className="font-black text-slate-900 text-base mb-1">{t('لا توجد أدوية في المفضلة')}</h4>
                     <p className="text-xs text-slate-500 font-bold max-w-xs mx-auto leading-relaxed">
                       {t('اضغط على علامة القلب ♥ بجانب أي منتج من منتجات الأدوية والصحة ليظهر هنا.')}

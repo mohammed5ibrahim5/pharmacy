@@ -89,40 +89,6 @@ export function Header() {
     return localStorage.getItem('user_delivery_location') || '';
   });
   const displayLocation = userLocation || p(headerConfig.locationText, headerConfig.locationText_en) || t('القاهرة - المعادي');
-  const isAccount = route.name === 'account';
-  const [headerHidden, setHeaderHidden] = useState(false);
-
-  useEffect(() => {
-    if (!isAccount) {
-      setHeaderHidden(false);
-      return;
-    }
-    let lastY = window.scrollY;
-    let acc = 0;
-    let ticking = false;
-    const HIDE_PX = 56;
-    const SHOW_PX = 20;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(() => {
-        const y = window.scrollY;
-        const delta = y - lastY;
-        lastY = y;
-        if (y <= 100) {
-          acc = 0;
-          setHeaderHidden(false);
-        } else {
-          acc = Math.max(-SHOW_PX * 3, Math.min(HIDE_PX * 3, acc + delta));
-          if (acc >= HIDE_PX) setHeaderHidden(true);
-          else if (acc <= -SHOW_PX) setHeaderHidden(false);
-        }
-        ticking = false;
-      });
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [isAccount]);
 
   useEffect(() => {
     if (route.name === 'search') {
@@ -349,10 +315,7 @@ export function Header() {
 
   return (
     <>
-      <div
-        className="sticky top-0 z-50 transition-transform duration-300 will-change-transform"
-        style={{ transform: isAccount && headerHidden ? 'translateY(-100%)' : 'translateY(0)' }}
-      >
+      <div className="sticky top-0 z-50">
       {/* 1. TOP BAR */}
       {headerConfig.showTopBar && (
       <div
