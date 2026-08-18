@@ -845,7 +845,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
 
             {loyaltyConfig.enabled && (
               <button
-                onClick={() => navigate({ name: 'account', tab: 'rewards' as AccountTab })}
+                onClick={() => navigate({ name: 'account', tab: 'rewards' as AccountTab }, { scrollToTop: false })}
                 className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-400/20 hover:bg-amber-400/30 backdrop-blur-md border border-amber-300/30 text-xs font-black text-amber-100 cursor-pointer transition-all duration-300 active:scale-95"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-200" />
@@ -899,7 +899,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 return (
                   <button
                     key={t.id}
-                    onClick={() => navigate({ name: 'account', tab: t.id })}
+                    onClick={() => navigate({ name: 'account', tab: t.id }, { scrollToTop: false })}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-black transition-all duration-300 group ${
                       isActive ? 'text-white shadow-md' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
@@ -933,7 +933,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               return (
                 <button
                   key={t.id}
-                  onClick={() => navigate({ name: 'account', tab: t.id })}
+                  onClick={() => navigate({ name: 'account', tab: t.id }, { scrollToTop: false })}
                   className={`shrink-0 flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all duration-300 ${
                     isActive ? 'text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
                   }`}

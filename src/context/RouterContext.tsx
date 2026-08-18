@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 
 export type AccountTab = 'orders' | 'prescriptions' | 'addresses' | 'favorites' | 'rewards' | 'reminders' | 'family';
 
@@ -12,7 +12,7 @@ type Route =
 
 interface RouterContextType {
   route: Route;
-  navigate: (route: Route) => void;
+  navigate: (route: Route, opts?: { scrollToTop?: boolean }) => void;
   refreshKey: number;
 }
 
@@ -55,7 +55,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   const [route, setRoute] = useState<Route>(() => parseHash());
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const navigate = (newRoute: Route) => {
+  const navigate = (newRoute: Route, opts?: { scrollToTop?: boolean }) => {
     const hash = routeToHash(newRoute);
     if (window.location.hash !== hash) {
       window.location.hash = hash;
@@ -64,7 +64,9 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     // Force dependents (e.g. SearchPage) to re-run even when the hash/query
     // is unchanged, so pressing Enter always re-searches.
     setRefreshKey((k) => k + 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (opts?.scrollToTop !== false) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -73,8 +75,14 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  // Scroll back to the top only when switching to a different page/route,
+  // not when switching tabs inside the same page (e.g. account tabs).
+  const previousName = useRef(route.name);
   useEffect(() => {
-    window.scrollTo({ top: 0 });
+    if (previousName.current !== route.name) {
+      window.scrollTo({ top: 0 });
+    }
+    previousName.current = route.name;
   }, [route]);
 
   return (
