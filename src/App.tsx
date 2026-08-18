@@ -93,7 +93,7 @@ function SiteContent() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50" dir={dir}>
       <AnnouncementBar />
-      <Header />
+      {route.name !== 'account' && <Header />}
       <main className="flex-1 pb-20 lg:pb-0">
         {route.name === 'home' && <HomePage />}
         {route.name === 'search' && <SearchPage key={refreshKey} query={route.query} />}

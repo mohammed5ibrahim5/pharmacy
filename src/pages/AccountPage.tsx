@@ -791,67 +791,67 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
         </div>
       )}
 
-      {/* ===== Header Card (Redesigned with glassmorphism details & modern feel) ===== */}
+      {/* ===== Hero / Profile Header ===== */}
       <div
-        className="rounded-[2.5rem] text-white relative overflow-hidden p-6 sm:p-10 mb-8 shadow-xl border border-white/10"
+        className="relative rounded-[2.5rem] text-white overflow-hidden shadow-xl border border-white/10 mb-8"
         style={{ background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}
       >
         {/* Glow orbs background decoration */}
         <div className="absolute inset-0 bg-mesh opacity-20 pointer-events-none" />
         <div className="absolute -bottom-16 -start-16 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
         <div className="absolute -top-24 -end-24 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/3 end-1/4 w-40 h-40 rounded-full bg-white/10 blur-2xl pointer-events-none" />
 
-        <button
-          onClick={() => navigate({ name: 'home' })}
-          className="relative flex items-center gap-2 text-white/80 hover:text-white text-xs font-extrabold mb-6 transition-all hover:-translate-x-1"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {t('العودة للرئيسية')}
-        </button>
+        {/* Top actions */}
+        <div className="relative flex items-center justify-between gap-3 p-5 sm:p-7 pb-2 sm:pb-3">
+          <button
+            onClick={() => navigate({ name: 'home' })}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md text-white/90 hover:text-white text-xs font-extrabold transition-all duration-300 active:scale-95"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t('العودة للرئيسية')}
+          </button>
+          <button
+            onClick={signOut}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md text-white text-xs font-black transition-all duration-300 active:scale-95"
+          >
+            <LogOut className="w-4 h-4" />
+            {t('تسجيل الخروج')}
+          </button>
+        </div>
 
-        <div className="relative flex flex-col md:flex-row md:items-center gap-6 justify-between">
-          <div className="flex items-center gap-5">
-            {profile?.avatar_url ? (
-              <img
-                src={profile.avatar_url}
-                alt=""
-                className="w-20 h-20 rounded-[2rem] object-cover border-4 border-white/20 shadow-xl"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-[2rem] bg-white/15 backdrop-blur-md flex items-center justify-center text-3xl font-black border border-white/20 shadow-xl text-white">
-                {initial}
-              </div>
-            )}
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-black tracking-tight">{profile?.full_name || t('عميل صيدليتي')}</h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-[10px] font-black text-emerald-200">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  {t('حساب موثق')}
-                </span>
-              </div>
-              <p className="text-xs text-white/70 font-bold mt-1" dir="ltr">{user.email}</p>
-              
-              {loyaltyConfig.enabled && (
-                <div 
-                  onClick={() => navigate({ name: 'account', tab: 'rewards' as AccountTab })}
-                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur-md border border-amber-400/30 text-xs font-black text-amber-200 cursor-pointer transition-all active:scale-95"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  {t('المكافآت: {0} نقطة', [loyaltyPoints])}
-                </div>
-              )}
+        {/* Profile info */}
+        <div className="relative flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-7 px-5 sm:px-8 pb-6 sm:pb-8">
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt=""
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-[1.75rem] object-cover border-[3px] border-white/20 shadow-xl ring-4 ring-white/10"
+            />
+          ) : (
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-[1.75rem] bg-white/15 backdrop-blur-md flex items-center justify-center text-3xl sm:text-4xl font-black border border-white/20 shadow-xl ring-4 ring-white/10 text-white">
+              {initial}
             </div>
-          </div>
+          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight">{profile?.full_name || t('عميل صيدليتي')}</h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-400/20 backdrop-blur-md border border-emerald-300/30 text-[10px] font-black text-emerald-100">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {t('حساب موثق')}
+              </span>
+            </div>
+            <p className="text-xs text-white/75 font-bold mt-1.5" dir="ltr">{user.email}</p>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={signOut}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-black transition-all duration-300 hover:shadow-lg active:scale-95"
-            >
-              <LogOut className="w-4 h-4" />
-              {t('تسجيل الخروج')}
-            </button>
+            {loyaltyConfig.enabled && (
+              <button
+                onClick={() => navigate({ name: 'account', tab: 'rewards' as AccountTab })}
+                className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-400/20 hover:bg-amber-400/30 backdrop-blur-md border border-amber-300/30 text-xs font-black text-amber-100 cursor-pointer transition-all duration-300 active:scale-95"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                {t('المكافآت: {0} نقطة', [loyaltyPoints])}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -891,25 +891,31 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
         
         {/* Sidebar Navigation */}
         <div className="lg:col-span-1 space-y-2">
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-3 shadow-sm hidden lg:block">
-            <p className="text-[11px] font-black text-slate-400 px-4 py-2 uppercase tracking-wider">{t('قائمة التحكم')}</p>
-            <div className="space-y-1.5 mt-1">
+          <div className="bg-white border border-slate-200/80 rounded-[2rem] p-4 shadow-sm hidden lg:block">
+            <p className="text-[11px] font-black text-slate-400 px-3 pb-3 uppercase tracking-wider">{t('قائمة التحكم')}</p>
+            <div className="space-y-1.5">
               {tabs.map((t) => {
                 const isActive = tab === t.id;
                 return (
                   <button
                     key={t.id}
                     onClick={() => navigate({ name: 'account', tab: t.id })}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all duration-300 relative group ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-black transition-all duration-300 group ${
                       isActive ? 'text-white shadow-md' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                     }`}
-                    style={isActive ? { backgroundColor: themeColors.primaryColor, boxShadow: `0 8px 16px -4px ${themeColors.primaryColor}40` } : {}}
+                    style={isActive ? { backgroundColor: themeColors.primaryColor, boxShadow: `0 8px 20px -6px ${themeColors.primaryColor}55` } : {}}
                   >
-                    <span className="shrink-0">{t.icon}</span>
+                    <span
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                        isActive ? 'bg-white/20' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
+                      }`}
+                    >
+                      {t.icon}
+                    </span>
                     <span className="truncate flex-1 text-start">{t.label}</span>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-black transition-colors ${
-                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
+                        isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
                       }`}
                     >
                       {t.count}
@@ -928,10 +934,10 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <button
                   key={t.id}
                   onClick={() => navigate({ name: 'account', tab: t.id })}
-                  className={`shrink-0 flex items-center gap-2 py-3 px-4 rounded-xl text-xs font-black transition-all duration-300 ${
-                    isActive ? 'text-white shadow-sm scale-102' : 'text-slate-600 hover:bg-slate-50'
+                  className={`shrink-0 flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all duration-300 ${
+                    isActive ? 'text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
                   }`}
-                  style={isActive ? { backgroundColor: themeColors.primaryColor } : {}}
+                  style={isActive ? { backgroundColor: themeColors.primaryColor, boxShadow: `0 6px 14px -4px ${themeColors.primaryColor}55` } : {}}
                 >
                   {t.icon}
                   <span className="whitespace-nowrap">{t.label}</span>
