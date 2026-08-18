@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCompare } from '@/context/CompareContext';
 
 export function FloatingActions() {
   const { themeColors } = useSettings();
   const { t } = useLanguage();
+  const { compareList, barHidden } = useCompare();
   const [showTop, setShowTop] = useState(false);
+  const compareBarVisible = compareList.length > 0 && !barHidden;
 
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 400);
@@ -16,7 +19,7 @@ export function FloatingActions() {
   }, []);
 
   return (
-    <div className="fixed bottom-24 lg:bottom-5 start-5 z-50 flex flex-col items-center gap-3">
+    <div className={`fixed start-5 z-50 flex flex-col items-center gap-3 transition-all duration-300 ${compareBarVisible ? 'bottom-56' : 'bottom-24'} lg:bottom-5`}>
       {showTop && (
         <button
           type="button"

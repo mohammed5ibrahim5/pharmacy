@@ -2,6 +2,12 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { supabase } from '@/lib/supabase';
 import { localizedError } from '@/lib/errorMessages';
 
+// ===== الوضع التجريبي للدخول بالرقم (بدون إرسال SMS حقيقي) =====
+// عند التفعيل: يظهر الكود جوه التطبيق، ويفعّل حساب فضفضة (Anonymous) عند التأكيد.
+// عند الإطلاق الحقيقي: حول القيمة لـ false واستخدم Supabase Phone Auth.
+const DEMO_OTP_ENABLED = true;
+const demoOtpStore = new Map<string, string>();
+
 export interface CustomerProfile {
   id: string;
   user_id?: string | null;
@@ -22,6 +28,8 @@ interface CustomerContextType {
   setAuthModalOpen: (open: boolean) => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, fullName: string, phone?: string, avatarUrl?: string | null) => Promise<{ error: string | null }>;
+  sendOtp: (phone: string) => Promise<{ error: string | null; debugCode?: string | null }>;
+  verifyOtp: (phone: string, token: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<CustomerProfile>) => Promise<{ error: string | null }>;
@@ -35,6 +43,8 @@ const CustomerContext = createContext<CustomerContextType>({
   setAuthModalOpen: () => {},
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
+  sendOtp: async () => ({ error: null }),
+  verifyOtp: async () => ({ error: null }),
   signOut: async () => {},
   refreshProfile: async () => {},
   updateProfile: async () => ({ error: null }),
@@ -146,6 +156,58 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
+  const normalizeEgyptianPhone = (phone: string): string => {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('002')) return `+${digits.slice(3)}`;
+  if (digits.startsWith('01') && digits.length === 11) return `+2${digits.slice(1)}`;
+  if (!digits.startsWith('+')) return `+${digits}`;
+  return digits;
+};
+
+  const sendOtp = async (phone: string) => {
+    if (DEMO_OTP_ENABLED) {
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      demoOtpStore.set(phone.replace(/\D/g, ''), code);
+      return { error: null, debugCode: code };
+    }
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: normalizeEgyptianPhone(phone),
+    });
+    if (error) return { error: localizedError(error.message, 'ar') };
+    return { error: null };
+  };
+
+  const verifyOtp = async (phone: string, token: string) => {
+    if (DEMO_OTP_ENABLED) {
+      const expected = demoOtpStore.get(phone.replace(/\D/g, ''));
+      if (!expected || expected !== token.trim()) {
+        return { error: 'كود التحقق غير صحيح' };
+      }
+      demoOtpStore.delete(phone.replace(/\D/g, ''));
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        return { error: 'التسجيل التجريبي يتطلب تفعيل "Anonymous sign-in" في إعدادات Supabase Auth.' };
+      }
+      const uid = data?.user?.id;
+      if (uid) {
+        await supabase
+          .from('customers')
+          .update({ phone: normalizeEgyptianPhone(phone) })
+          .eq('id', uid);
+      }
+      await refreshProfile();
+      return { error: null };
+    }
+    const { error } = await supabase.auth.verifyOtp({
+      phone: normalizeEgyptianPhone(phone),
+      token: token.trim(),
+      type: 'sms',
+    });
+    if (error) return { error: localizedError(error.message, 'ar') };
+    await refreshProfile();
+    return { error: null };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
@@ -177,6 +239,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         setAuthModalOpen,
         signIn,
         signUp,
+        sendOtp,
+        verifyOtp,
         signOut,
         refreshProfile,
         updateProfile,

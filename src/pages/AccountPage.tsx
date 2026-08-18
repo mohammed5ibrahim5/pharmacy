@@ -44,6 +44,7 @@ import { useRouter } from '@/context/RouterContext';
 import { useOrder } from '@/context/OrderContext';
 import { useLanguage } from '@/context/LanguageContext';
 import type { AccountTab } from '@/context/RouterContext';
+import type { CustomerProfile } from '@/context/CustomerContext';
 import type { Pharmacy, Product, LoyaltyTransaction, MedicationReminder, FamilyMember } from '@/types';
 import { ProductCard } from '@/components/ProductCard';
 import { PharmacyCard } from '@/components/PharmacyCard';
@@ -358,7 +359,7 @@ function OrderTrackingModal({ order, onClose }: { order: OrderRecord; onClose: (
 }
 
 export function AccountPage({ tab }: { tab: AccountTab }) {
-  const { user, profile, setAuthModalOpen, signOut } = useCustomer();
+  const { user, profile, setAuthModalOpen, signOut, updateProfile } = useCustomer();
   const { settings, themeColors, loyaltyConfig, featuresConfig } = useSettings();
   const { navigate } = useRouter();
   const { openOrder } = useOrder();
@@ -374,6 +375,14 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [reviewOrder, setReviewOrder] = useState<OrderRecord | null>(null);
   const [trackingOrder, setTrackingOrder] = useState<OrderRecord | null>(null);
+  const [orderFilter, setOrderFilter] = useState<'all' | 'active' | 'delivered' | 'cancelled'>('all');
+  const [orderSearch, setOrderSearch] = useState('');
+  const [favView, setFavView] = useState<'products' | 'pharmacies'>('products');
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editAvatar, setEditAvatar] = useState<string | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [rxLoading, setRxLoading] = useState(false);
   const [rxUploading, setRxUploading] = useState(false);
@@ -527,6 +536,61 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     setToast(msg);
     setTimeout(() => setToast(null), 2200);
   };
+
+  const openEditProfile = () => {
+    setEditName(profile?.full_name || '');
+    setEditPhone(profile?.phone || '');
+    setEditAvatar(profile?.avatar_url || null);
+    setEditProfileOpen(true);
+  };
+
+  const handleEditAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast(t('حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setEditAvatar(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim()) {
+      showToast(t('يرجى إدخال الاسم الكامل.'));
+      return;
+    }
+    if (editPhone && !/^[0-9+\-\s]{8,15}$/.test(editPhone.trim())) {
+      showToast(t('يرجى إدخال رقم هاتف صحيح.'));
+      return;
+    }
+    setEditSaving(true);
+    const updates: Partial<CustomerProfile> = { full_name: editName.trim() };
+    if ((profile?.phone || '') !== editPhone.trim()) updates.phone = editPhone.trim();
+    if (editAvatar !== profile?.avatar_url) updates.avatar_url = editAvatar && editAvatar.length > 0 ? editAvatar : null;
+    const { error } = await updateProfile(updates);
+    setEditSaving(false);
+    if (error) {
+      showToast(error);
+      return;
+    }
+    setEditProfileOpen(false);
+    showToast(t('تم تحديث بياناتك بنجاح'));
+  };
+
+  const visibleOrders = useMemo(() => {
+    let list = orders;
+    if (orderFilter === 'active') list = list.filter((o) => o.status === 'pending' || o.status === 'confirmed' || o.status === 'shipped');
+    if (orderFilter === 'delivered') list = list.filter((o) => o.status === 'delivered');
+    if (orderFilter === 'cancelled') list = list.filter((o) => o.status === 'cancelled');
+    if (orderSearch.trim()) {
+      const q = orderSearch.trim().toLowerCase();
+      list = list.filter((o) => `${o.id}${o.product?.name || ''}${o.pharmacy?.name || ''}${o.status}`.toLowerCase().includes(q));
+    }
+    return list;
+  }, [orders, orderFilter, orderSearch]);
 
   const fetchPrescriptions = useCallback(async () => {
     if (!user) return;
@@ -841,8 +905,20 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <ShieldCheck className="w-3.5 h-3.5" />
                 {t('حساب موثق')}
               </span>
+              <button
+                type="button"
+                onClick={openEditProfile}
+                title={t('تعديل البيانات الشخصية')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white text-[11px] font-black transition-all duration-300 active:scale-95"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                {t('تعديل')}
+              </button>
             </div>
             <p className="text-xs text-white/75 font-bold mt-1.5" dir="ltr">{user.email}</p>
+            {profile?.phone && (
+              <p className="text-xs text-white/75 font-bold mt-1" dir="ltr">{profile.phone}</p>
+            )}
 
             {loyaltyConfig.enabled && (
               <button
@@ -860,14 +936,16 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       {/* ===== Quick Stats Grid (Aesthetic Glows & Hover Lift) ===== */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { icon: <PackageCheck className="w-6 h-6" />, value: `${orders.length}`, label: t('إجمالي الطلبات'), color: themeColors.primaryColor },
-          { icon: <Truck className="w-6 h-6" />, value: `${activeOrdersCount}`, label: t('طلبات نشطة ومتابعة'), color: themeColors.secondaryColor },
-          { icon: <FileText className="w-6 h-6" />, value: `${prescriptions.length}`, label: t('روشتات محفوظة'), color: themeColors.accentColor },
-          { icon: <Heart className="w-6 h-6" />, value: `${productFavoritesCount + pharmacyFavoritesCount}`, label: t('العناصر المفضلة'), color: '#ec4899' },
+          { icon: <PackageCheck className="w-6 h-6" />, value: `${orders.length}`, label: t('إجمالي الطلبات'), color: themeColors.primaryColor, tab: 'orders' as AccountTab },
+          { icon: <Truck className="w-6 h-6" />, value: `${activeOrdersCount}`, label: t('طلبات نشطة ومتابعة'), color: themeColors.secondaryColor, tab: 'orders' as AccountTab },
+          { icon: <FileText className="w-6 h-6" />, value: `${prescriptions.length}`, label: t('روشتات محفوظة'), color: themeColors.accentColor, tab: 'prescriptions' as AccountTab },
+          { icon: <Heart className="w-6 h-6" />, value: `${productFavoritesCount + pharmacyFavoritesCount}`, label: t('العناصر المفضلة'), color: '#ec4899', tab: 'favorites' as AccountTab },
         ].map((stat, i) => (
-          <div 
-            key={i} 
-            className="relative overflow-hidden bg-white rounded-3xl border border-slate-200/80 p-5 flex items-center gap-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-default"
+          <button
+            type="button"
+            key={i}
+            onClick={() => navigate({ name: 'account', tab: stat.tab }, { scrollToTop: false })}
+            className="relative overflow-hidden bg-white rounded-3xl border border-slate-200/80 p-5 flex items-center gap-4 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer text-start"
           >
             <div
               className="absolute -top-8 -end-8 w-24 h-24 rounded-full opacity-10 pointer-events-none transition-opacity duration-300 group-hover:opacity-20"
@@ -883,7 +961,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
               <p className="text-2xl font-black text-slate-900 leading-none tabular-nums">{stat.value}</p>
               <p className="text-xs text-slate-500 font-bold mt-1.5 leading-snug">{stat.label}</p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -969,6 +1047,39 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-500">{t('{0} طلب مسجل', [orders.length])}</span>
               </div>
 
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex rounded-2xl border border-slate-200/80 bg-white p-1 shadow-sm">
+                  {([
+                    { id: 'all' as const, label: t('الكل') },
+                    { id: 'active' as const, label: t('قيد المعالجة') },
+                    { id: 'delivered' as const, label: t('تم التسليم') },
+                    { id: 'cancelled' as const, label: t('ملغي') },
+                  ]).map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setOrderFilter(f.id)}
+                      className={`px-3.5 py-2 rounded-xl text-[11px] font-black transition-all duration-300 ${
+                        orderFilter === f.id ? 'text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                      }`}
+                      style={orderFilter === f.id ? { backgroundColor: themeColors.primaryColor } : undefined}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative flex-1 min-w-0">
+                  <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    value={orderSearch}
+                    onChange={(e) => setOrderSearch(e.target.value)}
+                    placeholder={t('ابحث في طلباتك...')}
+                    className="w-full ps-10 pe-3 py-2.5 rounded-2xl border border-slate-200/80 bg-white text-xs font-bold placeholder:font-bold focus:outline-none focus:ring-2 transition-shadow"
+                    style={{ ['--tw-ring-color' as string]: `${themeColors.primaryColor}40` }}
+                  />
+                </div>
+              </div>
+
               {ordersLoading ? (
                 <div className="grid gap-4">
                   {[...Array(3)].map((_, i) => (
@@ -993,9 +1104,23 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                     {t('تصفح الصيدليات المتاحة')}
                   </button>
                 </div>
+              ) : visibleOrders.length === 0 ? (
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-10 text-center shadow-sm">
+                  <Search className="w-10 h-10 mx-auto text-slate-300 mb-3" />
+                  <h3 className="font-black text-slate-900 text-base mb-1">{t('لا توجد طلبات مطابقة')}</h3>
+                  <p className="text-xs text-slate-500 font-medium mb-4">{t('جرّب تعديل البحث أو الفلاتر الحالية.')}</p>
+                  <button
+                    type="button"
+                    onClick={() => { setOrderFilter('all'); setOrderSearch(''); }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-black text-slate-600 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    {t('مسح الفلاتر')}
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-4">
-                  {orders.map((order) => {
+                  {visibleOrders.map((order) => {
                     const meta = STATUS_META[order.status] || STATUS_META.pending;
                     const product = order.product;
                     return (
@@ -1832,7 +1957,33 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                 </span>
               </div>
 
-              {/* Favorite products */}
+              <div className="flex rounded-2xl border border-slate-200/80 bg-white p-1 shadow-sm w-fit">
+                {([
+                  { id: 'products' as const, label: t('الأدوية'), count: productFavoritesCount },
+                  { id: 'pharmacies' as const, label: t('الصيدليات'), count: pharmacyFavoritesCount },
+                ]).map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setFavView(v.id)}
+                    className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-black transition-all duration-300 ${
+                      favView === v.id ? 'text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                    }`}
+                    style={favView === v.id ? { backgroundColor: themeColors.primaryColor } : undefined}
+                  >
+                    {v.label}
+                    <span
+                      className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${
+                        favView === v.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      {v.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {favView === 'products' && (
               <section className="space-y-3.5">
                 <div className="flex items-center gap-2.5">
                   <div
@@ -1873,8 +2024,10 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   </div>
                 )}
               </section>
+              )}
 
               {/* Favorite pharmacies */}
+              {favView === 'pharmacies' && (
               <section className="space-y-3.5 pt-6 border-t border-slate-200/60">
                 <div className="flex items-center gap-2.5">
                   <div
@@ -1910,6 +2063,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   </div>
                 )}
               </section>
+              )}
             </div>
           )}
         </div>
@@ -1927,6 +2081,108 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       )}
       {trackingOrder && (
         <OrderTrackingModal order={trackingOrder} onClose={() => setTrackingOrder(null)} />
+      )}
+
+      {editProfileOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => !editSaving && setEditProfileOpen(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-fade-up">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <Pencil className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
+                {t('تعديل البيانات الشخصية')}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditProfileOpen(false)}
+                disabled={editSaving}
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-5">
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  {editAvatar ? (
+                    <img
+                      src={editAvatar}
+                      alt=""
+                      className="w-24 h-24 rounded-[1.75rem] object-cover border-2 border-slate-100 shadow-md"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-[1.75rem] bg-slate-100 flex items-center justify-center text-4xl font-black text-slate-400 border-2 border-slate-100">
+                      {(editName.trim()[0] || '؟').toUpperCase()}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('edit-avatar-input')?.click()}
+                    className="absolute -bottom-2 -end-2 p-2.5 rounded-xl text-white shadow-lg hover:scale-105 active:scale-95 transition-all"
+                    style={{ backgroundColor: themeColors.primaryColor }}
+                    title={t('تغيير الصورة')}
+                  >
+                    <Camera className="w-4 h-4" />
+                  </button>
+                </div>
+                <input
+                  id="edit-avatar-input"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleEditAvatar}
+                />
+                <p className="text-[11px] text-slate-400 font-bold">{t('اضغط على الكاميرا لتغيير صورتك')}</p>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-600 mb-1.5">{t('الاسم الكامل')}</label>
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder={t('الاسم الكامل')}
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold focus:outline-none focus:ring-2 transition-shadow"
+                  style={{ ['--tw-ring-color' as string]: `${themeColors.primaryColor}40` }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-600 mb-1.5">{t('رقم الهاتف')}</label>
+                <input
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder={t('مثال: 05xxxxxxxx')}
+                  dir="ltr"
+                  inputMode="tel"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-start focus:outline-none focus:ring-2 transition-shadow"
+                  style={{ ['--tw-ring-color' as string]: `${themeColors.primaryColor}40` }}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/60">
+              <button
+                type="button"
+                onClick={() => setEditProfileOpen(false)}
+                disabled={editSaving}
+                className="flex-1 px-5 py-3 rounded-2xl bg-white border border-slate-200 text-slate-600 text-sm font-black hover:bg-slate-50 transition-colors"
+              >
+                {t('إلغاء')}
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                disabled={editSaving}
+                className="flex-1 px-5 py-3 rounded-2xl text-white text-sm font-black shadow-md hover:scale-102 active:scale-95 transition-all disabled:opacity-60 inline-flex items-center justify-center gap-2"
+                style={{ backgroundColor: themeColors.primaryColor }}
+              >
+                {editSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {editSaving ? t('جاري الحفظ...') : t('حفظ التغييرات')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

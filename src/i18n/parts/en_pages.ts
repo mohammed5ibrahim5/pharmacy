@@ -40,6 +40,8 @@
   'جرّب كلمة بحث مختلفة أو تصفّح فئة أخرى — قد تجد ما تبحث عنه': 'Try a different search term or browse another category — you might find what you\'re looking for',
   'الصيدلية لم تُضف منتجات بعد — تابعنا قريباً أو جرّب صيدلية أخرى': 'This pharmacy hasn\'t added products yet — check back soon or try another pharmacy',
   'عرض كل المنتجات': 'Show all products',
+  'اتصال سريع': 'Quick call',
+  'مرحباً، أحتاج الاستفسار عن متوفر عندكم': 'Hello, I would like to ask about what you have in stock',
 
   // ImageUploader
   'يرجى اختيار ملف صورة صالح.': 'Please choose a valid image file.',

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Mail, Lock, User, Eye, EyeOff, Loader2, AlertCircle, Cross, Phone, Camera, Info, Link2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, Mail, Lock, User, Eye, EyeOff, Loader2, AlertCircle, Cross, Phone, Camera, Info, Link2, Smartphone, Timer } from 'lucide-react';
 import { useCustomer } from '@/context/CustomerContext';
 import { useSettings } from '@/context/SettingsContext';
 import { translateError } from '@/lib/errorMessages';
@@ -11,9 +11,10 @@ interface Props {
 }
 
 export function AuthModal({ open, onClose }: Props) {
-  const { signIn, signUp } = useCustomer();
+  const { signIn, signUp, sendOtp, verifyOtp } = useCustomer();
   const { themeColors } = useSettings();
   const { t, lang } = useLanguage();
+  const [authMethod, setAuthMethod] = useState<'phone' | 'email'>('phone');
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -25,6 +26,36 @@ export function AuthModal({ open, onClose }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [otpPhone, setOtpPhone] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+  const [debugCode, setDebugCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = setTimeout(() => setResendIn(resendIn - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
+
+  useEffect(() => {
+    if (!open) return;
+    setError(null);
+    setOtpSent(false);
+    setOtp('');
+    setResendIn(0);
+    setDebugCode(null);
+  }, [open]);
+
+  const switchMethod = (m: 'phone' | 'email') => {
+    setAuthMethod(m);
+    setError(null);
+    setOtp('');
+    setOtpSent(false);
+    setResendIn(0);
+    setDebugCode(null);
+  };
 
   if (!open) return null;
 
@@ -44,7 +75,7 @@ export function AuthModal({ open, onClose }: Props) {
     setPhone(value.replace(/\D/g, '').slice(0, 11));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (mode === 'signup') {
@@ -73,6 +104,43 @@ export function AuthModal({ open, onClose }: Props) {
     }
   };
 
+  const handleSendOtp = async () => {
+    setError(null);
+    if (!/^01[0125]\d{8}$/.test(otpPhone.trim())) { setError('PHONE_INVALID'); return; }
+    setOtpLoading(true);
+    const res = await sendOtp(otpPhone);
+    setOtpLoading(false);
+    if (res.error) { setError(res.error); return; }
+    setOtp('');
+    setDebugCode(res.debugCode || null);
+    setOtpSent(true);
+    setResendIn(60);
+  };
+
+  const handleVerifyOtp = async () => {
+    setError(null);
+    if (otp.trim().length < 4) { setError(t('يرجى إدخال كود التحقق')); return; }
+    setOtpLoading(true);
+    const res = await verifyOtp(otpPhone, otp);
+    setOtpLoading(false);
+    if (res.error) {
+      setError(t(res.error));
+      return;
+    }
+    onClose();
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (authMethod === 'phone') {
+      if (otpSent) handleVerifyOtp();
+      else handleSendOtp();
+      return;
+    }
+    handleEmailSubmit(e);
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -98,10 +166,10 @@ export function AuthModal({ open, onClose }: Props) {
               <Cross className="w-8 h-8 text-white" strokeWidth={2.5} />
             </div>
             <h2 className="text-xl font-extrabold text-white">
-              {mode === 'login' ? t('تسجيل الدخول') : t('إنشاء حساب جديد')}
+              {authMethod === 'phone' ? t('تسجيل الدخول أو إنشاء حساب') : (mode === 'login' ? t('تسجيل الدخول') : t('إنشاء حساب جديد'))}
             </h2>
             <p className="text-white/80 text-sm mt-1">
-              {mode === 'login' ? t('أهلاً بعودتك! سجل دخولك للمتابعة') : t('انضم إلينا لتتمكن من طلب المنتجات')}
+              {authMethod === 'phone' ? t('أدخل رقم موبايلك وسنرسل لك كود تحقق للدخول فوراً') : (mode === 'login' ? t('أهلاً بعودتك! سجل دخولك للمتابعة') : t('انضم إلينا لتتمكن من طلب المنتجات'))}
             </p>
           </div>
         </div>
@@ -129,7 +197,136 @@ export function AuthModal({ open, onClose }: Props) {
             );
           })()}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleFormSubmit}>
+            {/* Method switcher */}
+            <div className="grid grid-cols-2 gap-2 mb-5">
+              <button
+                type="button"
+                onClick={() => switchMethod('phone')}
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-xs font-bold transition-all ${
+                  authMethod === 'phone' ? 'text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+                style={authMethod === 'phone' ? { backgroundColor: themeColors.priceColor, borderColor: themeColors.priceColor } : { borderColor: '#e5e7eb' }}
+              >
+                <Smartphone className="w-4 h-4" />
+                {t('رقم الموبايل')}
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMethod('email')}
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-xs font-bold transition-all ${
+                  authMethod === 'email' ? 'text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+                style={authMethod === 'email' ? { backgroundColor: themeColors.priceColor, borderColor: themeColors.priceColor } : { borderColor: '#e5e7eb' }}
+              >
+                <Mail className="w-4 h-4" />
+                {t('البريد الإلكتروني')}
+              </button>
+            </div>
+
+            {authMethod === 'phone' ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('رقم الموبايل')}</label>
+                  <div className="relative">
+                    <Smartphone className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="tel"
+                      value={otpPhone}
+                      onChange={(e) => setOtpPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                      disabled={otpSent}
+                      dir="ltr"
+                      inputMode="numeric"
+                      maxLength={11}
+                      className="w-full ps-11 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm disabled:opacity-60"
+                      style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
+                      placeholder="01XXXXXXXXX"
+                    />
+                  </div>
+                </div>
+
+                {!otpSent ? (
+                  <button
+                    type="submit"
+                    disabled={otpLoading}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 shadow-lg"
+                    style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
+                  >
+                    {otpLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Smartphone className="w-5 h-5" />}
+                    {t('أرسل كود التحقق')}
+                  </button>
+                ) : (
+                  <>
+                    <div className="rounded-2xl p-3.5 flex items-center gap-2.5" style={{ backgroundColor: debugCode ? '#ecfdf5' : `${themeColors.priceColor}10`, border: debugCode ? '1px solid #a7f3d0' : `1px solid ${themeColors.priceColor}25` }}>
+                      <Timer className="w-4 h-4 shrink-0" style={{ color: debugCode ? '#059669' : themeColors.priceColor }} />
+                      {debugCode ? (
+                        <p className="text-xs font-bold text-emerald-700">
+                          {t('وضع تجريبي — كود التحقق: {0}', [debugCode])}
+                        </p>
+                      ) : (
+                        <p className="text-xs font-bold text-gray-700" dir="ltr">{t('تم إرسال كود التحقق إلى {0}', [otpPhone])}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('كود التحقق')}</label>
+                      <div className="relative">
+                        <Lock className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          type="text"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          dir="ltr"
+                          inputMode="numeric"
+                          autoFocus
+                          maxLength={6}
+                          className="w-full ps-11 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm tracking-[0.4em] text-center font-black"
+                          style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
+                          placeholder="••••••"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={otpLoading}
+                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-95 disabled:opacity-50 shadow-lg"
+                      style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
+                    >
+                      {otpLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
+                      {t('تأكيد الدخول')}
+                    </button>
+
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      {resendIn > 0 ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-400">
+                          <Timer className="w-3.5 h-3.5" />
+                          {t('أعد الإرسال بعد {0} ثانية', [resendIn])}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleSendOtp}
+                          className="inline-flex items-center gap-1.5 text-xs font-bold hover:underline"
+                          style={{ color: themeColors.priceColor }}
+                        >
+                          <Timer className="w-3.5 h-3.5" />
+                          {t('إعادة إرسال الكود')}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => { setOtpSent(false); setOtp(''); setError(null); setResendIn(0); }}
+                        className="text-xs font-bold text-gray-400 hover:text-gray-600"
+                      >
+                        {t('تغيير الرقم')}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
             {mode === 'signup' && (
               <div className="space-y-4 mb-5">
                 {/* Avatar upload */}
@@ -281,20 +478,24 @@ export function AuthModal({ open, onClose }: Props) {
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : mode === 'login' ? t('تسجيل الدخول') : t('إنشاء الحساب')}
               </button>
             </div>
+              </>
+            )}
           </form>
 
-          <div className="mt-5 pt-5 border-t border-gray-100 text-center">
-            <p className="text-sm text-gray-500">
-              {mode === 'login' ? t('ليس لديك حساب؟') : t('لديك حساب بالفعل؟')}
-              <button
-                onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}
-                className="ms-1 font-semibold hover:underline"
-                style={{ color: themeColors.priceColor }}
-              >
-                {mode === 'login' ? t('إنشاء حساب') : t('تسجيل الدخول')}
-              </button>
-            </p>
-          </div>
+          {authMethod === 'email' && (
+            <div className="mt-5 pt-5 border-t border-gray-100 text-center">
+              <p className="text-sm text-gray-500">
+                {mode === 'login' ? t('ليس لديك حساب؟') : t('لديك حساب بالفعل؟')}
+                <button
+                  onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}
+                  className="ms-1 font-semibold hover:underline"
+                  style={{ color: themeColors.priceColor }}
+                >
+                  {mode === 'login' ? t('إنشاء حساب') : t('تسجيل الدخول')}
+                </button>
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

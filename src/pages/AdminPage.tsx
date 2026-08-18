@@ -7,7 +7,7 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Copy, Inbox, Ban, Navigation, ExternalLink, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog, BadgePercent, Baby, ChevronUp, MessageSquareQuote
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Copy, Inbox, Ban, Navigation, ExternalLink, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog, BadgePercent, Baby, ChevronUp, MessageSquareQuote, Scale
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_HOMEPAGE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig, type WelcomePopupConfig } from '@/context/SettingsContext';
@@ -5035,6 +5035,22 @@ function SettingsTab() {
                 desc="أداة تحسب جرعة آمنة من دواء معين حسب عمر ووزن الطفل"
                 checked={featuresCfg.doseCalculator}
                 onChange={(v) => setFeaturesCfg((p) => ({ ...p, doseCalculator: v }))}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Scale className="w-4 h-4" />}
+                title="مقارنة أسعار الدواء"
+                desc="زر على كل منتج يعرض نفس الدواء في الصيدليات الأخرى + بدائل بنفس المادة الفعالة مرتبة من الأرخص"
+                checked={featuresCfg.priceCompare}
+                onChange={(v) => setFeaturesCfg((p) => ({ ...p, priceCompare: v }))}
+                color={settings.primary_color}
+              />
+              <FeatureToggle
+                icon={<Scale className="w-4 h-4" />}
+                title="مقارنة الصيدليات"
+                desc="إضافة الصيدليات لشريط مقارنة أسفل الشاشة وعرضها جنباً لجنب بجدول مفصل"
+                checked={featuresCfg.pharmacyCompare}
+                onChange={(v) => setFeaturesCfg((p) => ({ ...p, pharmacyCompare: v }))}
                 color={settings.primary_color}
               />
             </div>

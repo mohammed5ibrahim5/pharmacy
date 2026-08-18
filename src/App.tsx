@@ -4,9 +4,12 @@ import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { RouterProvider, useRouter } from '@/context/RouterContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { PharmacyOwnerProvider } from '@/context/PharmacyOwnerContext';
+import { useSettings } from '@/context/SettingsContext';
+import { useCompare } from '@/context/CompareContext';
 import { CustomerProvider } from '@/context/CustomerContext';
 import { FavoritesProvider } from '@/context/FavoritesContext';
 import { OrderProvider } from '@/context/OrderContext';
+import { CompareProvider } from '@/context/CompareContext';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { OrderModal } from '@/components/OrderModal';
@@ -15,6 +18,9 @@ import { FloatingActions } from '@/components/FloatingActions';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { WelcomePopup } from '@/components/WelcomePopup';
 import { ReminderScheduler } from '@/components/ReminderScheduler';
+import { CompareBar } from '@/components/CompareBar';
+import { PriceCompareModal } from '@/components/PriceCompareModal';
+import { PharmacyCompareModal } from '@/components/PharmacyCompareModal';
 import { HomePage } from '@/pages/HomePage';
 import { SearchPage } from '@/pages/SearchPage';
 import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
@@ -86,6 +92,23 @@ function PharmacyAdminRoute() {
   );
 }
 
+function CompareOverlay() {
+  const { featuresConfig } = useSettings();
+  const { compareOpen, closeCompare, priceCompareProduct, closePriceCompare } = useCompare();
+
+  if (!featuresConfig.pharmacyCompare && !featuresConfig.priceCompare) return null;
+
+  return (
+    <>
+      {featuresConfig.pharmacyCompare && <CompareBar />}
+      {featuresConfig.pharmacyCompare && compareOpen && <PharmacyCompareModal onClose={closeCompare} />}
+      {featuresConfig.priceCompare && priceCompareProduct && (
+        <PriceCompareModal product={priceCompareProduct} onClose={closePriceCompare} />
+      )}
+    </>
+  );
+}
+
 function SiteContent() {
   const { route, refreshKey } = useRouter();
   const { dir } = useLanguage();
@@ -108,6 +131,7 @@ function SiteContent() {
       <MobileBottomNav />
       <WelcomePopup />
       <ReminderScheduler />
+      <CompareOverlay />
     </div>
   );
 }
@@ -161,11 +185,13 @@ function AppContent() {
       <SettingsProvider>
         <RouterProvider>
           <CustomerProvider>
-            <FavoritesProvider>
-              <OrderProvider>
-                <SiteContent />
-              </OrderProvider>
-            </FavoritesProvider>
+            <CompareProvider>
+              <FavoritesProvider>
+                <OrderProvider>
+                  <SiteContent />
+                </OrderProvider>
+              </FavoritesProvider>
+            </CompareProvider>
           </CustomerProvider>
         </RouterProvider>
       </SettingsProvider>

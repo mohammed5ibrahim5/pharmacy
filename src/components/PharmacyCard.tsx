@@ -1,9 +1,10 @@
-import { MapPin, Star, Phone, Clock, Truck, MessageCircle, ArrowLeft, Navigation, ShieldCheck, Car, BadgeCheck, Heart, Navigation2 } from 'lucide-react';
+import { MapPin, Star, Phone, Clock, Truck, MessageCircle, ArrowLeft, Navigation, ShieldCheck, Car, BadgeCheck, Heart, Navigation2, Scale } from 'lucide-react';
 import type { Pharmacy } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useCustomer } from '@/context/CustomerContext';
+import { useCompare } from '@/context/CompareContext';
 import { formatDistance } from '@/lib/distance';
 import { getDirectionsUrl } from '@/lib/directions';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
@@ -33,15 +34,24 @@ function RatingBar({ rating }: { rating: number }) {
 
 export function PharmacyCard({ pharmacy }: Props) {
   const { t, lang } = useLanguage();
-  const { themeColors } = useSettings();
+  const { themeColors, featuresConfig } = useSettings();
   const { navigate } = useRouter();
   const { user, setAuthModalOpen } = useCustomer();
   const { isPharmacyFavorite, togglePharmacyFavorite } = useFavorites();
+  const { isInCompare, toggleCompare, compareList } = useCompare();
   const isFav = isPharmacyFavorite(pharmacy.id);
+  const inCompare = featuresConfig.pharmacyCompare && isInCompare(pharmacy.id);
+  const compareCount = compareList.length;
 
   const handleToggleFavorite = () => {
     if (!user) { setAuthModalOpen(true); return; }
     togglePharmacyFavorite(pharmacy.id);
+  };
+
+  const handleToggleCompare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!featuresConfig.pharmacyCompare) return;
+    toggleCompare(pharmacy);
   };
 
   return (
@@ -85,7 +95,7 @@ export function PharmacyCard({ pharmacy }: Props) {
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/25 to-transparent" />
 
-          {/* Top-Left: Delivery + Open Badge */}
+          {/* Top-Left: Delivery Badge + Compare */}
           <div className="absolute top-3 start-3 flex items-center gap-1.5 z-10">
             {pharmacy.delivery_available && (
               <div
@@ -96,6 +106,25 @@ export function PharmacyCard({ pharmacy }: Props) {
                 <Truck className="w-3.5 h-3.5" />
                 <span>{t('توصيل')}</span>
               </div>
+            )}
+            {featuresConfig.pharmacyCompare && (
+              <button
+                type="button"
+                onClick={handleToggleCompare}
+                className={`relative w-10 h-10 rounded-full flex items-center justify-center shadow-lg border transition-all duration-300 z-10 active:scale-90 ${
+                  inCompare
+                    ? 'bg-teal-500 border-teal-400 text-white'
+                    : 'bg-white/90 backdrop-blur-md border-white/40 hover:bg-white text-slate-500 hover:text-teal-600'
+                }`}
+                title={inCompare ? t('إزالة من المقارنة') : t('أضف للمقارنة')}
+              >
+                <Scale className={`w-5 h-5 transition-all ${inCompare ? 'scale-110' : ''}`} />
+                {compareCount > 0 && (
+                  <span className="absolute -top-1.5 -end-1.5 min-w-[18px] h-[18px] px-0.5 rounded-full bg-sky-500 border-2 border-white text-white text-[9px] font-black flex items-center justify-center shadow">
+                    {compareCount}
+                  </span>
+                )}
+              </button>
             )}
           </div>
 

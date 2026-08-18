@@ -1,10 +1,11 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, FlaskConical, BellRing, BellOff, Flame, Plus, Minus, Eye } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, FlaskConical, BellRing, BellOff, Flame, Plus, Minus, Eye, Scale } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useRef, useState } from 'react';
 import { useCustomer } from '@/context/CustomerContext';
+import { useCompare } from '@/context/CompareContext';
 import { addStockAlert, removeStockAlert } from '@/lib/loyalty';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -13,14 +14,16 @@ interface Props {
   pharmacyName?: string;
   onClick?: () => void;
   popular?: boolean;
+  showCompare?: boolean;
 }
 
-export function ProductCard({ product, pharmacyName, onClick, popular = false }: Props) {
+export function ProductCard({ product, pharmacyName, onClick, popular = false, showCompare = true }: Props) {
   const { t, lang } = useLanguage();
   const { themeColors, featuresConfig } = useSettings();
   const { cart, openOrder, addToCart, updateCartQty } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { user, setAuthModalOpen } = useCustomer();
+  const { openPriceCompare } = useCompare();
   const [alerting, setAlerting] = useState(false);
   const [alerted, setAlerted] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
@@ -110,6 +113,19 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               <Eye className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
               {t('نظرة سريعة')}
             </button>
+            {featuresConfig.priceCompare && showCompare && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openPriceCompare(product);
+                }}
+                className="flex items-center gap-1.5 bg-white text-slate-900 px-4 py-2 rounded-full font-bold text-xs shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 hover:bg-teal-50 active:scale-95"
+              >
+                <Scale className="w-4 h-4" style={{ color: themeColors.priceColor }} />
+                {t('قارن الأسعار والبدائل')}
+              </button>
+            )}
           </div>
 
           {/* Badges Overlay */}
@@ -183,12 +199,10 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                   setAlerting(false);
                 }
               }}
-              className={`absolute bottom-2.5 end-2.5 w-9 h-9 rounded-2xl shadow-lg flex items-center justify-center transition-all duration-300 active:scale-90 z-30 ${
-                alerted
-                  ? 'text-white'
-                  : 'bg-white/90 backdrop-blur-sm border border-gray-100 hover:bg-white'
+              className={`absolute bottom-2.5 start-2.5 end-2.5 z-30 rounded-xl shadow-lg px-3 py-2.5 flex items-center justify-center gap-2 text-[11px] font-black transition-all duration-300 active:scale-95 ${
+                alerted ? 'text-white' : 'bg-white/95 backdrop-blur-sm border border-gray-200 hover:bg-white'
               }`}
-              style={alerted ? { backgroundColor: themeColors.priceColor } : { color: themeColors.accentColor }}
+              style={alerted ? { backgroundColor: themeColors.priceColor } : { color: themeColors.accentColor, borderColor: `${themeColors.accentColor}30` }}
               title={alerted ? t('تم الاشتراك — سنخبرك عند التوفر') : t('نبهني عند توفر الدواء')}
             >
               {alerting ? (
@@ -198,6 +212,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
               ) : (
                 <BellOff className="w-[18px] h-[18px]" />
               )}
+              {alerted ? t('تم الاشتراك — سنخبرك عند التوفر') : t('نبهني عند توفر الدواء')}
             </button>
           )}
 
@@ -244,7 +259,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                   <Plus className="w-3.5 h-3.5" strokeWidth={3} />
                 </button>
               </div>
-            ) : (
+            ) : product.is_available ? (
               <div className="absolute bottom-2.5 start-2.5 z-30">
                 {justAdded && (
                   <span
@@ -273,7 +288,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
                   <ShoppingCart className="w-[18px] h-[18px]" />
                 </button>
               </div>
-          )}
+          ) : null}
         </div>
 
         {/* Info */}
@@ -362,6 +377,22 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false }:
             </div>
           </div>
         </div>
+
+        {featuresConfig.priceCompare && showCompare && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openPriceCompare(product);
+            }}
+            className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-black border shadow-2xs transition-all hover:brightness-95 active:scale-[0.98]"
+            style={{ color: themeColors.priceColor, borderColor: `${themeColors.priceColor}35`, backgroundColor: `${themeColors.priceColor}0d` }}
+            title={t('قارن الأسعار والبدائل')}
+          >
+            <Scale className="w-3.5 h-3.5" />
+            {t('قارن الأسعار')}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -306,6 +306,8 @@ export interface FeaturesConfig {
   reminders: boolean;
   familyMembers: boolean;
   doseCalculator: boolean;
+  priceCompare: boolean;
+  pharmacyCompare: boolean;
 }
 
 export const DEFAULT_FEATURES_CONFIG: FeaturesConfig = {
@@ -314,6 +316,8 @@ export const DEFAULT_FEATURES_CONFIG: FeaturesConfig = {
   reminders: true,
   familyMembers: true,
   doseCalculator: true,
+  priceCompare: true,
+  pharmacyCompare: true,
 };
 
 export interface WelcomePopupConfig {

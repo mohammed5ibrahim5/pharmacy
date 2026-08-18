@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, MapPin, Phone, MessageCircle, Star, Clock, Truck, Mail, Search, Package, Navigation2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, MessageCircle, Star, Clock, Truck, Mail, Search, Package, Navigation2, Scale } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
@@ -12,6 +12,7 @@ import { getDirectionsUrl } from '@/lib/directions';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
 import type { Pharmacy, Product, Category } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
+import { useCompare } from '@/context/CompareContext';
 
 interface Props {
   id: string;
@@ -19,9 +20,10 @@ interface Props {
 
 export function PharmacyDetailPage({ id }: Props) {
   const { t, lang, dir } = useLanguage();
-  const { themeColors } = useSettings();
+  const { themeColors, featuresConfig } = useSettings();
   const { navigate } = useRouter();
   const { location } = useGeolocation();
+  const { isInCompare, toggleCompare } = useCompare();
   const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -29,6 +31,7 @@ export function PharmacyDetailPage({ id }: Props) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [otcOnly, setOtcOnly] = useState(false);
+  const inCompare = featuresConfig.pharmacyCompare && pharmacy ? isInCompare(pharmacy.id) : false;
 
   useEffect(() => {
     const fetch = async () => {
@@ -183,6 +186,20 @@ export function PharmacyDetailPage({ id }: Props) {
 
               {/* Contact buttons */}
               <div className="flex gap-2.5 w-full sm:w-auto">
+                {featuresConfig.pharmacyCompare && pharmacy && (
+                  <button
+                    type="button"
+                    onClick={() => toggleCompare(pharmacy)}
+                    className={`w-12 h-12 shrink-0 rounded-2xl border flex items-center justify-center transition-all active:scale-95 shadow-lg ${
+                      inCompare
+                        ? 'bg-teal-500 border-teal-400 text-white'
+                        : 'bg-white border-gray-200 text-gray-500 hover:text-teal-600'
+                    }`}
+                    title={inCompare ? t('إزالة من المقارنة') : t('أضف للمقارنة')}
+                  >
+                    <Scale className="w-5 h-5" />
+                  </button>
+                )}
                 {pharmacy.phone && (
                   <a
                     href={`tel:${pharmacy.phone}`}
