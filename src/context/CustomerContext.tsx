@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
+import { localizedError } from '@/lib/errorMessages';
 
 export interface CustomerProfile {
   id: string;
@@ -9,6 +10,8 @@ export interface CustomerProfile {
   email: string;
   avatar_url: string | null;
   password_hash?: string | null;
+  loyalty_points?: number;
+  created_at?: string;
 }
 
 interface CustomerContextType {
@@ -37,18 +40,17 @@ const CustomerContext = createContext<CustomerContextType>({
   updateProfile: async () => ({ error: null }),
 });
 
-// Simple hash function (not for real security, just for demo)
-function simpleHash(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0;
-  }
-  return 'h' + Math.abs(hash).toString(36) + '_' + str.length;
+async function fetchProfile(): Promise<CustomerProfile | null> {
+  const { data } = await supabase.auth.getUser();
+  const uid = data.user?.id;
+  if (!uid) return null;
+  const { data: row } = await supabase
+    .from('customers')
+    .select('*')
+    .eq('user_id', uid)
+    .maybeSingle();
+  return (row as CustomerProfile | null) || null;
 }
-
-const SESSION_KEY = 'pharmacy_customer_session';
 
 export function CustomerProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CustomerProfile | null>(null);
@@ -56,115 +58,113 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  const fetchProfileById = async (userId: string) => {
-    const { data } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    const p = data as CustomerProfile | null;
-    if (p) {
+  useEffect(() => {
+    let active = true;
+
+    const hydrate = async (uid?: string) => {
+      if (!uid) return;
+      const { data } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('user_id', uid)
+        .maybeSingle();
+      if (!active) return;
+      const p = (data as CustomerProfile | null) || null;
       setProfile(p);
       setUser(p);
-    }
-    return p;
-  };
-
-  useEffect(() => {
-    // Restore session from localStorage
-    const restore = async () => {
-      const sessionId = localStorage.getItem(SESSION_KEY);
-      if (sessionId) {
-        await fetchProfileById(sessionId);
-      }
-      setLoading(false);
     };
-    restore();
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      if (data.session?.user) {
+        hydrate(data.session.user.id).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      if (session?.user) {
+        hydrate(session.user.id);
+      } else {
+        setProfile(null);
+        setUser(null);
+      }
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
+  const refreshProfile = async () => {
+    const p = await fetchProfile();
+    setProfile(p);
+    setUser(p);
+  };
+
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('email', email.toLowerCase().trim())
-      .maybeSingle();
-if (error) {
-      return { error: error.message };
-    }
-    if (!data) {
-      return { error: 'لا يوجد حساب بهذا البريد الإلكتروني' };
-    }
-    const customer = data as CustomerProfile;
-    if (!customer.password_hash) {
-      return { error: 'هذا الحساب لا يدعم تسجيل الدخول المباشر' };
-    }
-    if (customer.password_hash !== simpleHash(password)) {
-      return { error: 'كلمة المرور غير صحيحة' };
-    }
-    localStorage.setItem(SESSION_KEY, customer.id);
-    await fetchProfileById(customer.id);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase().trim(),
+      password,
+    });
+    if (error) return { error: localizedError(error.message, 'ar') };
+    await refreshProfile();
     return { error: null };
   };
 
-const signUp = async (email: string, password: string, fullName: string, phone?: string, avatarUrl?: string | null) => {
+  const signUp = async (email: string, password: string, fullName: string, phone?: string, avatarUrl?: string | null) => {
     const normalizedEmail = email.toLowerCase().trim();
-    // Check if email already exists
-    const { data: existing, error: existingError } = await supabase
-      .from('customers')
-      .select('id')
-      .eq('email', normalizedEmail)
-      .maybeSingle();
-if (existing) {
-      return { error: 'هذا البريد الإلكتروني مسجل بالفعل، برجاء تسجيل الدخول' };
-    }
-    if (existingError) {
-      return { error: existingError.message };
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          phone: phone || null,
+          avatar_url: avatarUrl || null,
+        },
+      },
+    });
+    if (error) return { error: localizedError(error.message, 'ar') };
+
+    if (data.session) {
+      await refreshProfile();
+      return { error: null };
     }
 
-    const { data, error } = await supabase
-      .from('customers')
-      .insert({
-        full_name: fullName,
-        phone: phone || null,
-        email: normalizedEmail,
-        avatar_url: avatarUrl || null,
-        password_hash: simpleHash(password),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Signup error:', error);
-      return { error: error.message };
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+    if (signInError) {
+      return { error: 'تم إنشاء الحساب. برجاء تأكيد بريدك الإلكتروني من الرسالة المرسلة ثم تسجيل الدخول.' };
     }
-    const customer = data as CustomerProfile;
-    localStorage.setItem(SESSION_KEY, customer.id);
-    await fetchProfileById(customer.id);
+    await refreshProfile();
     return { error: null };
   };
 
   const signOut = async () => {
-    localStorage.removeItem(SESSION_KEY);
-    setUser(null);
+    await supabase.auth.signOut();
     setProfile(null);
-  };
-
-  const refreshProfile = async () => {
-    if (user?.id) {
-      await fetchProfileById(user.id);
-    }
+    setUser(null);
   };
 
   const updateProfile = async (updates: Partial<CustomerProfile>) => {
     if (!user?.id) return { error: 'غير مسجل دخول' };
+    const rest = { ...updates };
+    delete rest.email;
+    delete rest.password_hash;
     const { error } = await supabase
       .from('customers')
-      .update(updates)
+      .update(rest)
       .eq('id', user.id);
-if (!error) {
-      await fetchProfileById(user.id);
+    if (!error) {
+      await refreshProfile();
     }
-    return { error: error ? error.message : null };
+    return { error: error ? localizedError(error.message, 'ar') : null };
   };
 
   return (

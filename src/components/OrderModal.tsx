@@ -421,7 +421,7 @@ export function OrderModal() {
     }
 
     try {
-      const screenshotUrl = isCOD ? null : screenshot!.startsWith('data:') ? await uploadPaymentScreenshot(screenshot!) : screenshot;
+      const screenshotUrl = isCOD ? null : screenshot!.startsWith('data:') ? await uploadPaymentScreenshot(screenshot!, user.id) : screenshot;
       const redeemedPoints = redeemChunks * redeemStep;
       const { data: groupData, error: groupErr } = await supabase
         .from('order_groups')

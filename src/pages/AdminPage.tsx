@@ -24,6 +24,7 @@ import {
   type PharmacySectionKey,
 } from '@/lib/pharmacySections';
 import { ImageUploader } from '@/components/ImageUploader';
+import { PrivateImage, PrivateLink } from '@/components/PrivateImage';
 import { InvoiceModal } from '@/components/InvoiceModal';
 import { CATEGORY_ICON_MAP, categoryColor, categoryIcon } from '@/lib/categoryStyles';
 import { HERO_BADGE_ICON_MAP, heroBadgeIcon } from '@/lib/heroBadges';
@@ -359,7 +360,8 @@ function PrescriptionsTab() {
             return (
               <div key={rx.id} className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
                 <div className="h-44 bg-slate-900 relative flex items-center justify-center cursor-pointer" onClick={() => setExpanded(isOpen ? null : rx.id)}>
-                  <img
+                  <PrivateImage
+                    bucket="prescriptions"
                     src={rx.image_url}
                     alt="روشتة"
                     className={`max-h-44 w-auto object-contain transition-opacity ${isOpen ? 'opacity-100' : 'opacity-90'}`}
@@ -815,7 +817,8 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
                             الدفع: {paymentLabel}
                           </p>
                           {view.payment_screenshot_url && (
-                            <a
+                            <PrivateLink
+                              bucket="payments"
                               href={view.payment_screenshot_url}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -825,7 +828,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
                             >
                               <ImageIcon className="w-3 h-3" />
                               إثبات التحويل
-                            </a>
+                            </PrivateLink>
                           )}
                         </div>
                         {view.payment_number && (

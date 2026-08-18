@@ -66,8 +66,8 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
-export async function uploadPaymentScreenshot(dataUrl: string): Promise<string> {
-  const path = `pay_${Date.now()}_${Math.random().toString(36).slice(2)}.png`;
+export async function uploadPaymentScreenshot(dataUrl: string, customerId: string): Promise<string> {
+  const path = `${customerId}/pay_${Date.now()}_${Math.random().toString(36).slice(2)}.png`;
   const blob = dataUrlToBlob(dataUrl);
   const { error } = await supabase.storage
     .from('payments')

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { extractStoragePathFromUrl } from '@/lib/storage';
 
 export type PrescriptionStatus = 'new' | 'reviewing' | 'preparing' | 'completed' | 'cancelled';
 
@@ -43,8 +44,9 @@ function dataUrlToBlob(dataUrl: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
-export async function uploadPrescriptionImage(dataUrl: string): Promise<string> {
-  const path = `rx_${Date.now()}_${Math.random().toString(36).slice(2)}.png`;
+export async function uploadPrescriptionImage(dataUrl: string, customerId?: string | null): Promise<string> {
+  const folder = customerId || 'guest';
+  const path = `${folder}/rx_${Date.now()}_${Math.random().toString(36).slice(2)}.png`;
   const blob = dataUrlToBlob(dataUrl);
   const { error } = await supabase.storage
     .from('prescriptions')
@@ -72,7 +74,7 @@ export async function insertPrescription(payload: {
 
 export async function deletePrescription(id: string, imageUrl: string) {
   try {
-    const path = imageUrl.split('/').pop();
+    const path = extractStoragePathFromUrl('prescriptions', imageUrl);
     if (path) {
       await supabase.storage.from('prescriptions').remove([path]);
     }

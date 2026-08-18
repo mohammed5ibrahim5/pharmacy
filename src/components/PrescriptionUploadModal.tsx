@@ -55,7 +55,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
     setError(null);
     setUploading(true);
     try {
-      const imageUrl = image.startsWith('data:') ? await uploadPrescriptionImage(image) : image;
+      const imageUrl = image.startsWith('data:') ? await uploadPrescriptionImage(image, user?.id) : image;
       await insertPrescription({
         customerId: user?.id || null,
         imageUrl,

@@ -219,11 +219,11 @@ export function HomePage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [pharmRes, prodRes, catRes, ordersRes, sectionsRes, catCountRes] = await Promise.all([
+      const [pharmRes, prodRes, catRes, statsRes, sectionsRes, catCountRes] = await Promise.all([
         supabase.from('pharmacies').select('*').eq('is_active', true),
         supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').eq('is_available', true).limit(20),
         supabase.from('categories').select('*').order('name'),
-        supabase.from('orders').select('pharmacy_id, product_id, status'),
+        supabase.rpc('get_store_order_stats'),
         supabase.from('pharmacy_sections').select('pharmacy_id, section_key'),
         supabase.from('products').select('category_id').eq('is_available', true),
       ]);
@@ -237,21 +237,16 @@ export function HomePage() {
       });
       setCategoryCounts(catCounts);
 
-      const popularity = new Map<string, number>();
-      (ordersRes.data || []).forEach((o) => {
-        if (o.status === 'cancelled' || !o.product_id) return;
-        popularity.set(o.product_id, (popularity.get(o.product_id) || 0) + 1);
-      });
-      setPopularProductIds(
-        Array.from(popularity.entries())
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 10)
-          .map(([id]) => id)
-      );
+      const stats = (statsRes.data || {}) as {
+        popular?: { product_id: string; cnt: number }[];
+        pharmacy_counts?: { pharmacy_id: string; cnt: number }[];
+      };
+
+      setPopularProductIds((stats.popular || []).map((p) => p.product_id));
 
       const counts: Record<string, number> = {};
-      (ordersRes.data || []).forEach((order) => {
-        counts[order.pharmacy_id] = (counts[order.pharmacy_id] || 0) + 1;
+      (stats.pharmacy_counts || []).forEach((c) => {
+        counts[c.pharmacy_id] = c.cnt;
       });
       setOrderCounts(counts);
 

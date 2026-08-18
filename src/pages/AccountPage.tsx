@@ -48,6 +48,7 @@ import type { Pharmacy, Product, LoyaltyTransaction, MedicationReminder, FamilyM
 import { ProductCard } from '@/components/ProductCard';
 import { PharmacyCard } from '@/components/PharmacyCard';
 import { OrderReviewModal } from '@/components/OrderReviewModal';
+import { PrivateImage } from '@/components/PrivateImage';
 import { localizedError } from '@/lib/errorMessages';
 import { localizedDate } from '@/lib/format';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
@@ -662,7 +663,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     }
     setRxUploading(true);
     try {
-      const imageUrl = await uploadPrescriptionImage(rxImage);
+      const imageUrl = await uploadPrescriptionImage(rxImage, user?.id);
       await insertPrescription({
         customerId: user?.id || null,
         imageUrl,
@@ -1226,7 +1227,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                       <div key={rx.id} className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
                         <div>
                           <div className="h-40 bg-slate-950 relative flex items-center justify-center overflow-hidden">
-                            <img src={rx.image_url} alt={t('روشتة')} className="max-h-full w-auto object-contain transition-transform duration-500 group-hover:scale-105" />
+                            <PrivateImage bucket="prescriptions" src={rx.image_url} alt={t('روشتة')} className="max-h-full w-auto object-contain transition-transform duration-500 group-hover:scale-105" />
                             <span className="absolute top-3.5 start-3.5 flex items-center gap-1 px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-[10px] font-black border border-white/10">
                               <Clock className="w-3 h-3" />
                               {localizedDate(rx.created_at, lang, { month: 'short', day: 'numeric' })}
