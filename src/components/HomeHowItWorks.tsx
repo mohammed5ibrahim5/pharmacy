@@ -6,11 +6,11 @@ const STEP_ICONS = [<Search className="w-6 h-6" />, <Store className="w-6 h-6" /
 
 export function HomeHowItWorks() {
   const { themeColors, howItWorksConfig } = useSettings();
-  const { t, p } = useLanguage();
+  const { p } = useLanguage();
 
   if (!howItWorksConfig.enabled) return null;
 
-  const steps = howItWorksConfig.steps.length > 0 ? howItWorksConfig.steps : Array.from({ length: 4 }, (_, i) => ({ title: '', title_en: null, desc: '', desc_en: null }));
+  const steps = howItWorksConfig.steps.length > 0 ? howItWorksConfig.steps : Array.from({ length: 4 }, () => ({ title: '', title_en: null, desc: '', desc_en: null }));
 
   return (
     <section className="py-12 bg-white border-y border-gray-100">

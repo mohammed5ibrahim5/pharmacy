@@ -3,20 +3,14 @@ import {
   Search,
   MapPin,
   Navigation,
-  Pill,
-  Truck,
-  TrendingDown,
   ChevronLeft,
   ChevronRight,
   Sparkles,
   Heart,
-  Package,
   ShieldCheck,
   PhoneCall,
-  Users,
   ShoppingBag,
   Send,
-  Store,
   Barcode,
   FileText,
   Mic,
@@ -49,11 +43,10 @@ import { CustomerServiceBanner } from '@/components/CustomerServiceBanner';
 import { PharmacyMap } from '@/components/PharmacyMap';
 import { MostSearched } from '@/components/MostSearched';
 import { Reveal } from '@/components/Reveal';
-import { CountUp, parseStatValue } from '@/components/CountUp';
 import { TrustSignals } from '@/components/TrustSignals';
 import { categoryColor, categoryGradient, categoryIcon, mergeCategories, orderedCategories } from '@/lib/categoryStyles';
 import { heroBadgeIcon } from '@/lib/heroBadges';
-import type { Pharmacy, Product, Category, HeroStat } from '@/types';
+import type { Pharmacy, Product, Category } from '@/types';
 
 interface SpeechRecognitionLike {
   lang: string;
@@ -79,51 +72,6 @@ const HERO_TRENDING = [
   'كمامات طبية',
 ];
 
-const DEFAULT_HERO_STATS: HeroStat[] = [
-  { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', sub_en: 'Partner pharmacy', desc: 'معتمدة ومجاوِرة لك', desc_en: 'Accredited & nearby', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true, showOnline: true, showOffline: true },
-  { id: 'products', value: '8+', sub: 'منتج متاح', sub_en: 'Products available', desc: 'تحديث يومي للأسعار', desc_en: 'Daily price updates', icon: 'package', auto: true, autoSource: 'products', visible: true, showOnline: true, showOffline: true },
-  { id: 'customers', value: '10k+', sub: 'عميل سعيد', sub_en: 'Happy customers', desc: 'تقييم ممتاز 4.9⭐', desc_en: 'Excellent 4.9 rating', icon: 'users', auto: true, autoSource: 'customers', visible: true, showOnline: true, showOffline: true },
-  { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', sub_en: 'Delivery service', desc: 'شحن آمن وسريع', desc_en: 'Safe & fast shipping', icon: 'truck', auto: false, visible: true, showOnline: true, showOffline: true },
-];
-
-function statIcon(key: string): React.ReactNode {
-  switch (key) {
-    case 'store': return <Store className="w-6 h-6" />;
-    case 'package': return <Package className="w-6 h-6" />;
-    case 'users': return <Users className="w-6 h-6" />;
-    case 'truck': return <Truck className="w-6 h-6" />;
-    case 'pills': return <Pill className="w-6 h-6" />;
-    default: return <Sparkles className="w-6 h-6" />;
-  }
-}
-
-function statIconColor(key: string, colors: typeof import('@/context/SettingsContext').DEFAULT_THEME_COLORS): string {
-  switch (key) {
-    case 'store': return colors.primaryColor;
-    case 'package': return colors.secondaryColor;
-    case 'users': return colors.accent2Color;
-    case 'truck': return colors.accent2Color;
-    default: return colors.accent2Color;
-  }
-}
-
-function formatStatCount(n: number): string {
-  if (n >= 1000) {
-    const v = n / 1000;
-    return `${v % 1 === 0 ? v.toFixed(0) : v.toFixed(1).replace(/\.0$/, '')}k+`;
-  }
-  return `${n}+`;
-}
-
-function statDisplayValue(stat: { id: string; value: string; auto?: boolean; autoSource?: 'pharmacies' | 'products' | 'customers' }, pharmacyCount: number, productCount: number, customerCount: number): string {
-  if (stat.auto) {
-    if (stat.autoSource === 'products' || stat.id === 'products') return formatStatCount(productCount);
-    if (stat.autoSource === 'customers' || stat.id === 'customers') return formatStatCount(customerCount);
-    if (stat.autoSource === 'pharmacies' || stat.id === 'pharmacies') return formatStatCount(pharmacyCount);
-  }
-  return stat.value;
-}
-
 type PharmacyTab = 'nearest' | 'favorite' | 'highest_rated' | 'most_popular' | 'delivery' | '24h';
 
 export function HomePage() {
@@ -140,9 +88,6 @@ export function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
-  const [pharmacyCount, setPharmacyCount] = useState(0);
-  const [productCount, setProductCount] = useState(0);
-  const [customerCount, setCustomerCount] = useState(0);
   const [popularProductIds, setPopularProductIds] = useState<string[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [heroScrollY, setHeroScrollY] = useState(0);
@@ -274,23 +219,17 @@ export function HomePage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [pharmRes, prodRes, catRes, ordersRes, sectionsRes, pharmCountRes, prodCountRes, customerCountRes, catCountRes] = await Promise.all([
+      const [pharmRes, prodRes, catRes, ordersRes, sectionsRes, catCountRes] = await Promise.all([
         supabase.from('pharmacies').select('*').eq('is_active', true),
         supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').eq('is_available', true).limit(20),
         supabase.from('categories').select('*').order('name'),
         supabase.from('orders').select('pharmacy_id, product_id, status'),
         supabase.from('pharmacy_sections').select('pharmacy_id, section_key'),
-        supabase.from('pharmacies').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('products').select('id', { count: 'exact', head: true }).eq('is_available', true),
-        supabase.from('customers').select('id', { count: 'exact', head: true }),
         supabase.from('products').select('category_id').eq('is_available', true),
       ]);
       setPharmacies(pharmRes.data || []);
       setProducts(prodRes.data || []);
       setCategories(catRes.data || []);
-      setPharmacyCount(pharmCountRes.count || 0);
-      setProductCount(prodCountRes.count || 0);
-      setCustomerCount(customerCountRes.count || 0);
 
       const catCounts: Record<string, number> = {};
       (catCountRes.data || []).forEach((r: { category_id: string | null }) => {
@@ -693,69 +632,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ==================== STATS STRIP ==================== */}
-      {(() => {
-        const visibleStats = (heroConfig.stats.length > 0 ? heroConfig.stats : DEFAULT_HERO_STATS).filter((stat) =>
-          storeConfig.purchasesEnabled ? stat.showOnline !== false : stat.showOffline !== false
-        );
-        const count = visibleStats.length;
-        const gridClass =
-          count === 1
-            ? 'grid-cols-1 max-w-md mx-auto'
-            : count === 2
-            ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto'
-            : count === 3
-            ? 'grid-cols-2 sm:grid-cols-3 max-w-4xl mx-auto'
-            : 'grid-cols-2 lg:grid-cols-4';
-        if (!heroConfig.showStats || count === 0) return null;
-        return (
-        <section className="relative z-20 -mt-14 sm:-mt-16 mb-8 hidden lg:block">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div
-              className={`rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.06)] border p-4 sm:p-6 grid ${gridClass} gap-3 sm:gap-4 transition-all duration-300`}
-              style={{
-                backgroundColor: themeColors.statsCardBg,
-                color: themeColors.statsCardText,
-                borderColor: `${themeColors.primaryColor}15`
-              }}
-            >
-              {visibleStats.map((stat, i) => (
-              <div
-                key={i}
-                className="p-3 sm:p-4 text-start flex items-center gap-3.5 group hover:bg-black/[0.02] rounded-2xl transition-all"
-              >
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center border shadow-sm shrink-0 transition-transform group-hover:scale-110"
-                  style={{
-                    backgroundColor: `${statIconColor(stat.icon, themeColors)}15`,
-                    color: statIconColor(stat.icon, themeColors),
-                    borderColor: `${statIconColor(stat.icon, themeColors)}33`
-                  }}
-                >
-                  {statIcon(stat.icon)}
-                </div>
-                <div>
-                  <div className="flex items-baseline gap-1">
-                    {(() => {
-                      const parsed = parseStatValue(statDisplayValue(stat, pharmacyCount, productCount, customerCount));
-                      return (
-                        <p className="text-xl sm:text-2xl font-black tabular-nums">
-                          <CountUp target={parsed.target} suffix={parsed.suffix} />
-                        </p>
-                      );
-                    })()}
-                    <span className="text-xs font-bold opacity-80">{p(stat.sub, stat.sub_en)}</span>
-                  </div>
-                  <p className="text-[11px] opacity-60 mt-0.5 font-bold">{p(stat.desc, stat.desc_en)}</p>
-                </div>
-              </div>
-            ))}
-            </div>
-          </div>
-        </section>
-        );
-      })()}
-
       {/* ==================== CATEGORIES SECTION ==================== */}
       <Reveal>
       <section className="relative overflow-hidden py-10 sm:py-12">
@@ -1039,62 +915,6 @@ export function HomePage() {
 
       {/* ==================== HOW IT WORKS ==================== */}
       <Reveal className="hidden lg:block"><HomeHowItWorks /></Reveal>
-
-      {/* ==================== WHY US SECTION ==================== */}
-      <Reveal className="hidden lg:block">
-      <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <span
-            className="text-xs font-extrabold px-3.5 py-1 rounded-full"
-            style={{
-              backgroundColor: `${themeColors.primaryColor}15`,
-              color: themeColors.primaryColor
-            }}
-          >
-            {t('مميزات منصتنا')}
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">{t('لماذا نعتبر اختيارك الأول؟')}</h2>
-        </div>
-
-        {(() => {
-          const features = [
-            { icon: <MapPin className="w-6 h-6" />, title: 'أقرب صيدلية', desc: 'نحدد موقعك ونعرض الصيدليات الأقرب إليك بالمسافة والوقت', color: themeColors.primaryColor, delivery: false },
-            { icon: <Search className="w-6 h-6" />, title: 'بحث بالباركود والصوت', desc: 'امسح الباركود، صور الروشتة، أو ابحث بالاسم بالصوت بسهولة', color: themeColors.secondaryColor, delivery: false },
-            { icon: <TrendingDown className="w-6 h-6" />, title: 'مقارنة وتوفير', desc: 'قارن الأسعار بين الصيدليات واستفد من العروض والتخفيضات', color: themeColors.accentColor, delivery: false },
-            { icon: <Truck className="w-6 h-6" />, title: 'توصيل مباشر 24/7', desc: 'اطلب الدواء واستلمه فوراً لباب البيت بتغليف محكم وآمن', color: '#0d9488', delivery: true },
-          ].filter((f) => !f.delivery || storeConfig.purchasesEnabled);
-          if (features.length === 0) return null;
-          const count = features.length;
-          const gridClass =
-            count <= 1
-              ? 'grid-cols-1 max-w-sm mx-auto'
-              : count === 2
-              ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto'
-              : count === 3
-              ? 'grid-cols-1 sm:grid-cols-3 max-w-4xl mx-auto'
-              : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
-          return (
-          <div className={`grid ${gridClass} gap-4`}>
-            {features.map((feature, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs hover:shadow-lg transition-all duration-300 group"
-              >
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-transform group-hover:scale-110"
-                  style={{ backgroundColor: `${feature.color}15`, color: feature.color }}
-                >
-                  {feature.icon}
-                </div>
-                <h3 className="font-extrabold text-slate-900 text-base mb-1.5">{t(feature.title)}</h3>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">{t(feature.desc)}</p>
-              </div>
-            ))}
-          </div>
-          );
-        })()}
-      </section>
-      </Reveal>
 
       {/* ==================== ABOUT ==================== */}
       {(settings.about_title || settings.about_text) && (

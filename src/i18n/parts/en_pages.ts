@@ -18,7 +18,6 @@
   // PharmacyDetailPage
   'الصيدلية غير موجودة': 'Pharmacy not found',
   'رجوع': 'Back',
-  'مفتوح الآن': 'Open now',
   '24 ساعة': '24 hours',
   'تقييم': 'Rating',
   'على بُعد {0}': '{0} away',

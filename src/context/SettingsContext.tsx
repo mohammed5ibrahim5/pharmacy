@@ -18,8 +18,6 @@ export interface ThemeColors {
   secondaryColor: string;
   accentColor: string;
   accent2Color: string;
-  statsCardBg: string;
-  statsCardText: string;
   pharmacyHoverBorder: string;
   footerBg: string;
   footerText: string;
@@ -74,8 +72,6 @@ export const DEFAULT_THEME_COLORS: ThemeColors = {
   secondaryColor: '#0f766e',
   accentColor: '#f59e0b',
   accent2Color: '#4f46e5',
-  statsCardBg: '#ffffff',
-  statsCardText: '#0f172a',
   pharmacyHoverBorder: '#0d9488',
   footerBg: '#0f172a',
   footerText: '#cbd5e1',
@@ -128,8 +124,6 @@ function toDarkPalette(c: ThemeColors): ThemeColors {
     heroText: '#f1f5f9',
     heroBtnBg: c.primaryColor,
     heroBtnText: '#ffffff',
-    statsCardBg: '#111827',
-    statsCardText: '#f1f5f9',
     pharmacyHoverBorder: c.pharmacyHoverBorder,
     footerBg: '#020617',
     footerText: '#94a3b8',
@@ -307,7 +301,6 @@ export const DEFAULT_LOYALTY_CONFIG: LoyaltyConfig = {
 };
 
 export interface FeaturesConfig {
-  priceCompare: boolean;
   orderTracking: boolean;
   stockAlerts: boolean;
   reminders: boolean;
@@ -316,7 +309,6 @@ export interface FeaturesConfig {
 }
 
 export const DEFAULT_FEATURES_CONFIG: FeaturesConfig = {
-  priceCompare: true,
   orderTracking: true,
   stockAlerts: true,
   reminders: true,
@@ -399,7 +391,6 @@ export const DEFAULT_HOW_IT_WORKS_CONFIG: HowItWorksConfig = {
 export const DEFAULT_HERO_CONFIG: HeroConfig = {
   showSearch: true,
   showTrending: true,
-  showStats: true,
   showPrescriptionButton: true,
   showLocationButton: true,
   searchPlaceholder: 'ابحث عن اسم الدواء، المادة الفعالة، أو المنتج...',
@@ -420,12 +411,6 @@ export const DEFAULT_HERO_CONFIG: HeroConfig = {
     'أوجمنتين 1 جم',
     'سيتامول',
     'كمامات طبية',
-  ],
-  stats: [
-    { id: 'pharmacies', value: '5+', sub: 'صيدلية شريكة', sub_en: 'Partner pharmacy', desc: 'معتمدة ومجاوِرة لك', desc_en: 'Accredited & nearby', icon: 'store', auto: true, autoSource: 'pharmacies', visible: true, showOnline: true, showOffline: true },
-    { id: 'products', value: '8+', sub: 'منتج متاح', sub_en: 'Products available', desc: 'تحديث يومي للأسعار', desc_en: 'Daily price updates', icon: 'package', auto: true, autoSource: 'products', visible: true, showOnline: true, showOffline: true },
-    { id: 'customers', value: '10k+', sub: 'عميل سعيد', sub_en: 'Happy customers', desc: 'تقييم ممتاز 4.9⭐', desc_en: 'Excellent 4.9 rating', icon: 'users', auto: true, autoSource: 'customers', visible: true, showOnline: true, showOffline: true },
-    { id: 'delivery', value: '24/7', sub: 'خدمة توصيل', sub_en: 'Delivery service', desc: 'شحن آمن وسريع', desc_en: 'Safe & fast shipping', icon: 'truck', auto: false, visible: true, showOnline: true, showOffline: true },
   ],
 };
 
@@ -628,13 +613,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
         if (parsed && parsed.heroConfig) {
           hero = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
-          hero.stats = (hero.stats || []).map((s) => ({
-            ...s,
-            auto: s.auto === undefined ? s.id === 'pharmacies' || s.id === 'products' || s.id === 'customers' : s.auto,
-            autoSource: s.autoSource || (s.id === 'products' ? 'products' : s.id === 'customers' ? 'customers' : 'pharmacies'),
-            showOnline: s.showOnline === undefined ? s.visible !== false : s.showOnline,
-            showOffline: s.showOffline === undefined ? s.visible !== false : s.showOffline,
-          }));
         }
         if (parsed && parsed.howItWorksConfig) {
           howItWorks = { ...DEFAULT_HOW_IT_WORKS_CONFIG, ...parsed.howItWorksConfig };
@@ -746,8 +724,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       root.style.setProperty('--hero-btn-bg', resolvedThemeColors.heroBtnBg);
       root.style.setProperty('--hero-btn-text', resolvedThemeColors.heroBtnText);
       
-      root.style.setProperty('--stats-card-bg', resolvedThemeColors.statsCardBg);
-      root.style.setProperty('--stats-card-text', resolvedThemeColors.statsCardText);
       root.style.setProperty('--pharmacy-hover-border', resolvedThemeColors.pharmacyHoverBorder);
       
       root.style.setProperty('--footer-bg', resolvedThemeColors.footerBg);

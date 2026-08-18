@@ -176,9 +176,6 @@
   'أدخل وزن الطفل بالكيلوجرام لحساب الجرعة التقريبية. الجرعات تحسب عادة على أساس الوزن وليس العمر.': 'Enter the child\'s weight in kilograms to calculate the approximate dose. Doses are usually based on weight, not age.',
   'هذه الحاسبة لأغراض إرشادية فقط ولا تغني عن استشارة الطبيب أو الصيدلي. لا تعطِ أي دواء لطفل بدون وصفة طبية عند الحاجة، واحفظ الأدوية بعيداً عن متناول الأطفال.': 'This calculator is for guidance only and does not replace a doctor or pharmacist consultation. Never give any medicine to a child without a prescription when needed, and keep medicines out of children\'s reach.',
 
-  // PriceCompareModal
-  'السعر الحالي': 'Current price',
-
   // CustomerContext app-generated errors
   'لا يوجد حساب بهذا البريد الإلكتروني': 'No account found with this email',
   'هذا الحساب لا يدعم تسجيل الدخول المباشر': 'This account does not support direct login',

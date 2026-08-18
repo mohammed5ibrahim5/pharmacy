@@ -39,12 +39,6 @@ export function PharmacyCard({ pharmacy }: Props) {
   const { isPharmacyFavorite, togglePharmacyFavorite } = useFavorites();
   const isFav = isPharmacyFavorite(pharmacy.id);
 
-  // Determine open/closed status (simplified heuristic)
-  const isOpen = pharmacy.is_24h || (() => {
-    const h = new Date().getHours();
-    return h >= 8 && h < 22;
-  })();
-
   const handleToggleFavorite = () => {
     if (!user) { setAuthModalOpen(true); return; }
     togglePharmacyFavorite(pharmacy.id);
@@ -103,26 +97,6 @@ export function PharmacyCard({ pharmacy }: Props) {
                 <span>{t('توصيل')}</span>
               </div>
             )}
-            {/* Open/Closed status */}
-            <div
-              className="backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg border"
-              style={{
-                backgroundColor: isOpen ? 'rgba(16,185,129,0.85)' : 'rgba(239,68,68,0.85)',
-                borderColor: isOpen ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)',
-                color: 'white',
-              }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{
-                  backgroundColor: 'white',
-                  animation: isOpen ? 'statusPulse 2s ease-in-out infinite' : 'none',
-                  boxShadow: isOpen ? '0 0 0 2px rgba(255,255,255,0.4)' : 'none',
-                }}
-              />
-              <Clock className="w-3 h-3" />
-              <span>{isOpen ? t('مفتوح الآن') : t('مغلق')}</span>
-            </div>
           </div>
 
           {/* Distance badge */}

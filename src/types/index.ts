@@ -318,25 +318,9 @@ export interface NewsletterSubscriber {
   created_at: string;
 }
 
-export interface HeroStat {
-  id: string;
-  value: string;
-  sub: string;
-  sub_en: string | null;
-  desc: string;
-  desc_en: string | null;
-  icon: string;
-  auto?: boolean;
-  autoSource?: 'pharmacies' | 'products' | 'customers';
-  visible?: boolean;
-  showOnline?: boolean;
-  showOffline?: boolean;
-}
-
 export interface HeroConfig {
   showSearch: boolean;
   showTrending: boolean;
-  showStats: boolean;
   showPrescriptionButton: boolean;
   showLocationButton: boolean;
   searchPlaceholder: string;
@@ -350,7 +334,6 @@ export interface HeroConfig {
   trendingLabel: string;
   trendingLabel_en: string | null;
   trendingKeywords: string[];
-  stats: HeroStat[];
 }
 
 export interface HowItWorksStep {

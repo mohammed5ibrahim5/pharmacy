@@ -7,7 +7,7 @@ import {
   Megaphone, Users, Activity, Palette,
   Menu, Heart, ShoppingCart, User, Mail, Facebook, Instagram, Twitter,
   ChevronDown, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Percent, Copy, Inbox, Ban, Navigation, ExternalLink, Scale, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog, BadgePercent, Baby, ChevronUp, MessageSquareQuote
+  Send, Loader2, Wallet, Info, Zap, Mic, Barcode, Ticket, Copy, Inbox, Ban, Navigation, ExternalLink, BellRing, Bell, Pill, Home, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog, BadgePercent, Baby, ChevronUp, MessageSquareQuote
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_HOMEPAGE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig, type WelcomePopupConfig } from '@/context/SettingsContext';
@@ -35,14 +35,9 @@ import {
 } from '@/lib/prescriptions';
 import { insertNotification } from '@/lib/notifications';
 import { notifyStockAvailable } from '@/lib/loyalty';
-import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HeroStat, HowItWorksConfig, HomepageConfig, PharmacyOwner, Review } from '@/types';
+import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HowItWorksConfig, HomepageConfig, PharmacyOwner, Review } from '@/types';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'reviews' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
-
-function statAutoHint(s: HeroStat): string {
-  if (s.autoSource === 'customers' || s.id === 'customers') return 'عدد العملاء تلقائياً';
-  return s.autoSource === 'products' ? 'عدد المنتجات تلقائياً' : 'عدد الصيدليات تلقائياً';
-}
 
 export function AdminPage() {
   const { settings } = useSettings();
@@ -3458,13 +3453,6 @@ function SettingsTab() {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.heroConfig) {
           const merged = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
-          merged.stats = (merged.stats || []).map((s: HeroStat) => ({
-            ...s,
-            auto: s.auto === undefined ? s.id === 'pharmacies' || s.id === 'products' || s.id === 'customers' : s.auto,
-            autoSource: s.autoSource || (s.id === 'products' ? 'products' : s.id === 'customers' ? 'customers' : 'pharmacies'),
-            showOnline: s.showOnline === undefined ? s.visible !== false : s.showOnline,
-            showOffline: s.showOffline === undefined ? s.visible !== false : s.showOffline,
-          }));
           return merged;
         }
       } catch (e) {
@@ -3642,9 +3630,6 @@ function SettingsTab() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const updateHeroStat = (id: string, patch: Partial<HeroStat>) =>
-    setHeroCfg({ ...heroCfg, stats: heroCfg.stats.map((x) => (x.id === id ? { ...x, ...patch } : x)) });
-
   const handleResetColors = () => {
     if (window.confirm('هل أنت متأكد من إعادة تعيين كافة الألوان إلى الألوان الافتراضية؟')) {
       setColors({ ...DEFAULT_THEME_COLORS });
@@ -3691,8 +3676,6 @@ function SettingsTab() {
       primaryColor: primary,
       secondaryColor: secondary,
       accentColor: accent,
-      statsCardBg: '#ffffff',
-      statsCardText: '#0f172a',
       pharmacyHoverBorder: primary,
       footerBg: '#0f172a',
       footerText: '#cbd5e1',
@@ -3730,8 +3713,6 @@ function SettingsTab() {
       primaryColor: primary,
       secondaryColor: secondary,
       accentColor: accent,
-      statsCardBg: surfaceBg,
-      statsCardText: lightText,
       pharmacyHoverBorder: primary,
       footerBg: deepBg,
       footerText: '#94a3b8',
@@ -3777,7 +3758,6 @@ function SettingsTab() {
       heroText: '#1a1a1a',
       heroBtnBg: '#1a1a1a', heroBtnText: '#ffffff',
       primaryColor: '#2a2a2a', secondaryColor: '#5a5a5a', accentColor: '#8a8580',
-      statsCardBg: '#ffffff', statsCardText: '#1a1a1a',
       pharmacyHoverBorder: '#1a1a1a',
       footerBg: '#1a1a1a', footerText: '#d0cbc6',
     }),
@@ -3788,7 +3768,6 @@ function SettingsTab() {
       heroText: '#1c1c1e',
       heroBtnBg: '#1c1c1e', heroBtnText: '#ffffff',
       primaryColor: '#3a3a3c', secondaryColor: '#636366', accentColor: '#8e8e92',
-      statsCardBg: '#ffffff', statsCardText: '#1c1c1e',
       pharmacyHoverBorder: '#1c1c1e',
       footerBg: '#1c1c1e', footerText: '#b8b8bc',
     }),
@@ -3799,7 +3778,6 @@ function SettingsTab() {
       heroText: '#f5f5f7',
       heroBtnBg: '#f5f5f7', heroBtnText: '#1c1c1e',
       primaryColor: '#3a3a3c', secondaryColor: '#8e8e93', accentColor: '#c0c0c5',
-      statsCardBg: '#58585a', statsCardText: '#f5f5f7',
       pharmacyHoverBorder: '#f5f5f7',
       footerBg: '#2c2c2e', footerText: '#b0b0b5',
     }),
@@ -3810,7 +3788,6 @@ function SettingsTab() {
       heroText: '#e8eaf0',
       heroBtnBg: '#e8eaf0', heroBtnText: '#0e1220',
       primaryColor: '#2a3040', secondaryColor: '#606878', accentColor: '#8890a0',
-      statsCardBg: '#242a38', statsCardText: '#e8eaf0',
       pharmacyHoverBorder: '#e8eaf0',
       footerBg: '#0a0d14', footerText: '#8890a0',
     }),
@@ -3821,7 +3798,6 @@ function SettingsTab() {
       heroText: '#f0f0f0',
       heroBtnBg: '#f0f0f0', heroBtnText: '#0a0a0a',
       primaryColor: '#1e1e1e', secondaryColor: '#707070', accentColor: '#a0a0a0',
-      statsCardBg: '#1e1e1e', statsCardText: '#f0f0f0',
       pharmacyHoverBorder: '#f0f0f0',
       footerBg: '#050505', footerText: '#909090',
     }),
@@ -3832,7 +3808,6 @@ function SettingsTab() {
       heroText: '#1a1c20',
       heroBtnBg: '#2c2e32', heroBtnText: '#ffffff',
       primaryColor: '#2c2e32', secondaryColor: '#586068', accentColor: '#8890a0',
-      statsCardBg: '#ffffff', statsCardText: '#2c2e32',
       pharmacyHoverBorder: '#2c2e32',
       footerBg: '#1c1e22', footerText: '#909aa4',
     }),
@@ -3843,7 +3818,6 @@ function SettingsTab() {
       heroText: '#1a1c20',
       heroBtnBg: '#1a1c20', heroBtnText: '#ffffff',
       primaryColor: '#2c3038', secondaryColor: '#585c64', accentColor: '#a0a4ac',
-      statsCardBg: '#ffffff', statsCardText: '#1a1c20',
       pharmacyHoverBorder: '#1a1c20',
       footerBg: '#1a1c20', footerText: '#b8bcc4',
     }),
@@ -3854,7 +3828,6 @@ function SettingsTab() {
       heroText: '#1a1a1a',
       heroBtnBg: '#1a1a1a', heroBtnText: '#ffffff',
       primaryColor: '#333333', secondaryColor: '#666666', accentColor: '#aaaaaa',
-      statsCardBg: '#ffffff', statsCardText: '#1a1a1a',
       pharmacyHoverBorder: '#1a1a1a',
       footerBg: '#222222', footerText: '#aaaaaa',
     }),
@@ -3865,7 +3838,6 @@ function SettingsTab() {
       heroText: '#ffffff',
       heroBtnBg: '#ffffff', heroBtnText: '#000000',
       primaryColor: '#333333', secondaryColor: '#aaaaaa', accentColor: '#888888',
-      statsCardBg: '#111111', statsCardText: '#ffffff',
       pharmacyHoverBorder: '#ffffff',
       footerBg: '#000000', footerText: '#888888',
     }),
@@ -3876,7 +3848,6 @@ function SettingsTab() {
       heroText: '#18181b',
       heroBtnBg: '#18181b', heroBtnText: '#ffffff',
       primaryColor: '#27272a', secondaryColor: '#52525b', accentColor: '#8a8a90',
-      statsCardBg: '#f4f4f5', statsCardText: '#18181b',
       pharmacyHoverBorder: '#18181b',
       footerBg: '#18181b', footerText: '#a1a1aa',
     }),
@@ -4215,7 +4186,6 @@ function SettingsTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Toggle checked={heroCfg.showSearch} onChange={(v) => setHeroCfg({ ...heroCfg, showSearch: v })} label="صندوق البحث" hint="شريط البحث الرئيسي في الهيرو" />
               <Toggle checked={heroCfg.showTrending} onChange={(v) => setHeroCfg({ ...heroCfg, showTrending: v })} label="الكلمات الأكثر بحثاً" hint="الأكثر بحثاً أسفل صندوق البحث" />
-              <Toggle checked={heroCfg.showStats} onChange={(v) => setHeroCfg({ ...heroCfg, showStats: v })} label="أرقام الإحصائيات" hint="البطاقات الأربعة (صيدلية شريكة، منتج متاح...) أسفل الهيرو" />
               <Toggle checked={heroCfg.showPrescriptionButton} onChange={(v) => setHeroCfg({ ...heroCfg, showPrescriptionButton: v })} label="زر رفع الروشتة" hint="زر رفع الروشتة الطبية" />
               <Toggle checked={heroCfg.showLocationButton} onChange={(v) => setHeroCfg({ ...heroCfg, showLocationButton: v })} label="زر تحديد الموقع" hint="زر تحديد الموقع لإيجاد أقرب الصيدليات" />
             </div>
@@ -4266,131 +4236,8 @@ function SettingsTab() {
             </div>
           </SettingsSection>
 
-          <SettingsSection title="أرقام الإحصائيات (البطاقات)" icon={<Percent className="w-5 h-5" />}>
-            <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-              لكل بطاقة حدّد متى تظهر: عند تفعيل «الطلب عبر الموقع» (أونلاين شغّال)، وعند إيقافه (أوفلاين). فعّلهما معاً للظهور في الحالتين، أو أوقفهما معاً لإخفاء البطاقة تماماً.
-              اختر «قيمة تلقائية من بيانات الموقع» لعدّها من الصيدليات/المنتجات الفعلية في الموقع، أو اكتب القيمة يدوياً.
-              الأيقونة تُختار من: store, package, users, truck, pills.
-            </p>
-            <div className="space-y-4">
-              {heroCfg.stats.map((s) => (
-                <div key={s.id} className="rounded-xl bg-gray-50/70 border border-gray-100 p-4 space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Toggle
-                        checked={s.showOnline !== false}
-                        onChange={(v) => updateHeroStat(s.id, { showOnline: v })}
-                        label="الظهور عند تفعيل الطلب عبر الموقع"
-                      />
-                      <Toggle
-                        checked={s.showOffline !== false}
-                        onChange={(v) => updateHeroStat(s.id, { showOffline: v })}
-                        label="الظهور عند إيقاف الطلب عبر الموقع"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={!!s.auto}
-                          onChange={(e) =>
-                            updateHeroStat(s.id, {
-                              auto: e.target.checked,
-                              autoSource: e.target.checked ? s.autoSource || (s.id === 'products' ? 'products' : s.id === 'customers' ? 'customers' : 'pharmacies') : s.autoSource,
-                            })
-                          }
-                          className="w-4 h-4 rounded"
-                        />
-                        قيمة تلقائية من بيانات الموقع
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setHeroCfg({ ...heroCfg, stats: heroCfg.stats.filter((x) => x.id !== s.id) })}
-                        className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg border border-red-100"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" /> حذف
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="relative">
-                      {s.auto ? (
-                        <>
-                          <input value={statAutoHint(s)} disabled className={`${inputClass} cursor-not-allowed opacity-60 bg-gray-100`} />
-                          <span className="absolute -top-2 right-2 bg-teal-500 text-white text-[10px] font-bold px-1.5 py-px rounded-full">تلقائي</span>
-                        </>
-                      ) : (
-                        <input
-                          value={s.value}
-                          onChange={(e) => updateHeroStat(s.id, { value: e.target.value })}
-                          className={inputClass}
-                          placeholder="القيمة (مثال: 24/7)"
-                        />
-                      )}
-                    </div>
-                    <input
-                      value={s.sub}
-                      onChange={(e) => updateHeroStat(s.id, { sub: e.target.value })}
-                      className={inputClass}
-                      placeholder="العنوان"
-                    />
-                    <input
-                      value={s.sub_en || ''}
-                      onChange={(e) => updateHeroStat(s.id, { sub_en: e.target.value })}
-                      className={inputClass}
-                      dir="ltr"
-                      placeholder="Title (EN)"
-                    />
-                    <input
-                      value={s.desc}
-                      onChange={(e) => updateHeroStat(s.id, { desc: e.target.value })}
-                      className={inputClass}
-                      placeholder="الوصف"
-                    />
-                    <input
-                      value={s.desc_en || ''}
-                      onChange={(e) => updateHeroStat(s.id, { desc_en: e.target.value })}
-                      className={inputClass}
-                      dir="ltr"
-                      placeholder="Description (EN)"
-                    />
-                    <select
-                      value={s.icon}
-                      onChange={(e) => updateHeroStat(s.id, { icon: e.target.value })}
-                      className={inputClass}
-                    >
-                      <option value="store">صيدلية</option>
-                      <option value="package">منتج</option>
-                      <option value="users">عميل</option>
-                      <option value="truck">توصيل</option>
-                      <option value="pills">أدوية</option>
-                    </select>
-                    {s.auto && (
-                      <select
-                        value={s.autoSource || (s.id === 'products' ? 'products' : s.id === 'customers' ? 'customers' : 'pharmacies')}
-                        onChange={(e) => updateHeroStat(s.id, { autoSource: e.target.value as 'pharmacies' | 'products' | 'customers' })}
-                        className={inputClass}
-                      >
-                        <option value="pharmacies">العد من عدد الصيدليات</option>
-                        <option value="products">العد من عدد المنتجات</option>
-                        <option value="customers">العد من عدد العملاء</option>
-                      </select>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setHeroCfg({ ...heroCfg, stats: [...heroCfg.stats, { id: `stat_${Date.now()}`, value: '0', sub: 'عنوان جديد', sub_en: '', desc: 'وصف جديد', desc_en: '', icon: 'store', auto: false, showOnline: true, showOffline: true }] })}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-gray-300 text-xs font-bold text-gray-500 hover:bg-gray-50"
-              >
-                <Plus className="w-4 h-4" /> إضافة بطاقة جديدة
-              </button>
-            </div>
-          </SettingsSection>
         </div>
       )}
-
       {settingsSubTab === 'howItWorks' && (
         <div className="space-y-6">
           <SettingsSection title="قسم «كيف تعمل المنصة؟»" icon={<List className="w-5 h-5" />}>
@@ -4547,19 +4394,6 @@ function SettingsTab() {
                   <ColorField label="لون نصوص البانر" value={colors.heroText} onChange={(v) => setColors({ ...colors, heroText: v })} />
                   <ColorField label="خلفية زر البحث" value={colors.heroBtnBg} onChange={(v) => setColors({ ...colors, heroBtnBg: v })} />
                   <ColorField label="نص زر البحث" value={colors.heroBtnText} onChange={(v) => setColors({ ...colors, heroBtnText: v })} />
-                </div>
-              </ColorGroup>
-
-              <ColorGroup
-                num="5"
-                title="كروت الأرقام والإحصائيات"
-                location="منتصف الصفحة الرئيسية"
-                hint="البطاقات التي تعرض عدد الصيدليات والمنتجات وخدمات التوصيل — خلفية الكارت ونصوص الأرقام."
-                visual={<StatsVisual colors={colors} />}
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <ColorField label="خلفية كروت الأرقام" value={colors.statsCardBg} onChange={(v) => setColors({ ...colors, statsCardBg: v })} />
-                  <ColorField label="نصوص كروت الأرقام" value={colors.statsCardText} onChange={(v) => setColors({ ...colors, statsCardText: v })} />
                 </div>
               </ColorGroup>
 
@@ -5160,14 +4994,6 @@ function SettingsTab() {
           <SettingsSection title="تفعيل الميزات الرئيسية" icon={<Sparkles className="w-5 h-5" />}>
             <p className="text-xs text-gray-500 mb-4">تحكم في إظهار أو إخفاء كل ميزة من الميزات الجديدة على واجهة الموقع.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FeatureToggle
-                icon={<Scale className="w-4 h-4" />}
-                title="مقارنة الأسعار والبدائل"
-                desc="زر قارن الأسعار على بطاقات المنتجات + البدائل بنفس المادة الفعالة"
-                checked={featuresCfg.priceCompare}
-                onChange={(v) => setFeaturesCfg((p) => ({ ...p, priceCompare: v }))}
-                color={settings.primary_color}
-              />
               <FeatureToggle
                 icon={<Truck className="w-4 h-4" />}
                 title="تتبع حالة الطلب"
@@ -5870,23 +5696,6 @@ function SitePreviewMockup({
         </div>
       </div>
 
-      {/* Stats */}
-      {!compact && (
-      <div className="px-[1.2em] py-[1em] grid grid-cols-4 gap-[0.8em]" style={{ backgroundColor: colors.statsCardBg, color: colors.statsCardText }}>
-        {[
-          { n: '5+', l: 'صيدلية شريكة', c: colors.primaryColor },
-          { n: '8+', l: 'منتج متاح', c: colors.secondaryColor },
-          { n: '24/7', l: 'خدمة توصيل', c: colors.accentColor },
-          { n: '24/7', l: 'طوارئ ودعم', c: colors.primaryColor },
-        ].map((s) => (
-          <div key={s.l} className="text-center">
-            <p className="font-black text-[1.5em]" style={{ color: s.c }}>{s.n}</p>
-            <p className="text-[0.7em] opacity-75 font-bold mt-[0.2em]">{s.l}</p>
-          </div>
-        ))}
-      </div>
-      )}
-
       {/* Categories */}
       {!compact && (
       <div className="px-[1.2em] py-[1em] bg-white">
@@ -6270,7 +6079,7 @@ function HeroVisual({ colors }: { colors: ThemeColors }) {
     <div className="rounded-xl overflow-hidden border border-gray-300/60 shadow-sm">
       <div className="px-4 py-4 text-center space-y-2" style={{ background: `linear-gradient(135deg, ${colors.heroBgStart}, ${colors.heroBgMiddle}, ${colors.heroBgEnd})` }}>
         <p className="text-[10px] font-black" style={{ color: colors.heroText }}>اعثر على دوائك في أقرب صيدلية</p>
-        <p className="text-[8px] font-bold opacity-75" style={{ color: colors.heroText }}>قارن الأسعار واطلب التوصيل حتى باب منزلك</p>
+        <p className="text-[8px] font-bold opacity-75" style={{ color: colors.heroText }}>اطلب دواءك ونجهز التوصيل حتى باب منزلك</p>
         <div className="flex items-center gap-1 bg-white rounded-full p-1 max-w-[210px] mx-auto shadow-sm">
           <span className="flex-1 text-[8px] text-gray-400 px-2 truncate">ابحث عن دواء...</span>
           <span className="px-2 py-1 rounded-full text-[8px] font-black flex items-center gap-1 shrink-0" style={{ backgroundColor: colors.heroBtnBg, color: colors.heroBtnText }}>
@@ -6284,24 +6093,6 @@ function HeroVisual({ colors }: { colors: ThemeColors }) {
           <span className="px-1.5 py-px rounded-full bg-white text-[7px] font-bold shadow-xs" style={{ color: colors.secondaryColor }}>أوجمنتين</span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function StatsVisual({ colors }: { colors: ThemeColors }) {
-  const stats = [
-    { v: '5+', l: 'صيدلية شريكة' },
-    { v: '8+', l: 'منتج متاح' },
-    { v: '24/7', l: 'توصيل سريع' },
-  ];
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      {stats.map((s) => (
-        <div key={s.l} className="rounded-xl border border-gray-200 p-2 text-center shadow-sm" style={{ backgroundColor: colors.statsCardBg }}>
-          <p className="text-[11px] font-black" style={{ color: colors.statsCardText }}>{s.v}</p>
-          <p className="text-[8px] font-bold opacity-70" style={{ color: colors.statsCardText }}>{s.l}</p>
-        </div>
-      ))}
     </div>
   );
 }
@@ -6452,7 +6243,6 @@ function PharmacyHeaderVisual({ colors }: { colors: ThemeColors }) {
             <span className="text-[7px] font-bold" style={{ color: colors.pharmacyHeaderText }}>4.8 (120)</span>
           </div>
         </div>
-        <span className="px-2 py-1 rounded-full text-white text-[7px] font-black shrink-0" style={{ backgroundColor: colors.tabActiveBg }}>مفتوح الآن</span>
       </div>
       <div className="px-3 py-2 flex items-center gap-1.5 overflow-hidden border-t" style={{ borderColor: `${colors.pharmacyHeaderBg}99`, backgroundColor: colors.sectionBg }}>
         <span className="px-2 py-1 rounded-lg text-[7px] font-black text-white shrink-0" style={{ backgroundColor: colors.tabActiveBg }}>الكل</span>

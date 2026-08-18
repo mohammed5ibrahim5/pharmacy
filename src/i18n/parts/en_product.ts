@@ -39,7 +39,6 @@
   'الأكثر طلباً': 'Most requested',
   'إزالة من المفضلة': 'Remove from favorites',
   'أضف إلى المفضلة': 'Add to favorites',
-  'قارن الأسعار والبدائل': 'Compare prices & alternatives',
   'تم الاشتراك — سنخبرك عند التوفر': 'Subscribed — we will notify you when it is available',
   'نبهني عند توفر الدواء': 'Notify me when available',
   'غير متوفر حالياً': 'Currently unavailable',

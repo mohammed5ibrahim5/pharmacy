@@ -129,12 +129,6 @@ export function PharmacyDetailPage({ id }: Props) {
           <ArrowLeft className="w-4 h-4" />
           {t('رجوع')}
         </button>
-
-        {/* Open badge */}
-        <div className="absolute top-4 start-4 flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-bold shadow-lg">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          {t('مفتوح الآن')}
-        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
