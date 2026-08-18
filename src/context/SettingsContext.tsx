@@ -645,6 +645,26 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (parsed && parsed.homepageConfig) {
           homepage = { ...DEFAULT_HOMEPAGE_CONFIG, ...parsed.homepageConfig };
         }
+        // Backfill hero badges so old DB data without English translation
+        // columns still shows English by falling back to the defaults.
+        const defaultBadges = DEFAULT_HOMEPAGE_CONFIG.heroBadges.badges;
+        homepage.heroBadges = {
+          ...DEFAULT_HOMEPAGE_CONFIG.heroBadges,
+          ...homepage.heroBadges,
+          badges: (homepage.heroBadges.badges || []).map((b) => {
+            const def = defaultBadges.find((d) => d.id === b.id);
+            return def
+              ? {
+                  ...def,
+                  ...b,
+                  title: b.title || def.title,
+                  title_en: b.title_en || def.title_en,
+                  subtitle: b.subtitle || def.subtitle,
+                  subtitle_en: b.subtitle_en || def.subtitle_en,
+                }
+              : b;
+          }),
+        };
         if (parsed && parsed.loyaltyConfig) {
           loyalty = { ...DEFAULT_LOYALTY_CONFIG, ...parsed.loyaltyConfig };
         }
