@@ -98,19 +98,25 @@ export function Header() {
       return;
     }
     let lastY = window.scrollY;
+    let acc = 0;
     let ticking = false;
+    const HIDE_PX = 56;
+    const SHOW_PX = 20;
     const onScroll = () => {
       if (ticking) return;
       ticking = true;
       window.requestAnimationFrame(() => {
         const y = window.scrollY;
-        setHeaderHidden((prev) => {
-          if (y <= 80) return false;
-          if (y > lastY) return true;
-          if (y < lastY) return false;
-          return prev;
-        });
+        const delta = y - lastY;
         lastY = y;
+        if (y <= 100) {
+          acc = 0;
+          setHeaderHidden(false);
+        } else {
+          acc = Math.max(-SHOW_PX * 3, Math.min(HIDE_PX * 3, acc + delta));
+          if (acc >= HIDE_PX) setHeaderHidden(true);
+          else if (acc <= -SHOW_PX) setHeaderHidden(false);
+        }
         ticking = false;
       });
     };

@@ -3579,13 +3579,10 @@ function SettingsTab() {
       featuresConfig: featuresCfg,
     });
 
-    const { error: saveError } = await supabase.from('site_settings').update({
+    const basePayload = {
       site_name: form.site_name,
-      site_name_en: form.site_name_en || null,
       site_tagline: form.site_tagline,
-      site_tagline_en: form.site_tagline_en || null,
       site_description: form.site_description,
-      site_description_en: form.site_description_en || null,
       logo_url: form.logo_url,
       primary_color: colors.primaryColor,
       secondary_color: colors.secondaryColor,
@@ -3594,26 +3591,46 @@ function SettingsTab() {
       contact_email: form.contact_email,
       contact_whatsapp: form.contact_whatsapp,
       contact_address: form.contact_address,
-      contact_address_en: form.contact_address_en || null,
       footer_text: form.footer_text,
-      footer_text_en: form.footer_text_en || null,
       hero_title: form.hero_title,
-      hero_title_en: form.hero_title_en || null,
       hero_subtitle: form.hero_subtitle,
-      hero_subtitle_en: form.hero_subtitle_en || null,
       facebook_url: form.facebook_url,
       instagram_url: form.instagram_url,
       twitter_url: form.twitter_url,
       about_title: form.about_title,
-      about_title_en: form.about_title_en || null,
       about_text: form.about_text,
-      about_text_en: form.about_text_en || null,
       announcement_text: form.announcement_text,
-      announcement_text_en: form.announcement_text_en || null,
       announcement_active: form.announcement_active,
       features_json: updatedFeaturesJson,
       updated_at: new Date().toISOString(),
-    }).eq('id', form.id);
+    };
+
+    const englishPayload = {
+      site_name_en: form.site_name_en || null,
+      site_tagline_en: form.site_tagline_en || null,
+      site_description_en: form.site_description_en || null,
+      hero_title_en: form.hero_title_en || null,
+      hero_subtitle_en: form.hero_subtitle_en || null,
+      footer_text_en: form.footer_text_en || null,
+      announcement_text_en: form.announcement_text_en || null,
+      about_title_en: form.about_title_en || null,
+      about_text_en: form.about_text_en || null,
+      contact_address_en: form.contact_address_en || null,
+    };
+
+    const isMissingColumnError = (e: { code?: string; message?: string } | null) =>
+      !!e && (e.code === '42703' || /column .* does not exist/i.test(e.message || ''));
+
+    let saveError = (
+      await supabase.from('site_settings').update({ ...basePayload, ...englishPayload }).eq('id', form.id)
+    ).error;
+
+    if (isMissingColumnError(saveError)) {
+      saveError = (await supabase.from('site_settings').update(basePayload).eq('id', form.id)).error;
+      if (!saveError) {
+        showToast('تم الحفظ — لكن أعمدة الترجمة الإنجليزية غير منشأة بعد في قاعدة البيانات، شغّل ملف الترحيل settings_text_en.sql لتفعيلها');
+      }
+    }
 
     setSaving(false);
     if (saveError) {
