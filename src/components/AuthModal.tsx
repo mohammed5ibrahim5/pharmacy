@@ -133,7 +133,7 @@ export function AuthModal({ open, onClose }: Props) {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (authMethod === 'phone') {
+    if (authMethod === 'phone' && mode !== 'signup') {
       if (otpSent) handleVerifyOtp();
       else handleSendOtp();
       return;
@@ -166,10 +166,10 @@ export function AuthModal({ open, onClose }: Props) {
               <Cross className="w-8 h-8 text-white" strokeWidth={2.5} />
             </div>
             <h2 className="text-xl font-extrabold text-white">
-              {authMethod === 'phone' ? t('تسجيل الدخول أو إنشاء حساب') : (mode === 'login' ? t('تسجيل الدخول') : t('إنشاء حساب جديد'))}
+              {mode === 'signup' ? t('إنشاء حساب جديد') : (authMethod === 'phone' ? t('تسجيل الدخول أو إنشاء حساب') : t('تسجيل الدخول'))}
             </h2>
             <p className="text-white/80 text-sm mt-1">
-              {authMethod === 'phone' ? t('أدخل رقم موبايلك وسنرسل لك كود تحقق للدخول فوراً') : (mode === 'login' ? t('أهلاً بعودتك! سجل دخولك للمتابعة') : t('انضم إلينا لتتمكن من طلب المنتجات'))}
+              {mode === 'signup' ? t('انضم إلينا لتتمكن من طلب المنتجات') : (authMethod === 'phone' ? t('أدخل رقم موبايلك وسنرسل لك كود تحقق للدخول فوراً') : t('أهلاً بعودتك! سجل دخولك للمتابعة'))}
             </p>
           </div>
         </div>
@@ -198,7 +198,8 @@ export function AuthModal({ open, onClose }: Props) {
           })()}
 
           <form onSubmit={handleFormSubmit}>
-            {/* Method switcher */}
+            {/* Method switcher (for login only) */}
+            {mode === 'login' && (
             <div className="grid grid-cols-2 gap-2 mb-5">
               <button
                 type="button"
@@ -223,8 +224,9 @@ export function AuthModal({ open, onClose }: Props) {
                 {t('البريد الإلكتروني')}
               </button>
             </div>
+            )}
 
-            {authMethod === 'phone' ? (
+            {authMethod === 'phone' && mode !== 'signup' ? (
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('رقم الموبايل')}</label>
@@ -487,7 +489,7 @@ export function AuthModal({ open, onClose }: Props) {
               <p className="text-sm text-gray-500">
                 {mode === 'login' ? t('ليس لديك حساب؟') : t('لديك حساب بالفعل؟')}
                 <button
-                  onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); }}
+                  onClick={() => { const next = mode === 'login' ? 'signup' : 'login'; setMode(next); if (next === 'signup') switchMethod('email'); setError(null); }}
                   className="ms-1 font-semibold hover:underline"
                   style={{ color: themeColors.priceColor }}
                 >
