@@ -28,7 +28,7 @@ interface CustomerContextType {
   setAuthModalOpen: (open: boolean) => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, fullName: string, phone?: string, avatarUrl?: string | null) => Promise<{ error: string | null }>;
-  sendOtp: (phone: string) => Promise<{ error: string | null; debugCode?: string | null }>;
+  sendOtp: (phone: string) => Promise<{ error: string | null; debugCode?: string | null; instant?: boolean }>;
   verifyOtp: (phone: string, token: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -166,9 +166,19 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
   const sendOtp = async (phone: string) => {
     if (DEMO_OTP_ENABLED) {
-      const code = String(Math.floor(100000 + Math.random() * 900000));
-      demoOtpStore.set(phone.replace(/\D/g, ''), code);
-      return { error: null, debugCode: code };
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (error) {
+        return { error: 'التسجيل التجريبي يتطلب تفعيل "Anonymous sign-in" في إعدادات Supabase Auth.' };
+      }
+      const uid = data?.user?.id;
+      if (uid) {
+        await supabase
+          .from('customers')
+          .update({ phone: normalizeEgyptianPhone(phone) })
+          .eq('id', uid);
+      }
+      await refreshProfile();
+      return { error: null, instant: true };
     }
     const { error } = await supabase.auth.signInWithOtp({
       phone: normalizeEgyptianPhone(phone),

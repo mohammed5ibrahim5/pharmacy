@@ -111,6 +111,10 @@ export function AuthModal({ open, onClose }: Props) {
     const res = await sendOtp(otpPhone);
     setOtpLoading(false);
     if (res.error) { setError(res.error); return; }
+    if (res.instant) {
+      onClose();
+      return;
+    }
     setOtp('');
     setDebugCode(res.debugCode || null);
     setOtpSent(true);
