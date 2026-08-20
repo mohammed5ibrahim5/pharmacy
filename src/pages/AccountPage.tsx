@@ -642,41 +642,62 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     fetchPrescriptions();
   }, [fetchPrescriptions]);
 
+  const fetchOrders = useCallback(async () => {
+    if (!user) return;
+    setOrdersLoading(true);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, product:products(*), pharmacy:pharmacies(*)')
+      .eq('customer_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    let rows = (data || []) as OrderRecord[];
+    if (error) {
+      showToast(localizedError(error.message, lang));
+    } else if (featuresConfig.familyMembers) {
+      const ids = Array.from(new Set(rows.map((o) => o.family_member_id).filter((v): v is string => !!v)));
+      if (ids.length > 0) {
+        const { data: members } = await supabase
+          .from('family_members')
+          .select('*')
+          .in('id', ids);
+        const map = new Map((members || []).map((m: FamilyMember) => [m.id, m]));
+        rows = rows.map((o) => (o.family_member_id && map.get(o.family_member_id) ? { ...o, family_member: map.get(o.family_member_id) } : o));
+      }
+    }
+    setOrders(rows);
+    setOrdersLoading(false);
+  }, [user, lang, featuresConfig.familyMembers]);
+
   useEffect(() => {
     if (!user) return;
-    let cancelled = false;
-    setOrdersLoading(true);
-    const fetchOrders = async () => {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, product:products(*), pharmacy:pharmacies(*)')
-        .eq('customer_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (!cancelled) {
-        let rows = (data || []) as OrderRecord[];
-        if (error) {
-          showToast(localizedError(error.message, lang));
-        } else if (featuresConfig.familyMembers) {
-          const ids = Array.from(new Set(rows.map((o) => o.family_member_id).filter((v): v is string => !!v)));
-          if (ids.length > 0) {
-            const { data: members } = await supabase
-              .from('family_members')
-              .select('*')
-              .in('id', ids);
-            const map = new Map((members || []).map((m: FamilyMember) => [m.id, m]));
-            rows = rows.map((o) => (o.family_member_id && map.get(o.family_member_id) ? { ...o, family_member: map.get(o.family_member_id) } : o));
-          }
-        }
-        setOrders(rows);
-        setOrdersLoading(false);
-      }
-    };
     fetchOrders();
+  }, [fetchOrders]);
+
+  // تتبع حي: أي تغيير في حالة الطلبات يُحدَّث فوراً
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`customer-orders-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'order_groups', filter: `customer_id=eq.${user.id}` },
+        () => {
+          fetchOrders();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `customer_id=eq.${user.id}` },
+        () => {
+          fetchOrders();
+        }
+      )
+      .subscribe();
     return () => {
-      cancelled = true;
+      supabase.removeChannel(channel);
     };
-  }, [user, lang, featuresConfig.familyMembers]);
+  }, [user?.id, fetchOrders]);
 
   const activeOrdersCount = useMemo(
     () => orders.filter((o) => o.status === 'pending' || o.status === 'confirmed' || o.status === 'shipped').length,

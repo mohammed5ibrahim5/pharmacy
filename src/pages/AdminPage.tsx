@@ -4192,6 +4192,14 @@ function SettingsTab() {
                   hint="خيار الدفع كاش عند الاستلام للعميل"
                 />
               </div>
+              <div className="flex items-end">
+                <Toggle
+                  checked={paymentCfg.showOnlinePayment}
+                  onChange={(v) => setPaymentCfg({ ...paymentCfg, showOnlinePayment: v })}
+                  label="إظهار الدفع أونلاين (Paymob)"
+                  hint="بوابة الدفع الآمنة — يتطلب ضبط مفاتيح Paymob في إعدادات Vercel"
+                />
+              </div>
             </div>
             <Field label="ملاحظة التوصيل الظاهرة للعميل">
               <textarea

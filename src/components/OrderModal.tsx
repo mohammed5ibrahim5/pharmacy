@@ -3,7 +3,7 @@ import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
   Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark,
   Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2, Download, FileText, ZoomIn,
-  Users, Gift, Banknote, BadgeCheck,
+  Users, Gift, Banknote, BadgeCheck, CreditCard, ExternalLink, RefreshCw,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -14,6 +14,7 @@ import { localizedError } from '@/lib/errorMessages';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
 import { awardLoyaltyPoints } from '@/lib/loyalty';
 import { buildInvoiceImage, dataUrlToBlob } from '@/lib/invoice';
+import { createPaymentIntent, findOrderGroupStatus } from '@/lib/payments';
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABEL,
@@ -25,8 +26,17 @@ import type { Pharmacy, Product, FamilyMember } from '@/types';
 const METHOD_ICONS: Record<PaymentMethod, React.ReactNode> = {
   vodafone_cash: <Smartphone className="w-5 h-5" />,
   instapay: <Landmark className="w-5 h-5" />,
+  online: <CreditCard className="w-5 h-5" />,
   cash_on_delivery: <Banknote className="w-5 h-5" />,
 };
+
+interface OnlinePayment {
+  groupId: string;
+  amount: number;
+  hostedUrl: string;
+  iframeId: string;
+  token: string;
+}
 
 interface CartGroup {
   key: string;
@@ -64,6 +74,9 @@ export function OrderModal() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [onlinePayment, setOnlinePayment] = useState<OnlinePayment | null>(null);
+  const [paymentChecking, setPaymentChecking] = useState(false);
+  const [paymentPaid, setPaymentPaid] = useState(false);
   const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [invoiceViewer, setInvoiceViewer] = useState(false);
@@ -123,7 +136,30 @@ export function OrderModal() {
     setError(null);
     setSuccess(false);
     setCopied(false);
+    setOnlinePayment(null);
+    setPaymentPaid(false);
   }, [cartOpen, profile?.phone, cartStep]);
+
+  useEffect(() => {
+    if (!onlinePayment || !user?.id) return;
+    let cancelled = false;
+    const check = async () => {
+      const status = await findOrderGroupStatus(onlinePayment.groupId, user.id);
+      if (cancelled) return;
+      if (status === 'paid') {
+        handlePaymentDone();
+      } else {
+        setPaymentChecking(false);
+      }
+    };
+    check();
+    const iv = setInterval(check, 4000);
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onlinePayment?.groupId, user?.id]);
 
   const groups = useMemo(() => {
     const map = new Map<string, CartGroup>();
@@ -164,6 +200,7 @@ export function OrderModal() {
 
   const totalDelivery = groups.reduce((sum, g) => sum + groupFee(g), 0);
   const isCOD = paymentMethod === 'cash_on_delivery';
+  const isOnline = paymentMethod === 'online';
   const codFee = isCOD ? Math.max(0, parseFloat(paymentConfig.cashOnDeliveryFee) || 0) : 0;
   const total = subtotal + totalDelivery + codFee;
 
@@ -227,8 +264,8 @@ export function OrderModal() {
     };
   }, [catalogMode, cartOpen, cart, subtotal, profile, settings.site_name, lang, t, themeColors.priceColor, catalogTargetName]);
 
-  const methodNumber = isCOD ? '' : paymentMethod === 'vodafone_cash' ? paymentConfig.vodafoneCash : paymentConfig.instapay;
-  const hasMethodNumber = isCOD || Boolean(methodNumber.trim());
+  const methodNumber = isCOD ? '' : isOnline ? '' : paymentMethod === 'vodafone_cash' ? paymentConfig.vodafoneCash : paymentConfig.instapay;
+  const hasMethodNumber = isCOD || isOnline || Boolean(methodNumber.trim());
 
   if (!cartOpen) return null;
 
@@ -254,6 +291,13 @@ export function OrderModal() {
 
   const closeModal = () => {
     if (!loading) closeCart();
+  };
+
+  const handlePaymentDone = () => {
+    setOnlinePayment(null);
+    setPaymentPaid(true);
+    clearCart();
+    setSuccess(true);
   };
 
   // ============ Empty cart ============
@@ -293,6 +337,71 @@ export function OrderModal() {
     );
   }
 
+  // ============ Online payment gateway ============
+  if (onlinePayment) {
+    return (
+      <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="rounded-3xl w-full max-w-xl flex flex-col overflow-hidden relative max-h-[94vh]" style={{ backgroundColor: themeColors.modalBodyBg }}>
+          <div className="px-6 pt-5 pb-4 border-b border-gray-100 shrink-0" style={{ backgroundColor: themeColors.modalHeaderBg }}>
+            <div className="flex items-start gap-3">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColors.priceColor}14`, color: themeColors.priceColor }}>
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-black text-gray-900">{t('الدفع أونلاين')}</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {t('أكمل الدفع الآن عبر بوابة Paymob الآمنة — فيزا / ماستركارد / محافظ إلكترونية')}
+                </p>
+              </div>
+              <button onClick={() => { setOnlinePayment(null); setError(null); }} className="w-8 h-8 rounded-xl hover:bg-gray-100 flex items-center justify-center shrink-0">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-5 overflow-y-auto space-y-3">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5 flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-xs font-bold text-amber-700 leading-relaxed">
+                {t('طلبك مسجّل بانتظار الدفع ({0} ج.م). لن يتأكد طلبك حتى يكتمل الدفع.', [onlinePayment.amount.toFixed(2)])}
+              </p>
+            </div>
+
+            <div className="rounded-2xl overflow-hidden border border-gray-200 bg-gray-50" style={{ height: 'min(70vh, 560px)' }}>
+              <iframe
+                src={onlinePayment.hostedUrl}
+                title={t('الدفع أونلاين')}
+                className="w-full h-full border-0"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => window.open(onlinePayment.hostedUrl, '_blank', 'noopener,noreferrer')}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-xs font-bold transition-all hover:brightness-105 active:scale-[0.98]"
+                style={{ backgroundColor: themeColors.priceColor }}
+              >
+                <ExternalLink className="w-4 h-4" />
+                {t('فتح الدفع في نافذة جديدة')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentChecking(true)}
+                disabled={paymentChecking}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
+              >
+                <RefreshCw className={`w-4 h-4 ${paymentChecking ? 'animate-spin' : ''}`} />
+                {paymentChecking ? t('جاري التحقق من الدفع...') : t('دفعت بالفعل — تحقق من الطلب')}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ============ Success ============
   if (success) {
     return (
@@ -303,7 +412,9 @@ export function OrderModal() {
           </div>
           <h2 className="text-xl font-extrabold text-gray-900 mb-2">{t('تم استلام طلبك بنجاح!')}</h2>
           <p className="text-gray-500 text-sm leading-relaxed mb-3">
-            {t('سنراجع إثبات التحويل الخاص بك، وبمجرد تأكيد الدفع ستصل إليك رسالة بأن طلبك في الطريق.')}
+            {paymentPaid
+              ? t('تم تأكيد الدفع أونلاين بنجاح! طلبك الآن قيد المراجعة وستصلك إشعارات التحديث لحظة بلحظة.')
+              : t('سنراجع إثبات التحويل الخاص بك، وبمجرد تأكيد الدفع ستصل إليك رسالة بأن طلبك في الطريق.')}
           </p>
           {groups.length > 1 && (
             <div className="bg-teal-50 border border-teal-200 rounded-xl p-3 flex items-center gap-2 text-xs font-bold text-teal-700 mb-4">
@@ -409,19 +520,19 @@ export function OrderModal() {
       setLoading(false);
       return;
     }
-    if (!isCOD && !hasMethodNumber) {
+    if (!isCOD && !isOnline && !hasMethodNumber) {
       setError(t('لم يتم إعداد رقم الدفع من الإدارة بعد، يرجى المحاولة لاحقاً.'));
       setLoading(false);
       return;
     }
-    if (!isCOD && !screenshot) {
+    if (!isCOD && !isOnline && !screenshot) {
       setError(t('يرجى رفع صورة إثبات التحويل (سكرين شوت) حتى يتم تأكيد الطلب.'));
       setLoading(false);
       return;
     }
 
     try {
-      const screenshotUrl = isCOD ? null : screenshot!.startsWith('data:') ? await uploadPaymentScreenshot(screenshot!, user.id) : screenshot;
+      const screenshotUrl = isCOD || isOnline ? null : screenshot!.startsWith('data:') ? await uploadPaymentScreenshot(screenshot!, user.id) : screenshot;
       const redeemedPoints = redeemChunks * redeemStep;
       const { data: groupData, error: groupErr } = await supabase
         .from('order_groups')
@@ -499,6 +610,29 @@ export function OrderModal() {
         }
         setLastEarnedPoints(earnedPoints);
         setLastRedeemedDiscount(loyaltyDiscount);
+      }
+      if (isOnline) {
+        try {
+          const intent = await createPaymentIntent({
+            amount: Math.round(totalAfterDiscount * 100) / 100,
+            phone: address || profile?.phone || '',
+            email: user?.email || '',
+            firstName: profile?.full_name?.split(' ')[0] || 'عميل',
+            lastName: profile?.full_name?.split(' ').slice(1).join(' ') || '',
+            orderGroupId: groupData.id,
+          });
+          setOnlinePayment({
+            groupId: groupData.id,
+            amount: totalAfterDiscount,
+            hostedUrl: intent.hostedUrl,
+            iframeId: intent.iframeId,
+            token: intent.token,
+          });
+          setPaymentPaid(false);
+        } catch {
+          setError(t('تعذر بدء الدفع أونلاين الآن، يمكنك إتمامه لاحقاً من صفحة طلباتك.'));
+        }
+      } else {
         setSuccess(true);
       }
     } catch {
@@ -934,7 +1068,10 @@ export function OrderModal() {
               {t('طريقة الدفع')}
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {PAYMENT_METHODS.filter((m) => m.id !== 'cash_on_delivery' || paymentConfig.showCashOnDelivery).map((m) => (
+              {PAYMENT_METHODS.filter((m) => (
+                (m.id !== 'cash_on_delivery' || paymentConfig.showCashOnDelivery) &&
+                (m.id !== 'online' || paymentConfig.showOnlinePayment)
+              )).map((m) => (
                 <button
                   key={m.id}
                   type="button"
@@ -982,6 +1119,13 @@ export function OrderModal() {
                   </p>
                 )}
               </div>
+            ) : isOnline ? (
+              <div className="mt-3 rounded-2xl border border-teal-200 bg-teal-50/50 p-4">
+                <p className="text-[11px] font-bold text-gray-600 mb-1 flex items-center gap-1.5">
+                  <CreditCard className="w-4 h-4" style={{ color: themeColors.priceColor }} />
+                  {t('سيتم توجيهك لصفحة دفع آمنة (Paymob) لإتمام الدفع بفيزا أو ماستركارد أو محفظة إلكترونية — الدفع مضمون ومشفّر.')}
+                </p>
+              </div>
             ) : (
             <div className={`mt-3 rounded-2xl border p-4 ${hasMethodNumber ? 'bg-teal-50/50 border-teal-200' : 'bg-amber-50 border-amber-200'}`}>
               {hasMethodNumber ? (
@@ -1013,7 +1157,7 @@ export function OrderModal() {
           </div>
 
           {/* Payment screenshot */}
-          {!isCOD && (
+          {!isCOD && !isOnline && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               {t('صورة إثبات التحويل (سكرين شوت) *')}

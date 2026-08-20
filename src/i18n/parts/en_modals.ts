@@ -163,6 +163,20 @@
   'استبدال {0} نقطة بخصم {1} ج.م': 'Redeemed {0} points for a {1} EGP discount',
   'تم خصم {0} ج.م من إجمالي طلبك باستخدام نقاط الولاء.': '{0} EGP was deducted from your order total using loyalty points.',
 
+  // OrderModal — online payment (Paymob)
+  'دفع أونلاين (كارت/محفظة)': 'Pay online (card/wallet)',
+  'بوابة دفع آمنة — فيزا/ماستركارد/محفظة': 'Secure payment gateway — Visa / Mastercard / wallet',
+  'دفع أونلاين': 'Pay online',
+  'الدفع أونلاين': 'Pay online',
+  'أكمل الدفع الآن عبر بوابة Paymob الآمنة — فيزا / ماستركارد / محافظ إلكترونية': 'Complete your payment now through the secure Paymob gateway — Visa / Mastercard / e-wallets',
+  'طلبك مسجّل بانتظار الدفع ({0} ج.م). لن يتأكد طلبك حتى يكتمل الدفع.': 'Your order is registered and awaiting payment ({0} EGP). It will not be confirmed until payment is completed.',
+  'فتح الدفع في نافذة جديدة': 'Open payment in a new window',
+  'جاري التحقق من الدفع...': 'Checking payment status...',
+  'دفعت بالفعل — تحقق من الطلب': 'I already paid — check my order',
+  'تم تأكيد الدفع أونلاين بنجاح! طلبك الآن قيد المراجعة وستصلك إشعارات التحديث لحظة بلحظة.': 'Your online payment was confirmed successfully! Your order is now under review, and you will receive live status notifications.',
+  'تعذر بدء الدفع أونلاين الآن، يمكنك إتمامه لاحقاً من صفحة طلباتك.': 'Could not start online payment right now. You can complete it later from your orders page.',
+  'سيتم توجيهك لصفحة دفع آمنة (Paymob) لإتمام الدفع بفيزا أو ماستركارد أو محفظة إلكترونية — الدفع مضمون ومشفّر.': 'You will be directed to a secure payment page (Paymob) to pay by Visa, Mastercard or an e-wallet — payment is guaranteed and encrypted.',
+
   // DoseCalculatorModal
   'حاسبة جرعات الأطفال': 'Kids dose calculator',
   'إرشادات تقريبية فقط': 'Approximate guidance only',

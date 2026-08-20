@@ -24,6 +24,7 @@ export const ORDER_STATUS_META: Record<
 export const PAYMENT_METHODS = [
   { id: 'vodafone_cash', label: 'فودافون كاش', description: 'تحويل عبر محفظة فودافون كاش' },
   { id: 'instapay', label: 'انستا باي', description: 'تحويل عبر تطبيق انستا باي' },
+  { id: 'online', label: 'دفع أونلاين (كارت/محفظة)', description: 'بوابة دفع آمنة — فيزا/ماستركارد/محفظة' },
   { id: 'cash_on_delivery', label: 'الدفع عند الاستلام', description: 'ادفع نقداً عند استلام طلبك' },
 ] as const;
 
@@ -35,6 +36,7 @@ export interface PaymentConfig {
   deliveryFee: string;
   freeDeliveryThreshold: string;
   showCashOnDelivery: boolean;
+  showOnlinePayment: boolean;
   cashOnDeliveryFee: string;
   shippingNote: string;
 }
@@ -45,6 +47,7 @@ export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
   deliveryFee: '25',
   freeDeliveryThreshold: '300',
   showCashOnDelivery: true,
+  showOnlinePayment: true,
   cashOnDeliveryFee: '10',
   shippingNote: 'التوصيل داخل المعادي خلال 30 دقيقة، وفي باقي المناطق خلال 24 ساعة',
 };
@@ -52,6 +55,7 @@ export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   vodafone_cash: 'فودافون كاش',
   instapay: 'انستا باي',
+  online: 'دفع أونلاين',
   cash_on_delivery: 'الدفع عند الاستلام',
 };
 

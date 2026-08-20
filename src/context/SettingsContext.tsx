@@ -244,6 +244,7 @@ export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
   deliveryFee: '25',
   freeDeliveryThreshold: '300',
   showCashOnDelivery: true,
+  showOnlinePayment: true,
   cashOnDeliveryFee: '10',
   shippingNote: 'التوصيل داخل المعادي خلال 30 دقيقة، وفي باقي المناطق خلال 24 ساعة',
 };
