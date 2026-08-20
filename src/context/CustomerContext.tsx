@@ -207,13 +207,13 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     if (DEMO_OTP_ENABLED) {
       const normPhone = phone ? normalizeEgyptianPhone(phone) : null;
       const [dupEmail, dupPhone] = await Promise.all([
-        supabase.from('customers').select('id').eq('email', normalizedEmail).maybeSingle(),
+        supabase.rpc('customer_email_exists', { p_email: normalizedEmail }),
         normPhone
-          ? supabase.from('customers').select('id').eq('phone', normPhone).maybeSingle()
-          : Promise.resolve({ data: null }),
+          ? supabase.rpc('customer_phone_exists', { p_phone: normPhone })
+          : Promise.resolve({ data: false }),
       ]);
-      if (dupEmail.data) return { error: 'هذا البريد الإلكتروني مستخدم بالفعل' };
-      if (dupPhone.data) return { error: 'رقم الهاتف مستخدم بالفعل' };
+      if (dupEmail.data) return { error: 'هذا البريد الإلكتروني مسجل بحساب آخر، يمكنك تسجيل الدخول بدلاً من إنشاء حساب جديد' };
+      if (dupPhone.data) return { error: 'رقم الهاتف مسجل بحساب آخر، يمكنك تسجيل الدخول بدلاً من إنشاء حساب جديد' };
       writeDemoCreds({
         email: normalizedEmail,
         phone: normPhone ?? '',
