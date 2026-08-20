@@ -104,8 +104,19 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (!active) return;
       const p = (data as CustomerProfile | null) || null;
-      setProfile(p);
-      setUser(p);
+      if (p) {
+        setProfile(p);
+        setUser(p);
+      } else {
+        const localP = loadLocalProfile();
+        if (localP) {
+          setProfile(localP);
+          setUser(localP);
+        } else {
+          setProfile(null);
+          setUser(null);
+        }
+      }
     };
 
     supabase.auth.getSession().then(({ data }) => {
@@ -229,11 +240,33 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
           .eq('user_id', uid)
           .select();
         if (!upd || upd.length === 0) {
-          await supabase
+          const { error: upsErr } = await supabase
             .from('customers')
             .upsert({ id: uid, user_id: uid, ...updates }, { onConflict: 'user_id' });
+          if (upsErr) {
+            saveLocalProfile({
+              id: LOCAL_USER_ID,
+              user_id: LOCAL_USER_ID,
+              full_name: fullName,
+              email: normalizedEmail,
+              phone: normPhone,
+              avatar_url: avatarUrl ?? null,
+            });
+            return { error: null };
+          }
         }
         await refreshProfile();
+        const p = await fetchProfile();
+        if (!p) {
+          saveLocalProfile({
+            id: LOCAL_USER_ID,
+            user_id: LOCAL_USER_ID,
+            full_name: fullName,
+            email: normalizedEmail,
+            phone: normPhone,
+            avatar_url: avatarUrl ?? null,
+          });
+        }
         return { error: null };
       }
       saveLocalProfile({
@@ -299,11 +332,35 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
           .eq('user_id', uid)
           .select();
         if (!upd || upd.length === 0) {
-          await supabase
+          const { error: upsErr } = await supabase
             .from('customers')
             .upsert({ id: uid, user_id: uid, phone: normPhone }, { onConflict: 'user_id' });
+          if (upsErr) {
+            const prev = loadLocalProfile();
+            saveLocalProfile({
+              id: LOCAL_USER_ID,
+              user_id: LOCAL_USER_ID,
+              full_name: prev?.full_name ?? null,
+              email: prev?.email ?? '',
+              phone: normPhone,
+              avatar_url: prev?.avatar_url ?? null,
+            });
+            return { error: null, instant: true };
+          }
         }
         await refreshProfile();
+        const p = await fetchProfile();
+        if (!p) {
+          const prev = loadLocalProfile();
+          saveLocalProfile({
+            id: LOCAL_USER_ID,
+            user_id: LOCAL_USER_ID,
+            full_name: prev?.full_name ?? null,
+            email: prev?.email ?? '',
+            phone: normPhone,
+            avatar_url: prev?.avatar_url ?? null,
+          });
+        }
         return { error: null, instant: true };
       }
       const prev = loadLocalProfile();
