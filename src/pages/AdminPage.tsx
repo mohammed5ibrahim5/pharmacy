@@ -3525,6 +3525,22 @@ function SettingsTab() {
     return { ...DEFAULT_HOMEPAGE_CONFIG };
   });
 
+  // Initialize welcome popup config state (Bug 4 fix: read from features_json not defaults)
+  const { welcomeConfig: ctxWelcome } = useSettings();
+  const [welcomeCfgLocal] = useState<WelcomePopupConfig>(() => {
+    if (settings.features_json) {
+      try {
+        const parsed = JSON.parse(settings.features_json);
+        if (parsed && parsed.welcomeConfig) {
+          return { ...ctxWelcome, ...parsed.welcomeConfig };
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return { ...ctxWelcome };
+  });
+
   // Sync colors with site settings colors
   useEffect(() => {
     setColors(prev => ({
@@ -3568,6 +3584,7 @@ function SettingsTab() {
       homepageConfig: homepageCfg,
       loyaltyConfig: loyaltyCfg,
       featuresConfig: featuresCfg,
+      welcomeConfig: welcomeCfgLocal,  // Bug 1 fix: preserve welcomeConfig on every save
     });
 
     const basePayload = {
@@ -4605,7 +4622,16 @@ function SettingsTab() {
                         return (
                           <button
                             key={preset.name}
-                            onClick={() => setColors(preset.colors)}
+                            onClick={() => {
+                              setColors(preset.colors);
+                              // Bug 2 fix: keep form in sync so the colors→form useEffect doesn't revert preset
+                              setForm(prev => ({
+                                ...prev,
+                                primary_color: preset.colors.primaryColor,
+                                secondary_color: preset.colors.secondaryColor,
+                                accent_color: preset.colors.accentColor,
+                              }));
+                            }}
                             className={`group relative text-right rounded-2xl border-2 p-2 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${
                               isActive
                                 ? 'border-gray-900 bg-gray-50 shadow-lg'
