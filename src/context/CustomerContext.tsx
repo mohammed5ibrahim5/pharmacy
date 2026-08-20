@@ -171,7 +171,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     }
     const creds = readDemoCreds();
     if (!creds) return { error: localizedError('Invalid login credentials', 'ar') };
-    const phoneMatch = isPhone ? creds.phone === normalizeEgyptianPhone(input) : false;
+    const phoneDigits = (p: string) => p.replace(/\D/g, '').slice(-10);
+    const phoneMatch = isPhone ? (creds.phone ? phoneDigits(creds.phone) === phoneDigits(normalizeEgyptianPhone(input)) : false) : false;
     const emailMatch = !isPhone ? creds.email.toLowerCase() === input.toLowerCase() : false;
     if (creds.password !== password || !(phoneMatch || emailMatch)) {
       return { error: 'بيانات الدخول غير صحيحة' };
@@ -309,11 +310,11 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   };
 
   const normalizeEgyptianPhone = (phone: string): string => {
-  const digits = phone.replace(/\D/g, '');
-  if (digits.startsWith('002')) return `+${digits.slice(3)}`;
-  if (digits.startsWith('01') && digits.length === 11) return `+2${digits.slice(1)}`;
-  if (!digits.startsWith('+')) return `+${digits}`;
-  return digits;
+  let digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('002')) digits = digits.slice(3);
+  else if (digits.startsWith('20') && digits.length === 12) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = digits.slice(1);
+  return `+20${digits}`;
 };
 
   const sendOtp = async (phone: string) => {
