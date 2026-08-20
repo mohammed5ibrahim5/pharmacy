@@ -200,6 +200,41 @@ const ERROR_MAP: { pattern: RegExp; ar: string; en: string; hint?: string; hintE
     hint: 'يرجى تحديث الصفحة وإعادة المحاولة',
     hintEn: 'Refresh the page and try again',
   },
+  {
+    pattern: /anonymous sign-i?ns?|anonymous.*(disabled|not enabled|enabled)|sign.*anonymous/i,
+    ar: 'التسجيل التجريبي غير مفعّل على الخادم',
+    en: 'Anonymous sign-in is not enabled',
+    hint: 'فعّل "Anonymous sign-ins" من إعدادات Supabase Auth ثم أعد المحاولة',
+    hintEn: 'Enable "Anonymous sign-ins" in Supabase Auth settings, then retry',
+  },
+  {
+    pattern: /an? (valid )?otp|otp expired|invalid token|invalid otp/i,
+    ar: 'كود التحقق غير صالح أو منتهي',
+    en: 'Invalid or expired verification code',
+    hint: 'اطلب كوداً جديداً وأدخله خلال الوقت المحدد',
+    hintEn: 'Request a new code and enter it in time',
+  },
+  {
+    pattern: /token has expired|jwt.*expired|refresh token/i,
+    ar: 'انتهت صلاحية الجلسة',
+    en: 'Session expired',
+    hint: 'سجل دخولك من جديد',
+    hintEn: 'Please sign in again',
+  },
+  {
+    pattern: /signups? disabled|new users.*disabled|signup.*not.*enabled/i,
+    ar: 'إنشاء الحسابات الجديدة معطّل حالياً',
+    en: 'New signups are currently disabled',
+    hint: 'حاول لاحقاً أو تواصل مع الدعم',
+    hintEn: 'Try again later or contact support',
+  },
+  {
+    pattern: /failed to parse|invalid json|unexpected end of json|invalid character/i,
+    ar: 'استجابة غير صالحة من الخادم',
+    en: 'Invalid server response',
+    hint: 'يرجى تحديث الصفحة وإعادة المحاولة',
+    hintEn: 'Refresh the page and try again',
+  },
 ];
 
 export function translateError(raw: string | null | undefined): TranslatedError {
@@ -213,6 +248,7 @@ export function translateError(raw: string | null | undefined): TranslatedError 
   }
 
   // Friendly fallback — أبداً لا نعرض نص الخطأ التقني الخام للمستخدم
+  console.warn('[unhandled error]', raw);
   return {
     ar: 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى',
     en: 'An unexpected error occurred, please try again',
