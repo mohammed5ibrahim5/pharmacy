@@ -491,12 +491,16 @@ export function AuthModal({ open, onClose }: Props) {
             )}
           </form>
 
-          {authMethod === 'email' && (
-            <div className="mt-5 pt-5 border-t border-gray-100 text-center">
+          <div className="mt-5 pt-5 border-t border-gray-100 text-center">
               <p className="text-sm text-gray-500">
                 {mode === 'login' ? t('ليس لديك حساب؟') : t('لديك حساب بالفعل؟')}
                 <button
-                  onClick={() => { const next = mode === 'login' ? 'signup' : 'login'; setMode(next); if (next === 'signup') switchMethod('email'); setError(null); }}
+                  onClick={() => {
+                    const next = mode === 'login' ? 'signup' : 'login';
+                    setMode(next);
+                    switchMethod(next === 'signup' ? 'email' : 'phone');
+                    setError(null);
+                  }}
                   className="ms-1 font-semibold hover:underline"
                   style={{ color: themeColors.priceColor }}
                 >
@@ -504,7 +508,6 @@ export function AuthModal({ open, onClose }: Props) {
                 </button>
               </p>
             </div>
-          )}
         </div>
       </div>
     </div>
