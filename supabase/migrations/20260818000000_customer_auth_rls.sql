@@ -442,12 +442,12 @@ BEGIN
   FOR r IN
     SELECT policyname FROM pg_policies
     WHERE schemaname = 'storage' AND tablename = 'objects'
-      AND (pg_get_expr(polqual, 0) LIKE '%payments%'
-           OR pg_get_expr(polqual, 0) LIKE '%prescriptions%'
-           OR pg_get_expr(polqual, 0) LIKE '%images%'
-           OR pg_get_expr(polwithcheck, 0) LIKE '%payments%'
-           OR pg_get_expr(polwithcheck, 0) LIKE '%prescriptions%'
-           OR pg_get_expr(polwithcheck, 0) LIKE '%images%')
+      AND (qual LIKE '%payments%'
+           OR qual LIKE '%prescriptions%'
+           OR qual LIKE '%images%'
+           OR with_check LIKE '%payments%'
+           OR with_check LIKE '%prescriptions%'
+           OR with_check LIKE '%images%')
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', r.policyname);
   END LOOP;

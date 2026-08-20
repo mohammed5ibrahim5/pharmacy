@@ -50,6 +50,8 @@ export function AuthModal({ open, onClose }: Props) {
 
   const switchMethod = (m: 'phone' | 'email') => {
     setAuthMethod(m);
+    if (m === 'phone' && !otpPhone && phone) setOtpPhone(phone);
+    if (m === 'email' && !phone && otpPhone) setPhone(otpPhone);
     setError(null);
     setOtp('');
     setOtpSent(false);
@@ -112,6 +114,7 @@ export function AuthModal({ open, onClose }: Props) {
     setOtpLoading(false);
     if (res.error) { setError(res.error); return; }
     if (res.instant) {
+      setPhone((prev) => prev || otpPhone);
       onClose();
       return;
     }

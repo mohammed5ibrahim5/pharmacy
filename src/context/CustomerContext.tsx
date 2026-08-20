@@ -7,6 +7,8 @@ import { localizedError } from '@/lib/errorMessages';
 // عند الإطلاق الحقيقي: حول القيمة لـ false واستخدم Supabase Phone Auth.
 const DEMO_OTP_ENABLED = true;
 const demoOtpStore = new Map<string, string>();
+const LOCAL_PROFILE_KEY = 'pharmacy_demo_profile_v1';
+const LOCAL_USER_ID = 'local-demo';
 
 export interface CustomerProfile {
   id: string;
@@ -89,6 +91,11 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       if (data.session?.user) {
         hydrate(data.session.user.id).finally(() => setLoading(false));
       } else {
+        const localP = loadLocalProfile();
+        if (localP) {
+          setProfile(localP);
+          setUser(localP);
+        }
         setLoading(false);
       }
     });
@@ -125,8 +132,69 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
+  const loadLocalProfile = (): CustomerProfile | null => {
+    try {
+      const raw = localStorage.getItem(LOCAL_PROFILE_KEY);
+      return raw ? (JSON.parse(raw) as CustomerProfile) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveLocalProfile = (p: CustomerProfile) => {
+    localStorage.setItem(LOCAL_PROFILE_KEY, JSON.stringify(p));
+    setProfile(p);
+    setUser(p);
+  };
+
   const signUp = async (email: string, password: string, fullName: string, phone?: string, avatarUrl?: string | null) => {
     const normalizedEmail = email.toLowerCase().trim();
+    if (DEMO_OTP_ENABLED) {
+      const normPhone = phone ? normalizeEgyptianPhone(phone) : null;
+      const [dupEmail, dupPhone] = await Promise.all([
+        supabase.from('customers').select('id').eq('email', normalizedEmail).maybeSingle(),
+        normPhone
+          ? supabase.from('customers').select('id').eq('phone', normPhone).maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+      if (dupEmail.data) return { error: 'هذا البريد الإلكتروني مستخدم بالفعل' };
+      if (dupPhone.data) return { error: 'رقم الهاتف مستخدم بالفعل' };
+      const { data: sessionData } = await supabase.auth.getSession();
+      let uid = sessionData.session?.user?.id ?? null;
+      if (!uid) {
+        const res = await supabase.auth.signInAnonymously();
+        uid = res.error ? null : (res.data?.user?.id ?? null);
+      }
+      if (uid) {
+        const updates: Record<string, unknown> = {
+          full_name: fullName,
+          email: normalizedEmail,
+          phone: normPhone,
+        };
+        if (avatarUrl) updates.avatar_url = avatarUrl;
+        const { data: upd } = await supabase
+          .from('customers')
+          .update(updates)
+          .eq('user_id', uid)
+          .select();
+        if (!upd || upd.length === 0) {
+          await supabase
+            .from('customers')
+            .upsert({ id: uid, user_id: uid, ...updates }, { onConflict: 'user_id' });
+        }
+        await refreshProfile();
+        return { error: null };
+      }
+      saveLocalProfile({
+        id: LOCAL_USER_ID,
+        user_id: LOCAL_USER_ID,
+        full_name: fullName,
+        email: normalizedEmail,
+        phone: normPhone,
+        avatar_url: avatarUrl ?? null,
+      });
+      return { error: null };
+    }
     const { data, error } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
@@ -166,18 +234,36 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
   const sendOtp = async (phone: string) => {
     if (DEMO_OTP_ENABLED) {
-      const { data, error } = await supabase.auth.signInAnonymously();
-      if (error) {
-        return { error: 'التسجيل التجريبي يتطلب تفعيل "Anonymous sign-in" في إعدادات Supabase Auth.' };
+      const normPhone = normalizeEgyptianPhone(phone);
+      const { data: sessionData } = await supabase.auth.getSession();
+      let uid = sessionData.session?.user?.id ?? null;
+      if (!uid) {
+        const res = await supabase.auth.signInAnonymously();
+        uid = res.error ? null : (res.data?.user?.id ?? null);
       }
-      const uid = data?.user?.id;
       if (uid) {
-        await supabase
+        const { data: upd } = await supabase
           .from('customers')
-          .update({ phone: normalizeEgyptianPhone(phone) })
-          .eq('id', uid);
+          .update({ phone: normPhone })
+          .eq('user_id', uid)
+          .select();
+        if (!upd || upd.length === 0) {
+          await supabase
+            .from('customers')
+            .upsert({ id: uid, user_id: uid, phone: normPhone }, { onConflict: 'user_id' });
+        }
+        await refreshProfile();
+        return { error: null, instant: true };
       }
-      await refreshProfile();
+      const prev = loadLocalProfile();
+      saveLocalProfile({
+        id: LOCAL_USER_ID,
+        user_id: LOCAL_USER_ID,
+        full_name: prev?.full_name ?? null,
+        email: prev?.email ?? '',
+        phone: normPhone,
+        avatar_url: prev?.avatar_url ?? null,
+      });
       return { error: null, instant: true };
     }
     const { error } = await supabase.auth.signInWithOtp({
@@ -203,7 +289,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         await supabase
           .from('customers')
           .update({ phone: normalizeEgyptianPhone(phone) })
-          .eq('id', uid);
+          .eq('user_id', uid);
       }
       await refreshProfile();
       return { error: null };
@@ -220,6 +306,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem(LOCAL_PROFILE_KEY);
     setProfile(null);
     setUser(null);
   };
@@ -229,10 +316,14 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     const rest = { ...updates };
     delete rest.email;
     delete rest.password_hash;
+    if (user.id === LOCAL_USER_ID) {
+      saveLocalProfile({ ...user, ...rest });
+      return { error: null };
+    }
     const { error } = await supabase
       .from('customers')
       .update(rest)
-      .eq('id', user.id);
+      .eq('user_id', user.id);
     if (!error) {
       await refreshProfile();
     }
