@@ -4,6 +4,7 @@ import { useCustomer } from '@/context/CustomerContext';
 import { useSettings } from '@/context/SettingsContext';
 import { translateError } from '@/lib/errorMessages';
 import { useLanguage } from '@/context/LanguageContext';
+import { supabase } from '@/lib/supabase';
 
 interface Props {
   open: boolean;
@@ -26,11 +27,39 @@ export function AuthModal({ open, onClose }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [phoneDup, setPhoneDup] = useState(false);
+  const [emailDup, setEmailDup] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setError(null);
   }, [open]);
+
+  useEffect(() => {
+    if (mode !== 'signup' || !open) return;
+    setPhoneDup(false);
+    const timeout = setTimeout(async () => {
+      const ph = phone.trim();
+      if (/^01[0125]\d{8}$/.test(ph)) {
+        const { data } = await supabase.rpc('customer_phone_exists', { p_phone: ph });
+        setPhoneDup(data === true);
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [phone, mode, open]);
+
+  useEffect(() => {
+    if (mode !== 'signup' || !open) return;
+    setEmailDup(false);
+    const timeout = setTimeout(async () => {
+      const em = email.trim().toLowerCase();
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+        const { data } = await supabase.rpc('customer_email_exists', { p_email: em });
+        setEmailDup(data === true);
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [email, mode, open]);
 
   if (!open) return null;
 
@@ -232,6 +261,12 @@ export function AuthModal({ open, onClose }: Props) {
                       placeholder="01XXXXXXXXX"
                     />
                   </div>
+                  {phoneDup && (
+                    <p className="text-xs font-medium text-red-600 mt-1.5 flex items-center gap-1">
+                      <Info className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t('رقم الهاتف مسجل بحساب آخر، يمكنك تسجيل الدخول بدلاً من إنشاء حساب جديد')}</span>
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -270,6 +305,12 @@ export function AuthModal({ open, onClose }: Props) {
                       placeholder="you@example.com"
                     />
                   </div>
+                  {emailDup && (
+                    <p className="text-xs font-medium text-red-600 mt-1.5 flex items-center gap-1">
+                      <Info className="w-3.5 h-3.5 shrink-0" />
+                      <span>{t('هذا البريد الإلكتروني مسجل بحساب آخر، يمكنك تسجيل الدخول بدلاً من إنشاء حساب جديد')}</span>
+                    </p>
+                  )}
                 </div>
               )}
 

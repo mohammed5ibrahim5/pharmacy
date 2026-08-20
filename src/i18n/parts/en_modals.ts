@@ -199,6 +199,8 @@
   'كلمة المرور غير صحيحة': 'Incorrect password',
   'هذا البريد الإلكتروني مسجل بالفعل، برجاء تسجيل الدخول': 'This email is already registered. Please log in',
   'غير مسجل دخول': 'You are not signed in',
+  'رقم الهاتف مسجل بحساب آخر، يمكنك تسجيل الدخول بدلاً من إنشاء حساب جديد': 'This phone number is already registered. You can log in instead of creating a new account',
+  'هذا البريد الإلكتروني مسجل بحساب آخر، يمكنك تسجيل الدخول بدلاً من إنشاء حساب جديد': 'This email is already registered. You can log in instead of creating a new account',
 
   // useGeolocation errors (displayed via t() in LocationSelectorModal)
   'المتصفح لا يدعم تحديد الموقع': 'Your browser does not support location detection',
