@@ -240,6 +240,12 @@ const ERROR_MAP: { pattern: RegExp; ar: string; en: string; hint?: string; hintE
 export function translateError(raw: string | null | undefined): TranslatedError {
   if (!raw) return { ar: 'حدث خطأ غير متوقع', en: 'Unexpected error' };
 
+  const trimmed = raw.trim();
+  // أي رسالة عربية ناتجة من التطبيق نفسه تُعرض كما هي بدون محاولة ترجمتها
+  if (/[\u0600-\u06FF]/.test(trimmed)) {
+    return { ar: trimmed, en: trimmed };
+  }
+
   // Direct match
   for (const entry of ERROR_MAP) {
     if (entry.pattern.test(raw)) {
