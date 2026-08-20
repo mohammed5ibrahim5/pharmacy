@@ -8,7 +8,29 @@ import { localizedError } from '@/lib/errorMessages';
 const DEMO_OTP_ENABLED = true;
 const demoOtpStore = new Map<string, string>();
 const LOCAL_PROFILE_KEY = 'pharmacy_demo_profile_v1';
+const LOCAL_CREDS_KEY = 'pharmacy_demo_creds_v1';
 const LOCAL_USER_ID = 'local-demo';
+
+interface DemoCreds {
+  email: string;
+  phone: string;
+  password: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
+function readDemoCreds(): DemoCreds | null {
+  try {
+    const raw = localStorage.getItem(LOCAL_CREDS_KEY);
+    return raw ? (JSON.parse(raw) as DemoCreds) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDemoCreds(c: DemoCreds) {
+  localStorage.setItem(LOCAL_CREDS_KEY, JSON.stringify(c));
+}
 
 export interface CustomerProfile {
   id: string;
@@ -122,13 +144,35 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     setUser(p);
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.toLowerCase().trim(),
-      password,
+  const signIn = async (identifier: string, password: string) => {
+    const input = identifier.trim();
+    const digits = input.replace(/\D/g, '');
+    const isPhone = input.startsWith('+') || /^(01[0125])/.test(input) || digits.length >= 10;
+    if (!isPhone) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: input.toLowerCase(),
+        password,
+      });
+      if (!error) {
+        await refreshProfile();
+        return { error: null };
+      }
+    }
+    const creds = readDemoCreds();
+    if (!creds) return { error: localizedError('Invalid login credentials', 'ar') };
+    const phoneMatch = isPhone ? creds.phone === normalizeEgyptianPhone(input) : false;
+    const emailMatch = !isPhone ? creds.email.toLowerCase() === input.toLowerCase() : false;
+    if (creds.password !== password || !(phoneMatch || emailMatch)) {
+      return { error: 'بيانات الدخول غير صحيحة' };
+    }
+    saveLocalProfile({
+      id: LOCAL_USER_ID,
+      user_id: LOCAL_USER_ID,
+      full_name: creds.full_name,
+      email: creds.email,
+      phone: creds.phone,
+      avatar_url: creds.avatar_url,
     });
-    if (error) return { error: localizedError(error.message, 'ar') };
-    await refreshProfile();
     return { error: null };
   };
 
@@ -159,6 +203,13 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       ]);
       if (dupEmail.data) return { error: 'هذا البريد الإلكتروني مستخدم بالفعل' };
       if (dupPhone.data) return { error: 'رقم الهاتف مستخدم بالفعل' };
+      writeDemoCreds({
+        email: normalizedEmail,
+        phone: normPhone ?? '',
+        password,
+        full_name: fullName,
+        avatar_url: avatarUrl ?? null,
+      });
       const { data: sessionData } = await supabase.auth.getSession();
       let uid = sessionData.session?.user?.id ?? null;
       if (!uid) {
