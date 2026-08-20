@@ -158,6 +158,48 @@ const ERROR_MAP: { pattern: RegExp; ar: string; en: string; hint?: string; hintE
     ar: 'غير مسجل دخول',
     en: 'You are not signed in',
   },
+  {
+    pattern: /invalid input syntax for type uuid|invalid text representation|invalid input syntax/i,
+    ar: 'معرّف الحساب غير صالح',
+    en: 'Invalid account identifier',
+    hint: 'سجل دخولك من جديد ثم أعد المحاولة',
+    hintEn: 'Sign in again and retry',
+  },
+  {
+    pattern: /violates foreign key constraint|is still referenced from table/i,
+    ar: 'لا يمكن إتمام هذه العملية',
+    en: 'This action cannot be completed',
+    hint: 'البيانات مرتبطة بطلبات أو سجلات أخرى',
+    hintEn: 'This data is linked to other records',
+  },
+  {
+    pattern: /violates unique constraint|duplicate key value/i,
+    ar: 'القيمة مسجلة بالفعل',
+    en: 'This value is already saved',
+    hint: 'استخدم قيمة أخرى',
+    hintEn: 'Please use a different value',
+  },
+  {
+    pattern: /column .* does not exist|relation .* does not exist|could not find the/,
+    ar: 'قاعدة البيانات بحاجة للتحديث',
+    en: 'The database needs to be updated',
+    hint: 'شغّل ملفات الإعداد المحدثة في Supabase SQL Editor',
+    hintEn: 'Run the latest setup SQL files in Supabase',
+  },
+  {
+    pattern: /null value in column|not-null constraint/i,
+    ar: 'بعض البيانات المطلوبة لم تُرسل',
+    en: 'Some required fields are missing',
+    hint: 'يرجى تعبئة جميع الحقول المطلوبة',
+    hintEn: 'Please fill in all required fields',
+  },
+  {
+    pattern: /syntax error|cannot be cast|invalid object name|syntax_error/i,
+    ar: 'صيغة البيانات المُرسلة غير صحيحة',
+    en: 'Invalid data format',
+    hint: 'يرجى تحديث الصفحة وإعادة المحاولة',
+    hintEn: 'Refresh the page and try again',
+  },
 ];
 
 export function translateError(raw: string | null | undefined): TranslatedError {
@@ -170,9 +212,13 @@ export function translateError(raw: string | null | undefined): TranslatedError 
     }
   }
 
-  // Fallback: shorten English error
-  const shortened = raw.length > 80 ? raw.substring(0, 80) + '...' : raw;
-  return { ar: shortened, en: shortened, hint: 'يرجى إعادة المحاولة', hintEn: 'Please try again' };
+  // Friendly fallback — أبداً لا نعرض نص الخطأ التقني الخام للمستخدم
+  return {
+    ar: 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى',
+    en: 'An unexpected error occurred, please try again',
+    hint: 'إذا تكررت المشكلة قم بتحديث الصفحة',
+    hintEn: 'If the problem persists, refresh the page',
+  };
 }
 
 export function localizedError(raw: string | null | undefined, lang: 'ar' | 'en'): string {

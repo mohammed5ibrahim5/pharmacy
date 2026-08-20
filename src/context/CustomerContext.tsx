@@ -9,7 +9,20 @@ const DEMO_OTP_ENABLED = true;
 const demoOtpStore = new Map<string, string>();
 const LOCAL_PROFILE_KEY = 'pharmacy_demo_profile_v1';
 const LOCAL_CREDS_KEY = 'pharmacy_demo_creds_v1';
-const LOCAL_USER_ID = 'local-demo';
+const LOCAL_USER_ID_KEY = 'pharmacy_demo_user_uuid';
+
+const getLocalUserId = (): string => {
+  try {
+    let id = localStorage.getItem(LOCAL_USER_ID_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(LOCAL_USER_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return 'local-demo';
+  }
+};
 
 interface DemoCreds {
   email: string;
@@ -178,8 +191,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       return { error: 'بيانات الدخول غير صحيحة' };
     }
     saveLocalProfile({
-      id: LOCAL_USER_ID,
-      user_id: LOCAL_USER_ID,
+      id: getLocalUserId(),
+      user_id: getLocalUserId(),
       full_name: creds.full_name,
       email: creds.email,
       phone: creds.phone,
@@ -191,7 +204,15 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const loadLocalProfile = (): CustomerProfile | null => {
     try {
       const raw = localStorage.getItem(LOCAL_PROFILE_KEY);
-      return raw ? (JSON.parse(raw) as CustomerProfile) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as CustomerProfile;
+      const localId = getLocalUserId();
+      if (!parsed.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(parsed.id)) {
+        parsed.id = localId;
+        parsed.user_id = localId;
+        saveLocalProfile(parsed);
+      }
+      return parsed;
     } catch {
       return null;
     }
@@ -246,8 +267,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
             .upsert({ id: uid, user_id: uid, ...updates }, { onConflict: 'user_id' });
           if (upsErr) {
             saveLocalProfile({
-              id: LOCAL_USER_ID,
-              user_id: LOCAL_USER_ID,
+              id: getLocalUserId(),
+              user_id: getLocalUserId(),
               full_name: fullName,
               email: normalizedEmail,
               phone: normPhone,
@@ -260,8 +281,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         const p = await fetchProfile();
         if (!p) {
           saveLocalProfile({
-            id: LOCAL_USER_ID,
-            user_id: LOCAL_USER_ID,
+            id: getLocalUserId(),
+            user_id: getLocalUserId(),
             full_name: fullName,
             email: normalizedEmail,
             phone: normPhone,
@@ -271,8 +292,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         return { error: null };
       }
       saveLocalProfile({
-        id: LOCAL_USER_ID,
-        user_id: LOCAL_USER_ID,
+        id: getLocalUserId(),
+        user_id: getLocalUserId(),
         full_name: fullName,
         email: normalizedEmail,
         phone: normPhone,
@@ -339,8 +360,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
           if (upsErr) {
             const prev = loadLocalProfile();
             saveLocalProfile({
-              id: LOCAL_USER_ID,
-              user_id: LOCAL_USER_ID,
+              id: getLocalUserId(),
+              user_id: getLocalUserId(),
               full_name: prev?.full_name ?? null,
               email: prev?.email ?? '',
               phone: normPhone,
@@ -354,8 +375,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         if (!p) {
           const prev = loadLocalProfile();
           saveLocalProfile({
-            id: LOCAL_USER_ID,
-            user_id: LOCAL_USER_ID,
+            id: getLocalUserId(),
+            user_id: getLocalUserId(),
             full_name: prev?.full_name ?? null,
             email: prev?.email ?? '',
             phone: normPhone,
@@ -366,8 +387,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       }
       const prev = loadLocalProfile();
       saveLocalProfile({
-        id: LOCAL_USER_ID,
-        user_id: LOCAL_USER_ID,
+        id: getLocalUserId(),
+        user_id: getLocalUserId(),
         full_name: prev?.full_name ?? null,
         email: prev?.email ?? '',
         phone: normPhone,
@@ -425,7 +446,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     const rest = { ...updates };
     delete rest.email;
     delete rest.password_hash;
-    if (user.id === LOCAL_USER_ID) {
+    if (user.id === getLocalUserId()) {
       saveLocalProfile({ ...user, ...rest });
       return { error: null };
     }
