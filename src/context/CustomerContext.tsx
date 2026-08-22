@@ -181,7 +181,27 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         await refreshProfile();
         return { error: null };
       }
+    } else {
+      // الدخول بالرقم: نبحث عن البريد المرتبط بالرقم في قاعدة البيانات ونسجل دخول حقيقي (يعمل من أي جهاز)
+      const normPhone = normalizeEgyptianPhone(input);
+      const { data: row } = await supabase
+        .from('customers')
+        .select('email')
+        .eq('phone', normPhone)
+        .maybeSingle();
+      const linkedEmail = (row as { email?: string | null } | null)?.email?.toLowerCase();
+      if (linkedEmail) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: linkedEmail,
+          password,
+        });
+        if (!error) {
+          await refreshProfile();
+          return { error: null };
+        }
+      }
     }
+    // احتياطي: حسابات تجريبية قديمة مخزنة محلياً في نفس المتصفح فقط
     const creds = readDemoCreds();
     if (!creds) return { error: localizedError('Invalid login credentials', 'ar') };
     const phoneDigits = (p: string) => p.replace(/\D/g, '').slice(-10);
@@ -243,12 +263,64 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         full_name: fullName,
         avatar_url: avatarUrl ?? null,
       });
+      // إنشاء حساب Auth حقيقي حتى يعمل تسجيل الدخول بالرقم أو الإيميل من أي جهاز
       const { data: sessionData } = await supabase.auth.getSession();
-      let uid = sessionData.session?.user?.id ?? null;
-      if (!uid) {
-        const res = await supabase.auth.signInAnonymously();
-        uid = res.error ? null : (res.data?.user?.id ?? null);
+      if (sessionData.session) await supabase.auth.signOut();
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone: normPhone,
+            avatar_url: avatarUrl || null,
+          },
+        },
+      });
+      if (signUpErr) {
+        const msg = signUpErr.message.toLowerCase();
+        if (msg.includes('already') || msg.includes('registered')) {
+          // الحساب موجود في Auth من قبل: نجرب الدخول مباشرة
+          const { error: signInErr } = await supabase.auth.signInWithPassword({
+            email: normalizedEmail,
+            password,
+          });
+          if (!signInErr) {
+            const p = await fetchProfile();
+            if (!p) {
+              const uid = (await supabase.auth.getUser()).data.user?.id;
+              if (uid) {
+                await supabase.from('customers').upsert(
+                  {
+                    id: uid,
+                    user_id: uid,
+                    full_name: fullName,
+                    email: normalizedEmail,
+                    phone: normPhone,
+                    ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+                  },
+                  { onConflict: 'user_id' }
+                );
+              }
+            }
+            await refreshProfile();
+            return { error: null };
+          }
+        }
+        saveLocalProfile({
+          id: getLocalUserId(),
+          user_id: getLocalUserId(),
+          full_name: fullName,
+          email: normalizedEmail,
+          phone: normPhone,
+          avatar_url: avatarUrl ?? null,
+        });
+        return { error: localizedError(signUpErr.message, 'ar') };
       }
+      if (!signUpData.session) {
+        return { error: 'تم إنشاء الحساب. برجاء تأكيد بريدك الإلكتروني من الرسالة المرسلة ثم تسجيل الدخول.' };
+      }
+      const uid = signUpData.user?.id ?? null;
       if (uid) {
         const updates: Record<string, unknown> = {
           full_name: fullName,
@@ -256,16 +328,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
           phone: normPhone,
         };
         if (avatarUrl) updates.avatar_url = avatarUrl;
-        const { data: upd } = await supabase
-          .from('customers')
-          .update(updates)
-          .eq('user_id', uid)
-          .select();
-        if (!upd || upd.length === 0) {
-          const { error: upsErr } = await supabase
+        const p = await fetchProfile();
+        if (!p) {
+          const { error: insErr } = await supabase
             .from('customers')
             .upsert({ id: uid, user_id: uid, ...updates }, { onConflict: 'user_id' });
-          if (upsErr) {
+          if (insErr) {
             saveLocalProfile({
               id: getLocalUserId(),
               user_id: getLocalUserId(),
@@ -276,10 +344,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
             });
             return { error: null };
           }
+        } else {
+          await supabase.from('customers').update(updates).eq('user_id', uid);
         }
         await refreshProfile();
-        const p = await fetchProfile();
-        if (!p) {
+        const check = await fetchProfile();
+        if (!check) {
           saveLocalProfile({
             id: getLocalUserId(),
             user_id: getLocalUserId(),
@@ -291,15 +361,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         }
         return { error: null };
       }
-      saveLocalProfile({
-        id: getLocalUserId(),
-        user_id: getLocalUserId(),
-        full_name: fullName,
-        email: normalizedEmail,
-        phone: normPhone,
-        avatar_url: avatarUrl ?? null,
-      });
-      return { error: null };
+      return { error: localizedError('Signup failed', 'ar') };
     }
     const { data, error } = await supabase.auth.signUp({
       email: normalizedEmail,
