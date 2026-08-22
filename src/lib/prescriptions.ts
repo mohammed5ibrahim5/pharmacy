@@ -364,6 +364,8 @@ export interface SubmitRxInput {
   cfg?: VerificationConfig;
   productNames?: string[];
   onProgress?: (stageIndex: number) => void;
+  /** نسبة تقدم التعرف النصي داخل مرحلة OCR (0-100) */
+  onOcrProgress?: (pct: number) => void;
 }
 
 export type SubmitRxOutcome =
@@ -379,7 +381,6 @@ export type SubmitRxOutcome =
 export async function submitPrescriptionVerification(input: SubmitRxInput): Promise<SubmitRxOutcome> {
   const { file, customerId, patientName, phone, notes, productNames = [], onProgress } = input;
   const cfg = input.cfg ?? DEFAULT_VERIFICATION_CONFIG;
-
   // ---- (1) رفع آمن + إنشاء السجل ----
   onProgress?.(0);
   const [imageHash] = await Promise.all([sha256Hex(file)]);
@@ -405,7 +406,10 @@ export async function submitPrescriptionVerification(input: SubmitRxInput): Prom
 
   // ---- (2) الفحص الآلي الأولي OCR ----
   onProgress?.(1);
-  const ocr = await recognizePrescription(file, { productNames });
+  const ocr = await recognizePrescription(file, {
+    productNames,
+    onProgress: (pct) => input.onOcrProgress?.(pct),
+  });
   const readable =
     ocr.ok &&
     ocr.confidence >= cfg.ocrMinConfidence &&
@@ -472,24 +476,22 @@ export async function submitPrescriptionVerification(input: SubmitRxInput): Prom
     .eq('id', rxId);
   if (updateError) throw updateError;
 
-  await addAudit(rxId, 'system', 'auto_checks_passed', {
-    confidence: ocr.confidence,
-    risk_level: riskLevel,
-    validity: validity.status,
-    duplicate: dup ? dup.id : null,
-    doctor_check: doctorCheck,
-  });
-
-  try {
-    await insertNotification({
+  const [auditResult] = await Promise.allSettled([
+    addAudit(rxId, 'system', 'auto_checks_passed', {
+      confidence: ocr.confidence,
+      risk_level: riskLevel,
+      validity: validity.status,
+      duplicate: dup ? dup.id : null,
+      doctor_check: doctorCheck,
+    }),
+    insertNotification({
       customerId,
       type: 'prescription',
       title: 'تم استلام روشتتك',
       body: 'اجتازت روشتك الفحص الآلي الأولي وهي الآن تحت مراجعة صيدلي مرخص. سنخطرك فور الانتهاء.',
-    });
-  } catch {
-    // الإشعارات لا تعمل على شبكة؟ لا تعطل المسار
-  }
+    }),
+  ]);
+  void auditResult;
 
   return { kind: 'needs_review', prescriptionId: rxId, fields: ocr.fields, riskLevel, warnings };
 }

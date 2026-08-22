@@ -13,6 +13,7 @@ import {
   VERIFICATION_STAGES,
   RISK_LEVEL_META,
 } from '@/lib/prescriptions';
+import { warmUpOcr } from '@/lib/ocr';
 import { localizedError } from '@/lib/errorMessages';
 
 interface PrescriptionUploadModalProps {
@@ -48,10 +49,16 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [stageIndex, setStageIndex] = useState(-1);
+  const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [error, setError] = useState<string | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  // تسخين محرك القراءة (تحميل النماذج) بمجرد فتح النافذة
+  useEffect(() => {
+    if (open) void warmUpOcr();
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -111,6 +118,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
 
     setError(null);
     setStep('processing');
+    setOcrPct(null);
     try {
       const productNames = await getProductNamesRequiringRx().catch(() => [] as string[]);
       const result = await submitPrescriptionVerification({
@@ -122,6 +130,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
         cfg: verificationConfig,
         productNames,
         onProgress: (i) => setStageIndex(i),
+        onOcrProgress: (pct) => setOcrPct(pct),
       });
       setOutcome(
         result.kind === 'needs_review'
@@ -379,7 +388,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                   <ScanLine className="absolute inset-0 m-auto w-7 h-7 text-teal-600" />
                 </div>
                 <h4 className="font-black text-gray-900">{t('جاري فحص روشتتك...')}</h4>
-                <p className="text-[11px] text-gray-500">{t('ماتبعدش الصفحة — الفحص بيستغرق ثوانٍ معدودة')}</p>
+                <p className="text-[11px] text-gray-500">{t('ماتبعدش الصفحة — أول فحص بيحمّل ملفات القراءة (لحد دقيقة)، واللي بعده أسرع بكثير')}</p>
               </div>
               <div className="space-y-2">
                 {VERIFICATION_STAGES.map((stage, i) => {
@@ -400,6 +409,11 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                         <span className="w-4 h-4 rounded-full border-2 border-gray-300 shrink-0" />
                       )}
                       <span className={`text-[11px] font-extrabold ${done ? 'text-teal-700' : 'text-gray-700'}`}>{stage}</span>
+                      {active && i === 1 && ocrPct !== null && (
+                        <span className="ms-auto text-[10px] font-black tabular-nums" style={{ color: themeColors.priceColor }}>
+                          {ocrPct}%
+                        </span>
+                      )}
                     </div>
                   );
                 })}

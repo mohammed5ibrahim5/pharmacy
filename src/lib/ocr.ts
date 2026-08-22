@@ -25,6 +25,7 @@ const TESSERACT_VERSION = '5.1.1';
 const TESSERACT_CORE_VERSION = '5.1.0';
 
 let workerPromise: ReturnType<typeof createWorker> | null = null;
+let ocrProgressListener: ((pct: number) => void) | null = null;
 
 function getWorker() {
   if (!workerPromise) {
@@ -32,10 +33,27 @@ function getWorker() {
       workerPath: `https://cdn.jsdelivr.net/npm/tesseract.js@${TESSERACT_VERSION}/dist/worker.min.js`,
       corePath: `https://cdn.jsdelivr.net/npm/tesseract.js-core@${TESSERACT_CORE_VERSION}`,
       langPath: 'https://tessdata.projectnaptha.com/4.0.0',
-      logger: () => {},
+      logger: (m: { status?: string; progress?: number }) => {
+        if (m.status === 'recognizing text' && ocrProgressListener && typeof m.progress === 'number') {
+          ocrProgressListener(Math.round(m.progress * 100));
+        }
+      },
     });
   }
   return workerPromise;
+}
+
+/**
+ * تسخين محرك القراءة مبكراً (تحميل النماذج من CDN)
+ * يُستدعى عند فتح نافذة الرفع حتى لا ينتظر المستخدم أثناء الفحص
+ */
+export async function warmUpOcr(): Promise<void> {
+  try {
+    await getWorker();
+  } catch {
+    // الفشل هنا لا يعطل شيئاً — سيعاد المحاولة عند أول استخدام
+    workerPromise = null;
+  }
 }
 
 export async function terminateOcrWorker() {
@@ -175,6 +193,27 @@ function matchDrugName(text: string, productNames: string[]): string | undefined
 
 export interface RecognizeOptions {
   productNames?: string[];
+  /** نسبة تقدم التعرف النصي 0-100 */
+  onProgress?: (pct: number) => void;
+}
+
+/** مهلة قصوى للتعرف النصي — بعدها نكمل المسار بدون رفض صارم */
+const OCR_TIMEOUT_MS = 90_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('ocr_timeout')), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      }
+    );
+  });
 }
 
 /**
@@ -184,8 +223,10 @@ export interface RecognizeOptions {
 export async function recognizePrescription(file: File | Blob, options: RecognizeOptions = {}): Promise<OcrResult> {
   try {
     const processed = await preprocessImage(file);
+    ocrProgressListener = options.onProgress || null;
     const worker = await getWorker();
-    const { data } = await worker.recognize(processed);
+    const { data } = await withTimeout(worker.recognize(processed), OCR_TIMEOUT_MS);
+    ocrProgressListener = null;
     const text = data.text || '';
     const confidence = Math.round(data.confidence || 0);
 
@@ -206,12 +247,16 @@ export async function recognizePrescription(file: File | Blob, options: Recogniz
 
     return { ok: true, confidence, fields, rawText: text };
   } catch (err) {
+    ocrProgressListener = null;
+    const timedOut = err instanceof Error && err.message === 'ocr_timeout';
     return {
       ok: false,
       confidence: 0,
       fields: {},
       rawText: '',
-      error: err instanceof Error ? err.message : 'تعذر تشغيل الفحص الآلي',
+      error: timedOut
+        ? 'استغرق الفحص وقتاً أطول من المعتاد — ستتم مراجعة الروشتة يدوياً'
+        : 'تعذر تشغيل الفحص الآلي',
     };
   }
 }
