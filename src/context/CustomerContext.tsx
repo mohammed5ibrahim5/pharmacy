@@ -45,6 +45,27 @@ function writeDemoCreds(c: DemoCreds) {
   localStorage.setItem(LOCAL_CREDS_KEY, JSON.stringify(c));
 }
 
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+function isRateLimitError(message: string | null | undefined): boolean {
+  return !!message && /rate limit|too many requests|429|for security purposes|email rate limit|over_request_rate_limit/i.test(message);
+}
+
+// عند تجاوز عدد المحاولات: ننتظر ونحاول تلقائياً بدل إظهار الخطأ للمستخدم فوراً
+async function withRateLimitRetry<R extends { error?: { message?: string } | null }>(
+  fn: () => Promise<R>,
+  maxAttempts = 3
+): Promise<R> {
+  let result = await fn();
+  let attempt = 1;
+  while (result?.error?.message && isRateLimitError(result.error.message) && attempt < maxAttempts) {
+    await sleep(attempt * 4000);
+    attempt += 1;
+    result = await fn();
+  }
+  return result;
+}
+
 export interface CustomerProfile {
   id: string;
   user_id?: string | null;
@@ -173,10 +194,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     const digits = input.replace(/\D/g, '');
     const isPhone = input.startsWith('+') || /^(01[0125])/.test(input) || digits.length >= 10;
     if (!isPhone) {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: input.toLowerCase(),
-        password,
-      });
+      const { error } = await withRateLimitRetry(() =>
+        supabase.auth.signInWithPassword({
+          email: input.toLowerCase(),
+          password,
+        })
+      );
       if (!error) {
         await refreshProfile();
         return { error: null };
@@ -191,10 +214,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       const linkedEmail = (row as { email?: string | null } | null)?.email?.toLowerCase();
       if (linkedEmail) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: linkedEmail,
-          password,
-        });
+        const { error } = await withRateLimitRetry(() =>
+          supabase.auth.signInWithPassword({
+            email: linkedEmail,
+            password,
+          })
+        );
         if (!error) {
           await refreshProfile();
           return { error: null };
@@ -266,25 +291,29 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       // إنشاء حساب Auth حقيقي حتى يعمل تسجيل الدخول بالرقم أو الإيميل من أي جهاز
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session) await supabase.auth.signOut();
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            phone: normPhone,
-            avatar_url: avatarUrl || null,
+      const { data: signUpData, error: signUpErr } = await withRateLimitRetry(() =>
+        supabase.auth.signUp({
+          email: normalizedEmail,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              phone: normPhone,
+              avatar_url: avatarUrl || null,
+            },
           },
-        },
-      });
+        })
+      );
       if (signUpErr) {
         const msg = signUpErr.message.toLowerCase();
         if (msg.includes('already') || msg.includes('registered')) {
           // الحساب موجود في Auth من قبل: نجرب الدخول مباشرة
-          const { error: signInErr } = await supabase.auth.signInWithPassword({
-            email: normalizedEmail,
-            password,
-          });
+          const { error: signInErr } = await withRateLimitRetry(() =>
+            supabase.auth.signInWithPassword({
+              email: normalizedEmail,
+              password,
+            })
+          );
           if (!signInErr) {
             const p = await fetchProfile();
             if (!p) {
@@ -318,7 +347,35 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         return { error: localizedError(signUpErr.message, 'ar') };
       }
       if (!signUpData.session) {
-        return { error: 'تم إنشاء الحساب. برجاء تأكيد بريدك الإلكتروني من الرسالة المرسلة ثم تسجيل الدخول.' };
+        // لو تأكيد البريد غير مفعّل على الخادم نقدر ندخل مباشرة
+        const { error: directErr } = await withRateLimitRetry(() =>
+          supabase.auth.signInWithPassword({
+            email: normalizedEmail,
+            password,
+          })
+        );
+        if (directErr) {
+          return { error: 'تم إنشاء الحساب. برجاء تأكيد بريدك الإلكتروني من الرسالة المرسلة ثم تسجيل الدخول.' };
+        }
+        const p = await fetchProfile();
+        if (!p) {
+          const newUid = (await supabase.auth.getUser()).data.user?.id;
+          if (newUid) {
+            await supabase.from('customers').upsert(
+              {
+                id: newUid,
+                user_id: newUid,
+                full_name: fullName,
+                email: normalizedEmail,
+                phone: normPhone,
+                ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+              },
+              { onConflict: 'user_id' }
+            );
+          }
+        }
+        await refreshProfile();
+        return { error: null };
       }
       const uid = signUpData.user?.id ?? null;
       if (uid) {
