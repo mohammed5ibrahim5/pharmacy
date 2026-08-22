@@ -37,6 +37,18 @@ type Outcome = OutcomeOk | OutcomeRejected;
 
 const EGYPT_PHONE_RE = /^01[0125]\d{8}$/;
 
+/**
+ * يقبل صيغة محلية (01xxxxxxxxx) أو دولية (+20 / 0020) مع أي فواصل
+ * ويعيد الرقم بالصيغة المحلية الموحدة، أو null لو غير صالح
+ */
+function normalizeEgyptPhone(raw: string): string | null {
+  let ph = raw.replace(/[\s\-().]/g, '');
+  if (ph.startsWith('+')) ph = ph.slice(1);
+  if (ph.startsWith('00')) ph = ph.slice(2);
+  if (/^20(1[0125]\d{8})$/.test(ph)) return '0' + ph.slice(2);
+  return EGYPT_PHONE_RE.test(ph) ? ph : null;
+}
+
 export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadModalProps) {
   const { themeColors, verificationConfig } = useSettings();
   const { profile, user, setAuthModalOpen } = useCustomer();
@@ -106,13 +118,13 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
   const startVerification = async () => {
     if (!file || !user) return;
     const name = patientName.trim();
-    const ph = phone.replace(/[\s-]/g, '');
+    const ph = normalizeEgyptPhone(phone);
     if (name.length < 3) {
       setError(t('يرجى إدخال اسم المريض كاملاً للتأكد من الهوية.'));
       return;
     }
-    if (!EGYPT_PHONE_RE.test(ph)) {
-      setError(t('أدخل رقم هاتف مصري صحيح (مثال: 01012345678).'));
+    if (!ph) {
+      setError(t('أدخل رقم هاتف مصري صحيح — يقبل ‎01012345678 أو ‎+201012345678.'));
       return;
     }
 
