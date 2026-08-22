@@ -142,6 +142,10 @@ export function NotificationsBell() {
                   key={n.id}
                   onClick={() => {
                     setOpen(false);
+                    if (!n.read) {
+                      setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+                      void supabase.from('notifications').update({ read: true }).eq('id', n.id);
+                    }
                     navigate({ name: 'account', tab: n.type === 'prescription' ? 'prescriptions' : 'orders' });
                   }}
                   className={`w-full text-start px-4 py-3 flex items-start gap-3 transition-colors hover:bg-teal-50/40 ${n.read ? 'opacity-70' : ''}`}

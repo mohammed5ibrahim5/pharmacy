@@ -357,6 +357,37 @@ export async function deletePrescription(id: string, imageUrl: string) {
   if (error) throw error;
 }
 
+/**
+ * رد العميل على طلب توضيح من الصيدلي:
+ * صورة أوضح (اختياري) + ملاحظة، وترجع الروشتة لطابور المراجعة
+ */
+export async function respondPrescriptionClarification(input: {
+  rxId: string;
+  customerId: string;
+  file?: File | Blob;
+  notes: string;
+}): Promise<void> {
+  let imageUrl: string | undefined;
+  if (input.file) {
+    imageUrl = await uploadPrescriptionImage(input.file, input.customerId);
+  }
+  const { error } = await supabase
+    .from('prescriptions')
+    .update({
+      ...(imageUrl ? { image_url: imageUrl } : {}),
+      notes: input.notes.trim() || null,
+      pipeline_status: 'needs_review',
+      rejection_reason: null,
+    })
+    .eq('id', input.rxId)
+    .eq('customer_id', input.customerId);
+  if (error) throw error;
+  await addAudit(input.rxId, 'customer', 'clarification_response', {
+    has_new_image: !!input.file,
+    notes: input.notes.trim(),
+  });
+}
+
 /** أسماء الأدوية التي تتطلب روشتة — تستخدم لمطابقة استخراج OCR */
 export async function getProductNamesRequiringRx(): Promise<string[]> {
   const { data } = await supabase

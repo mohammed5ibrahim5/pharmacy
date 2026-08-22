@@ -35,6 +35,7 @@ import {
   X,
   TrendingUp,
   AlertTriangle,
+  MessageCircle,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useCustomer } from '@/context/CustomerContext';
@@ -57,6 +58,7 @@ import {
   PRESCRIPTION_STATUS_META,
   type Prescription,
   submitPrescriptionVerification,
+  respondPrescriptionClarification,
   deletePrescription,
 } from '@/lib/prescriptions';
 import { dataUrlToBlob } from '@/lib/invoice';
@@ -464,6 +466,10 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
 
   // Prescription form state
   const [rxImage, setRxImage] = useState<string | null>(null);
+  const clarifyRx = prescriptions.find((p) => p.pipeline_status === 'clarification_requested') || null;
+  const [clarifyNotes, setClarifyNotes] = useState('');
+  const [clarifyImage, setClarifyImage] = useState<string | null>(null);
+  const [clarifyBusy, setClarifyBusy] = useState(false);
   const [rxPhone, setRxPhone] = useState(profile?.phone || '');
   const [rxNotes, setRxNotes] = useState('');
 
@@ -767,6 +773,43 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
       showToast(t('فشل رفع الروشتة، برجاء المحاولة مرة أخرى'));
     } finally {
       setRxUploading(false);
+    }
+  };
+
+  const handleClarifyImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast(t('حجم الصورة كبير جداً، الحد الأقصى 5 ميجابايت.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setClarifyImage(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleClarifySubmit = async () => {
+    if (!user || !clarifyRx || clarifyBusy) return;
+    if (!clarifyNotes.trim() && !clarifyImage) {
+      showToast(t('اكتب توضيحك أو أرفق صورة أوضح للروشتة.'));
+      return;
+    }
+    setClarifyBusy(true);
+    try {
+      await respondPrescriptionClarification({
+        rxId: clarifyRx.id,
+        customerId: user.id,
+        file: clarifyImage ? dataUrlToBlob(clarifyImage) : undefined,
+        notes: clarifyNotes,
+      });
+      await fetchPrescriptions();
+      setClarifyNotes('');
+      setClarifyImage(null);
+      showToast(t('تم إرسال ردك — سيراجعه الصيدلي في أقرب وقت'));
+    } catch {
+      showToast(t('تعذر إرسال الرد، حاول مرة أخرى'));
+    } finally {
+      setClarifyBusy(false);
     }
   };
 
@@ -1349,6 +1392,63 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
                   )}
                 </button>
               </form>
+
+              {/* Clarification request from pharmacist */}
+              {clarifyRx && (
+                <div className="bg-amber-50 rounded-[2rem] border-2 border-amber-300 p-5 sm:p-6 shadow-sm space-y-4 animate-fade-up">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-amber-100 text-amber-600 shrink-0">
+                      <MessageCircle className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-black text-amber-900 text-base leading-snug">{t('الصيدلي يحتاج توضيحاً بخصوص روشتتك')}</h3>
+                      {clarifyRx.review_notes && (
+                        <p className="text-xs text-amber-800 font-bold mt-1.5 leading-relaxed bg-amber-100/70 rounded-xl p-3">
+                          {clarifyRx.review_notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {clarifyImage && (
+                    <div className="relative rounded-2xl overflow-hidden border-2 border-amber-300 max-h-56 bg-slate-950 flex items-center justify-center">
+                      <img src={clarifyImage} alt={t('صورة أوضح')} className="max-h-56 w-auto object-contain mx-auto" />
+                      <button
+                        type="button"
+                        onClick={() => setClarifyImage(null)}
+                        className="absolute top-3 end-3 p-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  <textarea
+                    value={clarifyNotes}
+                    onChange={(e) => setClarifyNotes(e.target.value)}
+                    rows={2}
+                    placeholder={t('اكتب توضيحك هنا (اسم الدواء، الجرعة، اسم الطبيب...)')}
+                    className="w-full px-4 py-3 bg-white border border-amber-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                  />
+
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <label className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border-2 border-dashed border-amber-300 bg-white/60 text-amber-700 text-xs font-black cursor-pointer hover:bg-amber-100/60 transition-colors">
+                      <Camera className="w-4 h-4" />
+                      {clarifyImage ? t('تم اختيار صورة أوضح ✓') : t('أرفق صورة أوضح للروشتة')}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleClarifyImage} />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleClarifySubmit}
+                      disabled={clarifyBusy}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-60 text-white text-xs font-black transition-colors active:scale-[0.99] shadow-sm"
+                    >
+                      {clarifyBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      {t('إرسال الرد للصيدلي')}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Prescription list */}
               {rxLoading ? (

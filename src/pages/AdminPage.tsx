@@ -597,6 +597,7 @@ function PrescriptionsTab() {
               { label: 'رقم النقابة', value: selected.ocr_data?.doctor_syndicate_no },
               { label: 'تاريخ الإصدار', value: selected.ocr_data?.issue_date },
             ];
+            const customerReply = selected.notes;
             return (
               <div className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setSelectedId(null)}>
                 <div className="rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-hidden shadow-2xl bg-white flex flex-col" onClick={(e) => e.stopPropagation()}>
@@ -656,6 +657,12 @@ function PrescriptionsTab() {
 
                     {/* Left column (data) */}
                     <div className="space-y-4">
+                      {customerReply && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3.5">
+                          <p className="text-[10px] font-black text-amber-500 uppercase tracking-wide mb-1">رد العميل / ملاحظات</p>
+                          <p className="text-xs font-bold text-amber-900 leading-relaxed">{customerReply}</p>
+                        </div>
+                      )}
                       <div className="rounded-2xl border border-gray-200 p-3.5 space-y-2">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-wide">بيانات الفحص الآلي (OCR)</p>
                         {ocrFields.map((row, i) => (
