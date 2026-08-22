@@ -68,7 +68,7 @@ const TRENDING_LIMIT = 7;
 
 export function Header() {
   const { navigate, route } = useRouter();
-  const { settings, themeColors, headerConfig, storeConfig, darkMode, toggleDarkMode } = useSettings();
+  const { settings, themeColors, headerConfig, storeConfig, darkMode, toggleDarkMode, loading: settingsLoading } = useSettings();
   const { t, p, lang, toggleLang } = useLanguage();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
@@ -316,8 +316,8 @@ export function Header() {
   return (
     <>
       <div className="sticky top-0 z-50">
-      {/* 1. TOP BAR */}
-      {headerConfig.showTopBar && (
+      {/* 1. TOP BAR — لا يُرسم إلا بعد تحميل الإعدادات الحقيقية لمنع الوميض */}
+      {headerConfig.showTopBar && !settingsLoading && (
       <div
         className="text-xs py-2 px-4 border-b hidden sm:block transition-all duration-300"
         style={{
