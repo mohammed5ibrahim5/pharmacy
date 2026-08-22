@@ -154,6 +154,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
             }
           : { kind: 'auto_rejected', reason: result.reason }
       );
+      setStep('result');
     } catch (err) {
       const msg = localizedError((err as { message?: string })?.message || '', lang);
       setError(msg || t('حدث خطأ أثناء الفحص، برجاء المحاولة مرة أخرى.'));

@@ -130,6 +130,19 @@ create policy "prescriptions_insert_own"
   on public.prescriptions for insert to authenticated
   with check (customer_id = auth.uid());
 
+-- العميل يحدّث روشتته (خط الأنابيب يشتغل من المتصفح: OCR + الحالة)
+drop policy if exists "prescriptions_update_own" on public.prescriptions;
+create policy "prescriptions_update_own"
+  on public.prescriptions for update to authenticated
+  using (customer_id = auth.uid())
+  with check (customer_id = auth.uid());
+
+-- إشعار يصل للعميل نفسه من خط الأنابيب
+drop policy if exists "notifications_insert_self" on public.notifications;
+create policy "notifications_insert_self"
+  on public.notifications for insert to authenticated
+  with check (customer_id = auth.uid());
+
 -- ------------------------------------------------------------
 -- 5) تخزين الروشتات: الرفع لملك المجلد فقط
 --    (البوكيت خاص بالفعل منذ migration 20260818)

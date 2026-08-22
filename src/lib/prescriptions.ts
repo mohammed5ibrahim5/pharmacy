@@ -234,14 +234,37 @@ export function checkValidity(
 }
 
 export async function checkDoctorRegistry(syndicateNo: string): Promise<boolean> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('doctor_registry')
     .select('id')
     .eq('syndicate_no', syndicateNo.trim())
     .eq('is_active', true)
     .maybeSingle();
+  if (error) console.error('[rx] doctor registry:', error.message);
   return !!data;
 }
+
+/**
+ * حد أقصى زمني لأي طلب شبكة داخل خط الأنابيب
+ * يعيد undefined عند انتهاء المهلة بدل التعليق للأبد
+ */
+function raceTimeout<T>(p: PromiseLike<T>, ms: number): Promise<T | undefined> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(undefined), ms);
+    Promise.resolve(p).then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(undefined);
+      }
+    );
+  });
+}
+
+const DB_TIMEOUT_MS = 20_000;
 
 // ============================================================
 // الخطوة 5: تصنيف الدواء حسب درجة الخطورة
@@ -260,7 +283,7 @@ export function classifyRisk(text: string, cfg: VerificationConfig): RiskLevel {
 // ============================================================
 
 async function findDuplicate(imageHash: string, dataHash: string, excludeId: string) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('prescriptions')
     .select('id, reference_code, pipeline_status, created_at')
     .or(`image_hash.eq.${imageHash},data_hash.eq.${dataHash}`)
@@ -268,6 +291,7 @@ async function findDuplicate(imageHash: string, dataHash: string, excludeId: str
     .neq('id', excludeId)
     .order('created_at', { ascending: false })
     .limit(1);
+  if (error) console.error('[rx] findDuplicate:', error.message);
   return (data?.[0] as { id: string; reference_code: string | null } | undefined) || null;
 }
 
@@ -436,8 +460,8 @@ export async function submitPrescriptionVerification(input: SubmitRxInput): Prom
 
   let doctorCheck: 'verified' | 'not_found' | 'unknown' = 'unknown';
   if (cfg.requireSyndicateCheck && ocr.fields.doctor_syndicate_no) {
-    const found = await checkDoctorRegistry(ocr.fields.doctor_syndicate_no);
-    doctorCheck = found ? 'verified' : 'not_found';
+    const found = await raceTimeout(checkDoctorRegistry(ocr.fields.doctor_syndicate_no), DB_TIMEOUT_MS);
+    doctorCheck = found === true ? 'verified' : found === false ? 'not_found' : 'unknown';
   }
 
   if (validity.status === 'expired') {
@@ -448,7 +472,7 @@ export async function submitPrescriptionVerification(input: SubmitRxInput): Prom
   // ---- (4) فحص التكرار ----
   onProgress?.(3);
   const dataHash = await fingerprintData(ocr.fields, phone);
-  const dup = await findDuplicate(imageHash, dataHash, rxId);
+  const dup = (await raceTimeout(findDuplicate(imageHash, dataHash, rxId), DB_TIMEOUT_MS)) || null;
 
   // ---- تجميع التحذيرات وإنهاء المسار ----
   const warnings: string[] = [];
@@ -460,38 +484,44 @@ export async function submitPrescriptionVerification(input: SubmitRxInput): Prom
   if (riskLevel !== 'normal') warnings.push('الروشتة تحتوي دواءً مقيّداً — تتطلب مراجعة مشددة واستلاماً شخصياً بإثبات هوية');
   if (dup) warnings.push(`تحذير تكرار: تشابه مع روشتة سابقة${dup.reference_code ? ` (كود ${dup.reference_code})` : ''}`);
 
-  const { error: updateError } = await supabase
-    .from('prescriptions')
-    .update({
-      ocr_status: 'passed',
-      ocr_data: { ...ocr.fields, flags: warnings, doctor_check: doctorCheck, confidence: ocr.confidence } satisfies RxOcrData,
-      data_hash: dataHash,
-      validity_status: validity.status,
-      duplicate_status: dup ? 'suspected' : 'clear',
-      duplicate_of: dup?.id || null,
-      risk_level: riskLevel,
-      delivery_mode: riskLevel === 'normal' ? 'delivery' : 'pickup_only',
-      pipeline_status: 'needs_review',
-    })
-    .eq('id', rxId);
-  if (updateError) throw updateError;
+  const upd = await raceTimeout(
+    supabase
+      .from('prescriptions')
+      .update({
+        ocr_status: 'passed',
+        ocr_data: { ...ocr.fields, flags: warnings, doctor_check: doctorCheck, confidence: ocr.confidence } satisfies RxOcrData,
+        data_hash: dataHash,
+        validity_status: validity.status,
+        duplicate_status: dup ? 'suspected' : 'clear',
+        duplicate_of: dup?.id || null,
+        risk_level: riskLevel,
+        delivery_mode: riskLevel === 'normal' ? 'delivery' : 'pickup_only',
+        pipeline_status: 'needs_review',
+      })
+      .eq('id', rxId),
+    DB_TIMEOUT_MS
+  );
+  if (!upd) throw new Error('انتهت مهلة حفظ نتيجة الفحص — تحقق من الاتصال ثم أعد المحاولة');
+  if (upd.error) throw upd.error;
 
-  const [auditResult] = await Promise.allSettled([
-    addAudit(rxId, 'system', 'auto_checks_passed', {
-      confidence: ocr.confidence,
-      risk_level: riskLevel,
-      validity: validity.status,
-      duplicate: dup ? dup.id : null,
-      doctor_check: doctorCheck,
-    }),
-    insertNotification({
-      customerId,
-      type: 'prescription',
-      title: 'تم استلام روشتتك',
-      body: 'اجتازت روشتك الفحص الآلي الأولي وهي الآن تحت مراجعة صيدلي مرخص. سنخطرك فور الانتهاء.',
-    }),
-  ]);
-  void auditResult;
+  await raceTimeout(
+    Promise.allSettled([
+      addAudit(rxId, 'system', 'auto_checks_passed', {
+        confidence: ocr.confidence,
+        risk_level: riskLevel,
+        validity: validity.status,
+        duplicate: dup ? dup.id : null,
+        doctor_check: doctorCheck,
+      }),
+      insertNotification({
+        customerId,
+        type: 'prescription',
+        title: 'تم استلام روشتتك',
+        body: 'اجتازت روشتك الفحص الآلي الأولي وهي الآن تحت مراجعة صيدلي مرخص. سنخطرك فور الانتهاء.',
+      }),
+    ]),
+    12_000
+  );
 
   return { kind: 'needs_review', prescriptionId: rxId, fields: ocr.fields, riskLevel, warnings };
 }
