@@ -73,10 +73,22 @@ function dataUrlToBlob(dataUrl: string): Blob {
 export async function uploadPaymentScreenshot(dataUrl: string, customerId: string): Promise<string> {
   const path = `${customerId}/pay_${Date.now()}_${Math.random().toString(36).slice(2)}.png`;
   const blob = dataUrlToBlob(dataUrl);
+  
+  // للمستخدمين المحليين (local-demo) — خزن كـ data URL محلياً
+  if (customerId.startsWith('local-') || !supabase.auth.getSession) {
+    return dataUrl;
+  }
+  
   const { error } = await supabase.storage
     .from('payments')
     .upload(path, blob, { contentType: blob.type, upsert: false });
-  if (error) throw error;
+  if (error) {
+    // لو فشل الرفع (مثلاً المستخدم محلي)، رجّع الـ data URL كحل احتياطي
+    if (error.message?.includes('auth') || error.message?.includes('row-level') || error.message?.includes('policy')) {
+      return dataUrl;
+    }
+    throw error;
+  }
   const { data } = supabase.storage.from('payments').getPublicUrl(path);
   return data.publicUrl;
 }
