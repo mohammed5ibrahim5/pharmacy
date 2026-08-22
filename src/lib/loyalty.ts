@@ -22,9 +22,17 @@ export async function fetchLoyaltyHistory(customerId: string): Promise<LoyaltyTr
 }
 
 export async function awardLoyaltyPoints(customerId: string, points: number, reason: string) {
+  // إضافة النقاط للرصيد الحالي
+  const { data: customer } = await supabase
+    .from('customers')
+    .select('loyalty_points')
+    .eq('id', customerId)
+    .maybeSingle();
+  const current = Number((customer as { loyalty_points?: number } | null)?.loyalty_points || 0);
+  const newBalance = current + points;
   await supabase
     .from('customers')
-    .update({ loyalty_points: points })
+    .update({ loyalty_points: newBalance })
     .eq('id', customerId);
   await supabase.from('loyalty_transactions').insert({
     customer_id: customerId,

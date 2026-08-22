@@ -35,13 +35,15 @@ import {
   deletePrescription,
 } from '@/lib/prescriptions';
 import { insertNotification } from '@/lib/notifications';
+import { awardLoyaltyPoints } from '@/lib/loyalty';
 import { notifyStockAvailable } from '@/lib/loyalty';
 import type { Pharmacy, Product, Category, Discount, SiteSettings, FooterConfig, Coupon, NewsletterSubscriber, HeroConfig, HowItWorksConfig, HomepageConfig, PharmacyOwner, Review } from '@/types';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'reviews' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'settings';
 
 export function AdminPage() {
-  const { settings } = useSettings();
+  const settingsContext = useSettings();
+  const { settings } = settingsContext;
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -507,7 +509,7 @@ interface GroupView {
 }
 
 export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
-  const { settings } = useSettings();
+  const { settings, loyaltyConfig } = useSettings();
   const [list, setList] = useState<OrderRecord[]>([]);
   const [groups, setGroups] = useState<OrderGroupRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -601,7 +603,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
     [views]
   );
 
-  const updateStatus = async (view: GroupView, status: string) => {
+  const updateOrderStatus = async (view: GroupView, status: string) => {
     setUpdatingId(view.key);
     const now = new Date().toISOString();
     const scopedOrders = pharmacyId ? view.orders.filter((o) => o.pharmacy_id === pharmacyId) : view.orders;
@@ -642,6 +644,24 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
             ? `طلبك "${first.product.name}" أصبح ${meta.label}`
             : `حالة طلبك أصبحت: ${meta.label}`,
         });
+        // منح نقاط الولاء عند تأكيد الطلب أو تسليمه
+        if ((status === 'confirmed' || status === 'delivered') && loyaltyConfig?.enabled) {
+          try {
+            const pointsPerOrder = loyaltyConfig?.pointsPerOrder || 0;
+            const pointsPerPound = loyaltyConfig?.pointsPerPound || 0;
+            const groupTotal = view.group ? Number(view.group.total_price) : 0;
+            const earnBase = pointsPerOrder;
+            const earnSpend = pointsPerPound > 0 ? Math.floor(groupTotal / pointsPerPound) : 0;
+            const earnedPoints = earnBase + earnSpend;
+            
+            if (earnedPoints > 0) {
+              await awardLoyaltyPoints(first.customer_id, earnedPoints, `مكافأة طلب ${isScopedGroup ? 'موحّد' : ''} من ${groups.length} صيدلية`);
+              showToast(`تم منح ${earnedPoints} نقطة ولاء للعميل`);
+            }
+          } catch (loyaltyErr) {
+            console.error('Failed to award loyalty points:', loyaltyErr);
+          }
+        }
       }
       showToast('تم تحديث حالة الطلب بنجاح');
     }
@@ -890,7 +910,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
                     return (
                       <button
                         key={s}
-                        onClick={() => updateStatus(view, s)}
+                        onClick={() => updateOrderStatus(view, s)}
                         disabled={updatingId === view.key}
                         className={`px-2.5 py-1.5 rounded-full text-[10px] font-extrabold border transition-all active:scale-95 disabled:opacity-50 ${
                           active ? `${sm.className} shadow-sm scale-105` : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50'

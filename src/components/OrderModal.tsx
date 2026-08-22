@@ -12,7 +12,6 @@ import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { localizedError } from '@/lib/errorMessages';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
-import { awardLoyaltyPoints } from '@/lib/loyalty';
 import { buildInvoiceImage, dataUrlToBlob } from '@/lib/invoice';
 import { createPaymentIntent, findOrderGroupStatus } from '@/lib/payments';
 import {
@@ -599,16 +598,8 @@ export function OrderModal() {
             reason: t('استبدال {0} نقطة بخصم {1} ج.م', [redeemedPoints, loyaltyDiscount.toFixed(2)]),
           });
         }
-
-        const earnBase = loyaltyConfig.enabled ? (loyaltyConfig.pointsPerOrder || 0) : 0;
-        const earnSpend = loyaltyConfig.enabled && (loyaltyConfig.pointsPerPound || 0) > 0
-          ? Math.floor(totalAfterDiscount / loyaltyConfig.pointsPerPound)
-          : 0;
-        const earnedPoints = earnBase + earnSpend;
-        if (earnedPoints > 0) {
-          await awardLoyaltyPoints(user.id, current + earnedPoints - redeemedPoints, t('مكافأة طلب موحّد من {0} صيدلية', [groups.length]));
-        }
-        setLastEarnedPoints(earnedPoints);
+        // النقاط تُضاف بعد تأكيد الأدمن (status = confirmed/delivered)
+        setLastEarnedPoints(0);
         setLastRedeemedDiscount(loyaltyDiscount);
       }
       if (isOnline) {
