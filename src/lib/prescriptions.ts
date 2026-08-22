@@ -681,6 +681,38 @@ export async function requestClarification(
 // الخطوة 8: التسليم والتحقق من الهوية (الرقم القومي المصري)
 // ============================================================
 
+/** أكواد المحافظات المصرية الرسمية في الرقم القومي (88 = مول خارج الجمهورية) */
+const EGY_GOVERNORATE_CODES = new Set([
+  '01', // القاهرة
+  '02', // الإسكندرية
+  '03', // بورسعيد
+  '04', // السويس
+  '11', // دمياط
+  '12', // الدقهلية
+  '13', // الشرقية
+  '14', // القليوبية
+  '15', // كفر الشيخ
+  '16', // الغربية
+  '17', // المنوفية
+  '18', // البحيرة
+  '19', // الإسماعيلية
+  '21', // الجيزة
+  '22', // بني سويف
+  '23', // الفيوم
+  '24', // المنيا
+  '25', // أسيوط
+  '26', // سوهاج
+  '27', // قنا
+  '28', // أسوان
+  '29', // الأقصر
+  '31', // البحر الأحمر
+  '32', // الوادي الجديد
+  '33', // مطروح
+  '34', // شمال سيناء
+  '35', // جنوب سيناء
+  '88', // خارج الجمهورية
+]);
+
 export function validateNationalId(nid: string): { ok: boolean; reason?: string } {
   const v = nid.replace(/\D/g, '');
   if (v.length !== 14) return { ok: false, reason: 'الرقم القومي يجب أن يكون 14 رقماً' };
@@ -693,8 +725,9 @@ export function validateNationalId(nid: string): { ok: boolean; reason?: string 
   if (month < 1 || month > 12 || birth.getDate() !== day || birth.getMonth() !== month - 1) {
     return { ok: false, reason: 'تاريخ الميلاد داخل الرقم القومي غير صحيح' };
   }
-  const gov = Number(v.slice(7, 9));
-  if (gov < 1 || gov > 88) return { ok: false, reason: 'كود المحافظة غير صحيح' };
+  if (!EGY_GOVERNORATE_CODES.has(v.slice(7, 9))) {
+    return { ok: false, reason: 'كود المحافظة داخل الرقم القومي غير صحيح' };
+  }
   return { ok: true };
 }
 
