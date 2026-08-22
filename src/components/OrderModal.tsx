@@ -20,6 +20,8 @@ import {
   uploadPaymentScreenshot,
   type PaymentMethod,
 } from '@/lib/orders';
+import { linkPrescriptionToOrderGroup } from '@/lib/prescriptions';
+import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
 import type { Pharmacy, Product, FamilyMember } from '@/types';
 
 const METHOD_ICONS: Record<PaymentMethod, React.ReactNode> = {
@@ -42,6 +44,13 @@ interface CartGroup {
   label: string;
   pharmacy: Pharmacy | null;
   subtotal: number;
+}
+
+interface RxLite {
+  id: string;
+  reference_code: string | null;
+  pipeline_status: string | null;
+  created_at: string;
 }
 
 function finalPriceOf(product: Product): number {
@@ -79,6 +88,28 @@ export function OrderModal() {
   const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [invoiceViewer, setInvoiceViewer] = useState(false);
+  const needsRx = useMemo(() => cart.some((e) => e.product.requires_prescription), [cart]);
+  const [myRxList, setMyRxList] = useState<RxLite[]>([]);
+  const [selectedRxId, setSelectedRxId] = useState('');
+  const [rxModalOpen, setRxModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!cartOpen || !user || !needsRx) return;
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase
+        .from('prescriptions')
+        .select('id, reference_code, pipeline_status, created_at')
+        .eq('customer_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (!cancelled) setMyRxList((data || []) as RxLite[]);
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [cartOpen, user, needsRx, rxModalOpen]);
 
   const catalogMode = !storeConfig.purchasesEnabled;
 
@@ -214,6 +245,15 @@ export function OrderModal() {
   const redeemChunks = Math.min(usableChunks, Math.floor(pointsToRedeem / redeemStep));
   const loyaltyDiscount = Math.round(redeemChunks * redeemValue * 100) / 100;
   const totalAfterDiscount = Math.max(0, total - loyaltyDiscount);
+
+  const approvedRx = myRxList.filter((r) => r.pipeline_status === 'approved');
+  const pendingRxCount = myRxList.filter(
+    (r) => r.pipeline_status !== 'approved' && !['rejected', 'auto_rejected', 'dispensed', 'cancelled'].includes(r.pipeline_status || '')
+  ).length;
+  useEffect(() => {
+    if (selectedRxId && !approvedRx.some((r) => r.id === selectedRxId)) setSelectedRxId('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRxId, myRxList]);
 
   const displayTotal = catalogMode ? subtotal : total;
 
@@ -529,6 +569,11 @@ export function OrderModal() {
       setLoading(false);
       return;
     }
+    if (needsRx && !selectedRxId) {
+      setError(t('الطلب يحتوي أدوية تتطلب روشتة معتمدة من صيدلي — ارفع روشتك وانتظر الاعتماد ثم أكمل الطلب.'));
+      setLoading(false);
+      return;
+    }
 
     try {
       const screenshotUrl = isCOD || isOnline ? null : screenshot!.startsWith('data:') ? await uploadPaymentScreenshot(screenshot!, user.id) : screenshot;
@@ -586,6 +631,13 @@ export function OrderModal() {
       if (err) {
         setError(localizedError(err.message, lang));
       } else {
+        if (selectedRxId) {
+          try {
+            await linkPrescriptionToOrderGroup(selectedRxId, groupData.id);
+          } catch {
+            // لا نعطل الطلب لو فشل الربط
+          }
+        }
         const { data: customer } = await supabase.from('customers').select('loyalty_points').eq('id', user.id).maybeSingle();
         const current = Number((customer as { loyalty_points?: number } | null)?.loyalty_points || 0);
 
@@ -1052,6 +1104,60 @@ export function OrderModal() {
             </div>
           </div>
 
+          {/* Prescription requirement */}
+          {needsRx && (
+            <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 space-y-3">
+              <label className="flex items-center gap-1.5 text-sm font-bold text-amber-800">
+                <FileText className="w-4 h-4" />
+                {t('أدوية هذا الطلب تتطلب روشتة معتمدة')}
+              </label>
+              {approvedRx.length > 0 ? (
+                <div className="space-y-2">
+                  {approvedRx.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setSelectedRxId(selectedRxId === r.id ? '' : r.id)}
+                      className={`w-full flex items-center justify-between rounded-xl border p-3 text-start text-sm transition-all ${
+                        selectedRxId === r.id
+                          ? 'border-transparent bg-white shadow-md'
+                          : 'border-gray-200 bg-white/70 hover:border-gray-300'
+                      }`}
+                      style={selectedRxId === r.id ? { borderColor: themeColors.priceColor } : undefined}
+                    >
+                      <span className="flex items-center gap-2 font-bold text-gray-700">
+                        {selectedRxId === r.id
+                          ? <CheckCircle2 className="w-4 h-4" style={{ color: themeColors.priceColor }} />
+                          : <span className="w-4 h-4 rounded-full border-2 border-gray-300 inline-block" />}
+                        {t('روشتة')} {r.reference_code || `#${r.id.slice(0, 8)}`}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(r.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'ar-EG')}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  {t('لا توجد روشتات معتمدة على حسابك حتى الآن — ارفع صورة الروشتة وسيراجعها صيدلي مرخص.')}
+                </p>
+              )}
+              {pendingRxCount > 0 && (
+                <p className="text-xs text-amber-700 bg-amber-100/70 rounded-xl px-3 py-2 leading-relaxed">
+                  {t('عندك {0} روشتة قيد الفحص والمراجعة — هتقدر تستخدمها في الطلبات بعد اعتماد الصيدلي.', [pendingRxCount])}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setRxModalOpen(true)}
+                className="flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-800"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                {t('ارفع روشتة جديدة')}
+              </button>
+            </div>
+          )}
+
           {/* Payment method */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
@@ -1319,6 +1425,7 @@ export function OrderModal() {
           </p>
         </form>
       </div>
+      <PrescriptionUploadModal open={rxModalOpen} onClose={() => setRxModalOpen(false)} />
     </div>
   );
 }

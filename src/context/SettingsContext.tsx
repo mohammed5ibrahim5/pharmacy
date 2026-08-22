@@ -2,6 +2,10 @@ import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactN
 import { supabase } from '@/lib/supabase';
 import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig, StoreConfig, HowItWorksConfig, HomepageConfig } from '@/types';
 import type { PaymentConfig } from '@/lib/orders';
+import { DEFAULT_VERIFICATION_CONFIG, type VerificationConfig } from '@/lib/prescriptions';
+
+export { DEFAULT_VERIFICATION_CONFIG };
+export type { VerificationConfig };
 
 export interface ThemeColors {
   headerBg: string;
@@ -432,6 +436,7 @@ interface SettingsContextType {
   loyaltyConfig: LoyaltyConfig;
   featuresConfig: FeaturesConfig;
   welcomeConfig: WelcomePopupConfig;
+  verificationConfig: VerificationConfig;
   darkMode: boolean;
   toggleDarkMode: () => void;
   loading: boolean;
@@ -491,6 +496,7 @@ interface SettingsCache {
   loyaltyConfig: LoyaltyConfig;
   featuresConfig: FeaturesConfig;
   welcomeConfig: WelcomePopupConfig;
+  verificationConfig: VerificationConfig;
 }
 
 function loadSettingsCache(): SettingsCache | null {
@@ -528,6 +534,7 @@ const SettingsContext = createContext<SettingsContextType>({
   loyaltyConfig: DEFAULT_LOYALTY_CONFIG,
   featuresConfig: DEFAULT_FEATURES_CONFIG,
   welcomeConfig: DEFAULT_WELCOME_POPUP_CONFIG,
+  verificationConfig: DEFAULT_VERIFICATION_CONFIG,
   darkMode: false,
   toggleDarkMode: () => {},
   loading: true,
@@ -569,6 +576,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [welcomeConfig, setWelcomeConfig] = useState<WelcomePopupConfig>(
     settingsCache ? { ...DEFAULT_WELCOME_POPUP_CONFIG, ...settingsCache.welcomeConfig } : DEFAULT_WELCOME_POPUP_CONFIG,
   );
+  const [verificationConfig, setVerificationConfig] = useState<VerificationConfig>(
+    settingsCache ? { ...DEFAULT_VERIFICATION_CONFIG, ...settingsCache.verificationConfig } : DEFAULT_VERIFICATION_CONFIG,
+  );
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     try {
       return localStorage.getItem('pharmacy-dark-mode') === '1';
@@ -601,6 +611,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     let loyalty = { ...DEFAULT_LOYALTY_CONFIG };
     let features = { ...DEFAULT_FEATURES_CONFIG };
     let welcome = { ...DEFAULT_WELCOME_POPUP_CONFIG };
+    let verification = { ...DEFAULT_VERIFICATION_CONFIG };
     if (siteSettings.features_json) {
       try {
         const parsed = JSON.parse(siteSettings.features_json);
@@ -657,6 +668,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (parsed && parsed.welcomeConfig) {
           welcome = { ...DEFAULT_WELCOME_POPUP_CONFIG, ...parsed.welcomeConfig };
         }
+        if (parsed && parsed.verificationConfig) {
+          verification = { ...DEFAULT_VERIFICATION_CONFIG, ...parsed.verificationConfig };
+        }
       } catch (e) {
         console.error('Error parsing features_json for themeColors:', e);
       }
@@ -678,6 +692,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setLoyaltyConfig(loyalty);
     setFeaturesConfig(features);
     setWelcomeConfig(welcome);
+    setVerificationConfig(verification);
     setLoading(false);
 
     saveSettingsCache({
@@ -693,6 +708,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       loyaltyConfig: loyalty,
       featuresConfig: features,
       welcomeConfig: welcome,
+      verificationConfig: verification,
     });
   };
 
@@ -751,6 +767,7 @@ return (
         loyaltyConfig,
         featuresConfig,
         welcomeConfig,
+        verificationConfig,
         darkMode,
         toggleDarkMode: () => setDarkMode((v) => !v),
         loading,

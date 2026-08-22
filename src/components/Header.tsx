@@ -327,19 +327,7 @@ export function Header() {
         }}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          {headerConfig.showLocationBar && storeConfig.purchasesEnabled && (
-            <button
-              onClick={() => setLocationModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/20 hover:bg-black/35 transition-all border border-white/10 shadow-inner group"
-              style={{ color: headerConfig.topBarTextColor }}
-            >
-              <MapPin className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} />
-              <span>{t('التوصيل إلى:')} <strong className="text-white font-bold">{t(displayLocation)}</strong></span>
-              <ChevronDown className="w-3 h-3 opacity-60" />
-            </button>
-          )}
-
-          <div className={`flex items-center gap-4 font-semibold ${headerConfig.showLocationBar ? '' : 'ms-auto'}`}>
+          <div className="flex items-center gap-4 font-semibold ms-auto">
             {headerConfig.showServiceBar && (
               <span className="flex items-center gap-1.5 font-bold" style={{ color: themeColors.accentColor }}>
                 <Zap className="w-3.5 h-3.5 animate-pulse" />

@@ -56,10 +56,10 @@ import { buildWhatsAppLink } from '@/lib/whatsapp';
 import {
   PRESCRIPTION_STATUS_META,
   type Prescription,
-  uploadPrescriptionImage,
-  insertPrescription,
+  submitPrescriptionVerification,
   deletePrescription,
 } from '@/lib/prescriptions';
+import { dataUrlToBlob } from '@/lib/invoice';
 import {
   fetchLoyaltyBalance,
   fetchLoyaltyHistory,
@@ -748,17 +748,17 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
     }
     setRxUploading(true);
     try {
-      const imageUrl = await uploadPrescriptionImage(rxImage, user?.id);
-      await insertPrescription({
-        customerId: user?.id || null,
-        imageUrl,
+      await submitPrescriptionVerification({
+        file: dataUrlToBlob(rxImage),
+        customerId: user?.id || '',
+        patientName: profile?.full_name || 'عميل',
         phone: rxPhone.trim(),
         notes: rxNotes.trim(),
       });
       await fetchPrescriptions();
       setRxImage(null);
       setRxNotes('');
-      showToast(t('تم حفظ وإرسال الروشتة للصيدلية بنجاح'));
+      showToast(t('تم إرسال الروشتة بنجاح — جاري الفحص الآلي ثم مراجعة صيدلي مرخص'));
       if (settings.contact_whatsapp) {
         const text = t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [rxPhone, rxNotes || t('لا يوجد')]);
         window.open(buildWhatsAppLink(settings.contact_whatsapp, text), '_blank');
