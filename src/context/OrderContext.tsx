@@ -12,7 +12,7 @@ export interface CartItem {
   quantity: number;
 }
 
-export type CartStep = 'cart' | 'checkout';
+export type CartStep = 'cart' | 'rx' | 'checkout';
 
 interface OrderContextType {
   cart: CartItem[];

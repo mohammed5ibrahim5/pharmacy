@@ -3,7 +3,7 @@ import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
   Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark,
   Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2, Download, FileText, ZoomIn,
-  Users, Gift, Banknote, BadgeCheck, CreditCard, ExternalLink, RefreshCw,
+  Users, Gift, Banknote, BadgeCheck, CreditCard, ExternalLink, RefreshCw, ChevronDown,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -247,9 +247,6 @@ export function OrderModal() {
   const totalAfterDiscount = Math.max(0, total - loyaltyDiscount);
 
   const approvedRx = myRxList.filter((r) => r.pipeline_status === 'approved');
-  const pendingRxCount = myRxList.filter(
-    (r) => r.pipeline_status !== 'approved' && !['rejected', 'auto_rejected', 'dispensed', 'cancelled'].includes(r.pipeline_status || '')
-  ).length;
   useEffect(() => {
     if (selectedRxId && !approvedRx.some((r) => r.id === selectedRxId)) setSelectedRxId('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -954,6 +951,10 @@ export function OrderModal() {
                     setAuthModalOpen(true);
                     return;
                   }
+                  if (needsRx && !selectedRxId) {
+                    setCartStep('rx');
+                    return;
+                  }
                   setCartStep('checkout');
                 }}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-black text-[15px] transition-all hover:brightness-105 active:scale-[0.99] shadow-lg"
@@ -999,6 +1000,98 @@ export function OrderModal() {
             </div>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // ============ Prescription gate step ============
+  if (cartStep === 'rx') {
+    return (
+      <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={closeModal}>
+        <div className="rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto p-6 relative space-y-4" style={{ backgroundColor: themeColors.modalBodyBg }} onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => setCartStep('cart')} className="absolute top-4 end-4 w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center" aria-label={t('رجوع')}>
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+
+          <div className="text-center space-y-1.5 pt-2">
+            <div className="w-14 h-14 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mx-auto shadow-inner">
+              <FileText className="w-7 h-7" />
+            </div>
+            <h3 className="font-black text-lg text-gray-900">{t('أول خطوة: روشتة معتمدة')}</h3>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              {t('سلتك تحتوي أدوية لا تُصرف إلا بروشتة معتمدة من صيدلي مرخص. اختر روشتة معتمدة أو ارفع واحدة — وبعد الاعتماد تكمل الدفع.')}
+            </p>
+          </div>
+
+          {approvedRx.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-extrabold text-gray-700">{t('روشتاتك المعتمدة:')}</p>
+              {approvedRx.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setSelectedRxId(selectedRxId === r.id ? '' : r.id)}
+                  className={`w-full flex items-center justify-between rounded-xl border-2 p-3 text-start transition-all ${
+                    selectedRxId === r.id ? 'border-transparent bg-white shadow-md' : 'border-gray-200 bg-white/70 hover:border-gray-300'
+                  }`}
+                  style={selectedRxId === r.id ? { borderColor: themeColors.priceColor } : undefined}
+                >
+                  <span className="flex items-center gap-2 font-bold text-sm text-gray-700">
+                    {selectedRxId === r.id
+                      ? <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: themeColors.priceColor }} />
+                      : <span className="w-5 h-5 rounded-full border-2 border-gray-300 inline-block shrink-0" />}
+                    <span>
+                      {t('روشتة')} {r.reference_code || `#${r.id.slice(0, 8)}`}
+                      <span className="block text-[10px] font-medium text-teal-600">{t('معتمدة من صيدلي ✓')}</span>
+                    </span>
+                  </span>
+                  <span className="text-[11px] text-gray-400">
+                    {new Date(r.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'ar-EG')}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {myRxList.filter((r) => r.pipeline_status !== 'approved' && !['rejected', 'auto_rejected', 'dispensed', 'cancelled'].includes(r.pipeline_status || '')).length > 0 && (
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-[11px] text-amber-800 font-bold leading-relaxed flex items-start gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin mt-0.5 shrink-0" />
+              {t('عندك روشتات قيد الفحص والمراجعة حالياً — هتظهر هنا تلقائياً بعد اعتماد الصيدلي وتقدر تكمل الدفع وقتها.')}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setRxModalOpen(true)}
+            className="w-full py-3 rounded-xl border-2 border-dashed border-teal-300 bg-teal-50/50 text-teal-700 font-extrabold text-sm flex items-center justify-center gap-2 hover:bg-teal-50 transition-colors"
+          >
+            <Camera className="w-4 h-4" />
+            {approvedRx.length > 0 ? t('ارفع روشتة جديدة') : t('ارفع روشتك الآن')}
+          </button>
+
+          <button
+            type="button"
+            disabled={!selectedRxId}
+            onClick={() => setCartStep('checkout')}
+            className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-white font-bold transition-all active:scale-[0.99] ${
+              selectedRxId ? 'shadow-lg hover:brightness-105' : 'opacity-40 cursor-not-allowed'
+            }`}
+            style={{ backgroundColor: themeColors.priceColor }}
+          >
+            <Send className="w-5 h-5" />
+            {selectedRxId ? t('تمام! متابعة إلى الدفع') : t('اختر روشتة معتمدة للمتابعة')}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCartStep('cart')}
+            className="w-full text-xs font-bold text-gray-500 hover:text-gray-700"
+          >
+            {t('← رجوع للسلة')}
+          </button>
+
+          <PrescriptionUploadModal open={rxModalOpen} onClose={() => setRxModalOpen(false)} />
+        </div>
       </div>
     );
   }
@@ -1106,56 +1199,38 @@ export function OrderModal() {
 
           {/* Prescription requirement */}
           {needsRx && (
-            <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 space-y-3">
-              <label className="flex items-center gap-1.5 text-sm font-bold text-amber-800">
-                <FileText className="w-4 h-4" />
-                {t('أدوية هذا الطلب تتطلب روشتة معتمدة')}
-              </label>
-              {approvedRx.length > 0 ? (
-                <div className="space-y-2">
-                  {approvedRx.map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => setSelectedRxId(selectedRxId === r.id ? '' : r.id)}
-                      className={`w-full flex items-center justify-between rounded-xl border p-3 text-start text-sm transition-all ${
-                        selectedRxId === r.id
-                          ? 'border-transparent bg-white shadow-md'
-                          : 'border-gray-200 bg-white/70 hover:border-gray-300'
-                      }`}
-                      style={selectedRxId === r.id ? { borderColor: themeColors.priceColor } : undefined}
-                    >
-                      <span className="flex items-center gap-2 font-bold text-gray-700">
-                        {selectedRxId === r.id
-                          ? <CheckCircle2 className="w-4 h-4" style={{ color: themeColors.priceColor }} />
-                          : <span className="w-4 h-4 rounded-full border-2 border-gray-300 inline-block" />}
-                        {t('روشتة')} {r.reference_code || `#${r.id.slice(0, 8)}`}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {new Date(r.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'ar-EG')}
-                      </span>
-                    </button>
-                  ))}
+            selectedRxId ? (
+              <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-3 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <BadgeCheck className="w-5 h-5 text-teal-600 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-extrabold text-teal-800 truncate">
+                      {t('روشتة معتمدة')} — {approvedRx.find((r) => r.id === selectedRxId)?.reference_code || `#${selectedRxId.slice(0, 8)}`}
+                    </p>
+                    <p className="text-[10px] text-teal-600">{t('مرتبطة بهذا الطلب')}</p>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  {t('لا توجد روشتات معتمدة على حسابك حتى الآن — ارفع صورة الروشتة وسيراجعها صيدلي مرخص.')}
-                </p>
-              )}
-              {pendingRxCount > 0 && (
-                <p className="text-xs text-amber-700 bg-amber-100/70 rounded-xl px-3 py-2 leading-relaxed">
-                  {t('عندك {0} روشتة قيد الفحص والمراجعة — هتقدر تستخدمها في الطلبات بعد اعتماد الصيدلي.', [pendingRxCount])}
-                </p>
-              )}
+                <button
+                  type="button"
+                  onClick={() => setCartStep('rx')}
+                  className="text-[11px] font-extrabold text-teal-700 hover:text-teal-900 shrink-0"
+                >
+                  {t('تغيير')}
+                </button>
+              </div>
+            ) : (
               <button
                 type="button"
-                onClick={() => setRxModalOpen(true)}
-                className="flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-800"
+                onClick={() => setCartStep('rx')}
+                className="w-full rounded-2xl border-2 border-amber-300 bg-amber-50 p-3.5 flex items-center justify-between gap-2 text-start"
               >
-                <Camera className="w-3.5 h-3.5" />
-                {t('ارفع روشتة جديدة')}
+                <span className="flex items-center gap-2 text-xs font-extrabold text-amber-800">
+                  <FileText className="w-4 h-4 shrink-0" />
+                  {t('مطلوب: اختر روشتة معتمدة للأدوية في سلتك')}
+                </span>
+                <ChevronDown className="w-4 h-4 text-amber-600 -rotate-90 shrink-0" />
               </button>
-            </div>
+            )
           )}
 
           {/* Payment method */}
