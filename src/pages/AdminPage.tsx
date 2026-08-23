@@ -66,6 +66,28 @@ export function AdminPage() {
     localStorage.setItem('pharmacy-admin-dark-mode', adminDark ? '1' : '0');
   }, [adminDark]);
 
+  // عداد الروشتات الجديدة المنتظرة للمراجعة (realtime + polling احتياطي)
+  const [newRxCount, setNewRxCount] = useState(0);
+  useEffect(() => {
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from('prescriptions')
+        .select('id', { count: 'exact', head: true })
+        .in('pipeline_status', ['needs_review', 'pending_ocr']);
+      if (typeof count === 'number') setNewRxCount(count);
+    };
+    fetchCount();
+    const timer = setInterval(fetchCount, 15000);
+    const channel = supabase
+      .channel('admin-rx-alerts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prescriptions' }, () => { void fetchCount(); })
+      .subscribe();
+    return () => {
+      clearInterval(timer);
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
   const navItems: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'الرئيسية', icon: <LayoutDashboard className="w-5 h-5" /> },
     { id: 'orders', label: 'طلبات العملاء', icon: <ShoppingCart className="w-5 h-5" /> },
@@ -137,6 +159,11 @@ export function AdminPage() {
               >
                 {item.icon}
                 {item.label}
+                {item.id === 'prescriptions' && newRxCount > 0 && (
+                  <span className="ms-auto min-w-[1.4rem] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-extrabold flex items-center justify-center animate-pulse shadow-lg shadow-rose-500/40">
+                    {newRxCount > 99 ? '+99' : newRxCount}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
