@@ -180,7 +180,7 @@ export function AdminPage() {
                     item.id === 'orders' ? newOrdersCount : 0;
                   if (badgeCount <= 0) return null;
                   return (
-                    <span className="ms-auto min-w-[1.4rem] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-extrabold flex items-center justify-center animate-pulse shadow-lg shadow-rose-500/40">
+                    <span className="ms-auto min-w-[1.35rem] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[11px] font-extrabold flex items-center justify-center shadow-sm ring-2 ring-emerald-500/20">
                       {badgeCount > 99 ? '+99' : badgeCount}
                     </span>
                   );
