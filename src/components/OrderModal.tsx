@@ -759,6 +759,12 @@ export function OrderModal() {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-[13px] font-bold text-gray-900 truncate">{lang === 'en' ? (entry.product.name_en || entry.product.name) : entry.product.name}</p>
+                            {entry.product.requires_prescription && (
+                              <span className="inline-flex items-center gap-1 mt-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 border border-amber-200">
+                                <FileText className="w-2.5 h-2.5" />
+                                {t('محتاج رفع روشتة')}
+                              </span>
+                            )}
                             <p className="text-[11px] text-gray-500 truncate mt-0.5">{t(entry.product.unit) || t('قطعة')} · {t('{0} ج.م', [price.toFixed(2)])}</p>
                             <p className="text-sm font-extrabold mt-1" style={{ color: themeColors.priceColor }}>
                               {(price * entry.quantity).toFixed(2)} <span className="text-[10px] text-gray-400 font-medium">{t('ج.م')}</span>

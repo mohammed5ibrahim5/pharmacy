@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, LayoutGrid, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
@@ -68,6 +68,19 @@ export function AllCategoriesPage() {
               {t('تصفح جميع الأقسام الطبية في مكان واحد واختر ما يناسبك')}
             </p>
           </div>
+          <button
+            onClick={() => navigate({ name: 'search', query: '' })}
+            className="ms-auto hidden sm:flex w-11 h-11 rounded-full border items-center justify-center transition-all duration-200 hover:-translate-y-0.5 active:scale-90"
+            style={{
+              backgroundColor: themeColors.cardBg,
+              color: themeColors.headerText,
+              borderColor: `${themeColors.headerText}14`,
+            }}
+            title={t('ابحث عن دواء')}
+            aria-label={t('ابحث عن دواء')}
+          >
+            <Search className="w-[19px] h-[19px]" strokeWidth={2.25} />
+          </button>
         </div>
       </div>
 

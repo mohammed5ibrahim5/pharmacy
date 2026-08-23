@@ -13,6 +13,7 @@ import {
   Pill,
   Zap,
   Flame,
+  LayoutGrid,
   ArrowUpLeft,
   ShoppingCart,
   Moon,
@@ -317,7 +318,7 @@ export function Header() {
       <div className="sticky top-0 z-50">
       {/* 2. MAIN HEADER BAR */}
       <header
-        className="border-b shadow-sm transition-all duration-300 backdrop-blur-xl"
+        className="relative z-40 border-b shadow-sm transition-all duration-300 backdrop-blur-xl"
         style={{
           backgroundColor: `${themeColors.headerBg}f2`,
           color: themeColors.headerText,
@@ -540,46 +541,35 @@ export function Header() {
 
             {/* RIGHT HEADER ACTIONS */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {settings.contact_whatsapp && headerConfig.showWhatsAppButton && (
-                <a
-                  href={buildWhatsAppLink(settings.contact_whatsapp, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-extrabold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:scale-95"
-                  style={{ backgroundColor: themeColors.whatsappBtnBg, boxShadow: `0 4px 14px -2px ${themeColors.whatsappBtnBg}88` }}
-                >
-                  <Send className="w-4 h-4" />
-                  {t('واتساب')}
-                </a>
-              )}
-
               {headerConfig.showBarcode && (
                 <button
                   onClick={() => setBarcodeModalOpen(true)}
-                  className="sm:hidden w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90"
+                  className="sm:hidden w-9 h-9 rounded-full border flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5 active:scale-90"
                   style={{
                     backgroundColor: `${themeColors.headerText}08`,
-                    color: themeColors.headerText
+                    color: themeColors.headerText,
+                    borderColor: `${themeColors.headerText}14`
                   }}
                   title={t('مسح باركود')}
                 >
-                  <Barcode className="w-[18px] h-[18px]" />
+                  <Barcode className="w-[19px] h-[19px]" strokeWidth={2.25} />
                 </button>
               )}
 
               {headerConfig.showVoiceSearch && (
                 <button
                   onClick={handleVoiceSearch}
-                  className={`md:hidden w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 ${
+                  className={`md:hidden w-9 h-9 rounded-full border flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5 active:scale-90 ${
                     isListening ? 'text-red-500 animate-bounce' : ''
                   }`}
                   style={{
                     backgroundColor: isListening ? '#ef44441a' : `${themeColors.headerText}08`,
-                    color: isListening ? '#ef4444' : themeColors.headerText
+                    color: isListening ? '#ef4444' : themeColors.headerText,
+                    borderColor: isListening ? '#ef44444d' : `${themeColors.headerText}14`
                   }}
                   title={t('بحث بالصوت')}
                 >
-                  <Mic className="w-[18px] h-[18px]" />
+                  <Mic className="w-[19px] h-[19px]" strokeWidth={2.25} />
                 </button>
               )}
 
@@ -591,41 +581,35 @@ export function Header() {
                   backgroundColor: `${themeColors.headerText}08`,
                   color: themeColors.headerText,
                   borderColor: `${themeColors.headerText}14`
-                }}
-                title={darkMode ? t('الوضع الفاتح') : t('الوضع الليلي')}
+                }}                title={darkMode ? t('الوضع الفاتح') : t('الوضع الليلي')}
                 aria-label={darkMode ? t('الوضع الفاتح') : t('الوضع الليلي')}
               >
-                <Sun className={`w-[18px] h-[18px] transition-all duration-300 ${darkMode ? 'rotate-0 scale-100' : '-rotate-90 scale-0'}`} />
-                <Moon className={`absolute inset-0 m-auto w-[18px] h-[18px] transition-all duration-300 ${darkMode ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
+                <Sun className={`w-[19px] h-[19px] transition-all duration-300 ${darkMode ? 'rotate-0 scale-100' : '-rotate-90 scale-0'}`} strokeWidth={2.25} />
+                <Moon className={`absolute inset-0 m-auto w-[19px] h-[19px] transition-all duration-300 ${darkMode ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} strokeWidth={2.25} />
               </button>
 
               <NotificationsBell />
 
               <button
                 onClick={() => openCart('cart')}
-                className={`relative flex items-center rounded-full text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:scale-95 ${cartBump ? 'animate-cart-bump' : ''} w-10 h-10 justify-center sm:w-auto sm:h-11 sm:justify-start sm:gap-2 sm:ps-3.5 sm:pe-4`}
+                className={`relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5 active:scale-90 ${cartBump ? 'animate-cart-bump' : ''}`}
                 style={{
-                  background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor || themeColors.primaryColor})`,
-                  boxShadow: `0 6px 18px -5px ${themeColors.primaryColor}75`
+                  backgroundColor: `${themeColors.headerText}08`,
+                  color: themeColors.headerText,
+                  borderColor: `${themeColors.headerText}14`
                 }}
                 title={t('سلة التسوق')}
                 aria-label={t('سلة التسوق')}
               >
-                <span className="relative flex items-center justify-center">
-                  <ShoppingCart className="w-[19px] h-[19px]" strokeWidth={2.25} />
-                  {cartCount > 0 && (
-                    <span
-                      className="absolute -top-2 -left-2 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center ring-2"
-                      style={{
-                        backgroundColor: themeColors.priceColor,
-                        '--tw-ring-color': themeColors.headerBg
-                      } as React.CSSProperties}
-                    >
-                      {cartCount > 99 ? '99+' : cartCount}
-                    </span>
-                  )}
-                </span>
-                <span className="hidden sm:inline text-xs font-black">{t('السلة')}</span>
+                <ShoppingCart className="w-[19px] h-[19px]" strokeWidth={2.25} />
+                {cartCount > 0 && (
+                  <span
+                    className="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full text-white text-[10px] font-black flex items-center justify-center ring-2"
+                    style={{ backgroundColor: themeColors.priceColor, '--tw-ring-color': themeColors.headerBg } as React.CSSProperties}
+                  >
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
               </button>
 
               <UserMenu />
@@ -682,6 +666,14 @@ export function Header() {
                     {t('تصفح حسب الفئة')}
                   </button>
                   <div className="w-px h-5 shrink-0" style={{ backgroundColor: `${themeColors.headerNavText}20` }} />
+                  <button
+                    onClick={() => navigate({ name: 'category', slug: 'all' })}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-white text-[11px] font-black shrink-0 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 shadow-sm"
+                    style={{ background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor || themeColors.primaryColor})` }}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" strokeWidth={2.25} />
+                    {t('الكل')}
+                  </button>
                   {mergeCategories(categories).map((cat) => {
                     const color = categoryColor(cat.slug);
                     const Icon = categoryIcon(cat.slug, cat.icon);

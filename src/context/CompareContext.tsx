@@ -111,6 +111,7 @@ export function CompareProvider({ children }: { children: ReactNode }) {
       setCompareList((prev) =>
         prev.length >= MAX_COMPARE ? [...prev.slice(1), pharmacy] : [...prev, pharmacy]
       );
+      setBarHidden(false);
       notify(
         willReplace
           ? t('الحد الأقصى 4 صيدليات — تم استبدال الأقدم')
@@ -132,7 +133,10 @@ export function CompareProvider({ children }: { children: ReactNode }) {
     setCompareList([]);
     notify(t('تم مسح قائمة المقارنة'));
   }, [notify, t]);
-  const openCompare = useCallback(() => setCompareOpen(true), []);
+  const openCompare = useCallback(() => {
+    setBarHidden(false);
+    setCompareOpen(true);
+  }, []);
   const closeCompare = useCallback(() => setCompareOpen(false), []);
   const hideCompareBar = useCallback(() => setBarHidden(true), []);
   const openPriceCompare = useCallback((product: Product) => setPriceCompareProduct(product), []);

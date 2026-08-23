@@ -2941,7 +2941,25 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
         <Field label="الوصف"><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={inputClass} rows={2} /></Field>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="السعر (ج.م) *"><input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputClass} dir="ltr" type="number" step="0.01" /></Field>
-          <Field label="الوحدة"><input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className={inputClass} placeholder="شريط / علبة" /></Field>
+          <Field label="الوحدة">
+            <input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className={inputClass} placeholder="شريط / علبة" list="unit-suggestions" />
+            <datalist id="unit-suggestions">
+              {UNIT_OPTIONS.map((u) => <option key={u} value={u} />)}
+            </datalist>
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {UNIT_OPTIONS.map((u) => (
+                <button
+                  key={u}
+                  type="button"
+                  onClick={() => setForm({ ...form, unit: u })}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all active:scale-95 ${form.unit === u ? 'text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                  style={form.unit === u ? { backgroundColor: '#0d9488', borderColor: '#0d9488' } : { borderColor: '#e2e8f0' }}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+          </Field>
           <Field label="الفئة"><select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className={inputClass}><option value="">بدون فئة</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
         </div>
         {!lockedPharmacy && (
@@ -5547,6 +5565,8 @@ function SettingsTab() {
 // Shared UI
 // ============================================
 const inputClass = "w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-transparent focus:ring-2 text-sm text-gray-900";
+
+const UNIT_OPTIONS = ['قطعة', 'شريط', 'علبة', 'زجاجة', 'أمبول', 'تيوب', 'كيس', 'قارورة', 'عبوة', 'فيال'];
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><label className="block text-xs font-medium text-gray-600 mb-1.5">{label}</label>{children}</div>;

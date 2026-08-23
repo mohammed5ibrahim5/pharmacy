@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Scale, X, ArrowRight, Store, Trash2 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -8,18 +7,13 @@ export function CompareBar() {
   const { themeColors } = useSettings();
   const { t, lang } = useLanguage();
   const { compareList, removeFromCompare, clearCompare, openCompare, barHidden, hideCompareBar } = useCompare();
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    if (compareList.length === 0) setVisible(true);
-  }, [compareList.length]);
 
   if (compareList.length === 0 || barHidden) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[60] px-3 sm:px-4 pb-3 sm:pb-4 pointer-events-none">
       <div
-        className={`pointer-events-auto max-w-3xl mx-auto rounded-3xl border shadow-2xl overflow-hidden transition-all duration-300 ${visible ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'}`}
+        className="pointer-events-auto max-w-3xl mx-auto rounded-3xl border shadow-2xl overflow-hidden animate-fade-up"
         style={{
           backgroundColor: themeColors.headerBg,
           borderColor: `${themeColors.priceColor}35`,
@@ -44,7 +38,7 @@ export function CompareBar() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => { setVisible(false); hideCompareBar(); }}
+              onClick={hideCompareBar}
               className="flex items-center gap-1 text-[10px] font-bold text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="w-3 h-3" />

@@ -8,6 +8,8 @@ import { useCustomer } from '@/context/CustomerContext';
 import { useCompare } from '@/context/CompareContext';
 import { addStockAlert, removeStockAlert } from '@/lib/loyalty';
 import { useLanguage } from '@/context/LanguageContext';
+import { QuickViewModal } from '@/components/QuickViewModal';
+import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 
 interface Props {
   product: Product;
@@ -15,9 +17,10 @@ interface Props {
   onClick?: () => void;
   popular?: boolean;
   showCompare?: boolean;
+  showCategory?: boolean;
 }
 
-export function ProductCard({ product, pharmacyName, onClick, popular = false, showCompare = true }: Props) {
+export function ProductCard({ product, pharmacyName, onClick, popular = false, showCompare = true, showCategory = false }: Props) {
   const { t, lang } = useLanguage();
   const { themeColors, featuresConfig } = useSettings();
   const { cart, openOrder, addToCart, updateCartQty } = useOrder();
@@ -29,6 +32,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
   const [justAdded, setJustAdded] = useState(false);
   const [heartPop, setHeartPop] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [quickViewOpen, setQuickViewOpen] = useState(false);
   
   const addTimer = useRef<number | null>(null);
   const heartTimer = useRef<number | null>(null);
@@ -109,7 +113,14 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
 
           {/* Quick View Overlay (Hover) */}
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 flex flex-col items-center justify-center gap-2">
-            <button className="flex items-center gap-1.5 bg-white text-slate-900 px-4 py-2 rounded-full font-bold text-xs shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 hover:bg-slate-50 active:scale-95">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setQuickViewOpen(true);
+              }}
+              className="flex items-center gap-1.5 bg-white text-slate-900 px-4 py-2 rounded-full font-bold text-xs shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 hover:bg-slate-50 active:scale-95"
+            >
               <Eye className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
               {t('نظرة سريعة')}
             </button>
@@ -302,6 +313,29 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
           </h3>
 
           <div className="flex flex-wrap gap-1.5">
+            {showCategory && product.category && (() => {
+              const catSlug = product.category!.slug;
+              const catColor = categoryColor(catSlug);
+              const CatIcon = categoryIcon(catSlug, product.category!.icon);
+              const catLabel = lang === 'en'
+                ? (product.category!.name_en || t(product.category!.name))
+                : t(product.category!.name);
+              return (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full max-w-full"
+                  style={{
+                    color: catColor,
+                    backgroundColor: `${catColor}12`,
+                    border: `1px solid ${catColor}25`,
+                  }}
+                  title={t('الفئة: {0}', [catLabel])}
+                >
+                  <CatIcon className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{catLabel}</span>
+                </span>
+              );
+            })()}
+
             {product.is_available && (
               <span
                 className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full"
@@ -394,6 +428,12 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
           </button>
         )}
       </div>
+
+      <QuickViewModal
+        product={quickViewOpen ? product : null}
+        pharmacyName={pharmacyName}
+        onClose={() => setQuickViewOpen(false)}
+      />
     </div>
   );
 }

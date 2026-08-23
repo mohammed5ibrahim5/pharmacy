@@ -199,7 +199,19 @@ export function UserMenu() {
   };
 
   if (loading) {
-    return <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />;
+    return (
+      <div
+        className="flex items-center gap-1.5 p-1 pe-1.5 rounded-full border border-gray-200/80 bg-white/90 shadow-sm"
+        aria-hidden="true"
+      >
+        <span className="w-8 h-8 rounded-full bg-gray-200/80 shrink-0" />
+        <span className="hidden sm:block space-y-1">
+          <span className="block w-[84px] h-2.5 rounded bg-gray-200/80" />
+          <span className="block w-[56px] h-2 rounded bg-gray-100" />
+        </span>
+        <ChevronDown className="w-3.5 h-3.5 text-gray-200" />
+      </div>
+    );
   }
 
   // Not logged in: show professional login button with glowing border effect
@@ -231,32 +243,35 @@ export function UserMenu() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 p-1.5 ps-3 pe-2 rounded-2xl border border-gray-200/80 bg-white/90 hover:bg-white hover:border-teal-300 transition-all shadow-sm group"
+        className="flex items-center gap-1.5 p-1 pe-1.5 rounded-full border border-gray-200/80 bg-white/90 hover:bg-white hover:border-teal-300 transition-all shadow-sm group"
       >
-        {profile?.avatar_url ? (
-          <img
-            src={profile.avatar_url}
-            alt={profile.full_name || t('صورة')}
-            className="w-9 h-9 rounded-xl object-cover border border-teal-200"
-          />
-        ) : (
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-inner"
-            style={{ backgroundColor: themeColors.priceColor }}
-          >
-            {initial}
-          </div>
-        )}
+        <span className="relative shrink-0">
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt={profile.full_name || t('صورة')}
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
+            />
+          ) : (
+            <span
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[13px] font-black shadow-sm"
+              style={{ background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor || themeColors.primaryColor})` }}
+            >
+              {initial}
+            </span>
+          )}
+          <span className="absolute -bottom-0.5 -end-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+        </span>
         <div className="hidden sm:block text-start leading-tight">
           <div className="flex items-center gap-1">
-            <span className="text-xs font-extrabold text-gray-900 max-w-[90px] truncate">
+            <span className="text-[11px] font-extrabold text-gray-900 max-w-[84px] truncate">
               {profile?.full_name || t('عميل متميز')}
             </span>
             <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400" />
           </div>
-          <p className="text-[10px] text-teal-600 font-medium">{t('حسابي والخدمات')}</p>
+          <p className="text-[9px] font-semibold" style={{ color: themeColors.primaryColor }}>{t('حسابي والخدمات')}</p>
         </div>
-        <ChevronDown className={`w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (

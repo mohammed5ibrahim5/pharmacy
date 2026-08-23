@@ -92,15 +92,15 @@ export function NotificationsBell() {
           if (!open) load();
           setOpen(!open);
         }}
-        className="relative p-2.5 rounded-2xl border transition-colors"
+        className="relative w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5 active:scale-90"
         style={{
           backgroundColor: `${themeColors.headerText}08`,
           color: themeColors.headerText,
-          borderColor: `${themeColors.headerText}15`,
+          borderColor: `${themeColors.headerText}14`,
         }}
         aria-label={t('الإشعارات')}
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-[19px] h-[19px]" strokeWidth={2.25} />
         {unread > 0 && (
           <span className="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-white">
             {unread > 9 ? '9+' : unread}

@@ -13,6 +13,14 @@
     direction: rtl;
     scroll-behavior: smooth;
   }
+  /* منع تمدد الصفحة أفقيًا نهائيًا (clip يحافظ على sticky) */
+  html, body {
+    overflow-x: clip;
+    max-width: 100%;
+  }
+  @supports not (overflow: clip) {
+    html, body { overflow-x: hidden; }
+  }
   body {
     font-family: 'Cairo', 'Tajawal', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;

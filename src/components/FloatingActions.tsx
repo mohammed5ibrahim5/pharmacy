@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Send } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCompare } from '@/context/CompareContext';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
 
 export function FloatingActions() {
-  const { themeColors } = useSettings();
+  const { themeColors, settings } = useSettings();
   const { t } = useLanguage();
   const { compareList, barHidden } = useCompare();
   const [showTop, setShowTop] = useState(false);
@@ -20,6 +21,22 @@ export function FloatingActions() {
 
   return (
     <div className={`fixed start-5 z-50 flex flex-col items-center gap-3 transition-all duration-300 ${compareBarVisible ? 'bottom-56' : 'bottom-24'} lg:bottom-5`}>
+      {settings.contact_whatsapp && (
+        <a
+          href={buildWhatsAppLink(settings.contact_whatsapp, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden lg:flex w-11 h-11 rounded-2xl items-center justify-center text-white shadow-lg transition-all hover:scale-110 active:scale-95 animate-fade-up"
+          style={{
+            backgroundColor: themeColors.whatsappBtnBg || '#25D366',
+            boxShadow: `0 10px 22px -8px ${themeColors.whatsappBtnBg || '#25D366'}aa`,
+          }}
+          title={t('تواصل معنا واتساب')}
+          aria-label={t('تواصل معنا واتساب')}
+        >
+          <Send className="w-5 h-5" strokeWidth={2.25} />
+        </a>
+      )}
       {showTop && (
         <button
           type="button"
