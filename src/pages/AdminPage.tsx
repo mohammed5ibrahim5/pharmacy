@@ -68,23 +68,38 @@ export function AdminPage() {
 
   // عداد الروشتات الجديدة المنتظرة للمراجعة (realtime + polling احتياطي)
   const [newRxCount, setNewRxCount] = useState(0);
+  // عداد الطلبات الجديدة (قيد المراجعة)
+  const [newOrdersCount, setNewOrdersCount] = useState(0);
   useEffect(() => {
-    const fetchCount = async () => {
+    const fetchRxCount = async () => {
       const { count } = await supabase
         .from('prescriptions')
         .select('id', { count: 'exact', head: true })
         .in('pipeline_status', ['needs_review', 'pending_ocr']);
       if (typeof count === 'number') setNewRxCount(count);
     };
-    fetchCount();
-    const timer = setInterval(fetchCount, 15000);
+    const fetchOrdersCount = async () => {
+      const { count } = await supabase
+        .from('order_groups')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      if (typeof count === 'number') setNewOrdersCount(count);
+    };
+    fetchRxCount();
+    fetchOrdersCount();
+    const timer = setInterval(() => { void fetchRxCount(); void fetchOrdersCount(); }, 15000);
     const channel = supabase
       .channel('admin-rx-alerts')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'prescriptions' }, () => { void fetchCount(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prescriptions' }, () => { void fetchRxCount(); })
+      .subscribe();
+    const ordersChannel = supabase
+      .channel('admin-orders-alerts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_groups' }, () => { void fetchOrdersCount(); })
       .subscribe();
     return () => {
       clearInterval(timer);
       void supabase.removeChannel(channel);
+      void supabase.removeChannel(ordersChannel);
     };
   }, []);
 
@@ -159,11 +174,17 @@ export function AdminPage() {
               >
                 {item.icon}
                 {item.label}
-                {item.id === 'prescriptions' && newRxCount > 0 && (
-                  <span className="ms-auto min-w-[1.4rem] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-extrabold flex items-center justify-center animate-pulse shadow-lg shadow-rose-500/40">
-                    {newRxCount > 99 ? '+99' : newRxCount}
-                  </span>
-                )}
+                {(() => {
+                  const badgeCount =
+                    item.id === 'prescriptions' ? newRxCount :
+                    item.id === 'orders' ? newOrdersCount : 0;
+                  if (badgeCount <= 0) return null;
+                  return (
+                    <span className="ms-auto min-w-[1.4rem] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-extrabold flex items-center justify-center animate-pulse shadow-lg shadow-rose-500/40">
+                      {badgeCount > 99 ? '+99' : badgeCount}
+                    </span>
+                  );
+                })()}
               </button>
             ))}
           </nav>
