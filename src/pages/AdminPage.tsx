@@ -8,7 +8,7 @@ import {
   Menu, ShoppingCart, User, Mail,
   ChevronDown, ShieldCheck, Sparkles, FileText,
   Send, Loader2, Wallet, Info, Zap, Ticket, Copy, Inbox, Ban, Navigation, ExternalLink, BellRing, Bell, Pill, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog, BadgePercent, Baby, ChevronUp, MessageSquareQuote, Scale,
-  TriangleAlert, BadgeCheck, ClipboardList, CircleAlert, Fingerprint, Stethoscope, CreditCard
+  TriangleAlert, BadgeCheck, ClipboardList, CircleAlert, Fingerprint, Stethoscope, CreditCard, Banknote
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG, DEFAULT_STORE_CONFIG, DEFAULT_HOMEPAGE_CONFIG, DEFAULT_LOYALTY_CONFIG, DEFAULT_FEATURES_CONFIG, type ThemeColors, type LoyaltyConfig, type FeaturesConfig, type WelcomePopupConfig } from '@/context/SettingsContext';
@@ -18,6 +18,8 @@ import { buildWhatsAppLink } from '@/lib/whatsapp';
 import {
   ORDER_STATUSES,
   ORDER_STATUS_META,
+  PAYMENT_METHOD_LABEL,
+  type PaymentMethod,
 } from '@/lib/orders';
 import {
   PHARMACY_SECTION_KEYS,
@@ -269,6 +271,16 @@ function PrescriptionsTab() {
 
   const selected = list.find((r) => r.id === selectedId) || null;
 
+  interface LinkedOrderInfo {
+    id: string;
+    status: string | null;
+    payment_status: string | null;
+    payment_method: string | null;
+    total_price: number | null;
+    created_at: string;
+  }
+  const [linkedOrder, setLinkedOrder] = useState<LinkedOrderInfo | null | undefined>(undefined);
+
   const openDetail = async (rx: Prescription) => {
     setSelectedId(rx.id);
     setShowRejectBox(false);
@@ -277,11 +289,22 @@ function PrescriptionsTab() {
     setNid('');
     setDeliveredBy('');
     setNidError(null);
+    setLinkedOrder(undefined);
     try {
       const log = await fetchAuditLog(rx.id);
       setAuditLog(log as typeof auditLog);
     } catch {
       setAuditLog([]);
+    }
+    if (rx.order_group_id) {
+      const { data } = await supabase
+        .from('order_groups')
+        .select('id, status, payment_status, payment_method, total_price, created_at')
+        .eq('id', rx.order_group_id)
+        .maybeSingle();
+      setLinkedOrder((data as LinkedOrderInfo | null) ?? null);
+    } else {
+      setLinkedOrder(null);
     }
   };
 
@@ -810,6 +833,38 @@ function PrescriptionsTab() {
                           <CreditCard className="w-3.5 h-3.5 text-teal-600" />
                           الخطوة 8: تسجيل الصرف — تحقق من بطاقة الرقم القومي للمستلم وسجل رقمها:
                         </p>
+                        {linkedOrder === null && (
+                          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 flex items-center gap-1.5">
+                            <CircleAlert className="w-3.5 h-3.5 shrink-0" />
+                            العميل لم يُنشئ طلباً بهذه الروشتة بعد — لا تُصرف قبل إتمام الشراء
+                          </div>
+                        )}
+                        {linkedOrder && (() => {
+                          const paid = linkedOrder.payment_status === 'paid';
+                          const isCOD = linkedOrder.payment_method === 'cash_on_delivery';
+                          const stMeta = ORDER_STATUS_META[(linkedOrder.status || 'pending') as keyof typeof ORDER_STATUS_META];
+                          return (
+                            <div className={`rounded-xl border px-3 py-2 text-[11px] font-bold space-y-1 ${paid ? 'border-teal-200 bg-teal-50 text-teal-800' : isCOD ? 'border-blue-200 bg-blue-50 text-blue-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                {paid ? (
+                                  <span className="flex items-center gap-1"><BadgeCheck className="w-3.5 h-3.5" /> مدفوع إلكترونياً ✓</span>
+                                ) : isCOD ? (
+                                  <span className="flex items-center gap-1"><Banknote className="w-3.5 h-3.5" /> الدفع عند الاستلام — استلم المبلغ مع التسليم</span>
+                                ) : (
+                                  <span className="flex items-center gap-1"><CircleAlert className="w-3.5 h-3.5" /> بانتظار تأكيد الدفع ({PAYMENT_METHOD_LABEL[(linkedOrder.payment_method || 'online') as PaymentMethod] || '—'})</span>
+                                )}
+                                <span className="opacity-60">•</span>
+                                <span>{stMeta?.label || linkedOrder.status}</span>
+                                {linkedOrder.total_price != null && (
+                                  <>
+                                    <span className="opacity-60">•</span>
+                                    <span dir="ltr">{linkedOrder.total_price.toFixed(2)} EGP</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
                         <div className="grid sm:grid-cols-3 gap-2">
                           <input
                             value={nid}
