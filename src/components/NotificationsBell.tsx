@@ -109,7 +109,7 @@ export function NotificationsBell() {
       </button>
 
       {open && (
-        <div className="absolute start-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
+        <div className="absolute end-0 top-full mt-2 w-[min(20rem,calc(100vw-1.5rem))] bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/70">
             <h4 className="text-xs font-black text-gray-900 flex items-center gap-1.5">
               <Bell className="w-4 h-4" style={{ color: themeColors.primaryColor }} />

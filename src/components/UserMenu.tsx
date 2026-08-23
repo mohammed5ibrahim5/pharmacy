@@ -16,7 +16,8 @@ import {
   Heart,
   Sparkles,
   ShieldCheck,
-  Link2
+  Link2,
+  Languages
 } from 'lucide-react';
 import { useCustomer } from '@/context/CustomerContext';
 import { useSettings } from '@/context/SettingsContext';
@@ -32,7 +33,7 @@ export function UserMenu() {
   const { themeColors } = useSettings();
   const { navigate } = useRouter();
   const { favoriteCount } = useFavorites();
-  const { t, lang } = useLanguage();
+  const { t, lang, toggleLang } = useLanguage();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -259,7 +260,7 @@ export function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute start-0 top-full mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
+        <div className="absolute end-0 top-full mt-2 w-[min(20rem,calc(100vw-1.5rem))] bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
           {/* Profile header card */}
           <div
             className="p-4 text-white relative overflow-hidden"
@@ -378,19 +379,22 @@ export function UserMenu() {
             </div>
 
             {/* Account Quick Features Menu */}
-            <div className="border-t border-gray-100 pt-2 space-y-0.5">
+            <div className="border-t border-gray-100 pt-2 space-y-1">
               <button
                 onClick={() => {
                   setOpen(false);
                   navigate({ name: 'account', tab: 'orders' });
                 }}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-teal-50/60 text-gray-800 transition-colors font-medium"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-teal-50/60 text-gray-800 transition-colors font-medium group"
               >
-                <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-lg bg-teal-100/80 flex items-center justify-center shrink-0">
                   <PackageCheck className="w-4 h-4 text-teal-600" />
-                  <span>{t('طلباتي ومتابعة الشحنات')}</span>
-                </div>
-                <span className="bg-teal-100 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-full">{t('{0} نشطة', [activeOrders])}</span>
+                </span>
+                <span className="text-xs font-bold">{t('طلباتي ومتابعة الشحنات')}</span>
+                <span className="bg-teal-100 text-teal-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap">
+                  {activeOrders > 0 ? t('{0} نشطة', [activeOrders]) : t('لا يوجد')}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-25 ms-auto shrink-0 -rotate-90 group-hover:opacity-60 transition-opacity" />
               </button>
 
               <button
@@ -398,13 +402,16 @@ export function UserMenu() {
                   setOpen(false);
                   navigate({ name: 'account', tab: 'prescriptions' });
                 }}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-teal-50/60 text-gray-800 transition-colors font-medium"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-blue-50/60 text-gray-800 transition-colors font-medium group"
               >
-                <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-lg bg-blue-100/80 flex items-center justify-center shrink-0">
                   <FileText className="w-4 h-4 text-blue-600" />
-                  <span>{t('الروشتات المحفوظة')}</span>
-                </div>
-                <span className="text-gray-400 text-[10px]">{prescriptionsCount > 0 ? t('{0} محفوظة', [prescriptionsCount]) : t('إضافة')}</span>
+                </span>
+                <span className="text-xs font-bold">{t('الروشتات المحفوظة')}</span>
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap ${prescriptionsCount > 0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-500'}`}>
+                  {prescriptionsCount > 0 ? t('{0} محفوظة', [prescriptionsCount]) : t('إضافة +')}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-25 ms-auto shrink-0 -rotate-90 group-hover:opacity-60 transition-opacity" />
               </button>
 
               <button
@@ -412,13 +419,16 @@ export function UserMenu() {
                   setOpen(false);
                   navigate({ name: 'account', tab: 'addresses' });
                 }}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-teal-50/60 text-gray-800 transition-colors font-medium"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-rose-50/60 text-gray-800 transition-colors font-medium group"
               >
-                <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-lg bg-rose-100/80 flex items-center justify-center shrink-0">
                   <MapPin className="w-4 h-4 text-rose-500" />
-                  <span>{t('العناوين المسجلة')}</span>
-                </div>
-                <span className="text-gray-400 text-[10px] truncate max-w-[70px]">{savedAddresses[0] || t('إضافة')}</span>
+                </span>
+                <span className="text-xs font-bold">{t('العناوين المسجلة')}</span>
+                <span className="bg-gray-100 text-gray-600 text-[10px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap max-w-[110px] truncate">
+                  {savedAddresses[0] || t('إضافة +')}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-25 ms-auto shrink-0 -rotate-90 group-hover:opacity-60 transition-opacity" />
               </button>
 
               <button
@@ -426,13 +436,31 @@ export function UserMenu() {
                   setOpen(false);
                   navigate({ name: 'account', tab: 'favorites' });
                 }}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-teal-50/60 text-gray-800 transition-colors font-medium"
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-pink-50/60 text-gray-800 transition-colors font-medium group"
               >
-                <div className="flex items-center gap-2.5">
+                <span className="w-8 h-8 rounded-lg bg-pink-100/80 flex items-center justify-center shrink-0">
                   <Heart className="w-4 h-4 text-pink-500" />
-                  <span>{t('المفضلة')}</span>
-                </div>
-                <span className="bg-pink-50 text-pink-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{favoriteCount}</span>
+                </span>
+                <span className="text-xs font-bold">{t('المفضلة')}</span>
+                <span className="bg-pink-100 text-pink-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap">
+                  {favoriteCount > 0 ? favoriteCount : t('فارغة')}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-25 ms-auto shrink-0 -rotate-90 group-hover:opacity-60 transition-opacity" />
+              </button>
+
+              {/* اللغة */}
+              <button
+                onClick={toggleLang}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-indigo-50/60 text-gray-800 transition-colors font-medium group"
+              >
+                <span className="w-8 h-8 rounded-lg bg-indigo-100/80 flex items-center justify-center shrink-0">
+                  <Languages className="w-4 h-4 text-indigo-500" />
+                </span>
+                <span className="text-xs font-bold">{t('اللغة')}</span>
+                <span className="bg-indigo-100 text-indigo-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                  {lang === 'ar' ? 'English' : 'العربية'}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-25 ms-auto shrink-0 -rotate-90 group-hover:opacity-60 transition-opacity" />
               </button>
             </div>
 

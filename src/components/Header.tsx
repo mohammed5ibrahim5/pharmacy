@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Pill,
   Zap,
-  PhoneCall,
   Flame,
   ArrowUpLeft,
   ShoppingCart,
@@ -68,7 +67,7 @@ const TRENDING_LIMIT = 7;
 
 export function Header() {
   const { navigate, route } = useRouter();
-  const { settings, themeColors, headerConfig, storeConfig, darkMode, toggleDarkMode, loading: settingsLoading } = useSettings();
+  const { settings, themeColors, headerConfig, storeConfig, darkMode, toggleDarkMode } = useSettings();
   const { t, p, lang, toggleLang } = useLanguage();
   const { authModalOpen, setAuthModalOpen } = useCustomer();
   const { cartCount, openCart } = useOrder();
@@ -316,50 +315,6 @@ export function Header() {
   return (
     <>
       <div className="sticky top-0 z-50">
-      {/* 1. TOP BAR — لا يُرسم إلا بعد تحميل الإعدادات الحقيقية لمنع الوميض */}
-      {headerConfig.showTopBar && !settingsLoading && (
-      <div
-        className="text-xs py-2 px-4 border-b hidden sm:block transition-all duration-300"
-        style={{
-          backgroundColor: headerConfig.topBarColor,
-          color: headerConfig.topBarTextColor,
-          borderColor: `${headerConfig.topBarTextColor}15`
-        }}
-      >
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 font-semibold ms-auto">
-            {headerConfig.showServiceBar && (
-              <span className="flex items-center gap-1.5 font-bold" style={{ color: themeColors.accentColor }}>
-                <Zap className="w-3.5 h-3.5 animate-pulse" />
-                {p(headerConfig.serviceText, headerConfig.serviceText_en)}
-              </span>
-            )}
-
-            {headerConfig.showPrescriptionBar && (
-              <button
-                onClick={() => setPrescriptionModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-white font-bold transition-all shadow-md active:scale-95 hover:brightness-110"
-                style={{ backgroundColor: headerConfig.prescriptionBarColor }}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                {t('رفع روشتة طبية')}
-              </button>
-            )}
-
-            {settings.contact_phone && headerConfig.showContactPhone && (
-              <a
-                href={`tel:${settings.contact_phone}`}
-                className="flex items-center gap-1 hover:brightness-125 transition-all"
-              >
-                <PhoneCall className="w-3.5 h-3.5" style={{ color: themeColors.primaryColor }} />
-                <span dir="ltr">{settings.contact_phone}</span>
-              </a>
-            )}
-          </div>
-        </div>
-      </div>
-      )}
-
       {/* 2. MAIN HEADER BAR */}
       <header
         className="border-b shadow-sm transition-all duration-300 backdrop-blur-xl"
@@ -370,17 +325,17 @@ export function Header() {
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20 gap-2 sm:gap-6">
+          <div className="flex items-center justify-between gap-2 sm:gap-5 py-2.5 lg:py-3">
             {/* Logo */}
             <button
               onClick={() => navigate({ name: 'home' })}
               className="flex items-center gap-2 sm:gap-3 shrink-0 group text-start min-w-0"
             >
               <div
-                className="relative w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg transition-transform group-hover:scale-105 shrink-0"
+                className="relative w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 rounded-[1.1rem] flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:scale-[1.06] group-hover:-rotate-2 shrink-0"
                 style={{
-                  backgroundColor: themeColors.primaryColor,
-                  boxShadow: `0 8px 24px -4px ${themeColors.primaryColor}66`,
+                  background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor || themeColors.primaryColor})`,
+                  boxShadow: `0 8px 22px -6px ${themeColors.primaryColor}70`,
                 }}
               >
                 {settings.logo_url ? (
@@ -389,29 +344,33 @@ export function Header() {
                   <Cross className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
                 )}
                 <span
-                  className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-2 animate-pulse"
+                  className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full animate-pulse"
                   style={{
                     backgroundColor: themeColors.accentColor,
-                    borderColor: themeColors.headerBg
+                    boxShadow: `0 0 0 2px ${themeColors.headerBg}`,
                   }}
                 />
               </div>
               <div className="min-w-0">
-                <h1 className="text-base sm:text-xl font-black leading-tight truncate" style={{ color: themeColors.headerText }}>
+                <h1 className="text-base sm:text-lg lg:text-xl font-black leading-tight truncate tracking-tight" style={{ color: themeColors.headerText }}>
                   {p(settings.site_name, settings.site_name_en)}
                 </h1>
-                <p className="text-[10px] sm:text-xs font-bold hidden sm:block opacity-80" style={{ color: themeColors.primaryColor }}>
+                <p className="text-[9px] sm:text-[11px] font-extrabold hidden sm:block tracking-widest uppercase opacity-70" style={{ color: themeColors.primaryColor }}>
                   {p(settings.site_tagline, settings.site_tagline_en)}
                 </p>
               </div>
             </button>
 
             {/* SEARCH HUB - Desktop */}
-            <div className="hidden md:flex flex-1 max-w-2xl relative" ref={searchRef}>
+            <div className="hidden md:flex flex-1 max-w-2xl flex-col relative" ref={searchRef}>
               <form onSubmit={handleSearchSubmit} className="w-full relative group">
                 <div
-                  className="relative flex items-center rounded-full border p-1 transition-all shadow-inner"
-                  style={{ backgroundColor: themeColors.headerSearchBg, borderColor: `${themeColors.headerText}22` }}
+                  className="relative flex items-center h-11 lg:h-12 rounded-full border backdrop-blur-md transition-all duration-300 focus-within:shadow-lg focus-within:border-opacity-40"
+                  style={{
+                    backgroundColor: themeColors.headerSearchBg,
+                    borderColor: `${themeColors.headerText}1f`,
+                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)'
+                  }}
                 >
                   <input
                     type="text"
@@ -419,34 +378,39 @@ export function Header() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
                     placeholder={t('ابحث باسم الدواء، المادة الفعالة، أو امسح الباركود...')}
-                    className="w-full pr-11 pl-36 py-2.5 bg-transparent text-xs sm:text-sm font-bold placeholder:font-medium focus:outline-none text-ellipsis"
+                    className="w-full pr-12 pl-28 py-2.5 bg-transparent text-xs sm:text-sm font-bold placeholder:font-medium focus:outline-none text-ellipsis"
                     style={{ color: themeColors.headerSearchText }}
                   />
 
                   <button
                     type="submit"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 w-8.5 h-8.5 rounded-full flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95 shadow-md hover:brightness-110"
-                    style={{ backgroundColor: themeColors.primaryColor }}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-white transition-all duration-200 hover:scale-105 active:scale-95"
+                    style={{
+                      background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor || themeColors.primaryColor})`,
+                      boxShadow: `0 4px 14px -3px ${themeColors.primaryColor}80`
+                    }}
                     title={t('بحث')}
                   >
-                    <Search className="w-4 h-4" />
+                    <Search className="w-4 h-4" strokeWidth={2.5} />
                   </button>
 
                   <div
-                    className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 border-r pr-2"
-                    style={{ borderColor: `${themeColors.headerText}22` }}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1"
                   >
                     {headerConfig.showVoiceSearch && (
-                  <button
-                    type="button"
-                    onClick={handleVoiceSearch}
-                    className={`p-1.5 rounded-full transition-colors ${
-                      isListening ? 'text-red-500 animate-bounce' : 'opacity-70 hover:opacity-100'
-                    }`}
-                    style={{ color: themeColors.accent2Color }}
-                    title={t('بحث بالصوت')}
-                  >
-                        <Mic className="w-4 h-4" />
+                      <button
+                        type="button"
+                        onClick={handleVoiceSearch}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5 ${
+                          isListening ? 'text-red-500 animate-bounce' : ''
+                        }`}
+                        style={{
+                          backgroundColor: isListening ? '#ef44441a' : `${themeColors.headerText}08`,
+                          color: isListening ? '#ef4444' : themeColors.accent2Color
+                        }}
+                        title={t('بحث بالصوت')}
+                      >
+                        <Mic className="w-[15px] h-[15px]" />
                       </button>
                     )}
 
@@ -454,21 +418,51 @@ export function Header() {
                       <button
                         type="button"
                         onClick={() => setBarcodeModalOpen(true)}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg transition-all text-xs font-extrabold shadow-sm border hover:brightness-105"
+                        className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5"
                         style={{
-                          backgroundColor: `${themeColors.accent2Color}15`,
-                          color: themeColors.accent2Color,
-                          borderColor: `${themeColors.accent2Color}33`
+                          backgroundColor: `${themeColors.accent2Color}14`,
+                          color: themeColors.accent2Color
                         }}
                         title={t('ماسح باركود وتصوير المنتج')}
                       >
-                        <Barcode className="w-4 h-4" />
-                        <span className="text-[10px] hidden lg:inline">{t('باركود')}</span>
+                        <Barcode className="w-[17px] h-[17px]" />
                       </button>
                     )}
                   </div>
                 </div>
               </form>
+
+              {/* TRENDING — نص أنيق تحت البحث مباشرة */}
+              {headerConfig.showTrendingTags && (
+                <div className="hidden lg:flex items-center gap-1 mt-1.5 px-1 text-[11px] overflow-x-auto scrollbar-none">
+                  <span
+                    className="flex items-center gap-1 font-black shrink-0"
+                    style={{ color: themeColors.accentColor }}
+                  >
+                    <Flame className="w-3 h-3" fill="currentColor" />
+                    {t('الأكثر طلباً:')}
+                  </span>
+                  {trendingTags.map((tag, i) => (
+                    <span key={tag} className="flex items-center shrink-0">
+                      <button
+                        onClick={() => {
+                          setSearchQuery(tag);
+                          handleSearchSubmit(undefined, tag);
+                        }}
+                        className={`whitespace-nowrap font-bold transition-all hover:underline underline-offset-4 ${i === 0 ? 'ms-1.5' : ''}`}
+                        style={{ color: themeColors.headerText, textDecorationColor: themeColors.primaryColor }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = themeColors.primaryColor)}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = themeColors.headerText)}
+                      >
+                        {t(tag)}
+                      </button>
+                      {i < trendingTags.length - 1 && (
+                        <span className="mx-2 opacity-25 select-none" style={{ color: themeColors.headerText }}>·</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* LIVE SUGGESTIONS DROPDOWN */}
               {showSuggestions && (
@@ -545,13 +539,13 @@ export function Header() {
             </div>
 
             {/* RIGHT HEADER ACTIONS */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {settings.contact_whatsapp && headerConfig.showWhatsAppButton && (
                 <a
                   href={buildWhatsAppLink(settings.contact_whatsapp, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-extrabold text-white transition-all hover:scale-[1.03] active:scale-95 shadow-md hover:brightness-110"
+                  className="hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-extrabold text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:scale-95"
                   style={{ backgroundColor: themeColors.whatsappBtnBg, boxShadow: `0 4px 14px -2px ${themeColors.whatsappBtnBg}88` }}
                 >
                   <Send className="w-4 h-4" />
@@ -562,123 +556,94 @@ export function Header() {
               {headerConfig.showBarcode && (
                 <button
                   onClick={() => setBarcodeModalOpen(true)}
-                  className="flex md:hidden p-2 md:p-2.5 rounded-2xl border transition-colors"
+                  className="sm:hidden w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90"
                   style={{
                     backgroundColor: `${themeColors.headerText}08`,
-                    color: themeColors.headerText,
-                    borderColor: `${themeColors.headerText}15`
+                    color: themeColors.headerText
                   }}
                   title={t('مسح باركود')}
                 >
-                  <Barcode className="w-5 h-5" />
+                  <Barcode className="w-[18px] h-[18px]" />
                 </button>
               )}
 
-              <NotificationsBell />
+              {headerConfig.showVoiceSearch && (
+                <button
+                  onClick={handleVoiceSearch}
+                  className={`md:hidden w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 ${
+                    isListening ? 'text-red-500 animate-bounce' : ''
+                  }`}
+                  style={{
+                    backgroundColor: isListening ? '#ef44441a' : `${themeColors.headerText}08`,
+                    color: isListening ? '#ef4444' : themeColors.headerText
+                  }}
+                  title={t('بحث بالصوت')}
+                >
+                  <Mic className="w-[18px] h-[18px]" />
+                </button>
+              )}
 
-              <button
-                onClick={toggleLang}
-                className="hidden md:flex relative items-center gap-1.5 p-2 md:p-2.5 rounded-2xl border transition-all duration-300 active:scale-90"
-                style={{
-                  backgroundColor: `${themeColors.headerText}08`,
-                  color: themeColors.headerText,
-                  borderColor: `${themeColors.headerText}15`
-                }}
-                title={lang === 'ar' ? t('English') : t('العربية')}
-                aria-label={lang === 'ar' ? t('Switch to English') : t('التبديل إلى العربية')}
-              >
-                <Languages className="w-4 h-4" />
-              </button>
-
+              {/* الوضع الليلي — زر سريع */}
               <button
                 onClick={toggleDarkMode}
-                className="hidden md:flex relative p-2 md:p-2.5 rounded-2xl border transition-all duration-300 active:scale-90"
+                className="hidden md:flex relative w-10 h-10 rounded-full items-center justify-center border transition-all duration-200 hover:-translate-y-0.5 active:scale-90 overflow-hidden shrink-0"
                 style={{
                   backgroundColor: `${themeColors.headerText}08`,
                   color: themeColors.headerText,
-                  borderColor: `${themeColors.headerText}15`
+                  borderColor: `${themeColors.headerText}14`
                 }}
                 title={darkMode ? t('الوضع الفاتح') : t('الوضع الليلي')}
                 aria-label={darkMode ? t('الوضع الفاتح') : t('الوضع الليلي')}
               >
-                <Sun className={`w-5 h-5 transition-transform duration-300 ${darkMode ? 'rotate-0 scale-100' : '-rotate-90 scale-0'}`} />
-                <Moon className={`absolute inset-0 m-auto w-5 h-5 transition-transform duration-300 ${darkMode ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
+                <Sun className={`w-[18px] h-[18px] transition-all duration-300 ${darkMode ? 'rotate-0 scale-100' : '-rotate-90 scale-0'}`} />
+                <Moon className={`absolute inset-0 m-auto w-[18px] h-[18px] transition-all duration-300 ${darkMode ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
               </button>
+
+              <NotificationsBell />
 
               <button
                 onClick={() => openCart('cart')}
-                className={`hidden lg:flex relative p-2 md:p-2.5 rounded-2xl border transition-colors ${cartBump ? 'animate-cart-bump' : ''}`}
+                className={`relative flex items-center rounded-full text-white transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110 active:scale-95 ${cartBump ? 'animate-cart-bump' : ''} w-10 h-10 justify-center sm:w-auto sm:h-11 sm:justify-start sm:gap-2 sm:ps-3.5 sm:pe-4`}
                 style={{
-                  backgroundColor: `${themeColors.headerText}08`,
-                  color: themeColors.headerText,
-                  borderColor: `${themeColors.headerText}15`
+                  background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor || themeColors.primaryColor})`,
+                  boxShadow: `0 6px 18px -5px ${themeColors.primaryColor}75`
                 }}
                 title={t('سلة التسوق')}
                 aria-label={t('سلة التسوق')}
               >
-                <ShoppingCart className="w-5 h-5" />
-                {cartCount > 0 && (
-                  <span
-                    className="absolute -top-1.5 -left-1.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center border-2"
-                    style={{ backgroundColor: themeColors.priceColor, borderColor: themeColors.headerBg }}
-                  >
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </span>
-                )}
+                <span className="relative flex items-center justify-center">
+                  <ShoppingCart className="w-[19px] h-[19px]" strokeWidth={2.25} />
+                  {cartCount > 0 && (
+                    <span
+                      className="absolute -top-2 -left-2 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center ring-2"
+                      style={{
+                        backgroundColor: themeColors.priceColor,
+                        '--tw-ring-color': themeColors.headerBg
+                      } as React.CSSProperties}
+                    >
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </span>
+                  )}
+                </span>
+                <span className="hidden sm:inline text-xs font-black">{t('السلة')}</span>
               </button>
 
               <UserMenu />
 
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="md:hidden p-2 md:p-2.5 rounded-2xl border transition-colors"
+                className="md:hidden w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-200 active:scale-90"
                 style={{
                   backgroundColor: `${themeColors.headerText}08`,
                   color: themeColors.headerText,
-                  borderColor: `${themeColors.headerText}15`
+                  borderColor: `${themeColors.headerText}14`
                 }}
                 aria-label={t('القائمة')}
               >
-                {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {menuOpen ? <X className="w-[18px] h-[18px]" /> : <Menu className="w-[18px] h-[18px]" />}
               </button>
             </div>
           </div>
-
-          {/* TRENDING QUICK SEARCH TAGS — desktop only (mobile has hero trending chips) */}
-          {headerConfig.showTrendingTags && (
-            <div
-              className="hidden lg:flex items-center gap-2 py-1.5 px-4 lg:px-0 overflow-x-auto scrollbar-none"
-              style={{
-                backgroundColor: `${themeColors.accentColor}0a`,
-                borderBottom: `1px solid ${themeColors.accentColor}22`
-              }}
-            >
-              <span className="font-bold flex items-center gap-1.5 shrink-0 text-[11px] whitespace-nowrap" style={{ color: themeColors.accentColor }}>
-                <Flame className="w-3.5 h-3.5" style={{ color: themeColors.accentColor }} fill="currentColor" />
-                {t('الأكثر طلباً:')}
-              </span>
-              {trendingTags.map((tag, i) => (
-                <button
-                  key={tag}
-                  onClick={() => {
-                    setSearchQuery(tag);
-                    handleSearchSubmit(undefined, tag);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-full transition-all shrink-0 text-[11px] font-bold hover:bg-white active:scale-95"
-                  style={{
-                    backgroundColor: `${themeColors.headerText}08`,
-                    color: themeColors.headerText,
-                    border: `1px solid ${themeColors.headerText}12`
-                  }}
-                >
-                  <span className="text-[9px] font-black" style={{ color: themeColors.headerText, opacity: 0.45 }}>
-                    {i + 1}
-                  </span>
-                  {t(tag)}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* 3. CATEGORY QUICK NAVIGATION BAR — desktop only; mobile uses the home categories section */}
@@ -887,29 +852,40 @@ export function Header() {
               </a>
             )}
 
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t" style={{ borderColor: `${themeColors.headerText}10` }}>
               <button
                 onClick={toggleLang}
-                className="flex items-center justify-center gap-2 p-3 rounded-2xl border text-xs font-bold"
+                className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border transition-all active:scale-95"
                 style={{
                   backgroundColor: `${themeColors.headerText}05`,
                   borderColor: `${themeColors.headerText}10`,
                   color: themeColors.headerText
                 }}
               >
-                <Languages className="w-4 h-4" style={{ color: themeColors.primaryColor }} />
+                <span
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: `${themeColors.primaryColor}15`, color: themeColors.primaryColor }}
+                >
+                  <Languages className="w-[18px] h-[18px]" />
+                </span>
+                <span className="text-[10px] font-black">{lang === 'ar' ? 'English' : t('العربية')}</span>
               </button>
               <button
                 onClick={toggleDarkMode}
-                className="flex items-center justify-center gap-2 p-3 rounded-2xl border text-xs font-bold"
+                className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border transition-all active:scale-95"
                 style={{
                   backgroundColor: `${themeColors.headerText}05`,
                   borderColor: `${themeColors.headerText}10`,
                   color: themeColors.headerText
                 }}
               >
-                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                {darkMode ? t('الوضع الفاتح') : t('الوضع الليلي')}
+                <span
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: `${themeColors.accent2Color}15`, color: themeColors.accent2Color }}
+                >
+                  {darkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+                </span>
+                <span className="text-[10px] font-black">{darkMode ? t('الوضع الفاتح') : t('الوضع الليلي')}</span>
               </button>
             </div>
           </div>
