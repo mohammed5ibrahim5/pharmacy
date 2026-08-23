@@ -106,8 +106,10 @@ export function OrderModal() {
       if (!cancelled) setMyRxList((data || []) as RxLite[]);
     };
     load();
+    const timer = setInterval(load, 12000);
     return () => {
       cancelled = true;
+      clearInterval(timer);
     };
   }, [cartOpen, user, needsRx, rxModalOpen]);
 
