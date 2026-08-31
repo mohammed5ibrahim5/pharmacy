@@ -274,9 +274,12 @@ html[lang='en'] h4 { letter-spacing: -0.02em; }
 
 /* ═══════════════════════════════════════
    DARK MODE
-═══════════════════════════════════════ */
+══════════════════════════════════════ */
 html.dark,
 html.dark body { background-color: #070d1a; color: #e2e8f0; }
+
+/* Root element: admin-dark on same element as bg-gray-50 */
+.admin-dark.bg-gray-50 { background-color: #0d1426 !important; }
 
 html.dark .bg-white,
 .admin-dark .bg-white { background-color: #111827 !important; }
@@ -299,6 +302,21 @@ html.dark .bg-slate-100,
 .admin-dark .bg-gray-100,
 .admin-dark .bg-slate-100 { background-color: #1a2435 !important; }
 
+/* Additional bg colors for admin dark mode */
+.admin-dark .bg-gray-200 { background-color: #1e2e45 !important; }
+.admin-dark .bg-gray-300 { background-color: #2d3f5e !important; }
+.admin-dark .bg-teal-50 { background-color: rgba(13,148,136,0.15) !important; }
+.admin-dark .bg-red-50 { background-color: rgba(220,38,38,0.15) !important; }
+.admin-dark .bg-green-50 { background-color: rgba(22,163,74,0.15) !important; }
+.admin-dark .bg-green-100 { background-color: rgba(22,163,74,0.2) !important; }
+.admin-dark .bg-indigo-50 { background-color: rgba(79,70,229,0.15) !important; }
+.admin-dark .bg-amber-50 { background-color: rgba(245,158,11,0.15) !important; }
+.admin-dark .bg-blue-50 { background-color: rgba(59,130,246,0.15) !important; }
+.admin-dark .bg-red-100 { background-color: rgba(220,38,38,0.2) !important; }
+.admin-dark .bg-white\/90 { background-color: #1a2435 !important; }
+.admin-dark .bg-teal-50\/30 { background-color: rgba(13,148,136,0.1) !important; }
+
+/* Text colors */
 html.dark .text-slate-900,
 html.dark .text-gray-900,
 html.dark .text-slate-800,
@@ -306,7 +324,11 @@ html.dark .text-gray-800,
 html.dark .text-slate-700,
 html.dark .text-gray-700,
 .admin-dark .text-slate-900,
-.admin-dark .text-gray-900 { color: #e2e8f0 !important; }
+.admin-dark .text-gray-900,
+.admin-dark .text-slate-800,
+.admin-dark .text-gray-800,
+.admin-dark .text-slate-700,
+.admin-dark .text-gray-700 { color: #e2e8f0 !important; }
 html.dark .text-slate-600,
 html.dark .text-gray-600,
 html.dark .text-slate-500,
@@ -320,6 +342,23 @@ html.dark .text-gray-400,
 .admin-dark .text-slate-400,
 .admin-dark .text-gray-400 { color: #64748b !important; }
 
+/* Additional text colors for admin dark mode */
+.admin-dark .text-gray-200 { color: #94a3b8 !important; }
+.admin-dark .text-slate-200 { color: #94a3b8 !important; }
+.admin-dark .text-teal-700 { color: #5eead4 !important; }
+.admin-dark .text-teal-800 { color: #5eead4 !important; }
+.admin-dark .text-red-700 { color: #fca5a5 !important; }
+.admin-dark .text-red-800 { color: #fca5a5 !important; }
+.admin-dark .text-green-700 { color: #86efac !important; }
+.admin-dark .text-green-800 { color: #86efac !important; }
+.admin-dark .text-amber-700 { color: #fcd34d !important; }
+.admin-dark .text-amber-800 { color: #fcd34d !important; }
+.admin-dark .text-blue-700 { color: #93c5fd !important; }
+.admin-dark .text-blue-800 { color: #93c5fd !important; }
+.admin-dark .text-indigo-700 { color: #c4b5fd !important; }
+.admin-dark .text-indigo-800 { color: #c4b5fd !important; }
+
+/* Border colors */
 html.dark .border-gray-100,
 html.dark .border-gray-200,
 html.dark .border-slate-100,
@@ -331,6 +370,17 @@ html.dark .border-slate-200\/80,
 .admin-dark .border-slate-100,
 .admin-dark .border-slate-200 { border-color: #1e2e45 !important; }
 
+/* Additional border colors for admin dark mode */
+.admin-dark .border-gray-50 { border-color: #1a2435 !important; }
+.admin-dark .border-teal-200 { border-color: rgba(13,148,136,0.3) !important; }
+.admin-dark .border-teal-500 { border-color: #0d9488 !important; }
+.admin-dark .border-red-200 { border-color: rgba(220,38,38,0.3) !important; }
+.admin-dark .border-amber-200 { border-color: rgba(245,158,11,0.3) !important; }
+.admin-dark .border-green-200 { border-color: rgba(22,163,74,0.3) !important; }
+.admin-dark .border-blue-200 { border-color: rgba(59,130,246,0.3) !important; }
+.admin-dark .border-indigo-200 { border-color: rgba(79,70,229,0.3) !important; }
+
+/* Hover states */
 html.dark .hover\:bg-gray-50:hover,
 html.dark .hover\:bg-slate-50:hover,
 html.dark .hover\:bg-white:hover,
@@ -338,6 +388,41 @@ html.dark .hover\:bg-white:hover,
 html.dark .hover\:border-gray-300:hover,
 html.dark .hover\:border-gray-200:hover,
 .admin-dark .hover\:border-gray-300:hover { border-color: #2d4060 !important; }
+
+/* Additional hover states for admin dark mode */
+.admin-dark .hover\:bg-gray-100:hover { background-color: #1e2e45 !important; }
+.admin-dark .hover\:bg-gray-200:hover { background-color: #2d3f5e !important; }
+.admin-dark .hover\:bg-gray-50\/60:hover { background-color: #1a2435 !important; }
+.admin-dark .hover\:bg-red-50:hover { background-color: rgba(220,38,38,0.2) !important; }
+.admin-dark .hover\:bg-red-100:hover { background-color: rgba(220,38,38,0.25) !important; }
+.admin-dark .hover\:bg-green-50:hover { background-color: rgba(22,163,74,0.2) !important; }
+.admin-dark .hover\:bg-teal-50:hover { background-color: rgba(13,148,136,0.2) !important; }
+.admin-dark .hover\:bg-amber-50:hover { background-color: rgba(245,158,11,0.2) !important; }
+
+/* Ring / focus states — keep accent colors visible */
+.admin-dark .focus\:ring-green-500\/40:focus { --tw-ring-color: rgba(13,148,136,0.4); }
+.admin-dark .focus\:border-green-500:focus { border-color: #0d9488 !important; }
+.admin-dark .focus\:ring-amber-500\/40:focus { --tw-ring-color: rgba(245,158,11,0.4); }
+.admin-dark .focus\:border-amber-500:focus { border-color: #f59e0b !important; }
+
+/* Input fields in dark mode */
+.admin-dark input,
+.admin-dark select,
+.admin-dark textarea {
+  background-color: #1a2435 !important;
+  border-color: #2d3f5e !important;
+  color: #e2e8f0 !important;
+}
+.admin-dark input::placeholder,
+.admin-dark select::placeholder,
+.admin-dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Table rows in dark mode */
+.admin-dark tr { border-color: #1e2e45 !important; }
+.admin-dark td { border-color: #1e2e45 !important; }
+.admin-dark th { border-color: #1e2e45 !important; }
 
 html.dark .skeleton,
 .admin-dark .skeleton {
