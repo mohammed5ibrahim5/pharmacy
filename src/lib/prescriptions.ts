@@ -742,6 +742,24 @@ export async function recordDispense(
   const check = validateNationalId(params.nationalId);
   if (!check.ok) return check;
 
+  // إعادة التحقق من صلاحية الوصفة عند الصرف (بعد الاعتماد قد تنتهي مدتها)
+  const { data: rxRow } = await supabase
+    .from('prescriptions')
+    .select('ocr_data, risk_level, status, pipeline_status')
+    .eq('id', rx.id)
+    .single();
+  const rxData = rxRow as {
+    ocr_data?: { issue_date?: string } | null;
+    risk_level?: RiskLevel;
+    pipeline_status?: string;
+  } | null;
+  if (rxData?.ocr_data?.issue_date) {
+    const stillValid = checkValidity(rxData.ocr_data.issue_date, rxData.risk_level || 'normal', DEFAULT_VERIFICATION_CONFIG);
+    if (stillValid.status === 'expired') {
+      return { ok: false, reason: 'انتهت صلاحية الوصفة، يجب تجديدها قبل الصرف.' };
+    }
+  }
+
   const { error } = await supabase
     .from('prescriptions')
     .update({
@@ -838,12 +856,11 @@ export async function listMyApprovedPrescriptions(customerId: string) {
   return data || [];
 }
 
-export async function linkPrescriptionToOrderGroup(prescriptionId: string, orderGroupId: string) {
-  const { error } = await supabase
-    .from('prescriptions')
-    .update({ order_group_id: orderGroupId })
-    .eq('id', prescriptionId)
-    .eq('pipeline_status', 'approved')
-    .is('order_group_id', null);
+export async function linkPrescriptionToOrderGroup(prescriptionId: string, orderGroupId: string, productIds?: string[]) {
+  const { error } = await supabase.rpc('link_rx_to_order_group', {
+    p_rx_id: prescriptionId,
+    p_order_group_id: orderGroupId,
+    p_product_ids: productIds || [],
+  });
   if (error) throw error;
 }

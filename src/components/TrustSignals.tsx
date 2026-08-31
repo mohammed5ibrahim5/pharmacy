@@ -1,4 +1,4 @@
-import { ShieldCheck, Award, Clock, Truck, BadgeCheck, Phone, Stethoscope, Lock } from 'lucide-react';
+import { ShieldCheck, Award, Clock, BadgeCheck, Phone, Stethoscope, Lock } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -125,33 +125,6 @@ export function TrustSignals() {
         </div>
         );
       })()}
-
-      {/* Bottom trust bar — shows only when online purchases are enabled */}
-      {trust.showBottomBar && storeConfig.purchasesEnabled && (
-      <div
-        className="mt-8 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 border"
-        style={{
-          backgroundColor: `${themeColors.primaryColor}08`,
-          borderColor: `${themeColors.primaryColor}20`,
-        }}
-      >
-        {[
-          { icon: <Truck className="w-4 h-4" />, text: 'توصيل آمن ومضمون', color: themeColors.primaryColor },
-          { icon: <ShieldCheck className="w-4 h-4" />, text: 'استرداد كامل إذا لم تكن راضياً', color: '#10b981' },
-          { icon: <Award className="w-4 h-4" />, text: 'أكثر من 10,000 عميل سعيد', color: '#f59e0b' },
-        ].map((item, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-              style={{ backgroundColor: `${item.color}15`, color: item.color }}
-            >
-              {item.icon}
-            </div>
-            <span className="text-xs font-bold text-slate-700">{t(item.text)}</span>
-          </div>
-        ))}
-      </div>
-      )}
     </section>
   );
 }

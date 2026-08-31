@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, MapPin, Phone, MessageCircle, Star, Clock, Truck, Mail, Search, Package, Navigation2, Scale } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { ArrowLeft, MapPin, Phone, MessageCircle, Star, Clock, Truck, Mail, Search, Package, Navigation2, Scale, AlertTriangle, RefreshCw, ChevronDown, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
@@ -13,6 +13,8 @@ import { buildWhatsAppLink } from '@/lib/whatsapp';
 import type { Pharmacy, Product, Category } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCompare } from '@/context/CompareContext';
+
+const PAGE_SIZE = 20;
 
 interface Props {
   id: string;
@@ -28,38 +30,135 @@ export function PharmacyDetailPage({ id }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [otcOnly, setOtcOnly] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const inCompare = featuresConfig.pharmacyCompare && pharmacy ? isInCompare(pharmacy.id) : false;
 
-  useEffect(() => {
-    const fetch = async () => {
-      setLoading(true);
-      const [pharmRes, prodRes] = await Promise.all([
-        supabase.from('pharmacies').select('*').eq('id', id).maybeSingle(),
-        supabase
-          .from('products')
-          .select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)')
-          .or(`pharmacy_id.eq.${id},for_all_pharmacies.eq.true`)
-          .order('name'),
-      ]);
-      setPharmacy(pharmRes.data as Pharmacy | null);
-      setProducts((prodRes.data || []) as Product[]);
+  const fetchProducts = useCallback(async (
+    pageNum: number,
+    append = false,
+    filterCategory?: string | null,
+    filterOtc?: boolean
+  ) => {
+    const from = pageNum * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
 
-      const catIds = new Set((prodRes.data || []).map((p: Product) => p.category_id).filter(Boolean));
-      if (catIds.size > 0) {
-        const { data: cats } = await supabase
-          .from('categories')
-          .select('*')
-          .in('id', Array.from(catIds))
-          .order('name');
-        setCategories((cats || []) as Category[]);
+    let query = supabase
+      .from('products')
+      .select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)')
+      .or(`pharmacy_id.eq.${id},for_all_pharmacies.eq.true`);
+
+    if (filterCategory) {
+      query = query.eq('category_id', filterCategory);
+    }
+    if (filterOtc) {
+      query = query.eq('requires_prescription', false);
+    }
+
+    query = query.order('name').range(from, to);
+
+    const { data, error: prodError } = await query;
+
+    if (prodError) throw prodError;
+
+    const newProducts = (data || []) as Product[];
+    setProducts(prev => append ? [...prev, ...newProducts] : newProducts);
+    setHasMore(newProducts.length === PAGE_SIZE);
+
+    const catIds = new Set(newProducts.map((p: Product) => p.category_id).filter(Boolean));
+    if (catIds.size > 0) {
+      const { data: cats } = await supabase
+        .from('categories')
+        .select('*')
+        .in('id', Array.from(catIds))
+        .order('name');
+      if (cats) {
+        setCategories(prev => {
+          const existing = new Set(prev.map(c => c.id));
+          const newCats = (cats as Category[]).filter(c => !existing.has(c.id));
+          return newCats.length > 0 ? [...prev, ...newCats].sort((a, b) => a.name.localeCompare(b.name)) : prev;
+        });
       }
-      setLoading(false);
-    };
-    fetch();
+    }
+
+    return newProducts;
   }, [id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(false);
+      try {
+        const [pharmRes] = await Promise.all([
+          supabase.from('pharmacies').select('*').eq('id', id).maybeSingle(),
+        ]);
+        if (cancelled) return;
+        setPharmacy(pharmRes.data as Pharmacy | null);
+
+        await fetchProducts(0, false);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [id, retryCount, fetchProducts]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      await fetchProducts(page + 1, true);
+      setPage(prev => prev + 1);
+    } catch {
+      // silently fail on load more
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [page, loadingMore, hasMore, fetchProducts]);
+
+  useEffect(() => {
+    if (!hasMore || loadingMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '200px' }
+    );
+    const el = loadMoreTriggerRef.current;
+    if (el) observer.observe(el);
+    return () => { if (el) observer.unobserve(el); };
+  }, [hasMore, loadingMore, loadMore]);
+
+  const resetAndRefetch = useCallback(async (filterCategory?: string | null, filterOtc?: boolean) => {
+    setPage(0);
+    setHasMore(true);
+    setLoading(true);
+    try {
+      await fetchProducts(0, false, filterCategory, filterOtc);
+    } catch {
+      // error handled by state
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    resetAndRefetch(activeCategory, otcOnly);
+  }, [activeCategory, otcOnly, resetAndRefetch]);
 
   const pharmacyWithDistance = useMemo(() => {
     if (!pharmacy) return null;
@@ -68,9 +167,6 @@ export function PharmacyDetailPage({ id }: Props) {
 
   const filteredProducts = useMemo(() => {
     let result = products;
-    if (activeCategory) {
-      result = result.filter((p) => p.category_id === activeCategory);
-    }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter(
@@ -79,11 +175,8 @@ export function PharmacyDetailPage({ id }: Props) {
           (p.name_en?.toLowerCase().includes(q) ?? false)
       );
     }
-    if (otcOnly) {
-      result = result.filter((p) => !p.requires_prescription);
-    }
     return result;
-  }, [products, search, activeCategory, otcOnly]);
+  }, [products, search]);
 
   if (loading) {
     return (
@@ -96,6 +189,25 @@ export function PharmacyDetailPage({ id }: Props) {
               <div key={i} className="h-52 bg-gray-100 rounded-xl" />
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="flex flex-col items-center gap-3 rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+          <AlertTriangle className="w-8 h-8 text-rose-400" />
+          <p className="text-sm font-black text-rose-700">{t('تعذر تحميل بيانات الصيدلية، تحقق من اتصالك بالإنترنت.')}</p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((c) => c + 1)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-black hover:bg-rose-700 active:scale-95 transition-all"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            {t('إعادة المحاولة')}
+          </button>
         </div>
       </div>
     );
@@ -291,7 +403,7 @@ export function PharmacyDetailPage({ id }: Props) {
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between mb-5">
             <div>
               <h2 className="text-xl sm:text-2xl font-black" style={{ color: themeColors.sectionHeadingText }}>{t('المنتجات المتاحة')}</h2>
-              <p className="text-sm font-medium mt-0.5" style={{ color: themeColors.sectionSubheadingText }}>{t('{0} منتج في صيدلية {1}', [filteredProducts.length, lang === 'en' ? (pharmacy.name_en || pharmacy.name) : pharmacy.name])}</p>
+              <p className="text-sm font-medium mt-0.5" style={{ color: themeColors.sectionSubheadingText }}>{t('{0} منتج في صيدلية {1}', [filteredProducts.length, lang === 'en' ? (pharmacy.name_en || pharmacy.name) : pharmacy.name])}{!hasMore ? '' : '+'}</p>
             </div>
             <div className="flex flex-col gap-2 w-full sm:max-w-xs">
               <div className="relative">
@@ -372,11 +484,38 @@ export function PharmacyDetailPage({ id }: Props) {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              {/* Intersection observer trigger for infinite scroll */}
+              <div ref={loadMoreTriggerRef} className="h-1" />
+              {/* Load more section */}
+              {hasMore && (
+                <div ref={loadMoreRef} className="flex justify-center py-6">
+                  <button
+                    type="button"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95 shadow-md disabled:opacity-60"
+                    style={{
+                      backgroundColor: themeColors.cardBg,
+                      color: themeColors.priceColor,
+                      border: `2px solid ${themeColors.priceColor}22`
+                    }}
+                  >
+                    {loadingMore ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                    {loadingMore ? t('جاري التحميل...') : t('تحميل المزيد')}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 

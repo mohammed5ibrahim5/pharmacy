@@ -86,6 +86,15 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       setAuthModalOpen(true);
       return false;
     }
+    // Check if product is available and has sufficient stock
+    if (product.is_available === false) {
+      notify(t('هذا المنتج غير متوفر حالياً.'));
+      return false;
+    }
+    if (product.stock_quantity !== undefined && product.stock_quantity < quantity) {
+      notify(t('المخزون المتاح: {0} وحدة فقط.', [String(product.stock_quantity)]));
+      return false;
+    }
     const catalogMode = !storeConfig.purchasesEnabled;
     if (catalogMode && !storeConfig.catalogMultiPharmacy && !product.for_all_pharmacies) {
       const cartPharmacyIds = new Set(
@@ -99,15 +108,26 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       }
     }
     const key = `${product.id}:${product.pharmacy_id}`;
+    // Check stock before calling setCart to avoid stale closure
+    let stockWarning: string | null = null;
     setCart((prev) => {
       const existing = prev.find((i) => i.key === key);
       if (existing) {
+        const newQty = existing.quantity + quantity;
+        if (product.stock_quantity !== undefined && product.stock_quantity < newQty) {
+          stockWarning = t('المخزون المتاح: {0} وحدة فقط.', [String(product.stock_quantity)]);
+          return prev;
+        }
         return prev.map((i) =>
-          i.key === key ? { ...i, quantity: i.quantity + quantity } : i
+          i.key === key ? { ...i, quantity: newQty } : i
         );
       }
       return [...prev, { key, product, pharmacyName, quantity }];
     });
+    if (stockWarning) {
+      notify(stockWarning);
+      return false;
+    }
     return true;
   };
 

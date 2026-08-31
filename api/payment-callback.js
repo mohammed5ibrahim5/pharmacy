@@ -14,7 +14,19 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 function verifyHmac(obj, header) {
   const secret = process.env.PAYMOB_HMAC_SECRET;
-  if (!secret || !header) return true; // not configured — accept (dev mode)
+  if (!secret) {
+    // Secret not configured — reject in production, accept in dev only
+    if (process.env.VERCEL_ENV === 'production') {
+      console.error('[payment-callback] PAYMOB_HMAC_SECRET not set — rejecting in production');
+      return false;
+    }
+    console.warn('[payment-callback] PAYMOB_HMAC_SECRET not set — accepting in dev mode');
+    return true;
+  }
+  if (!header) {
+    console.error('[payment-callback] HMAC header missing');
+    return false;
+  }
   const data = { ...obj };
   delete data.data;
   const sorted = Object.keys(data)

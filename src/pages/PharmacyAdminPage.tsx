@@ -6,7 +6,9 @@ import {
 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { usePharmacyOwner } from '@/context/PharmacyOwnerContext';
-import { ProductsTab, OrdersTab, PharmacyForm } from '@/pages/AdminPage';
+import { ProductsTab } from '@/pages/admin/tabs/ProductsTab';
+import { OrdersTab } from '@/pages/admin/tabs/OrdersTab';
+import { PharmacyForm } from '@/pages/admin/tabs/PharmaciesTab';
 import { supabase } from '@/lib/supabase';
 import type { Pharmacy } from '@/types';
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, ArrowRight, Package, LayoutGrid, Search, Sparkles, Pill, HeartPulse, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Package, LayoutGrid, Search, Sparkles, Pill, HeartPulse, Plus, AlertTriangle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
@@ -29,6 +29,8 @@ export function CategoryPage({ slug }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCat, setActiveCat] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [otcOnly, setOtcOnly] = useState(false);
   const chipsRef = useRef<HTMLDivElement>(null);
 
@@ -48,39 +50,45 @@ export function CategoryPage({ slug }: Props) {
     setLoading(true);
     setProducts([]);
     setActiveCat(null);
+    setError(false);
     (async () => {
-      let query = supabase
-        .from('products')
-        .select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)')
-        .eq('is_available', true);
+      try {
+        let query = supabase
+          .from('products')
+          .select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)')
+          .eq('is_available', true);
 
-      if (isAll) {
-        query = query.limit(48);
-      } else {
-        const { data: cat } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('slug', slug)
-          .maybeSingle();
-        if (cancelled) return;
-        setActiveCat((cat as Category) ?? null);
-        if (!cat) {
-          setLoading(false);
-          return;
+        if (isAll) {
+          query = query.limit(48);
+        } else {
+          const { data: cat } = await supabase
+            .from('categories')
+            .select('*')
+            .eq('slug', slug)
+            .maybeSingle();
+          if (cancelled) return;
+          setActiveCat((cat as Category) ?? null);
+          if (!cat) {
+            setLoading(false);
+            return;
+          }
+          query = query.eq('category_id', (cat as Category).id);
         }
-        query = query.eq('category_id', (cat as Category).id);
-      }
 
-      const { data: prods } = await query.order('name');
-      if (cancelled) return;
-      setProducts((prods || []) as Product[]);
-      setLoading(false);
+        const { data: prods } = await query.order('name');
+        if (cancelled) return;
+        setProducts((prods || []) as Product[]);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
+  }, [slug, retryCount]);
 
   /* حافظ على الشيب المختار ظاهر في الشريط */
   useEffect(() => {
@@ -289,7 +297,20 @@ export function CategoryPage({ slug }: Props) {
 
       {/* ══ المحتوى ══ */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {loading ? (
+        {error ? (
+          <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+            <AlertTriangle className="w-8 h-8 text-rose-400" />
+            <p className="text-sm font-black text-rose-700">{t('تعذر تحميل المنتجات، تحقق من اتصالك بالإنترنت.')}</p>
+            <button
+              type="button"
+              onClick={() => setRetryCount((c) => c + 1)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-black hover:bg-rose-700 active:scale-95 transition-all"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              {t('إعادة المحاولة')}
+            </button>
+          </div>
+        ) : loading ? (
           <div className="pt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="h-52 skeleton rounded-xl" />

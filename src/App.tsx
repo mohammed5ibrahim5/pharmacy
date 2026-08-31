@@ -21,6 +21,7 @@ import { ReminderScheduler } from '@/components/ReminderScheduler';
 import { CompareBar } from '@/components/CompareBar';
 import { PriceCompareModal } from '@/components/PriceCompareModal';
 import { PharmacyCompareModal } from '@/components/PharmacyCompareModal';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { HomePage } from '@/pages/HomePage';
 import { SearchPage } from '@/pages/SearchPage';
 import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
@@ -73,7 +74,15 @@ function AdminRoute() {
         </div>
       }
     >
-      {!user ? <AdminLoginPage /> : isAdmin ? <AdminPage /> : <AdminForbidden />}
+      {!user ? (
+        <AdminLoginPage />
+      ) : isAdmin ? (
+        <ErrorBoundary>
+          <AdminPage />
+        </ErrorBoundary>
+      ) : (
+        <AdminForbidden />
+      )}
     </Suspense>
   );
 }
@@ -118,12 +127,14 @@ function SiteContent() {
       <AnnouncementBar />
       {route.name !== 'account' && route.name !== 'category' && route.name !== 'categories' && <Header />}
       <main className="flex-1 pb-20 lg:pb-0">
-        {route.name === 'home' && <HomePage />}
-        {route.name === 'search' && <SearchPage key={refreshKey} query={route.query} />}
-        {route.name === 'pharmacy' && <PharmacyDetailPage id={route.id} />}
-        {route.name === 'category' && <CategoryPage slug={route.slug} />}
-        {route.name === 'categories' && <AllCategoriesPage />}
-        {route.name === 'account' && <AccountPage tab={route.tab} />}
+        <ErrorBoundary>
+          {route.name === 'home' && <HomePage />}
+          {route.name === 'search' && <SearchPage key={refreshKey} query={route.query} />}
+          {route.name === 'pharmacy' && <PharmacyDetailPage id={route.id} />}
+          {route.name === 'category' && <CategoryPage slug={route.slug} />}
+          {route.name === 'categories' && <AllCategoriesPage />}
+          {route.name === 'account' && <AccountPage tab={route.tab} />}
+        </ErrorBoundary>
       </main>
       <Footer />
       <OrderModal />

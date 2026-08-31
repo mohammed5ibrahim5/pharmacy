@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Pill, ArrowLeft, Navigation, Package } from 'lucide-react';
+import { Search, Pill, ArrowLeft, Navigation, Package, AlertTriangle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
+import { useDebounce } from '@/hooks/useDebounce';
 import { ProductCard } from '@/components/ProductCard';
 import { PharmacyCard } from '@/components/PharmacyCard';
 import { OtcFilterToggle } from '@/components/OtcFilterToggle';
@@ -24,32 +25,48 @@ export function SearchPage({ query }: Props) {
   const [products, setProducts] = useState<Product[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [otcOnly, setOtcOnly] = useState(false);
 
+  // Debounce query to avoid excessive API calls
+  const debouncedQuery = useDebounce(query, 300);
+
   useEffect(() => {
-    trackSearch(query);
+    trackSearch(debouncedQuery);
+    let cancelled = false;
     const search = async () => {
       setLoading(true);
-      const searchTerm = `%${query}%`;
-      const [prodRes, pharmRes] = await Promise.all([
-        supabase
-          .from('products')
-          .select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)')
-          .or(`name.ilike.${searchTerm},name_en.ilike.${searchTerm},description.ilike.${searchTerm}`)
-          .eq('is_available', true)
-          .order('name'),
-        supabase
-          .from('pharmacies')
-          .select('*')
-          .or(`name.ilike.${searchTerm},description.ilike.${searchTerm},area.ilike.${searchTerm}`)
-          .eq('is_active', true),
-      ]);
-      setProducts(prodRes.data || []);
-      setPharmacies(pharmRes.data || []);
-      setLoading(false);
+      setError(false);
+      try {
+        const searchTerm = `%${debouncedQuery}%`;
+        const [prodRes, pharmRes] = await Promise.all([
+          supabase
+            .from('products')
+            .select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)')
+            .or(`name.ilike.${searchTerm},name_en.ilike.${searchTerm},description.ilike.${searchTerm}`)
+            .eq('is_available', true)
+            .order('name'),
+          supabase
+            .from('pharmacies')
+            .select('*')
+            .or(`name.ilike.${searchTerm},description.ilike.${searchTerm},area.ilike.${searchTerm}`)
+            .eq('is_active', true),
+        ]);
+        if (cancelled) return;
+        setProducts(prodRes.data || []);
+        setPharmacies(pharmRes.data || []);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
     search();
-  }, [query]);
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedQuery, retryCount]);
 
   // Get unique pharmacies that have matching products, sorted by distance
   const nearestPharmaciesWithProduct = useMemo(() => {
@@ -95,7 +112,20 @@ return (
         </div>
       </div>
 
-      {loading ? (
+      {error ? (
+        <div className="flex flex-col items-center gap-3 rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+          <AlertTriangle className="w-8 h-8 text-rose-400" />
+          <p className="text-sm font-black text-rose-700">{t('تعذر البحث، تحقق من اتصالك بالإنترنت.')}</p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((c) => c + 1)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-black hover:bg-rose-700 active:scale-95 transition-all"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            {t('إعادة المحاولة')}
+          </button>
+        </div>
+      ) : loading ? (
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (

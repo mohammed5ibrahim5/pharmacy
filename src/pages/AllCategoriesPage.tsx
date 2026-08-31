@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, LayoutGrid, Search } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, LayoutGrid, Search, AlertTriangle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
@@ -14,24 +14,37 @@ export function AllCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     const fetch = async () => {
       setLoading(true);
-      const [catRes, countRes] = await Promise.all([
-        supabase.from('categories').select('*').order('name'),
-        supabase.from('products').select('category_id').eq('is_available', true),
-      ]);
-      setCategories(catRes.data || []);
-      const counts: Record<string, number> = {};
-      (countRes.data || []).forEach((r: { category_id: string | null }) => {
-        if (r.category_id) counts[r.category_id] = (counts[r.category_id] || 0) + 1;
-      });
-      setCategoryCounts(counts);
-      setLoading(false);
+      setError(false);
+      try {
+        const [catRes, countRes] = await Promise.all([
+          supabase.from('categories').select('*').order('name'),
+          supabase.from('products').select('category_id').eq('is_available', true),
+        ]);
+        if (cancelled) return;
+        setCategories(catRes.data || []);
+        const counts: Record<string, number> = {};
+        (countRes.data || []).forEach((r: { category_id: string | null }) => {
+          if (r.category_id) counts[r.category_id] = (counts[r.category_id] || 0) + 1;
+        });
+        setCategoryCounts(counts);
+      } catch {
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
     fetch();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [retryCount]);
 
   const allCategories = useMemo(() => orderedCategories(mergeCategories(categories)), [categories]);
 
@@ -84,7 +97,20 @@ export function AllCategoriesPage() {
         </div>
       </div>
 
-      {loading ? (
+      {error ? (
+        <div className="flex flex-col items-center gap-3 rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+          <AlertTriangle className="w-8 h-8 text-rose-400" />
+          <p className="text-sm font-black text-rose-700">{t('تعذر تحميل الأقسام، تحقق من اتصالك بالإنترنت.')}</p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((c) => c + 1)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-black hover:bg-rose-700 active:scale-95 transition-all"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            {t('إعادة المحاولة')}
+          </button>
+        </div>
+      ) : loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {[...Array(12)].map((_, i) => (
             <div key={i} className="skeleton rounded-2xl h-32" />

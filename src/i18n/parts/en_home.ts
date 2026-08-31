@@ -67,6 +67,7 @@
   'صوّر روشتك الآن': 'Capture your prescription now',
   'امسحلي صندوق الدواء': 'Scan your medicine box',
   'تواصل واتساب': 'Chat on WhatsApp',
+  'أو عندك مشكلة في طلبك؟ فريقنا جاهز يساعدك': 'Or having trouble with your order? Our team is ready to help',
   'تصوير الروشتة مجاني وسرّي — يراجعها صيدلي حقيقي قبل صرف أي دواء': 'Prescription capture is free and confidential — reviewed by a real pharmacist before any medicine is dispensed',
   'البحث الصوتي غير مدعوم في هذا المتصفح.': 'Voice search is not supported in this browser.',
   'ابحث عن اسم الدواء، المادة الفعالة، أو المنتج...': 'Search by medicine name, active ingredient, or product...',

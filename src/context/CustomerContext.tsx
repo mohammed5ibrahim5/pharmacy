@@ -2,11 +2,6 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { supabase } from '@/lib/supabase';
 import { localizedError } from '@/lib/errorMessages';
 
-// ===== وضع تجريبي لكود التحقق (OTP) بدون إرسال SMS حقيقي =====
-// الكود يظهر داخل التطبيق، والتحقق يفعّل جلسة Supabase حقيقية (Anonymous).
-const DEMO_OTP_ENABLED = true;
-const demoOtpStore = new Map<string, string>();
-
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function isRateLimitError(message: string | null | undefined): boolean {
@@ -48,7 +43,7 @@ interface CustomerContextType {
   setAuthModalOpen: (open: boolean) => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, fullName: string, phone?: string, avatarUrl?: string | null) => Promise<{ error: string | null }>;
-  sendOtp: (phone: string) => Promise<{ error: string | null; debugCode?: string | null; instant?: boolean }>;
+  sendOtp: (phone: string) => Promise<{ error: string | null }>;
   verifyOtp: (phone: string, token: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -69,6 +64,14 @@ const CustomerContext = createContext<CustomerContextType>({
   refreshProfile: async () => {},
   updateProfile: async () => ({ error: null }),
 });
+
+function normalizeEgyptianPhone(phone: string): string {
+  let digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('002')) digits = digits.slice(3);
+  else if (digits.startsWith('20') && digits.length === 12) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = digits.slice(1);
+  return `+20${digits}`;
+}
 
 async function fetchProfile(): Promise<CustomerProfile | null> {
   const { data } = await supabase.auth.getUser();
@@ -180,14 +183,13 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string, phone?: string, avatarUrl?: string | null) => {
     const normalizedEmail = email.toLowerCase().trim();
-    if (DEMO_OTP_ENABLED) {
-      const normPhone = phone ? normalizeEgyptianPhone(phone) : null;
-      const [dupEmail, dupPhone] = await Promise.all([
-        supabase.rpc('customer_email_exists', { p_email: normalizedEmail }),
-        normPhone
-          ? supabase.rpc('customer_phone_exists', { p_phone: normPhone })
-          : Promise.resolve({ data: false }),
-      ]);
+    const normPhone = phone ? normalizeEgyptianPhone(phone) : null;
+    const [dupEmail, dupPhone] = await Promise.all([
+      supabase.rpc('customer_email_exists', { p_email: normalizedEmail }),
+      normPhone
+        ? supabase.rpc('customer_phone_exists', { p_phone: normPhone })
+        : Promise.resolve({ data: false }),
+    ]);
       if (dupEmail.data) return { error: 'هذا البريد الإلكتروني مسجل بحساب آخر، يمكنك تسجيل الدخول بدلاً من إنشاء حساب جديد' };
       if (dupPhone.data) return { error: 'رقم الهاتف مسجل بحساب آخر، يمكنك تسجيل الدخول بدلاً من إنشاء حساب جديد' };
       // إنشاء حساب Auth حقيقي حتى يعمل تسجيل الدخول بالرقم أو الإيميل من أي جهاز
@@ -253,67 +255,9 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       }
       await refreshProfile();
       return { error: null };
-    }
-    const { data, error } = await supabase.auth.signUp({
-      email: normalizedEmail,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          phone: phone || null,
-          avatar_url: avatarUrl || null,
-        },
-      },
-    });
-    if (error) return { error: localizedError(error.message, 'ar') };
-
-    if (data.session) {
-      await refreshProfile();
-      return { error: null };
-    }
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
-    if (signInError) {
-      return { error: 'تم إنشاء الحساب. برجاء تأكيد بريدك الإلكتروني من الرسالة المرسلة ثم تسجيل الدخول.' };
-    }
-    await refreshProfile();
-    return { error: null };
   };
 
-  const normalizeEgyptianPhone = (phone: string): string => {
-  let digits = phone.replace(/\D/g, '');
-  if (digits.startsWith('002')) digits = digits.slice(3);
-  else if (digits.startsWith('20') && digits.length === 12) digits = digits.slice(2);
-  if (digits.startsWith('0')) digits = digits.slice(1);
-  return `+20${digits}`;
-};
-
   const sendOtp = async (phone: string) => {
-    if (DEMO_OTP_ENABLED) {
-      const normPhone = normalizeEgyptianPhone(phone);
-      const { data: sessionData } = await supabase.auth.getSession();
-      let uid = sessionData.session?.user?.id ?? null;
-      if (!uid) {
-        const res = await supabase.auth.signInAnonymously();
-        uid = res.error ? null : (res.data?.user?.id ?? null);
-      }
-      if (!uid) {
-        return { error: 'تعذر بدء جلسة التحقق، برجاء المحاولة مرة أخرى', instant: false };
-      }
-      // ربط الرقم بصف العميل الخاص بهذه الجلسة (الـ trigger ينشئه تلقائياً عند الحاجة)
-      const { error: linkErr } = await supabase
-        .from('customers')
-        .update({ phone: normPhone })
-        .eq('user_id', uid);
-      if (linkErr) {
-        return { error: localizedError(linkErr.message, 'ar'), instant: false };
-      }
-      await refreshProfile();
-      return { error: null, instant: true };
-    }
     const { error } = await supabase.auth.signInWithOtp({
       phone: normalizeEgyptianPhone(phone),
     });
@@ -322,30 +266,6 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   };
 
   const verifyOtp = async (phone: string, token: string) => {
-    if (DEMO_OTP_ENABLED) {
-      const expected = demoOtpStore.get(phone.replace(/\D/g, ''));
-      if (!expected || expected !== token.trim()) {
-        return { error: 'كود التحقق غير صحيح' };
-      }
-      demoOtpStore.delete(phone.replace(/\D/g, ''));
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session?.user) {
-        const res = await supabase.auth.signInAnonymously();
-        if (res.error) {
-          return { error: 'تعذر إكمال التحقق، برجاء المحاولة مرة أخرى' };
-        }
-      }
-      const uid = (await supabase.auth.getUser()).data.user?.id ?? null;
-      if (!uid) {
-        return { error: 'تعذر إكمال التحقق، برجاء المحاولة مرة أخرى' };
-      }
-      await supabase
-        .from('customers')
-        .update({ phone: normalizeEgyptianPhone(phone) })
-        .eq('user_id', uid);
-      await refreshProfile();
-      return { error: null };
-    }
     const { error } = await supabase.auth.verifyOtp({
       phone: normalizeEgyptianPhone(phone),
       token: token.trim(),

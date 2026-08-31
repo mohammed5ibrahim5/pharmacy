@@ -72,11 +72,15 @@ export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-8 bg-slate-900/70 backdrop-blur-md animate-fade-in"
-      onClick={onClose}
+      className="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-8"
     >
       <div
-        className="bg-white w-full max-w-4xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-fade-up"
+        className="absolute inset-0 bg-slate-900/70 backdrop-blur-md animate-fade-in"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onClose}
+      />
+      <div
+        className="relative z-10 bg-white w-full max-w-4xl max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-fade-up"
         onClick={(e) => e.stopPropagation()}
         dir="rtl"
       >

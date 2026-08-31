@@ -20,7 +20,6 @@ import {
   uploadPaymentScreenshot,
   type PaymentMethod,
 } from '@/lib/orders';
-import { linkPrescriptionToOrderGroup } from '@/lib/prescriptions';
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
 import type { Pharmacy, Product, FamilyMember } from '@/types';
 
@@ -51,6 +50,7 @@ interface RxLite {
   reference_code: string | null;
   pipeline_status: string | null;
   created_at: string;
+  ocr_data?: { drug_name?: string } | null;
 }
 
 function finalPriceOf(product: Product): number {
@@ -93,13 +93,34 @@ export function OrderModal() {
   const [selectedRxId, setSelectedRxId] = useState('');
   const [rxModalOpen, setRxModalOpen] = useState(false);
 
+  const approvedRx = myRxList.filter((r) => r.pipeline_status === 'approved');
+
+  // تطبيع اسم دواء للمقارنة (يحذف الهمزات والفراغات والرموز)
+  const normalizeMed = (s?: string | null) =>
+    (s || '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[^0-9a-zA-Z\u0621-\u064A]/g, '').toUpperCase();
+
+  // تحقق صارم: كل دواء في السلة يحتاج وصفة يجب أن يطابق دواء الروشتة المختارة
+  const rxMismatch = useMemo(() => {
+    if (!selectedRxId) return null;
+    const rxDrug = normalizeMed(approvedRx.find((r) => r.id === selectedRxId)?.ocr_data?.drug_name);
+    if (!rxDrug) return { name: '' };
+    for (const e of cart) {
+      if (!e.product.requires_prescription) continue;
+      const prod = normalizeMed(e.product.name || e.product.name_en || '');
+      if (rxDrug !== prod && !rxDrug.includes(prod) && !prod.includes(rxDrug)) {
+        return { name: e.product.name || e.product.name_en || '' };
+      }
+    }
+    return null;
+  }, [selectedRxId, cart, approvedRx]);
+
   useEffect(() => {
     if (!cartOpen || !user || !needsRx) return;
     let cancelled = false;
     const load = async () => {
       const { data } = await supabase
         .from('prescriptions')
-        .select('id, reference_code, pipeline_status, created_at')
+        .select('id, reference_code, pipeline_status, created_at, ocr_data')
         .eq('customer_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -119,14 +140,27 @@ export function OrderModal() {
     if (!cartOpen) return;
     let cancelled = false;
     const loadPharmacies = async () => {
-      const { data } = await supabase.from('pharmacies').select('*').order('name');
+      // Only load pharmacies that are in the cart (optimized)
+      const pharmacyIds = [...new Set(
+        cart
+          .filter((e) => e.product.pharmacy_id && !e.product.for_all_pharmacies)
+          .map((e) => e.product.pharmacy_id)
+      )];
+      if (pharmacyIds.length === 0) {
+        setPharmacies([]);
+        return;
+      }
+      const { data } = await supabase
+        .from('pharmacies')
+        .select('*')
+        .in('id', pharmacyIds);
       if (!cancelled) setPharmacies((data || []) as Pharmacy[]);
     };
     loadPharmacies();
     return () => {
       cancelled = true;
     };
-  }, [cartOpen]);
+  }, [cartOpen, cart]);
 
   useEffect(() => {
     if (!cartOpen || !user || !featuresConfig.familyMembers) return;
@@ -248,7 +282,6 @@ export function OrderModal() {
   const loyaltyDiscount = Math.round(redeemChunks * redeemValue * 100) / 100;
   const totalAfterDiscount = Math.max(0, total - loyaltyDiscount);
 
-  const approvedRx = myRxList.filter((r) => r.pipeline_status === 'approved');
   useEffect(() => {
     if (selectedRxId && !approvedRx.some((r) => r.id === selectedRxId)) setSelectedRxId('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -573,86 +606,56 @@ export function OrderModal() {
       setLoading(false);
       return;
     }
+    if (needsRx && rxMismatch) {
+      setError(t('الدواء "{0}" لا يتطابق مع الدواء المذكور في الروشتة المعتمدة. لا يمكن إتمام الطلب — اختر دواءً مطابقاً أو ارفع روشتة جديدة.', [rxMismatch.name]));
+      setLoading(false);
+      return;
+    }
 
     try {
-      const screenshotUrl = isCOD || isOnline ? null : screenshot!.startsWith('data:') ? await uploadPaymentScreenshot(screenshot!, user.id) : screenshot;
-      const redeemedPoints = redeemChunks * redeemStep;
-      const { data: groupData, error: groupErr } = await supabase
-        .from('order_groups')
-        .insert({
-          customer_id: user.id,
-          family_member_id: selectedFamilyMember || null,
-          address: address || null,
-          note: note || null,
-          status: 'pending',
-          payment_method: paymentMethod,
-          payment_number: methodNumber,
-          payment_screenshot_url: screenshotUrl,
-          delivery_fee: totalDelivery,
-          total_price: totalAfterDiscount,
-          loyalty_discount: loyaltyDiscount,
-          points_used: redeemedPoints,
-        })
-        .select('id')
-        .single();
-      if (groupErr) {
-        setError(localizedError(groupErr.message, lang));
+      // رفع صورة إثبات التحويل قبل استدعاء السيرفر (إن وُجدت)
+      const screenshotUrl = isCOD || isOnline
+        ? null
+        : screenshot!.startsWith('data:')
+          ? await uploadPaymentScreenshot(screenshot!, user.id)
+          : screenshot;
+
+      const stockItems = cart.map((e) => ({ product_id: e.product.id, quantity: e.quantity }));
+      const rxProductIds = needsRx
+        ? cart.filter((e) => e.product.requires_prescription).map((e) => e.product.id)
+        : null;
+
+      // إنشاء الطلب بالكامل على السيرفر: يتحقق من السعر/الكمية/المخزون
+      // ويعيد حساب الإجمالي ويخصم المخزون — كعملية ذرّية واحدة.
+      const { data: placed, error: placeErr } = await supabase.rpc('place_order', {
+        p_items: stockItems,
+        p_address: address || null,
+        p_note: note || null,
+        p_family_member_id: selectedFamilyMember || null,
+        p_payment_method: paymentMethod,
+        p_payment_number: methodNumber || null,
+        p_payment_screenshot_url: screenshotUrl,
+        p_redeem_chunks: redeemChunks,
+        p_rx_id: selectedRxId || null,
+        p_rx_product_ids: rxProductIds,
+      });
+
+      if (placeErr) {
+        setError(localizedError(placeErr.message, lang));
         setLoading(false);
         return;
       }
 
-      const lineTotals = cart.map((entry) => finalPriceOf(entry.product) * entry.quantity);
-      const lineSum = lineTotals.reduce((s, v) => s + v, 0) || 1;
-      const rows = cart.map((entry, i) => {
-        const price = lineTotals[i];
-        const share = lineSum > 0 ? (price / lineSum) * loyaltyDiscount : 0;
-        const rounded = i === cart.length - 1
-          ? Math.max(0, Math.round((loyaltyDiscount - lineTotals.slice(0, -1).reduce((s, v) => s + Math.round((v / lineSum) * loyaltyDiscount * 100) / 100, 0)) * 100) / 100)
-          : Math.round(share * 100) / 100;
-        return {
-          customer_id: user.id,
-          family_member_id: selectedFamilyMember || null,
-          product_id: entry.product.id,
-          pharmacy_id: entry.product.pharmacy_id || null,
-          quantity: entry.quantity,
-          total_price: Math.max(0, Math.round((price - rounded) * 100) / 100),
-          address: address || null,
-          note: note || null,
-          status: 'pending' as const,
-          payment_method: paymentMethod,
-          payment_number: methodNumber,
-          payment_screenshot_url: screenshotUrl,
-          order_group_id: groupData.id,
-        };
-      });
-
-      const { error: err } = await supabase.from('orders').insert(rows);
-      if (err) {
-        setError(localizedError(err.message, lang));
-      } else {
-        if (selectedRxId) {
-          try {
-            await linkPrescriptionToOrderGroup(selectedRxId, groupData.id);
-          } catch {
-            // لا نعطل الطلب لو فشل الربط
-          }
-        }
-        const { data: customer } = await supabase.from('customers').select('loyalty_points').eq('id', user.id).maybeSingle();
-        const current = Number((customer as { loyalty_points?: number } | null)?.loyalty_points || 0);
-
-        if (redeemedPoints > 0) {
-          const newBalance = Math.max(0, current - redeemedPoints);
-          await supabase.from('customers').update({ loyalty_points: newBalance }).eq('id', user.id);
-          await supabase.from('loyalty_transactions').insert({
-            customer_id: user.id,
-            points: -redeemedPoints,
-            reason: t('استبدال {0} نقطة بخصم {1} ج.م', [redeemedPoints, loyaltyDiscount.toFixed(2)]),
-          });
-        }
-        // النقاط تُضاف بعد تأكيد الأدمن (status = confirmed/delivered)
-        setLastEarnedPoints(0);
-        setLastRedeemedDiscount(loyaltyDiscount);
+      const groupId = (placed as { order_group_id?: string } | null)?.order_group_id;
+      if (!groupId) {
+        setError(t('تعذر إنشاء الطلب، برجاء المحاولة مرة أخرى.'));
+        setLoading(false);
+        return;
       }
+
+      setLastEarnedPoints(0);
+      setLastRedeemedDiscount(loyaltyDiscount);
+
       if (isOnline) {
         try {
           const intent = await createPaymentIntent({
@@ -661,10 +664,10 @@ export function OrderModal() {
             email: user?.email || '',
             firstName: profile?.full_name?.split(' ')[0] || 'عميل',
             lastName: profile?.full_name?.split(' ').slice(1).join(' ') || '',
-            orderGroupId: groupData.id,
+            orderGroupId: groupId,
           });
           setOnlinePayment({
-            groupId: groupData.id,
+            groupId,
             amount: totalAfterDiscount,
             hostedUrl: intent.hostedUrl,
             iframeId: intent.iframeId,
@@ -675,6 +678,7 @@ export function OrderModal() {
           setError(t('تعذر بدء الدفع أونلاين الآن، يمكنك إتمامه لاحقاً من صفحة طلباتك.'));
         }
       } else {
+        clearCart();
         setSuccess(true);
       }
     } catch {

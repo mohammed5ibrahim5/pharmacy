@@ -17,6 +17,8 @@ import {
   Zap,
   Calculator,
   Cross,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
@@ -39,7 +41,6 @@ import { HomeHowItWorks } from '@/components/HomeHowItWorks';
 import { HomeTestimonials } from '@/components/HomeTestimonials';
 import { HomeHealthTips } from '@/components/HomeHealthTips';
 import { HomeFAQ } from '@/components/HomeFAQ';
-import { CustomerServiceBanner } from '@/components/CustomerServiceBanner';
 import { PharmacyMap } from '@/components/PharmacyMap';
 import { MostSearched } from '@/components/MostSearched';
 import { Reveal } from '@/components/Reveal';
@@ -90,6 +91,8 @@ export function HomePage() {
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
   const [popularProductIds, setPopularProductIds] = useState<string[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [dataError, setDataError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const [heroScrollY, setHeroScrollY] = useState(0);
 
   const categoriesScrollRef = useRef<HTMLDivElement | null>(null);
@@ -218,56 +221,67 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
-      const [pharmRes, prodRes, catRes, statsRes, sectionsRes, catCountRes] = await Promise.all([
-        supabase.from('pharmacies').select('*').eq('is_active', true),
-        supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').eq('is_available', true).limit(20),
-        supabase.from('categories').select('*').order('name'),
-        supabase.rpc('get_store_order_stats'),
-        supabase.from('pharmacy_sections').select('pharmacy_id, section_key'),
-        supabase.from('products').select('category_id').eq('is_available', true),
-      ]);
-      setPharmacies(pharmRes.data || []);
-      setProducts(prodRes.data || []);
-      setCategories(catRes.data || []);
+      setDataError(false);
+      setLoadingData(true);
+      try {
+        const [pharmRes, prodRes, catRes, statsRes, sectionsRes, catCountRes] = await Promise.all([
+          supabase.from('pharmacies').select('*').eq('is_active', true),
+          supabase.from('products').select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)').eq('is_available', true).limit(20),
+          supabase.from('categories').select('*').order('name'),
+          supabase.rpc('get_store_order_stats'),
+          supabase.from('pharmacy_sections').select('pharmacy_id, section_key'),
+          supabase.from('products').select('category_id').eq('is_available', true),
+        ]);
+        if (cancelled) return;
+        setPharmacies(pharmRes.data || []);
+        setProducts(prodRes.data || []);
+        setCategories(catRes.data || []);
 
-      const catCounts: Record<string, number> = {};
-      (catCountRes.data || []).forEach((r: { category_id: string | null }) => {
-        if (r.category_id) catCounts[r.category_id] = (catCounts[r.category_id] || 0) + 1;
-      });
-      setCategoryCounts(catCounts);
-
-      const stats = (statsRes.data || {}) as {
-        popular?: { product_id: string; cnt: number }[];
-        pharmacy_counts?: { pharmacy_id: string; cnt: number }[];
-      };
-
-      setPopularProductIds((stats.popular || []).map((p) => p.product_id));
-
-      const counts: Record<string, number> = {};
-      (stats.pharmacy_counts || []).forEach((c) => {
-        counts[c.pharmacy_id] = c.cnt;
-      });
-      setOrderCounts(counts);
-
-      if (sectionsRes.error) {
-        setSectionsLoaded(false);
-      } else {
-        const map: Record<string, string[]> = {};
-        (sectionsRes.data || []).forEach((row) => {
-          if (!map[row.section_key]) map[row.section_key] = [];
-          if (!map[row.section_key].includes(row.pharmacy_id)) {
-            map[row.section_key].push(row.pharmacy_id);
-          }
+        const catCounts: Record<string, number> = {};
+        (catCountRes.data || []).forEach((r: { category_id: string | null }) => {
+          if (r.category_id) catCounts[r.category_id] = (catCounts[r.category_id] || 0) + 1;
         });
-        setPharmacySections(map);
-        setSectionsLoaded(true);
-      }
+        setCategoryCounts(catCounts);
 
-      setLoadingData(false);
+        const stats = (statsRes.data || {}) as {
+          popular?: { product_id: string; cnt: number }[];
+          pharmacy_counts?: { pharmacy_id: string; cnt: number }[];
+        };
+
+        setPopularProductIds((stats.popular || []).map((p) => p.product_id));
+
+        const counts: Record<string, number> = {};
+        (stats.pharmacy_counts || []).forEach((c) => {
+          counts[c.pharmacy_id] = c.cnt;
+        });
+        setOrderCounts(counts);
+
+        if (sectionsRes.error) {
+          setSectionsLoaded(false);
+        } else {
+          const map: Record<string, string[]> = {};
+          (sectionsRes.data || []).forEach((row) => {
+            if (!map[row.section_key]) map[row.section_key] = [];
+            if (!map[row.section_key].includes(row.pharmacy_id)) {
+              map[row.section_key].push(row.pharmacy_id);
+            }
+          });
+          setPharmacySections(map);
+          setSectionsLoaded(true);
+        }
+      } catch {
+        if (!cancelled) setDataError(true);
+      } finally {
+        if (!cancelled) setLoadingData(false);
+      }
     };
     fetchData();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [retryCount]);
 
   const sortedPharmacies = useMemo(() => {
     const withDistance = pharmacies.map((p) =>
@@ -669,6 +683,20 @@ export function HomePage() {
           </div>
 
           {/* Categories strip */}
+          {dataError && (
+            <div className="flex flex-col items-center gap-3 rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+              <AlertTriangle className="w-8 h-8 text-rose-400" />
+              <p className="text-sm font-black text-rose-700">{t('تعذر تحميل بيانات المتجر، تحقق من اتصالك بالإنترنت.')}</p>
+              <button
+                type="button"
+                onClick={() => setRetryCount((c) => c + 1)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-black hover:bg-rose-700 active:scale-95 transition-all"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                {t('إعادة المحاولة')}
+              </button>
+            </div>
+          )}
           {loadingData && categories.length === 0 ? (
             <div className="flex gap-2.5 overflow-hidden">
               {[...Array(10)].map((_, i) => (
@@ -957,9 +985,6 @@ export function HomePage() {
 
       {/* ==================== FAQ ==================== */}
       <Reveal><HomeFAQ /></Reveal>
-
-      {/* ==================== CUSTOMER SERVICE ==================== */}
-      <Reveal className="hidden lg:block"><CustomerServiceBanner /></Reveal>
 
       {/* ==================== EMERGENCY CTA BANNER ==================== */}
       {storeConfig.purchasesEnabled && (

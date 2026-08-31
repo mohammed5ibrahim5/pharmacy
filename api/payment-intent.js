@@ -33,6 +33,39 @@ export default async function handler(req, res) {
     return;
   }
 
+  // Validate amount against the database (prevents tampering)
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (supabaseUrl && serviceKey) {
+    try {
+      const groupRes = await fetch(
+        `${supabaseUrl}/rest/v1/order_groups?id=eq.${encodeURIComponent(orderGroupId)}&select=total_price,delivery_fee`,
+        {
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
+          },
+        }
+      );
+      const groups = await groupRes.json();
+      const group = groups && groups[0];
+      if (group) {
+        const serverTotal = Number(group.total_price) + Number(group.delivery_fee || 0);
+        const clientAmount = Number(amount);
+        // Allow 1% tolerance for rounding
+        if (Math.abs(serverTotal - clientAmount) > serverTotal * 0.01 + 0.01) {
+          res.status(400).json({ ok: false, error: 'AMOUNT_MISMATCH' });
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('[payment-intent] amount validation failed:', err);
+      // If validation request itself fails, reject to be safe
+      res.status(500).json({ ok: false, error: 'AMOUNT_VALIDATION_FAILED' });
+      return;
+    }
+  }
+
   const wallet = integration === 'wallet';
   const integrationId = wallet ? process.env.PAYMOB_INTEGRATION_WALLET : cardIntegration;
   const iframeId = wallet ? process.env.PAYMOB_IFRAME_WALLET : cardIframe;

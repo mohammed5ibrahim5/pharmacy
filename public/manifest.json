@@ -1,0 +1,29 @@
+{
+  "name": "صيدليتي - منصة الصيدليات القريبة",
+  "short_name": "صيدليتي",
+  "description": "اعثر على دوائك في أقرب صيدلية - منصة تجمع الصيدليات القريبة منك",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#0d9488",
+  "orientation": "portrait-primary",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "medical", "pharmacy"],
+  "scope": "/",
+  "prefer_related_applications": false
+}
