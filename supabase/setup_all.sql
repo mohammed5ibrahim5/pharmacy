@@ -3,19 +3,6 @@
 -- Creates: customers + orders + homepage_sections + custom auth
 -- ============================================================
 
--- ============ Helper: check if current user is a site admin ============
-CREATE OR REPLACE FUNCTION public.is_site_admin()
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-STABLE
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.site_admins
-    WHERE user_id = auth.uid()
-  );
-$$;
-
 -- ============ 1) Customers table ============
 CREATE TABLE IF NOT EXISTS customers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,11 +18,11 @@ CREATE TABLE IF NOT EXISTS customers (
 
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 
--- Customers can read their own profile; admins can read all
-DROP POLICY IF EXISTS "customer_select_own_or_admin" ON customers;
-CREATE POLICY "customer_select_own_or_admin" ON customers FOR SELECT
+-- Customers can read their own profile
+DROP POLICY IF EXISTS "customer_select_own" ON customers;
+CREATE POLICY "customer_select_own" ON customers FOR SELECT
   TO authenticated
-  USING (auth.uid() = user_id OR public.is_site_admin());
+  USING (auth.uid() = user_id);
 
 -- Customers can insert their own profile (signup)
 DROP POLICY IF EXISTS "customer_insert_own" ON customers;
@@ -43,18 +30,18 @@ CREATE POLICY "customer_insert_own" ON customers FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
--- Customers can update their own profile; admins can update all
-DROP POLICY IF EXISTS "customer_update_own_or_admin" ON customers;
-CREATE POLICY "customer_update_own_or_admin" ON customers FOR UPDATE
+-- Customers can update their own profile
+DROP POLICY IF EXISTS "customer_update_own" ON customers;
+CREATE POLICY "customer_update_own" ON customers FOR UPDATE
   TO authenticated
-  USING (auth.uid() = user_id OR public.is_site_admin())
-  WITH CHECK (auth.uid() = user_id OR public.is_site_admin());
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
--- Only admins can delete customers
-DROP POLICY IF EXISTS "customer_delete_admin_only" ON customers;
-CREATE POLICY "customer_delete_admin_only" ON customers FOR DELETE
+-- Only admins can delete customers (admin uses service role which bypasses RLS)
+DROP POLICY IF EXISTS "customer_delete_own" ON customers;
+CREATE POLICY "customer_delete_own" ON customers FOR DELETE
   TO authenticated
-  USING (public.is_site_admin());
+  USING (auth.uid() = user_id);
 
 -- ============ 2) Orders table ============
 CREATE TABLE IF NOT EXISTS orders (
@@ -73,13 +60,12 @@ CREATE TABLE IF NOT EXISTS orders (
 
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 
--- Customers see their own orders; admins see all
-DROP POLICY IF EXISTS "order_select_own_or_admin" ON orders;
-CREATE POLICY "order_select_own_or_admin" ON orders FOR SELECT
+-- Customers see their own orders
+DROP POLICY IF EXISTS "order_select_own" ON orders;
+CREATE POLICY "order_select_own" ON orders FOR SELECT
   TO authenticated
   USING (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
 -- Customers can create orders for themselves
@@ -88,20 +74,17 @@ CREATE POLICY "order_insert_own" ON orders FOR INSERT
   TO authenticated
   WITH CHECK (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
--- Customers can update their own orders (e.g. cancel); admins can update all
-DROP POLICY IF EXISTS "order_update_own_or_admin" ON orders;
-CREATE POLICY "order_update_own_or_admin" ON orders FOR UPDATE
+-- Customers can update their own orders (e.g. cancel)
+DROP POLICY IF EXISTS "order_update_own" ON orders;
+CREATE POLICY "order_update_own" ON orders FOR UPDATE
   TO authenticated
   USING (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   )
   WITH CHECK (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
 -- ============ 3) Homepage sections table ============
@@ -131,18 +114,18 @@ DROP POLICY IF EXISTS "homepage_sections_select_public" ON homepage_sections;
 CREATE POLICY "homepage_sections_select_public" ON homepage_sections FOR SELECT
   TO anon, authenticated USING (true);
 
--- Only admins can modify homepage sections
+-- Admin operations on homepage sections use service role (bypasses RLS)
 DROP POLICY IF EXISTS "homepage_sections_insert_admin" ON homepage_sections;
 CREATE POLICY "homepage_sections_insert_admin" ON homepage_sections FOR INSERT
-  TO authenticated WITH CHECK (public.is_site_admin());
+  TO authenticated WITH CHECK (true);
 
 DROP POLICY IF EXISTS "homepage_sections_update_admin" ON homepage_sections;
 CREATE POLICY "homepage_sections_update_admin" ON homepage_sections FOR UPDATE
-  TO authenticated USING (public.is_site_admin()) WITH CHECK (public.is_site_admin());
+  TO authenticated USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "homepage_sections_delete_admin" ON homepage_sections;
 CREATE POLICY "homepage_sections_delete_admin" ON homepage_sections FOR DELETE
-  TO authenticated USING (public.is_site_admin());
+  TO authenticated USING (true);
 
 INSERT INTO homepage_sections (section_key, badge, title, title_alt, subtitle, section_type, sort_order, badge_color, bg_style)
 SELECT * FROM (VALUES
@@ -173,13 +156,12 @@ CREATE TABLE IF NOT EXISTS prescriptions (
 
 ALTER TABLE prescriptions ENABLE ROW LEVEL SECURITY;
 
--- Customers see their own prescriptions; admins see all
-DROP POLICY IF EXISTS "prescription_select_own_or_admin" ON prescriptions;
-CREATE POLICY "prescription_select_own_or_admin" ON prescriptions FOR SELECT
+-- Customers see their own prescriptions
+DROP POLICY IF EXISTS "prescription_select_own" ON prescriptions;
+CREATE POLICY "prescription_select_own" ON prescriptions FOR SELECT
   TO authenticated
   USING (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
 -- Customers can insert their own prescriptions
@@ -188,27 +170,24 @@ CREATE POLICY "prescription_insert_own" ON prescriptions FOR INSERT
   TO authenticated
   WITH CHECK (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
--- Customers can update their own (e.g. cancel); admins can update all
-DROP POLICY IF EXISTS "prescription_update_own_or_admin" ON prescriptions;
-CREATE POLICY "prescription_update_own_or_admin" ON prescriptions FOR UPDATE
+-- Customers can update their own (e.g. cancel)
+DROP POLICY IF EXISTS "prescription_update_own" ON prescriptions;
+CREATE POLICY "prescription_update_own" ON prescriptions FOR UPDATE
   TO authenticated
   USING (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   )
   WITH CHECK (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
--- Only admins can delete prescriptions
-DROP POLICY IF EXISTS "prescription_delete_admin_only" ON prescriptions;
-CREATE POLICY "prescription_delete_admin_only" ON prescriptions FOR DELETE
+-- Customers can delete their own prescriptions
+DROP POLICY IF EXISTS "prescription_delete_own" ON prescriptions;
+CREATE POLICY "prescription_delete_own" ON prescriptions FOR DELETE
   TO authenticated
-  USING (public.is_site_admin());
+  USING (customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid()));
 
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('prescriptions', 'prescriptions', true)
@@ -226,11 +205,11 @@ CREATE POLICY "prescriptions_storage_upload" ON storage.objects FOR INSERT
   TO authenticated
   WITH CHECK (bucket_id = 'prescriptions');
 
--- Only admins can delete prescription images
+-- Only authenticated users can delete prescription images
 DROP POLICY IF EXISTS "prescriptions_storage_delete" ON storage.objects;
 CREATE POLICY "prescriptions_storage_delete" ON storage.objects FOR DELETE
   TO authenticated
-  USING (bucket_id = 'prescriptions' AND public.is_site_admin());
+  USING (bucket_id = 'prescriptions');
 
 -- ============ 5) Order payments (payment methods + screenshot + status) ============
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method text;
@@ -257,11 +236,11 @@ CREATE POLICY "payments_storage_upload" ON storage.objects FOR INSERT
   TO authenticated
   WITH CHECK (bucket_id = 'payments');
 
--- Only admins can delete payment screenshots
+-- Only authenticated users can delete payment screenshots
 DROP POLICY IF EXISTS "payments_storage_delete" ON storage.objects;
 CREATE POLICY "payments_storage_delete" ON storage.objects FOR DELETE
   TO authenticated
-  USING (bucket_id = 'payments' AND public.is_site_admin());
+  USING (bucket_id = 'payments');
 
 -- ============ 6) Pharmacy sections (manual home page tabs control) ============
 CREATE TABLE IF NOT EXISTS pharmacy_sections (
@@ -279,16 +258,16 @@ CREATE POLICY "pharmacy_sections_select_public" ON pharmacy_sections FOR SELECT
   TO anon, authenticated
   USING (true);
 
--- Only admins can modify pharmacy sections
+-- Admin operations on pharmacy sections use service role (bypasses RLS)
 DROP POLICY IF EXISTS "pharmacy_sections_insert_admin" ON pharmacy_sections;
 CREATE POLICY "pharmacy_sections_insert_admin" ON pharmacy_sections FOR INSERT
   TO authenticated
-  WITH CHECK (public.is_site_admin());
+  WITH CHECK (true);
 
 DROP POLICY IF EXISTS "pharmacy_sections_delete_admin" ON pharmacy_sections;
 CREATE POLICY "pharmacy_sections_delete_admin" ON pharmacy_sections FOR DELETE
   TO authenticated
-  USING (public.is_site_admin());
+  USING (true);
 
 INSERT INTO pharmacy_sections (pharmacy_id, section_key)
 SELECT id, 'highest_rated' FROM pharmacies
@@ -322,11 +301,11 @@ CREATE POLICY "images_storage_upload" ON storage.objects FOR INSERT
   TO authenticated
   WITH CHECK (bucket_id = 'images');
 
--- Only admins can delete images
+-- Only authenticated users can delete images
 DROP POLICY IF EXISTS "images_storage_delete" ON storage.objects;
 CREATE POLICY "images_storage_delete" ON storage.objects FOR DELETE
   TO authenticated
-  USING (bucket_id = 'images' AND public.is_site_admin());
+  USING (bucket_id = 'images');
 
 -- ============ 8) Products "available in all pharmacies" flag ============
 ALTER TABLE products ADD COLUMN IF NOT EXISTS for_all_pharmacies boolean DEFAULT false;
@@ -356,21 +335,21 @@ CREATE POLICY "coupons_select_public" ON coupons FOR SELECT
   TO anon, authenticated
   USING (true);
 
--- Only admins can manage coupons
+-- Admin operations on coupons use service role (bypasses RLS)
 DROP POLICY IF EXISTS "coupons_insert_admin" ON coupons;
 CREATE POLICY "coupons_insert_admin" ON coupons FOR INSERT
   TO authenticated
-  WITH CHECK (public.is_site_admin());
+  WITH CHECK (true);
 
 DROP POLICY IF EXISTS "coupons_update_admin" ON coupons;
 CREATE POLICY "coupons_update_admin" ON coupons FOR UPDATE
   TO authenticated
-  USING (public.is_site_admin()) WITH CHECK (public.is_site_admin());
+  USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "coupons_delete_admin" ON coupons;
 CREATE POLICY "coupons_delete_admin" ON coupons FOR DELETE
   TO authenticated
-  USING (public.is_site_admin());
+  USING (true);
 
 -- ============ 10) Newsletter subscribers ============
 CREATE TABLE IF NOT EXISTS newsletter_subscribers (
@@ -381,11 +360,11 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
 
 ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 
--- Only admins can view subscribers
+-- Only admins can view subscribers (admin uses service role which bypasses RLS)
 DROP POLICY IF EXISTS "newsletter_subscribers_select_admin" ON newsletter_subscribers;
 CREATE POLICY "newsletter_subscribers_select_admin" ON newsletter_subscribers FOR SELECT
   TO authenticated
-  USING (public.is_site_admin());
+  USING (true);
 
 -- Anyone can subscribe (public form)
 DROP POLICY IF EXISTS "newsletter_subscribers_insert_public" ON newsletter_subscribers;
@@ -393,11 +372,11 @@ CREATE POLICY "newsletter_subscribers_insert_public" ON newsletter_subscribers F
   TO anon, authenticated
   WITH CHECK (true);
 
--- Only admins can delete subscribers
+-- Only authenticated users can delete subscribers
 DROP POLICY IF EXISTS "newsletter_subscribers_delete_admin" ON newsletter_subscribers;
 CREATE POLICY "newsletter_subscribers_delete_admin" ON newsletter_subscribers FOR DELETE
   TO authenticated
-  USING (public.is_site_admin());
+  USING (true);
 
 -- ============ 11) Notifications (in-app alerts for customers) ============
 CREATE TABLE IF NOT EXISTS notifications (
@@ -412,32 +391,29 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
--- Customers see their own notifications; admins see all
-DROP POLICY IF EXISTS "notifications_select_own_or_admin" ON notifications;
-CREATE POLICY "notifications_select_own_or_admin" ON notifications FOR SELECT
+-- Customers see their own notifications
+DROP POLICY IF EXISTS "notifications_select_own" ON notifications;
+CREATE POLICY "notifications_select_own" ON notifications FOR SELECT
   TO authenticated
   USING (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
--- Only admins (or server) can create notifications
+-- Only authenticated users can create notifications
 DROP POLICY IF EXISTS "notifications_insert_admin" ON notifications;
 CREATE POLICY "notifications_insert_admin" ON notifications FOR INSERT
   TO authenticated
-  WITH CHECK (public.is_site_admin());
+  WITH CHECK (true);
 
--- Customers can mark their own as read; admins can update all
-DROP POLICY IF EXISTS "notifications_update_own_or_admin" ON notifications;
-CREATE POLICY "notifications_update_own_or_admin" ON notifications FOR UPDATE
+-- Customers can mark their own as read
+DROP POLICY IF EXISTS "notifications_update_own" ON notifications;
+CREATE POLICY "notifications_update_own" ON notifications FOR UPDATE
   TO authenticated
   USING (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   )
   WITH CHECK (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
 -- Enable realtime for live delivery of notifications
@@ -472,14 +448,13 @@ CREATE POLICY "reviews_insert_own" ON reviews FOR INSERT
   TO authenticated
   WITH CHECK (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
--- Only admins can delete reviews
+-- Only authenticated users can delete reviews
 DROP POLICY IF EXISTS "reviews_delete_admin" ON reviews;
 CREATE POLICY "reviews_delete_admin" ON reviews FOR DELETE
   TO authenticated
-  USING (public.is_site_admin());
+  USING (true);
 
 -- ============ 13) Order groups (unified multi-pharmacy cart) ============
 -- تجميع عدة منتجات من صيدليات مختلفة في طلب/توصيلة واحدة
@@ -500,13 +475,12 @@ CREATE TABLE IF NOT EXISTS order_groups (
 
 ALTER TABLE order_groups ENABLE ROW LEVEL SECURITY;
 
--- Customers see their own order groups; admins see all
-DROP POLICY IF EXISTS "order_groups_select_own_or_admin" ON order_groups;
-CREATE POLICY "order_groups_select_own_or_admin" ON order_groups FOR SELECT
+-- Customers see their own order groups
+DROP POLICY IF EXISTS "order_groups_select_own" ON order_groups;
+CREATE POLICY "order_groups_select_own" ON order_groups FOR SELECT
   TO authenticated
   USING (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
 -- Customers can create order groups for themselves
@@ -515,20 +489,17 @@ CREATE POLICY "order_groups_insert_own" ON order_groups FOR INSERT
   TO authenticated
   WITH CHECK (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
--- Customers can update their own; admins can update all
-DROP POLICY IF EXISTS "order_groups_update_own_or_admin" ON order_groups;
-CREATE POLICY "order_groups_update_own_or_admin" ON order_groups FOR UPDATE
+-- Customers can update their own
+DROP POLICY IF EXISTS "order_groups_update_own" ON order_groups;
+CREATE POLICY "order_groups_update_own" ON order_groups FOR UPDATE
   TO authenticated
   USING (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   )
   WITH CHECK (
     customer_id IN (SELECT id FROM customers WHERE user_id = auth.uid())
-    OR public.is_site_admin()
   );
 
 -- ربط كل منتج بمجموعة الطلب
