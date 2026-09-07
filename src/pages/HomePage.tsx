@@ -19,6 +19,8 @@ import {
   Cross,
   AlertTriangle,
   RefreshCw,
+  BookOpen,
+  Truck,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
@@ -413,21 +415,20 @@ export function HomePage() {
     <div className="overflow-hidden bg-slate-50/60">
       {/* ==================== HERO SECTION ==================== */}
       <section
-        className="relative overflow-hidden pt-10 sm:pt-16 pb-12 lg:pb-32 border-b transition-all duration-300"
+        className="relative overflow-hidden pt-10 sm:pt-16 pb-12 lg:pb-32 border-b transition-all duration-300 ambient-glow-bg"
         style={{
-          background: `linear-gradient(135deg, ${themeColors.heroBgStart}, ${themeColors.heroBgMiddle}, ${themeColors.heroBgEnd})`,
           borderColor: `${themeColors.primaryColor}15`
         }}
       >
-        {/* Glow Orbs */}
+        {/* Glow Orbs & Ambient Mesh (Change Set 1) */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div
-            className="absolute -top-40 -end-40 w-[600px] h-[600px] rounded-full opacity-20 blur-[130px] animate-pulse"
-            style={{ backgroundColor: themeColors.primaryColor }}
+            className="absolute -top-32 -end-32 w-[650px] h-[650px] rounded-full opacity-25 blur-[120px] animate-pulse"
+            style={{ background: `radial-gradient(circle, ${themeColors.primaryColor}40 0%, ${themeColors.secondaryColor}20 60%, transparent 80%)` }}
           />
           <div
-            className="absolute top-1/2 -start-40 w-[500px] h-[500px] rounded-full opacity-15 blur-[110px] animate-float"
-            style={{ backgroundColor: themeColors.secondaryColor }}
+            className="absolute top-1/3 -start-32 w-[520px] h-[520px] rounded-full opacity-20 blur-[110px] animate-float"
+            style={{ background: `radial-gradient(circle, ${themeColors.accentColor}30 0%, ${themeColors.primaryColor}15 70%, transparent 80%)` }}
           />
           <div className="absolute inset-0 bg-[radial-gradient(rgba(0,0,0,0.04)_0.5px,transparent_0.5px)] [background-size:24px_24px] opacity-20" />
           {/* Floating Medical Emojis */}
@@ -982,6 +983,77 @@ export function HomePage() {
 
       {/* ==================== HEALTH TIPS ==================== */}
       <Reveal className="hidden lg:block"><HomeHealthTips /></Reveal>
+
+      {/* ==================== HEALTH & SAFETY PROMO BAND ==================== */}
+      <Reveal>
+      <section className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          className="rounded-[2rem] relative overflow-hidden border p-7 sm:p-10"
+          style={{
+            background: `linear-gradient(135deg, ${themeColors.priceColor}12, ${themeColors.primaryColor}08)`,
+            borderColor: `${themeColors.priceColor}20`,
+          }}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div>
+              <span
+                className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-black"
+                style={{ backgroundColor: `${themeColors.priceColor}18`, color: themeColors.priceColor }}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {t('سلامتك أولاً')}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mt-3 leading-snug">
+                {t('دليل الاستخدام الآمن للأدوية الأكثر شيوعاً')}
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium mt-3">
+                {t('الباراسيتامول، مسكنات الالتهاب، أدوية البرد، فيتامين د والمضادات الحيوية — اقرأ عن الجرعات الآمنة والتداخلات الدوائية قبل الشراء.')}
+              </p>
+              <div className="flex flex-wrap gap-3 mt-6">
+                <button
+                  onClick={() => navigate({ name: 'health' })}
+                  className="inline-flex items-center gap-1.5 px-5 py-3 rounded-2xl text-white font-bold text-sm shadow-lg transition-all hover:brightness-105 active:scale-[0.98]"
+                  style={{ backgroundColor: themeColors.priceColor, boxShadow: `0 8px 20px -6px ${themeColors.priceColor}88` }}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  {t('استكشف الموضوعات الصحية')}
+                </button>
+                <button
+                  onClick={() => navigate({ name: 'track' })}
+                  className="inline-flex items-center gap-1.5 px-5 py-3 rounded-2xl border-2 font-bold text-sm transition-all active:scale-[0.98]"
+                  style={{ borderColor: themeColors.priceColor, color: themeColors.priceColor, backgroundColor: 'rgba(255,255,255,0.6)' }}
+                >
+                  <Truck className="w-4 h-4" />
+                  {t('تتبع طلبك')}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+              {[
+                { icon: <ShieldCheck className="w-5 h-5" />, label: t('البدائل الآمنة المتوفرة') },
+                { icon: <Sparkles className="w-5 h-5" />, label: t('تنبيهات التداخلات الدوائية') },
+                { icon: <Truck className="w-5 h-5" />, label: t('تتبع الطلب برقم الهاتف') },
+                { icon: <BookOpen className="w-5 h-5" />, label: t('موسوعة صحية موثوقة') },
+              ].map((c, i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-100 p-4 flex items-center gap-3 shadow-sm"
+                >
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${themeColors.priceColor}14`, color: themeColors.priceColor }}
+                  >
+                    {c.icon}
+                  </div>
+                  <p className="text-xs font-extrabold text-slate-700 leading-snug">{c.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+      </Reveal>
 
       {/* ==================== FAQ ==================== */}
       <Reveal><HomeFAQ /></Reveal>

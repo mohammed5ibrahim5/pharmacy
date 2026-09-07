@@ -15,4 +15,5 @@ export const SubscribersTab = React.lazy(() => import('./SubscribersTab').then((
 export const StockAlertsTab = React.lazy(() => import('./StockAlertsTab').then((m) => ({ default: m.StockAlertsTab })));
 export const LoyaltyTab = React.lazy(() => import('./LoyaltyTab').then((m) => ({ default: m.LoyaltyTab })));
 export const DoseRulesTab = React.lazy(() => import('./DoseRulesTab').then((m) => ({ default: m.DoseRulesTab })));
+export const AnalyticsTab = React.lazy(() => import('./AnalyticsTab').then((m) => ({ default: m.AnalyticsTab })));
 export const SettingsTab = React.lazy(() => import('./SettingsTab').then((m) => ({ default: m.SettingsTab })));

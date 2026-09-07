@@ -29,6 +29,24 @@ export async function loginOwner(
     return { owner: null, pharmacy: null, error: ownerError.message };
   }
   if (!owner) {
+    const { data: staff, error: staffError } = await supabase
+      .from('pharmacy_staff')
+      .select('*')
+      .eq('id', uid)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (staffError || !staff) {
+      await supabase.auth.signOut();
+      return { owner: null, pharmacy: null, error: 'لا يوجد حساب صيدلية مرتبط بهذا البريد الإلكتروني' };
+    }
+    const pharmacy = await fetchPharmacy(staff.pharmacy_id);
+    if (!pharmacy) {
+      await supabase.auth.signOut();
+      return { owner: null, pharmacy: null, error: 'الصيدلية المرتبطة بهذا الحساب لم تعد موجودة' };
+    }
+    return { owner: { ...staff, phone: null, updated_at: staff.created_at } as PharmacyOwner, pharmacy, error: null };
+  }
+  if (!owner) {
     await supabase.auth.signOut();
     return { owner: null, pharmacy: null, error: 'لا يوجد حساب مالك مرتبط بهذا البريد الإلكتروني' };
   }

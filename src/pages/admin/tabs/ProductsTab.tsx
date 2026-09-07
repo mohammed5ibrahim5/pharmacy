@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Package, Plus, Edit2, Trash2, Search, Save, Check, Info } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, Search, Save, Check, Info, FileSpreadsheet, PackagePlus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { translateError } from '@/lib/errorMessages';
 import { notifyStockAvailable } from '@/lib/loyalty';
 import { Field, Modal, ImageUrlField, inputClass } from './shared';
 import type { Pharmacy, Product, Category } from '@/types';
+import { InventoryImportModal } from './InventoryImportModal';
+import { InventoryBatchModal } from './InventoryBatchModal';
 
 const UNIT_OPTIONS = ['قطعة', 'شريط', 'علبة', 'زجاجة', 'أمبول', 'تيوب', 'كيس', 'قارورة', 'عبوة', 'فيال'];
 
@@ -19,6 +21,8 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
   const [filterPharmacy, setFilterPharmacy] = useState('');
   const [editing, setEditing] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [batchProduct, setBatchProduct] = useState<Product | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -64,7 +68,10 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
             </select>
           )}
         </div>
-        <button onClick={() => { setEditing(null); setShowForm(true); }} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-medium shrink-0" style={{ backgroundColor: settings.primary_color }}><Plus className="w-4 h-4" /> إضافة منتج</button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={() => setShowImport(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-teal-200 bg-teal-50 text-teal-700 text-sm font-medium"><FileSpreadsheet className="w-4 h-4" /> استيراد Excel</button>
+          <button onClick={() => { setEditing(null); setShowForm(true); }} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-medium" style={{ backgroundColor: settings.primary_color }}><Plus className="w-4 h-4" /> إضافة منتج</button>
+        </div>
       </div>
 
       {loading ? (
@@ -104,10 +111,11 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
                       {!pharmacyId && <td className="p-3 text-gray-600 hidden sm:table-cell">{product.pharmacy?.name}</td>}
                       <td className="p-3 text-gray-600 hidden md:table-cell">{product.category?.name || '-'}</td>
                       <td className="p-3"><span className="font-semibold" style={{ color: settings.primary_color }}>{finalPrice.toFixed(2)}</span>{discount && <span className="text-xs text-gray-400 line-through mr-1">{product.price.toFixed(2)}</span>}<span className="text-xs text-gray-400"> ج.م</span></td>
-                      <td className="p-3 hidden sm:table-cell"><span className={`text-xs font-medium ${product.stock_quantity > 10 ? 'text-green-600' : product.stock_quantity > 0 ? 'text-amber-600' : 'text-red-500'}`}>{product.stock_quantity}</span></td>
+                      <td className="p-3 hidden sm:table-cell"><span className={`text-xs font-medium ${product.stock_quantity > (product.reorder_level ?? 5) ? 'text-green-600' : product.stock_quantity > 0 ? 'text-amber-600' : 'text-red-500'}`}>{product.stock_quantity}</span><span className="block text-[10px] text-gray-400">حد الطلب: {product.reorder_level ?? 5}</span></td>
                       <td className="p-3 hidden sm:table-cell"><span className={`px-2 py-0.5 rounded-full text-xs ${product.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{product.is_available ? 'متوفر' : 'غير متوفر'}</span></td>
                       <td className="p-3"><div className="flex items-center justify-center gap-1">
                         <button onClick={() => { setEditing(product); setShowForm(true); }} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center"><Edit2 className="w-4 h-4 text-gray-600" /></button>
+                        <button onClick={() => setBatchProduct(product)} className="w-8 h-8 rounded-lg hover:bg-teal-50 flex items-center justify-center" title="إدارة التشغيلات"><PackagePlus className="w-4 h-4 text-teal-600" /></button>
                         <button onClick={() => handleDelete(product.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-4 h-4 text-red-500" /></button>
                       </div></td>
                     </tr>
@@ -120,6 +128,8 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
       )}
 
       {showForm && <ProductForm product={editing} pharmacies={pharmacies} categories={categories} lockedPharmacy={pharmacyId ? { id: pharmacyId, name: '' } : undefined} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchProducts(); setShowForm(false); setEditing(null); }} />}
+      {showImport && <InventoryImportModal lockedPharmacyId={pharmacyId} onClose={() => setShowImport(false)} onSaved={() => { fetchProducts(); setShowImport(false); }} />}
+      {batchProduct && <InventoryBatchModal productId={batchProduct.id} productName={batchProduct.name} onClose={() => setBatchProduct(null)} onSaved={() => { fetchProducts(); }} />}
     </div>
   );
 }
@@ -137,7 +147,7 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
     form_type: product?.form || '', dosage: product?.dosage || '',
     how_to_use: product?.how_to_use || '', contraindications: product?.contraindications || '',
     interactions: product?.interactions || '',
-    stock_quantity: product?.stock_quantity?.toString() || '0', barcode: product?.barcode || '',
+    stock_quantity: product?.stock_quantity?.toString() || '0', reorder_level: product?.reorder_level?.toString() || '5', barcode: product?.barcode || '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -155,7 +165,7 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
       form: form.form_type || null, dosage: form.dosage || null,
       how_to_use: form.how_to_use || null, contraindications: form.contraindications || null,
       interactions: form.interactions || null,
-      stock_quantity: parseInt(form.stock_quantity) || 0, barcode: form.barcode || null,
+      stock_quantity: parseInt(form.stock_quantity) || 0, reorder_level: Math.max(0, parseInt(form.reorder_level) || 0), barcode: form.barcode || null,
       updated_at: new Date().toISOString(),
     };
     let saveErr: unknown = null;
@@ -249,7 +259,10 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
           <Field label="الجرعة"><input value={form.dosage} onChange={(e) => setForm({ ...form, dosage: e.target.value })} className={inputClass} dir="ltr" placeholder="500mg" /></Field>
           <Field label="الكمية في المخزون"><input value={form.stock_quantity} onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })} className={inputClass} dir="ltr" type="number" /></Field>
         </div>
-        <Field label="الباركود"><input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} className={inputClass} dir="ltr" placeholder="اختياري" /></Field>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="الباركود"><input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} className={inputClass} dir="ltr" placeholder="اختياري" /></Field>
+            <Field label="حد إعادة الطلب"><input value={form.reorder_level} onChange={(e) => setForm({ ...form, reorder_level: e.target.value })} className={inputClass} dir="ltr" type="number" min="0" /></Field>
+          </div>
         <Field label="طريقة الاستخدام (اختياري)"><textarea value={form.how_to_use} onChange={(e) => setForm({ ...form, how_to_use: e.target.value })} className={inputClass} rows={2} placeholder="مثال: قرص واحد بعد الأكل كل 8 ساعات" /></Field>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="متى لا يُستخدم (موانع الاستخدام)"><textarea value={form.contraindications} onChange={(e) => setForm({ ...form, contraindications: e.target.value })} className={inputClass} rows={2} placeholder="مثال: لا يُستخدم لمرضى الكبد أو الحساسية من المادة الفعالة" /></Field>

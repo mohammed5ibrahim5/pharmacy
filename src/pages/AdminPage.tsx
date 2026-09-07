@@ -1,14 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  LayoutDashboard, Store, Package, Settings, Plus, Edit2, Trash2,
-  X, Search, MapPin, Phone, Star, Truck, Save, Eye, EyeOff,
-  TrendingDown, List, ArrowLeft, Check, Image as ImageIcon, Cross,
-  LogOut, Clock, Shield, Globe,
-  Megaphone, Users, Activity,
-  Menu, ShoppingCart, User, Mail,
-  ChevronDown, ShieldCheck, Sparkles, FileText,
-  Send, Loader2, Wallet, Info, Zap, Ticket, Copy, Inbox, Ban, Navigation, ExternalLink, BellRing, Bell, Pill, Layers, Printer, MessageCircle, Moon, Sun, KeyRound, Link2, UserCog, BadgePercent, Baby, ChevronUp, MessageSquareQuote, Scale,
-  TriangleAlert, BadgeCheck, ClipboardList, CircleAlert, Fingerprint, Stethoscope, CreditCard, Banknote, Calculator, Droplets, AlertTriangle, RefreshCw
+  LayoutDashboard, Store, Package, Settings, X, TrendingDown, List, ArrowLeft,
+  Cross, LogOut, Users, Menu, ShoppingCart, Sparkles, FileText, Ticket, Inbox,
+  BellRing, Moon, Sun, MessageSquareQuote, Calculator, BarChart3
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
@@ -28,10 +22,11 @@ import {
   StockAlertsTab,
   LoyaltyTab,
   DoseRulesTab,
+  AnalyticsTab,
   SettingsTab,
 } from './admin/tabs';
 
-type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'reviews' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'doseRules' | 'settings';
+type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'reviews' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'doseRules' | 'analytics' | 'settings';
 
 export function AdminPage() {
   const settingsContext = useSettings();
@@ -82,6 +77,7 @@ export function AdminPage() {
 
   const navItems: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     { id: 'dashboard', label: 'الرئيسية', icon: <LayoutDashboard className="w-5 h-5" /> },
+    { id: 'analytics', label: 'التحليلات والسجل', icon: <BarChart3 className="w-5 h-5" /> },
     { id: 'orders', label: 'طلبات العملاء', icon: <ShoppingCart className="w-5 h-5" /> },
     { id: 'prescriptions', label: 'الروشتات الواردة', icon: <FileText className="w-5 h-5" /> },
     { id: 'pharmacies', label: 'الصيدليات', icon: <Store className="w-5 h-5" /> },
@@ -228,6 +224,7 @@ export function AdminPage() {
 
         <div className="p-4 sm:p-6">
           {activeTab === 'dashboard' && <DashboardTab />}
+          {activeTab === 'analytics' && <AnalyticsTab />}
           {activeTab === 'orders' && <OrdersTab />}
           {activeTab === 'prescriptions' && <PrescriptionsTab />}
           {activeTab === 'pharmacies' && <PharmaciesTab />}

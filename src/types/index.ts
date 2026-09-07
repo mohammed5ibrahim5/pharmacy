@@ -57,6 +57,8 @@ export interface Product {
   contraindications: string | null;
   interactions: string | null;
   stock_quantity: number;
+  reorder_level?: number;
+  reserved_quantity?: number;
   barcode: string | null;
   is_medical?: boolean;
   for_all_pharmacies?: boolean;
@@ -242,6 +244,7 @@ export interface PharmacyOwner {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  role?: 'owner' | 'manager' | 'pharmacist' | 'cashier';
 }
 
 export interface Review {
@@ -296,6 +299,11 @@ export interface FamilyMember {
   age: number | null;
   weight: number | null;
   created_at: string;
+  profile_type?: 'child' | 'adult' | 'senior';
+  sex?: 'male' | 'female' | 'other' | null;
+  medical_notes?: string | null;
+  allergies_summary?: string | null;
+  updated_at?: string;
 }
 
 export interface Coupon {

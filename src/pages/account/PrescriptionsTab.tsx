@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
+import { useOrder } from '@/context/OrderContext';
 import { supabase } from '@/lib/supabase';
 import { localizedError } from '@/lib/errorMessages';
 import { localizedDate } from '@/lib/format';
 import { dataUrlToBlob } from '@/lib/invoice';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
 import {
-  PRESCRIPTION_STATUS_META,
+  PIPELINE_STATUS_META,
   type Prescription,
   submitPrescriptionVerification,
   respondPrescriptionClarification,
@@ -19,11 +20,13 @@ import {
   MessageCircle, CheckCircle2,
 } from 'lucide-react';
 import { PrivateImage } from '@/components/PrivateImage';
+import type { FamilyMember, Product } from '@/types';
 
 export function PrescriptionsTab() {
   const { user, profile } = useCustomer();
   const { settings, themeColors } = useSettings();
   const { t, lang } = useLanguage();
+  const { addToCart, openCart } = useOrder();
 
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [rxLoading, setRxLoading] = useState(false);
@@ -31,6 +34,9 @@ export function PrescriptionsTab() {
   const [rxImage, setRxImage] = useState<string | null>(null);
   const [rxPhone, setRxPhone] = useState(profile?.phone || '');
   const [rxNotes, setRxNotes] = useState('');
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [familyMemberId, setFamilyMemberId] = useState('');
+  const [historyFilter, setHistoryFilter] = useState('all');
 
   const clarifyRx = prescriptions.find((p) => p.pipeline_status === 'clarification_requested') || null;
   const [clarifyNotes, setClarifyNotes] = useState('');
@@ -57,13 +63,20 @@ export function PrescriptionsTab() {
     setRxLoading(false);
   }, [user, lang]);
 
+  const fetchFamilyMembers = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase.from('family_members').select('*').eq('customer_id', user.id).order('created_at');
+    setFamilyMembers((data || []) as FamilyMember[]);
+  }, [user]);
+
   useEffect(() => {
     setRxPhone(profile?.phone || '');
   }, [profile?.phone]);
 
   useEffect(() => {
     fetchPrescriptions();
-  }, [fetchPrescriptions]);
+    fetchFamilyMembers();
+  }, [fetchPrescriptions, fetchFamilyMembers]);
 
   const handleRxImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -95,10 +108,12 @@ export function PrescriptionsTab() {
         patientName: profile?.full_name || 'عميل',
         phone: rxPhone.trim(),
         notes: rxNotes.trim(),
+        familyMemberId: familyMemberId || null,
       });
       await fetchPrescriptions();
       setRxImage(null);
       setRxNotes('');
+      setFamilyMemberId('');
       showToast(t('تم إرسال الروشتة بنجاح — جاري الفحص الآلي ثم مراجعة صيدلي مرخص'));
       if (settings.contact_whatsapp) {
         const text = t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [rxPhone, rxNotes || t('لا يوجد')]);
@@ -109,6 +124,27 @@ export function PrescriptionsTab() {
     } finally {
       setRxUploading(false);
     }
+  };
+
+  const handleReorder = async (rx: Prescription) => {
+    if (!rx.pipeline_status || !['approved', 'dispensed'].includes(rx.pipeline_status)) {
+      showToast(t('لا يمكن إعادة صرف هذه الروشتة قبل اعتمادها من الصيدلي.'));
+      return;
+    }
+    const drugName = rx.ocr_data?.drug_name?.trim();
+    if (!drugName) {
+      showToast(t('لم يتم التعرف على دواء قابل لإعادة الصرف — تواصل مع الصيدلي.'));
+      return;
+    }
+    const { data } = await supabase.from('products').select('*, pharmacy:pharmacies(*)').ilike('name', `%${drugName}%`).eq('is_available', true).gt('stock_quantity', 0).limit(5);
+    const products = (data || []) as Product[];
+    if (!products.length) {
+      showToast(t('الدواء غير متوفر حالياً، تواصل مع الصيدلي للبديل.'));
+      return;
+    }
+    const product = products[0];
+    const added = addToCart(product, product.pharmacy?.name, 1) ? 1 : 0;
+    if (added) openCart('cart');
   };
 
   const handleClarifyImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,7 +196,12 @@ export function PrescriptionsTab() {
 
   const handleResendPrescription = (rx: Prescription) => {
     if (!settings.contact_whatsapp) return;
-    const text = t('مرحباً صيدليتي 👋\nأود طلب دواء عن طريق الروشتة المرفقة.\nرقم الهاتف: {0}\nالملاحظات: {1}', [rx.phone, rx.notes || t('لا يوجد')]);
+    const text = t('مرحباً، أريد الاستفسار عن الروشتة رقم {0}.\nرقم الهاتف: {1}\nالحالة: {2}\nالملاحظات: {3}', [
+      (rx.reference_code || rx.id).slice(0, 8).toUpperCase(),
+      rx.phone,
+      t(PIPELINE_STATUS_META[rx.pipeline_status || 'pending_ocr']?.label || PIPELINE_STATUS_META.pending_ocr.label),
+      rx.notes || t('لا يوجد'),
+    ]);
     window.open(buildWhatsAppLink(settings.contact_whatsapp, text), '_blank');
   };
 
@@ -234,6 +275,12 @@ export function PrescriptionsTab() {
               style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}
             />
           </div>
+          {familyMembers.length > 0 && (
+            <select value={familyMemberId} onChange={(e) => setFamilyMemberId(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}>
+              <option value="">{t('الروشتة تخصني')}</option>
+              {familyMembers.map((member) => <option key={member.id} value={member.id}>{t('الروشتة تخص')} {member.name}</option>)}
+            </select>
+          )}
 
           <button
             type="submit"
@@ -311,9 +358,18 @@ export function PrescriptionsTab() {
             <p className="text-xs text-slate-500 font-bold max-w-sm mx-auto leading-relaxed">{t('قم برفع الروشتة الطبية الخاصة بك للاحتفاظ بنسخة رقمية مشفرة منها للتأمين وسهولة تكرار الطلب.')}</p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {prescriptions.map((rx) => {
-              const meta = PRESCRIPTION_STATUS_META[rx.status] || PRESCRIPTION_STATUS_META.new;
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={historyFilter} onChange={(e) => setHistoryFilter(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as string]: themeColors.primaryColor }}>
+                <option value="all">{t('كل أفراد العائلة')}</option>
+                <option value="self">{t('روشتاتي')}</option>
+                {familyMembers.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+              </select>
+              <span className="text-xs font-bold text-slate-400">{t('تاريخ الروشتات')}</span>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {prescriptions.filter((rx) => historyFilter === 'all' || (historyFilter === 'self' ? !rx.family_member_id : rx.family_member_id === historyFilter)).map((rx) => {
+              const meta = PIPELINE_STATUS_META[rx.pipeline_status || 'pending_ocr'] || PIPELINE_STATUS_META.pending_ocr;
               return (
                 <div key={rx.id} className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md transition-shadow group flex flex-col justify-between">
                   <div>
@@ -336,16 +392,25 @@ export function PrescriptionsTab() {
                       {rx.notes && (
                         <p className="text-xs text-slate-600 font-bold line-clamp-2 leading-relaxed bg-slate-50 p-2 rounded-xl">{rx.notes}</p>
                       )}
+                      {rx.family_member_id && <p className="text-xs text-teal-700 font-black">{t('لأجل فرد من العائلة')}</p>}
+                      {rx.manual_review_required && <p className="text-xs text-amber-700 font-black bg-amber-50 rounded-xl p-2">{t(rx.manual_review_reason || 'تحتاج مراجعة صيدلي يدوياً')}</p>}
+                      {rx.review_notes && <p className="text-xs text-blue-700 font-bold bg-blue-50 rounded-xl p-2">{rx.review_notes}</p>}
                     </div>
                   </div>
                   <div className="p-4.5 pt-0 flex items-center gap-2">
+                    {(['approved', 'dispensed'] as string[]).includes(rx.pipeline_status || '') && (
+                      <button onClick={() => handleReorder(rx)} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-xs font-black transition-colors hover:brightness-110 shadow-sm" style={{ backgroundColor: themeColors.primaryColor }}>
+                        <Send className="w-3.5 h-3.5" />
+                        {t('إعادة الصرف')}
+                      </button>
+                    )}
                     <button
                       onClick={() => handleResendPrescription(rx)}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-white text-xs font-black transition-colors hover:brightness-110 shadow-sm"
                       style={{ backgroundColor: themeColors.primaryColor }}
                     >
                       <Send className="w-3.5 h-3.5" />
-                      {t('إرسال واتساب')}
+                      {t('اسأل الصيدلي')}
                     </button>
                     <button
                       onClick={() => handleDeletePrescription(rx)}
@@ -358,6 +423,7 @@ export function PrescriptionsTab() {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
       </div>

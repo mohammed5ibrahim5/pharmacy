@@ -13,6 +13,7 @@ import { buildWhatsAppLink } from '@/lib/whatsapp';
 import type { Pharmacy, Product, Category } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCompare } from '@/context/CompareContext';
+import { generatePharmacySchema, setPageSchema, removePageSchema } from '@/lib/seo';
 
 const PAGE_SIZE = 20;
 
@@ -102,7 +103,21 @@ export function PharmacyDetailPage({ id }: Props) {
           supabase.from('pharmacies').select('*').eq('id', id).maybeSingle(),
         ]);
         if (cancelled) return;
-        setPharmacy(pharmRes.data as Pharmacy | null);
+        const p = (pharmRes.data as Pharmacy | null) || null;
+        setPharmacy(p);
+        if (p) {
+          setPageSchema(`pharmacy-schema-${p.id}`, generatePharmacySchema({
+            id: p.id,
+            name: p.name,
+            nameEn: p.name_en,
+            address: p.address,
+            phone: p.phone,
+            imageUrl: p.cover_url || p.logo_url,
+            rating: p.rating,
+            latitude: p.latitude,
+            longitude: p.longitude,
+          }));
+        }
 
         await fetchProducts(0, false);
       } catch {
@@ -112,7 +127,10 @@ export function PharmacyDetailPage({ id }: Props) {
       }
     };
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      removePageSchema(`pharmacy-schema-${id}`);
+    };
   }, [id, retryCount, fetchProducts]);
 
   const loadMore = useCallback(async () => {

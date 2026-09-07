@@ -7,15 +7,18 @@ import { useOrder } from '@/context/OrderContext';
 import { supabase } from '@/lib/supabase';
 import { localizedError } from '@/lib/errorMessages';
 import { localizedDate } from '@/lib/format';
-import { createPaymentIntent } from '@/lib/payments';
+import { buildWhatsAppLink } from '@/lib/whatsapp';
+import { createPaymentIntent, findOrderGroupStatus } from '@/lib/payments';
 import type { FamilyMember } from '@/types';
 import { OrderProgressTracker } from './OrderProgressTracker';
 import {
   PackageCheck, Search, X, Clock, CheckCircle2, Truck, Store,
   Pill, MapPin, Tag, Wallet, Info, Navigation, Star, CreditCard,
   Loader2, RefreshCw, AlertTriangle, AlertCircle, ExternalLink,
+  Sparkles, ShoppingCart, MessageCircle,
 } from 'lucide-react';
 import type { OrderRecord } from './types';
+import type { Product } from '@/types';
 import { STATUS_META } from './types';
 
 interface OrdersTabProps {
@@ -25,10 +28,10 @@ interface OrdersTabProps {
 
 export function OrdersTab({ onTrackingOrder, onReviewOrder }: OrdersTabProps) {
   const { user, profile } = useCustomer();
-  const { themeColors, featuresConfig } = useSettings();
+  const { themeColors, featuresConfig, settings } = useSettings();
   const { t, lang } = useLanguage();
   const { navigate } = useRouter();
-  const { openOrder } = useOrder();
+  const { openOrder, addToCart, openCart } = useOrder();
 
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
@@ -121,11 +124,21 @@ export function OrdersTab({ onTrackingOrder, onReviewOrder }: OrdersTabProps) {
     }
   };
 
+  const askPharmacistAboutOrder = (order: OrderRecord) => {
+    if (!settings.contact_whatsapp) return;
+    const productName = lang === 'en' ? (order.product?.name_en || order.product?.name || '') : order.product?.name || t('منتج');
+    const text = t('مرحباً، أريد الاستفسار عن طلبي رقم {0}.\nالدواء: {1}\nالحالة الحالية: {2}', [
+      order.id.slice(0, 8).toUpperCase(),
+      productName,
+      t(STATUS_META[order.status]?.label || STATUS_META.pending.label),
+    ]);
+    window.open(buildWhatsAppLink(settings.contact_whatsapp, text), '_blank', 'noopener,noreferrer');
+  };
+
   const handlePayChecking = async () => {
     if (!onlinePayment || !user) return;
     setPayChecking(true);
     try {
-      const { findOrderGroupStatus } = await import('@/lib/payments');
       const status = await findOrderGroupStatus(onlinePayment.groupId, user.id);
       if (status === 'paid') {
         showToast(t('تم تأكيد الدفع بنجاح. شكراً لك!'));
@@ -320,6 +333,12 @@ export function OrdersTab({ onTrackingOrder, onReviewOrder }: OrdersTabProps) {
                           <button onClick={() => onTrackingOrder(order)} className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-black border shadow-2xs hover:bg-slate-50 active:scale-95 transition-all" style={{ borderColor: `${themeColors.primaryColor}50`, color: themeColors.primaryColor }}>
                             <Navigation className="w-3.5 h-3.5" />
                             {t('تتبع الشحنة')}
+                          </button>
+                        )}
+                        {settings.contact_whatsapp && (
+                          <button onClick={() => askPharmacistAboutOrder(order)} className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-black border border-emerald-200 text-emerald-700 shadow-2xs hover:bg-emerald-50 active:scale-95 transition-all">
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            {t('اسأل الصيدلي')}
                           </button>
                         )}
                         {order.status === 'delivered' && (

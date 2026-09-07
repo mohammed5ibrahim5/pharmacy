@@ -30,12 +30,15 @@ const fmtRange = (lo: number, hi: number) => (lo === hi ? fmtNum(hi) : `${fmtNum
 const roundQuarter = (n: number) => Math.max(0.25, Math.round(n * 4) / 4);
 const trimNum = (n: number) => String(parseFloat(n.toFixed(2)));
 
-export function DoseCalculatorModal({ onClose }: { onClose: () => void }) {
+export function DoseCalculatorModal({ onClose, initialKey }: { onClose: () => void; initialKey?: string }) {
   const { t } = useLanguage();
   const { themeColors } = useSettings();
   const [rules, setRules] = useState<DoseRule[]>(DEFAULT_DOSE_RULES);
-  const [medKey, setMedKey] = useState('paracetamol');
-  const [formId, setFormId] = useState(DEFAULT_DOSE_RULES[0].forms[0].id);
+  const [medKey, setMedKey] = useState(initialKey || 'paracetamol');
+  const [formId, setFormId] = useState(() => {
+    const key = initialKey || 'paracetamol';
+    return DEFAULT_DOSE_RULES.find((r) => r.key === key)?.forms[0]?.id ?? DEFAULT_DOSE_RULES[0].forms[0].id;
+  });
   const [weight, setWeight] = useState('');
   const [age, setAge] = useState('');
 

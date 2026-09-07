@@ -3,10 +3,12 @@ import {
   X, ShoppingBag, Lock, CheckCircle2, AlertCircle, Loader2, MapPin, User, Phone,
   Send, Info, Store, Wallet, Copy, CheckCheck, Camera, Trash2, Smartphone, Landmark,
   Link2, Truck, Sparkles, Plus, Minus, ShoppingCart, Building2, Download, FileText, ZoomIn,
-  Users, Gift, Banknote, BadgeCheck, CreditCard, ExternalLink, RefreshCw, ChevronDown,
+  Users, Gift, Banknote, BadgeCheck, CreditCard, ExternalLink, RefreshCw, ChevronDown, ShieldAlert,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { useOrder } from '@/context/OrderContext';
 import { useCustomer } from '@/context/CustomerContext';
+import { useRouter } from '@/context/RouterContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
@@ -14,6 +16,7 @@ import { localizedError } from '@/lib/errorMessages';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
 import { buildInvoiceImage, dataUrlToBlob } from '@/lib/invoice';
 import { createPaymentIntent, findOrderGroupStatus } from '@/lib/payments';
+import { checkCartInteractions } from '@/lib/drugInteractions';
 import {
   PAYMENT_METHODS,
   PAYMENT_METHOD_LABEL,
@@ -21,6 +24,7 @@ import {
   type PaymentMethod,
 } from '@/lib/orders';
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
+import { SubstitutesModal } from '@/components/SubstitutesModal';
 import type { Pharmacy, Product, FamilyMember } from '@/types';
 
 const METHOD_ICONS: Record<PaymentMethod, React.ReactNode> = {
@@ -63,6 +67,7 @@ function finalPriceOf(product: Product): number {
 export function OrderModal() {
   const { cart, cartOpen, cartStep, setCartStep, closeCart, updateCartQty, removeFromCart, clearCart } = useOrder();
   const { user, profile, setAuthModalOpen } = useCustomer();
+  const { navigate } = useRouter();
   const { settings, themeColors, paymentConfig, storeConfig, loyaltyConfig, featuresConfig } = useSettings();
   const { t, lang } = useLanguage();
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
@@ -72,7 +77,7 @@ export function OrderModal() {
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
   const [lastEarnedPoints, setLastEarnedPoints] = useState(0);
   const [lastRedeemedDiscount, setLastRedeemedDiscount] = useState(0);
-  const [address, setAddress] = useState(profile?.phone || '');
+  const [address, setAddress] = useState('');
   const [note, setNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('vodafone_cash');
   const [screenshot, setScreenshot] = useState<string | null>(null);
@@ -92,6 +97,11 @@ export function OrderModal() {
   const [myRxList, setMyRxList] = useState<RxLite[]>([]);
   const [selectedRxId, setSelectedRxId] = useState('');
   const [rxModalOpen, setRxModalOpen] = useState(false);
+  const [guestName, setGuestName] = useState(() => sessionStorage.getItem('pharmacy_guest_name') || '');
+  const [guestPhone, setGuestPhone] = useState(() => sessionStorage.getItem('pharmacy_guest_phone') || '');
+  const [substitutesFor, setSubstitutesFor] = useState<Product | null>(null);
+
+  const isGuest = !user;
 
   const approvedRx = myRxList.filter((r) => r.pipeline_status === 'approved');
 
@@ -113,6 +123,10 @@ export function OrderModal() {
     }
     return null;
   }, [selectedRxId, cart, approvedRx]);
+
+  const drugInteractions = useMemo(() => {
+    return checkCartInteractions(cart.map((e) => e.product));
+  }, [cart]);
 
   useEffect(() => {
     if (!cartOpen || !user || !needsRx) return;
@@ -205,6 +219,10 @@ export function OrderModal() {
     setOnlinePayment(null);
     setPaymentPaid(false);
   }, [cartOpen, profile?.phone, cartStep]);
+
+  useEffect(() => {
+    if (!user && paymentMethod === 'online') setPaymentMethod('vodafone_cash');
+  }, [user, paymentMethod]);
 
   useEffect(() => {
     if (!onlinePayment || !user?.id) return;
@@ -321,9 +339,8 @@ export function OrderModal() {
       total: subtotal,
       currency: t('ج.م'),
       customerLabel: t('الاسم:'),
-      customerName: profile?.full_name || undefined,
-      customerPhone: profile?.phone || undefined,
-      subtotalLabel: t('المجموع الفرعي'),
+      customerName: profile?.full_name || guestName || undefined,
+      customerPhone: profile?.phone || guestPhone || undefined,      subtotalLabel: t('المجموع الفرعي'),
       totalLabel: t('الإجمالي'),
       footerNote: t('فاتورة إلكترونية صادرة من منصة {0} — شكراً لثقتكم.', [settings.site_name || 'صيدليتي']),
       primaryColor: themeColors.priceColor,
@@ -333,7 +350,7 @@ export function OrderModal() {
     return () => {
       cancelled = true;
     };
-  }, [catalogMode, cartOpen, cart, subtotal, profile, settings.site_name, lang, t, themeColors.priceColor, catalogTargetName]);
+  }, [catalogMode, cartOpen, cart, subtotal, profile, settings.site_name, lang, t, themeColors.priceColor, catalogTargetName, guestName, guestPhone]);
 
   const methodNumber = isCOD ? '' : isOnline ? '' : paymentMethod === 'vodafone_cash' ? paymentConfig.vodafoneCash : paymentConfig.instapay;
   const hasMethodNumber = isCOD || isOnline || Boolean(methodNumber.trim());
@@ -354,8 +371,8 @@ export function OrderModal() {
       });
     });
     lines.push('');
-    lines.push(`${t('الاسم:')} ${profile?.full_name || ''}`);
-    lines.push(`${t('الهاتف:')} ${profile?.phone || ''}`);
+    lines.push(`${t('الاسم:')} ${profile?.full_name || guestName || ''}`);
+    lines.push(`${t('الهاتف:')} ${profile?.phone || guestPhone || ''}`);
     if (note.trim()) lines.push(`${t('ملاحظات:')} ${note.trim()}`);
     return lines.join('\n');
   };
@@ -515,6 +532,20 @@ export function OrderModal() {
           >
             {t('حسناً')}
           </button>
+          {isGuest && (
+            <button
+              onClick={() => {
+                clearCart();
+                closeCart();
+                navigate({ name: 'track' });
+              }}
+              className="w-full mt-2 py-3 rounded-xl border font-bold flex items-center justify-center gap-1.5"
+              style={{ borderColor: `${themeColors.priceColor}40`, color: themeColors.priceColor, backgroundColor: `${themeColors.priceColor}0a` }}
+            >
+              <Truck className="w-4 h-4" />
+              {t('تتبع طلبك برقم الهاتف')}
+            </button>
+          )}
         </div>
       </div>
     );
@@ -586,10 +617,30 @@ export function OrderModal() {
     setLoading(true);
     setError(null);
 
-    if (!user) {
-      setError(t('يرجى تسجيل الدخول أولاً لإتمام الطلب.'));
-      setLoading(false);
-      return;
+    const isGuestFlow = !user;
+    if (isGuestFlow) {
+      const gName = guestName.trim();
+      const gPhone = guestPhone.trim();
+      if (gName.length < 2) {
+        setError(t('يرجى إدخال اسم المستلم كاملاً.'));
+        setLoading(false);
+        return;
+      }
+      if (!/^01[0125]\d{8}$/.test(gPhone)) {
+        setError(t('يرجى إدخال رقم هاتف مصري صحيح (مثل 01012345678).'));
+        setLoading(false);
+        return;
+      }
+      if (paymentMethod === 'online') {
+        setError(t('الدفع أونلاين متاح للأعضاء المسجلين فقط — اختر طريقة دفع أخرى.'));
+        setLoading(false);
+        return;
+      }
+      if (needsRx) {
+        setError(t('الأدوية التي تتطلب روشتة متاحة للأعضاء المسجلين فقط — أنشئ حساباً سريعاً لتتمكن من إتمام هذا الطلب.'));
+        setLoading(false);
+        return;
+      }
     }
     if (!isCOD && !isOnline && !hasMethodNumber) {
       setError(t('لم يتم إعداد رقم الدفع من الإدارة بعد، يرجى المحاولة لاحقاً.'));
@@ -617,34 +668,67 @@ export function OrderModal() {
       const screenshotUrl = isCOD || isOnline
         ? null
         : screenshot!.startsWith('data:')
-          ? await uploadPaymentScreenshot(screenshot!, user.id)
+          ? await uploadPaymentScreenshot(screenshot!, user?.id || 'guest')
           : screenshot;
 
       const stockItems = cart.map((e) => ({ product_id: e.product.id, quantity: e.quantity }));
+      const reservationKey = typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `checkout-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const { error: reservationError } = await supabase.rpc('reserve_stock', {
+        p_reservation_key: reservationKey,
+        p_items: stockItems,
+        p_ttl_minutes: 15,
+      });
+      if (reservationError) {
+        setError(localizedError(reservationError.message, lang));
+        setLoading(false);
+        return;
+      }
       const rxProductIds = needsRx
         ? cart.filter((e) => e.product.requires_prescription).map((e) => e.product.id)
         : null;
 
-      // إنشاء الطلب بالكامل على السيرفر: يتحقق من السعر/الكمية/المخزون
-      // ويعيد حساب الإجمالي ويخصم المخزون — كعملية ذرّية واحدة.
-      const { data: placed, error: placeErr } = await supabase.rpc('place_order', {
-        p_items: stockItems,
-        p_address: address || null,
-        p_note: note || null,
-        p_family_member_id: selectedFamilyMember || null,
-        p_payment_method: paymentMethod,
-        p_payment_number: methodNumber || null,
-        p_payment_screenshot_url: screenshotUrl,
-        p_redeem_chunks: redeemChunks,
-        p_rx_id: selectedRxId || null,
-        p_rx_product_ids: rxProductIds,
-      });
+      let placed: unknown;
+      let placeErr: { message: string } | null = null;
+      if (isGuestFlow) {
+        const res = await supabase.rpc('place_order_guest', {
+          p_items: stockItems,
+          p_guest_name: guestName.trim(),
+          p_guest_phone: guestPhone.trim(),
+          p_address: address || null,
+          p_note: note || null,
+          p_payment_method: paymentMethod,
+        });
+        placed = res.data;
+        placeErr = res.error;
+      } else {
+        const res = await supabase.rpc('place_order', {
+          p_items: stockItems,
+          p_address: address || null,
+          p_note: note || null,
+          p_family_member_id: selectedFamilyMember || null,
+          p_payment_method: paymentMethod,
+          p_payment_number: methodNumber || null,
+          p_payment_screenshot_url: screenshotUrl,
+          p_redeem_chunks: redeemChunks,
+          p_rx_id: selectedRxId || null,
+          p_rx_product_ids: rxProductIds,
+        });
+        placed = res.data;
+        placeErr = res.error;
+      }
 
       if (placeErr) {
+        await supabase.rpc('release_stock', { p_reservation_key: reservationKey });
         setError(localizedError(placeErr.message, lang));
         setLoading(false);
         return;
       }
+
+      // place_order/place_order_guest deduct the aggregate stock themselves;
+      // release the temporary hold to avoid double-counting reserved stock.
+      await supabase.rpc('release_stock', { p_reservation_key: reservationKey });
 
       const groupId = (placed as { order_group_id?: string } | null)?.order_group_id;
       if (!groupId) {
@@ -678,6 +762,10 @@ export function OrderModal() {
           setError(t('تعذر بدء الدفع أونلاين الآن، يمكنك إتمامه لاحقاً من صفحة طلباتك.'));
         }
       } else {
+        if (isGuestFlow) {
+          sessionStorage.setItem('pharmacy_guest_name', guestName.trim());
+          sessionStorage.setItem('pharmacy_guest_phone', guestPhone.trim());
+        }
         clearCart();
         setSuccess(true);
       }
@@ -729,6 +817,89 @@ export function OrderModal() {
               <div className="rounded-2xl border border-red-200 bg-red-50 p-3.5 flex items-start gap-2.5 animate-fade-in">
                 <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
                 <p className="font-bold text-sm text-red-700">{error}</p>
+              </div>
+            )}
+            {/* Clinical Drug-Drug Interaction Alerts */}
+            {drugInteractions.length > 0 && (
+              <div className="space-y-3 animate-fade-up">
+                {drugInteractions.map((alert) => (
+                  <div
+                    key={alert.id}
+                    className={`rounded-2xl border p-4 shadow-sm transition-all ${
+                      alert.severity === 'danger'
+                        ? 'bg-rose-50/95 border-rose-200 text-rose-950'
+                        : alert.severity === 'warning'
+                        ? 'bg-amber-50/95 border-amber-200 text-amber-950'
+                        : 'bg-sky-50/95 border-sky-200 text-sky-950'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+                          alert.severity === 'danger'
+                            ? 'bg-rose-600 text-white'
+                            : alert.severity === 'warning'
+                            ? 'bg-amber-500 text-white'
+                            : 'bg-sky-600 text-white'
+                        }`}
+                      >
+                        <ShieldAlert className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span
+                            className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                              alert.severity === 'danger'
+                                ? 'bg-rose-200 text-rose-800'
+                                : alert.severity === 'warning'
+                                ? 'bg-amber-200 text-amber-800'
+                                : 'bg-sky-200 text-sky-800'
+                            }`}
+                          >
+                            {alert.severity === 'danger'
+                              ? t('تعارض دوائي حرج')
+                              : alert.severity === 'warning'
+                              ? t('تحذير صيدلاني')
+                              : t('تنبيه توقيت وتناول')}
+                          </span>
+                        </div>
+                        <h4 className="font-black text-sm mt-1.5 leading-snug">
+                          {lang === 'en' ? alert.titleEn : alert.titleAr}
+                        </h4>
+                        <p className="text-xs mt-1 leading-relaxed font-medium opacity-90">
+                          {lang === 'en' ? alert.descriptionEn : alert.descriptionAr}
+                        </p>
+                        <div className="mt-2.5 pt-2 border-t border-current/15 flex items-start gap-1.5 text-xs font-bold">
+                          <Sparkles className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-600" />
+                          <span>
+                            <strong>{t('نصيحة الصيدلي:')}</strong>{' '}
+                            {lang === 'en' ? alert.recommendationEn : alert.recommendationAr}
+                          </span>
+                        </div>
+                        {(() => {
+                          const subTarget = cart.find((e) => e.product.id === alert.drugA.id)?.product ||
+                            cart.find((e) => e.product.id === alert.drugB.id)?.product || null;
+                          if (!subTarget) return null;
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setSubstitutesFor(subTarget)}
+                              className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-black border transition-all hover:brightness-95 active:scale-[0.98]"
+                              style={{
+                                color: themeColors.priceColor,
+                                borderColor: `${themeColors.priceColor}35`,
+                                backgroundColor: `${themeColors.priceColor}0a`,
+                              }}
+                            >
+                              <ArrowLeftRight className="w-3.5 h-3.5" />
+                              {t('عرض بدائل آمنة لهذه الأدوية')}
+                            </button>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -959,8 +1130,12 @@ export function OrderModal() {
               <button
                 onClick={() => {
                   if (!user) {
-                    closeCart();
-                    setAuthModalOpen(true);
+                    if (needsRx) {
+                      closeCart();
+                      setAuthModalOpen(true);
+                      return;
+                    }
+                    setCartStep('checkout');
                     return;
                   }
                   if (needsRx && !selectedRxId) {
@@ -1011,6 +1186,10 @@ export function OrderModal() {
               />
             </div>
           </div>
+        )}
+
+        {substitutesFor && (
+          <SubstitutesModal product={substitutesFor} onClose={() => setSubstitutesFor(null)} />
         )}
       </div>
     );
@@ -1160,6 +1339,20 @@ export function OrderModal() {
           </div>
         )}
 
+        {drugInteractions.length > 0 && (
+          <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-3.5 flex items-start gap-2.5 animate-fade-in text-amber-950">
+            <ShieldAlert className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-black">
+                {t('تنبيه أمان دوائي: تم رصد {0} تعارض/تداخل بين أدوية السلة', [drugInteractions.length])}
+              </p>
+              <p className="text-[11px] mt-0.5 leading-relaxed text-amber-900/90 font-medium">
+                {t('سيتم إرفاق ملاحظات الصيدلي مع الطلب لتأكيد مواعيد وتفاصيل الجرعات الآمنة.')}
+              </p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Contact info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1167,14 +1360,37 @@ export function OrderModal() {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('اسم المستلم')}</label>
               <div className="relative">
                 <User className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="text" value={profile?.full_name || ''} readOnly className="w-full ps-10 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                {user ? (
+                  <input type="text" value={profile?.full_name || ''} readOnly className="w-full ps-10 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                ) : (
+                  <input
+                    type="text"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    placeholder={t('الاسم الكامل *')}
+                    className="w-full ps-10 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
+                    style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
+                  />
+                )}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('رقم الهاتف')}</label>
               <div className="relative">
                 <Phone className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input type="tel" value={profile?.phone || ''} readOnly dir="ltr" className="w-full ps-10 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                {user ? (
+                  <input type="tel" value={profile?.phone || ''} readOnly dir="ltr" className="w-full ps-10 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm" />
+                ) : (
+                  <input
+                    type="tel"
+                    value={guestPhone}
+                    onChange={(e) => setGuestPhone(e.target.value)}
+                    placeholder="01012345678"
+                    dir="ltr"
+                    className="w-full ps-10 pe-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 text-sm"
+                    style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -1254,7 +1470,8 @@ export function OrderModal() {
             <div className="grid grid-cols-2 gap-3">
               {PAYMENT_METHODS.filter((m) => (
                 (m.id !== 'cash_on_delivery' || paymentConfig.showCashOnDelivery) &&
-                (m.id !== 'online' || paymentConfig.showOnlinePayment)
+                (m.id !== 'online' || paymentConfig.showOnlinePayment) &&
+                (!isGuest || m.id !== 'online')
               )).map((m) => (
                 <button
                   key={m.id}
@@ -1510,6 +1727,13 @@ export function OrderModal() {
             <Lock className="w-3 h-3 inline -mt-0.5 me-1" />
             {t('بعد رفع إثبات التحويل سيراجع فريقنا العملية ويؤكد طلبك، وستصل إليك إشعارات الحالة في صفحة طلباتك.')}
           </p>
+
+          {isGuest && (
+            <p className="text-[11px] text-teal-600 text-center font-bold leading-relaxed">
+              <Truck className="w-3 h-3 inline -mt-0.5 me-1" />
+              {t('احتفظ برقم هاتفك — تابع حالة طلبك في أي وقت من صفحة تتبع الطلب.')}
+            </p>
+          )}
         </form>
       </div>
       <PrescriptionUploadModal open={rxModalOpen} onClose={() => setRxModalOpen(false)} />

@@ -1,4 +1,4 @@
-import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, FlaskConical, BellRing, BellOff, Flame, Plus, Minus, Eye, Scale } from 'lucide-react';
+import { Tag, Pill, AlertCircle, CheckCircle2, Truck, ShoppingCart, Heart, Store, FlaskConical, BellRing, BellOff, Flame, Plus, Minus, Eye, Scale, CalendarClock, ArrowLeftRight } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
@@ -9,6 +9,8 @@ import { useCompare } from '@/context/CompareContext';
 import { addStockAlert, removeStockAlert } from '@/lib/loyalty';
 import { useLanguage } from '@/context/LanguageContext';
 import { QuickViewModal } from '@/components/QuickViewModal';
+import { SubscribeModal } from '@/components/SubscribeModal';
+import { SubstitutesModal } from '@/components/SubstitutesModal';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 
 interface Props {
@@ -22,7 +24,7 @@ interface Props {
 
 export function ProductCard({ product, pharmacyName, onClick, popular = false, showCompare = true, showCategory = false }: Props) {
   const { t, lang } = useLanguage();
-  const { themeColors, featuresConfig } = useSettings();
+  const { themeColors, featuresConfig, subscriptionConfig } = useSettings();
   const { cart, openOrder, addToCart, updateCartQty } = useOrder();
   const { isProductFavorite, toggleProductFavorite } = useFavorites();
   const { user, setAuthModalOpen } = useCustomer();
@@ -33,6 +35,10 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
   const [heartPop, setHeartPop] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
+  const [substitutesOpen, setSubstitutesOpen] = useState(false);
+
+  const canSubscribe = subscriptionConfig.enabled && product.is_available && !product.requires_prescription;
   
   const addTimer = useRef<number | null>(null);
   const heartTimer = useRef<number | null>(null);
@@ -134,7 +140,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
                 className="flex items-center gap-1.5 bg-white text-slate-900 px-4 py-2 rounded-full font-bold text-xs shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 hover:bg-teal-50 active:scale-95"
               >
                 <Scale className="w-4 h-4" style={{ color: themeColors.priceColor }} />
-                {t('قارن الأسعار والبدائل')}
+                {t('قارن الأسعار')}
               </button>
             )}
           </div>
@@ -412,19 +418,35 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
           </div>
         </div>
 
-        {featuresConfig.priceCompare && showCompare && (
+        {canSubscribe && (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              openPriceCompare(product);
+              setSubscribeOpen(true);
             }}
-            className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-black border shadow-2xs transition-all hover:brightness-95 active:scale-[0.98]"
-            style={{ color: themeColors.priceColor, borderColor: `${themeColors.priceColor}35`, backgroundColor: `${themeColors.priceColor}0d` }}
-            title={t('قارن الأسعار والبدائل')}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-black border shadow-2xs transition-all hover:brightness-95 active:scale-[0.98]"
+            style={{ color: themeColors.primaryColor, borderColor: `${themeColors.primaryColor}30`, backgroundColor: `${themeColors.primaryColor}0a` }}
+            title={t('اشترك شهرياً ووفر {0}%', [subscriptionConfig.discountPercent ?? 5])}
           >
-            <Scale className="w-3.5 h-3.5" />
-            {t('قارن الأسعار')}
+            <CalendarClock className="w-3.5 h-3.5" />
+            {t('اشترك شهرياً — وفر {0}%', [subscriptionConfig.discountPercent ?? 5])}
+          </button>
+        )}
+
+        {product.is_available && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setSubstitutesOpen(true);
+            }}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-black border shadow-2xs transition-all hover:brightness-95 active:scale-[0.98]"
+            style={{ color: themeColors.priceColor, borderColor: `${themeColors.priceColor}30`, backgroundColor: `${themeColors.priceColor}0a` }}
+            title={t('عرض البدائل الآمنة المتوفرة')}
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5" />
+            {t('البدائل الآمنة المتوفرة')}
           </button>
         )}
       </div>
@@ -434,6 +456,14 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
         pharmacyName={pharmacyName}
         onClose={() => setQuickViewOpen(false)}
       />
+
+      {subscribeOpen && (
+        <SubscribeModal product={product} pharmacyName={pharmacyName} onClose={() => setSubscribeOpen(false)} />
+      )}
+
+      {substitutesOpen && (
+        <SubstitutesModal product={product} onClose={() => setSubstitutesOpen(false)} />
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { createWorker } from 'tesseract.js';
+import type { Worker } from 'tesseract.js';
 
 // ============================================================
 // محرك الفحص الآلي الأولي للروشتات (OCR)
@@ -24,21 +24,24 @@ export interface OcrResult {
 const TESSERACT_VERSION = '5.1.1';
 const TESSERACT_CORE_VERSION = '5.1.0';
 
-let workerPromise: ReturnType<typeof createWorker> | null = null;
+let workerPromise: Promise<Worker> | null = null;
 let ocrProgressListener: ((pct: number) => void) | null = null;
 
-function getWorker() {
+async function getWorker(): Promise<Worker> {
   if (!workerPromise) {
-    workerPromise = createWorker(['ara', 'eng'], 1, {
-      workerPath: `https://cdn.jsdelivr.net/npm/tesseract.js@${TESSERACT_VERSION}/dist/worker.min.js`,
-      corePath: `https://cdn.jsdelivr.net/npm/tesseract.js-core@${TESSERACT_CORE_VERSION}`,
-      langPath: 'https://tessdata.projectnaptha.com/4.0.0',
-      logger: (m: { status?: string; progress?: number }) => {
-        if (m.status === 'recognizing text' && ocrProgressListener && typeof m.progress === 'number') {
-          ocrProgressListener(Math.round(m.progress * 100));
-        }
-      },
-    });
+    workerPromise = (async () => {
+      const { createWorker } = await import('tesseract.js');
+      return createWorker(['ara', 'eng'], 1, {
+        workerPath: `https://cdn.jsdelivr.net/npm/tesseract.js@${TESSERACT_VERSION}/dist/worker.min.js`,
+        corePath: `https://cdn.jsdelivr.net/npm/tesseract.js-core@${TESSERACT_CORE_VERSION}`,
+        langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+        logger: (m: { status?: string; progress?: number }) => {
+          if (m.status === 'recognizing text' && ocrProgressListener && typeof m.progress === 'number') {
+            ocrProgressListener(Math.round(m.progress * 100));
+          }
+        },
+      });
+    })();
   }
   return workerPromise;
 }
@@ -99,13 +102,13 @@ async function preprocessImage(file: File | Blob): Promise<Blob> {
 }
 
 // ---------- أدوات تحليل النص ----------
-function normalizeDigits(s: string): string {
+export function normalizeDigits(s: string): string {
   return s
     .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
     .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
 }
 
-function normalizeArabic(s: string): string {
+export function normalizeArabic(s: string): string {
   return normalizeDigits(s)
     .replace(/[\u064B-\u0652\u0640]/g, '')
     .replace(/[أإآ]/g, 'ا')
@@ -172,7 +175,7 @@ function extractDoctorName(text: string): string | undefined {
   return undefined;
 }
 
-function extractDosage(text: string): string | undefined {
+export function extractDosage(text: string): string | undefined {
   const normalized = normalizeDigits(text);
   const m = normalized.match(/\b(\d{1,4}\s*(?:mg|ml|جم|ملجم|مجم|ميكروجرام|mcg|g)\b)/i);
   return m ? m[1].replace(/\s+/g, ' ').trim() : undefined;
@@ -189,6 +192,46 @@ function matchDrugName(text: string, productNames: string[]): string | undefined
     }
   }
   return best?.name;
+}
+
+export interface OcrMatchedItem {
+  /** اسم الدواء كما هو في الكتالوج */
+  name: string;
+  /** سطر الـ OCR الذي ظهر فيه الاسم — لاستخراج الجرعة والكمية المرتبطة */
+  block: string;
+}
+
+/**
+ * مطابقة كل الأدوية داخل نص الروشتة مقابل أسماء الكتالوج (متعددة).
+ * لكل سطر نختار أطول اسم مطابق (تجنب النتائج المتداخلة مثل "بنادول" داخل "بنادول اكسترا")،
+ * ونكرر الاسم المطابق مرة واحدة عبر المستند كله.
+ */
+export function matchDrugNames(text: string, productNames: string[]): OcrMatchedItem[] {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return [];
+
+  const normalizedNames = productNames
+    .map((name) => ({ name, norm: normalizeArabic(name).trim() }))
+    .filter((n) => n.norm.length >= 4)
+    .sort((a, b) => b.norm.length - a.norm.length);
+
+  const matched = new Set<string>();
+  const result: OcrMatchedItem[] = [];
+
+  for (const line of lines) {
+    const hay = normalizeArabic(line);
+    for (const { name, norm } of normalizedNames) {
+      if (!hay.includes(norm)) continue;
+      if (matched.has(name)) break;
+      matched.add(name);
+      result.push({ name, block: line });
+      break;
+    }
+  }
+  return result;
 }
 
 export interface RecognizeOptions {

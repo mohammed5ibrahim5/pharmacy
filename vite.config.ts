@@ -14,6 +14,15 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
   build: {
-    chunkSizeWarningLimit: 700,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-icons': ['lucide-react'],
+        },
+      },
+    },
   },
 });

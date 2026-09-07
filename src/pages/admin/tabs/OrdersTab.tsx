@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Package, Store, ShoppingCart, Layers, MapPin, Info, Wallet, Truck, Send,
-  Printer, Loader2, BadgeCheck, Banknote, Image as ImageIcon,
+  Printer, Loader2, BadgeCheck, Banknote, Image as ImageIcon, BellRing, Timer,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
@@ -15,6 +15,7 @@ import { InvoiceModal } from '@/components/InvoiceModal';
 import { insertNotification } from '@/lib/notifications';
 import { awardLoyaltyPoints } from '@/lib/loyalty';
 import type { Pharmacy, Product } from '@/types';
+import { soundAlert } from '@/lib/soundAlert';
 
 interface OrderRecord {
   id: string;
@@ -30,6 +31,8 @@ interface OrderRecord {
   payment_screenshot_url: string | null;
   created_at: string;
   customer_id: string | null;
+  acceptance_deadline?: string | null;
+  accepted_at?: string | null;
   order_group_id: string | null;
   product?: Product;
   pharmacy?: Pharmacy;
@@ -74,6 +77,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
   const [toast, setToast] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [invoiceView, setInvoiceView] = useState<GroupView | null>(null);
+  const [newOrderAlert, setNewOrderAlert] = useState(false);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -103,6 +107,25 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  useEffect(() => {
+    if (!pharmacyId) return;
+    const channel = supabase.channel(`pharmacy-orders-${pharmacyId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `pharmacy_id=eq.${pharmacyId}` }, () => {
+        setNewOrderAlert(true);
+        soundAlert.playNewOrderChime();
+        void fetchOrders();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `pharmacy_id=eq.${pharmacyId}` }, () => void fetchOrders())
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [pharmacyId, fetchOrders]);
+
+  const acceptOrder = async (orderId: string, accepted: boolean) => {
+    const { error } = await supabase.rpc('accept_pharmacy_order', { p_order_id: orderId, p_accept: accepted });
+    if (error) showToast(translateError(error.message).ar);
+    else { showToast(accepted ? 'تم قبول الطلب' : 'تم رفض الطلب'); await fetchOrders(); }
+  };
 
   const views = useMemo<GroupView[]>(() => {
     const grouped = new Map<string, OrderRecord[]>();
@@ -232,6 +255,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
           {toast}
         </div>
       )}
+      {newOrderAlert && <button onClick={() => setNewOrderAlert(false)} className="fixed top-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-teal-700 px-5 py-3 text-xs font-black text-white shadow-xl"><BellRing className="h-4 w-4" />طلب جديد وصل للصيدلية — اضغط للإخفاء</button>}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -300,6 +324,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
         <div className="space-y-4">
           {filtered.map((view) => {
             const order = view.orders[0];
+            const acceptanceDeadline = order.acceptance_deadline || new Date(new Date(order.created_at).getTime() + 15 * 60 * 1000).toISOString();
             const isGroup = view.orders.length > 1 || !!view.group;
             const m = ORDER_STATUS_META[(view.status as (typeof ORDER_STATUSES)[number])] || ORDER_STATUS_META.pending;
             const paymentLabel =
@@ -458,6 +483,12 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
                 </div>
 
                 {/* Actions */}
+                {view.status === 'pending' && pharmacyId && (
+                  <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-black text-amber-800">
+                    <span className="flex items-center gap-1.5"><Timer className="h-4 w-4" />مهلة قبول الطلب حتى {new Date(acceptanceDeadline).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div className="flex gap-2"><button onClick={() => acceptOrder(order.id, true)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-white">قبول</button><button onClick={() => acceptOrder(order.id, false)} className="rounded-lg bg-rose-600 px-3 py-1.5 text-white">رفض</button></div>
+                  </div>
+                )}
                 <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-gray-100">
                   <span className="text-[10px] font-black text-gray-400 ml-1">تحديث الحالة:</span>
                   {ORDER_STATUSES.map((s) => {

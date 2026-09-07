@@ -132,6 +132,7 @@ export interface RxOcrData extends OcrFields {
 export interface Prescription {
   id: string;
   customer_id: string | null;
+  family_member_id?: string | null;
   image_url: string;
   phone: string;
   notes: string | null;
@@ -162,6 +163,8 @@ export interface Prescription {
   identity_verified?: boolean | null;
   delivered_at?: string | null;
   delivered_by?: string | null;
+  manual_review_required?: boolean;
+  manual_review_reason?: string | null;
   customer?: { full_name: string | null; phone: string | null } | null;
 }
 
@@ -416,6 +419,7 @@ export interface SubmitRxInput {
   patientName: string;
   phone: string;
   notes?: string;
+  familyMemberId?: string | null;
   cfg?: VerificationConfig;
   productNames?: string[];
   onProgress?: (stageIndex: number) => void;
@@ -430,11 +434,13 @@ export type SubmitRxOutcome =
       fields: OcrFields;
       riskLevel: RiskLevel;
       warnings: string[];
+      /** النص الخام المعترف به — يُستخدم لبناء سلة جاهزة بدون إعادة فحص */
+      rawText?: string;
     }
   | { kind: 'auto_rejected'; prescriptionId: string; reason: string };
 
 export async function submitPrescriptionVerification(input: SubmitRxInput): Promise<SubmitRxOutcome> {
-  const { file, customerId, patientName, phone, notes, productNames = [], onProgress } = input;
+  const { file, customerId, patientName, phone, notes, familyMemberId, productNames = [], onProgress } = input;
   const cfg = input.cfg ?? DEFAULT_VERIFICATION_CONFIG;
   // ---- (1) رفع آمن + إنشاء السجل ----
   onProgress?.(0);
@@ -448,6 +454,7 @@ export async function submitPrescriptionVerification(input: SubmitRxInput): Prom
       image_url: imageUrl,
       phone: phone.trim(),
       patient_name: patientName.trim(),
+      family_member_id: familyMemberId || null,
       notes: notes?.trim() || null,
       image_hash: imageHash,
       ocr_status: 'processing',
@@ -526,6 +533,12 @@ export async function submitPrescriptionVerification(input: SubmitRxInput): Prom
         duplicate_status: dup ? 'suspected' : 'clear',
         duplicate_of: dup?.id || null,
         risk_level: riskLevel,
+        manual_review_required: riskLevel !== 'normal' || !ocr.fields.issue_date || doctorCheck !== 'verified' || !!dup,
+        manual_review_reason: riskLevel !== 'normal'
+          ? 'دواء مقيد أو حساس — يلزم اعتماد صيدلي مباشر'
+          : (!ocr.fields.issue_date || doctorCheck !== 'verified' || !!dup)
+            ? 'بيانات الروشتة تحتاج تحققاً يدوياً'
+            : null,
         delivery_mode: riskLevel === 'normal' ? 'delivery' : 'pickup_only',
         pipeline_status: 'needs_review',
       })
@@ -554,7 +567,7 @@ export async function submitPrescriptionVerification(input: SubmitRxInput): Prom
     12_000
   );
 
-  return { kind: 'needs_review', prescriptionId: rxId, fields: ocr.fields, riskLevel, warnings };
+  return { kind: 'needs_review', prescriptionId: rxId, fields: ocr.fields, riskLevel, warnings, rawText: ocr.rawText };
 }
 
 async function finalizeAutoReject(rxId: string, reason: string, ocr: { ok: boolean; confidence: number; fields: OcrFields }) {

@@ -8,11 +8,12 @@ import { useSettings } from '@/context/SettingsContext';
 import { usePharmacyOwner } from '@/context/PharmacyOwnerContext';
 import { ProductsTab } from '@/pages/admin/tabs/ProductsTab';
 import { OrdersTab } from '@/pages/admin/tabs/OrdersTab';
+import { PharmacyReportsTab } from '@/pages/admin/tabs/PharmacyReportsTab';
 import { PharmacyForm } from '@/pages/admin/tabs/PharmaciesTab';
 import { supabase } from '@/lib/supabase';
 import type { Pharmacy } from '@/types';
 
-type OwnerTab = 'overview' | 'profile' | 'products' | 'orders';
+type OwnerTab = 'overview' | 'profile' | 'products' | 'orders' | 'reports';
 
 function OwnerLogin() {
   const { settings } = useSettings();
@@ -126,7 +127,7 @@ function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigat
         supabase.from('orders').select('total_price').eq('pharmacy_id', pharmacy.id).neq('status', 'cancelled'),
         supabase.from('reviews').select('rating').eq('pharmacy_id', pharmacy.id),
         supabase.from('orders').select('total_price, quantity, product:products(name)').eq('pharmacy_id', pharmacy.id).limit(1000),
-        supabase.from('products').select('id, name, stock_quantity, is_available').eq('pharmacy_id', pharmacy.id).lte('stock_quantity', 5).order('stock_quantity').limit(8),
+        supabase.from('products').select('id, name, stock_quantity, reorder_level, is_available').eq('pharmacy_id', pharmacy.id).order('stock_quantity').limit(8),
         supabase.from('orders').select('id, status, total_price, created_at, customer:customers(full_name)').eq('pharmacy_id', pharmacy.id).order('created_at', { ascending: false }).limit(5),
       ]);
       if (cancelled) return;
@@ -157,7 +158,7 @@ function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigat
         avgRating: Math.round(avgRating * 10) / 10,
       });
       setBestSellers(best);
-      setLowStock((lowRes.data || []) as { id: string; name: string; stock_quantity: number; is_available: boolean }[]);
+      setLowStock((lowRes.data || []).filter((item) => Number(item.stock_quantity) <= Number(item.reorder_level ?? 5)) as { id: string; name: string; stock_quantity: number; is_available: boolean }[]);
       const recentData = recentRes.data as { id: string; status: string; total_price: number; created_at: string; customer: { full_name: string } | null }[] | null;
       setRecentOrders((recentData || []).map((r) => ({
         id: r.id,
@@ -378,6 +379,7 @@ function OwnerDashboard() {
     { id: 'profile', label: 'بيانات الصيدلية', icon: <Settings className="w-5 h-5" /> },
     { id: 'products', label: 'المنتجات', icon: <Package className="w-5 h-5" /> },
     { id: 'orders', label: 'الطلبات', icon: <ShoppingCart className="w-5 h-5" /> },
+    { id: 'reports', label: 'التقارير', icon: <TrendingUp className="w-5 h-5" /> },
   ];
 
   const goHome = () => {
@@ -431,6 +433,7 @@ function OwnerDashboard() {
             <div className="px-3 py-2 mb-2">
               <p className="text-xs text-gray-500">المسجل دخول</p>
               <p className="text-xs text-gray-300 truncate">{owner?.full_name || ''}</p>
+              <p className="text-[10px] text-teal-400">{owner?.role === 'manager' ? 'مدير' : owner?.role === 'pharmacist' ? 'صيدلي' : owner?.role === 'cashier' ? 'كاشير' : 'مالك'}</p>
               <p className="text-[10px] text-gray-500 truncate" dir="ltr">{owner?.email}</p>
             </div>
             <button onClick={goHome} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
@@ -497,6 +500,7 @@ function OwnerDashboard() {
           )}
           {activeTab === 'products' && <ProductsTab pharmacyId={pharmacy.id} />}
           {activeTab === 'orders' && <OrdersTab pharmacyId={pharmacy.id} />}
+          {activeTab === 'reports' && <PharmacyReportsTab />}
         </div>
       </main>
 

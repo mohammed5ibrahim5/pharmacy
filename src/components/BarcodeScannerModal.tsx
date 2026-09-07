@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Barcode, Check, AlertCircle, Sparkles, Upload } from 'lucide-react';
+import { X, Camera, Barcode, Check, AlertCircle, Upload, Loader2, ShoppingCart, PackageCheck } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useOrder } from '@/context/OrderContext';
+import { lookupProductByBarcode } from '@/lib/rxCart';
 
 interface BarcodeScannerModalProps {
   open: boolean;
@@ -9,30 +11,47 @@ interface BarcodeScannerModalProps {
   onScan: (barcodeOrQuery: string) => void;
 }
 
-// Sample popular products with barcodes for quick demo testing
-const SAMPLE_BARCODES = [
-  { barcode: '6223000123456', name: 'بنادول اكسترا (Panadol Extra)', category: 'مسكنات' },
-  { barcode: '6221001987654', name: 'كونجستال (Congestal)', category: 'برد وإنفلونزا' },
-  { barcode: '6224000554433', name: 'سي ريتارد 500 (C-Retard 500)', category: 'فيتامينات' },
-  { barcode: '6229000112233', name: 'أوميجا 3 بلس (Omega 3 Plus)', category: 'مكملات غذائية' },
-  { barcode: '6227000889900', name: 'أوجمنتين 1 جرام (Augmentin 1g)', category: 'مضادات حيوية' },
-];
+interface ScannedCartItem {
+  id: string;
+  name: string;
+  qty: number;
+  price: number;
+}
+
+interface BarcodeDetectorResult {
+  rawValue: string;
+}
+
+interface BarcodeDetectorLike {
+  detect(source: ImageBitmapSource): Promise<BarcodeDetectorResult[]>;
+}
+
+interface BarcodeDetectorConstructorLike {
+  new (options?: { formats?: string[] }): BarcodeDetectorLike;
+}
 
 export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerModalProps) {
   const { themeColors } = useSettings();
   const { t } = useLanguage();
+  const { addToCart, openCart } = useOrder();
   const [cameraActive, setCameraActive] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [scannedSuccess, setScannedSuccess] = useState<string | null>(null);
+  const [resolving, setResolving] = useState(false);
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
+  const [cartAdded, setCartAdded] = useState<ScannedCartItem[]>([]);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const scanFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!open) {
       stopCamera();
       setScannedSuccess(null);
       setError(null);
+      setResolving(false);
+      setLastAdded(null);
     }
   }, [open]);
 
@@ -73,12 +92,76 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
     setCameraActive(false);
   };
 
-  const handleSelectCode = (code: string) => {
-    setScannedSuccess(code);
+  const handleSelectCode = async (code: string) => {
+    const plain = code.trim();
+    // فقط الأكواد الرقمية المرشحة لباركود حقيقي تُضاف للسلة؛
+    // النصوص أو الأكواد غير المعروفة تعمل بحثاً كما كان الحال
+    if (/^\d{6,16}$/.test(plain)) {
+      setResolving(true);
+      const product = await lookupProductByBarcode(plain).catch(() => null);
+      setResolving(false);
+      if (product) {
+        const ok = addToCart(product, product.pharmacy?.name, 1);
+        if (ok) {
+          setCartAdded((prev) => {
+            const ex = prev.find((i) => i.id === product.id);
+            return ex
+              ? prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + 1 } : i))
+              : [...prev, { id: product.id, name: product.name, qty: 1, price: product.price }];
+          });
+          setLastAdded(product.name);
+          return;
+        }
+      }
+    }
+    setScannedSuccess(plain);
     setTimeout(() => {
-      onScan(code);
+      onScan(plain);
       onClose();
     }, 600);
+  };
+
+  useEffect(() => {
+    if (!cameraActive || !videoRef.current) return;
+    const detectorConstructor = (window as Window & { BarcodeDetector?: BarcodeDetectorConstructorLike }).BarcodeDetector;
+    if (!detectorConstructor) {
+      setError(t('المتصفح لا يدعم قراءة الباركود تلقائياً. اكتب الكود يدوياً أو ارفع صورة واضحة.'));
+      return;
+    }
+    const detector = new detectorConstructor({ formats: ['ean_13', 'ean_8', 'upc_a', 'code_128', 'qr_code'] });
+    let active = true;
+    const scan = async () => {
+      const video = videoRef.current;
+      if (!active || !video) return;
+      if (video.readyState >= 2) {
+        try {
+          const results = await detector.detect(video);
+          const value = results[0]?.rawValue?.trim();
+          if (value) {
+            active = false;
+            stopCamera();
+            await handleSelectCode(value);
+            return;
+          }
+        } catch {
+          // Keep scanning; camera frames can be unavailable briefly on mobile.
+        }
+      }
+      scanFrameRef.current = requestAnimationFrame(scan);
+    };
+    scan();
+    return () => {
+      active = false;
+      if (scanFrameRef.current !== null) cancelAnimationFrame(scanFrameRef.current);
+    };
+  }, [cameraActive]);
+
+  const finishToCart = () => {
+    const total = cartAdded.reduce((sum, i) => sum + i.price * i.qty, 0);
+    if (total > 0) {
+      openCart('cart');
+      onClose();
+    }
   };
 
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -88,12 +171,24 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Simulate reading barcode from photo
-      const randomSample = SAMPLE_BARCODES[Math.floor(Math.random() * SAMPLE_BARCODES.length)];
-      handleSelectCode(randomSample.barcode);
+    if (!file) return;
+    const detectorConstructor = (window as Window & { BarcodeDetector?: BarcodeDetectorConstructorLike }).BarcodeDetector;
+    if (!detectorConstructor) {
+      setError(t('المتصفح لا يدعم قراءة الباركود من الصور. استخدم الكاميرا أو اكتب الكود يدوياً.'));
+      return;
+    }
+    try {
+      const detector = new detectorConstructor({ formats: ['ean_13', 'ean_8', 'upc_a', 'code_128', 'qr_code'] });
+      const bitmap = await createImageBitmap(file);
+      const results = await detector.detect(bitmap);
+      bitmap.close();
+      const value = results[0]?.rawValue?.trim();
+      if (value) await handleSelectCode(value);
+      else setError(t('لم نتمكن من قراءة باركود واضح من الصورة.'));
+    } catch {
+      setError(t('تعذر قراءة الصورة. جرّب صورة أوضح أو اكتب الكود يدوياً.'));
     }
   };
 
@@ -172,7 +267,38 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
               </div>
             )}
 
-            {scannedSuccess && (
+            {resolving && (
+              <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-sm flex flex-col items-center justify-center text-white p-4 animate-fade-in">
+                <Loader2 className="w-10 h-10 animate-spin" style={{ color: themeColors.priceColor }} />
+                <p className="font-extrabold text-sm mt-3">{t('جاري البحث عن المنتج في الكتالوج...')}</p>
+              </div>
+            )}
+
+            {lastAdded && !resolving && (
+              <div className="absolute inset-0 bg-teal-900/95 backdrop-blur-sm flex flex-col items-center justify-center text-white p-6 animate-fade-in">
+                <div className="w-14 h-14 rounded-full bg-teal-500 flex items-center justify-center text-white mb-2 shadow-lg">
+                  <Check className="w-8 h-8" />
+                </div>
+                <p className="font-extrabold text-base">{t('أُضيف للسلة ✓')}</p>
+                <p className="text-xs text-teal-200 mt-1 text-center max-w-[260px] leading-relaxed break-words">{lastAdded}</p>
+                <div className="w-full max-w-[260px] grid grid-cols-2 gap-2 mt-4">
+                  <button
+                    onClick={() => setLastAdded(null)}
+                    className="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-colors"
+                  >
+                    {t('متابعة المسح')}
+                  </button>
+                  <button
+                    onClick={finishToCart}
+                    className="px-3 py-2 rounded-xl bg-white text-teal-800 text-xs font-black shadow transition-transform hover:scale-[1.03]"
+                  >
+                    {t('الانتقال للسلة')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {scannedSuccess && !resolving && !lastAdded && (
               <div className="absolute inset-0 bg-teal-900/90 backdrop-blur-sm flex flex-col items-center justify-center text-white p-4 animate-fade-in">
                 <div className="w-14 h-14 rounded-full bg-teal-500 flex items-center justify-center text-white mb-2 shadow-lg animate-bounce">
                   <Check className="w-8 h-8" />
@@ -182,6 +308,41 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
               </div>
             )}
           </div>
+
+          {cartAdded.length > 0 && (
+            <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <PackageCheck className="w-4 h-4 text-teal-700" />
+                <p className="text-xs font-black text-teal-800">{t('سلتك من المسح (تابع المسح أو أنهِ الآن)')}</p>
+              </div>
+              <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                {cartAdded.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between gap-2 bg-white rounded-lg px-2.5 py-1.5 border border-teal-100">
+                    <p className="text-[11px] font-bold text-gray-800 truncate min-w-0">{item.name}</p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] font-black text-gray-500">× {item.qty}</span>
+                      <span className="text-[10px] font-black tabular-nums" style={{ color: themeColors.priceColor }}>
+                        {item.price * item.qty} ج.م
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-teal-100">
+                <span className="text-xs font-black text-gray-800">
+                  {t('الإجمالي')}: <span className="tabular-nums" style={{ color: themeColors.priceColor }}>{cartAdded.reduce((s, i) => s + i.price * i.qty, 0)} ج.م</span>
+                </span>
+                <button
+                  onClick={finishToCart}
+                  className="px-4 py-2 text-white text-xs font-black rounded-xl shadow flex items-center gap-1.5 transition-transform hover:scale-[1.02] active:scale-95"
+                  style={{ backgroundColor: themeColors.priceColor }}
+                >
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  {t('الذهاب للسلة')}
+                </button>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800">
@@ -224,28 +385,11 @@ export function BarcodeScannerModal({ open, onClose, onScan }: BarcodeScannerMod
             </div>
           </form>
 
-          {/* Quick Demo Sample Barcodes */}
+          {/* Barcode guidance */}
           <div className="space-y-2 pt-2 border-t border-gray-100">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              {t('أو تجربة منتجات نموذجية سريعة (اضغط للتجربة):')}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {SAMPLE_BARCODES.map((item) => (
-                <button
-                  key={item.barcode}
-                  onClick={() => handleSelectCode(item.barcode)}
-                  className="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 bg-slate-50 hover:bg-teal-50 hover:border-teal-200 transition-all text-start group"
-                >
-                  <div>
-                    <p className="text-xs font-bold text-gray-900 group-hover:text-teal-700">{t(item.name)}</p>
-                    <p className="text-[10px] text-gray-500">{t(item.category)}</p>
-                  </div>
-                  <span className="text-[10px] font-mono bg-white px-2 py-1 rounded-md border border-gray-200 text-gray-600 group-hover:border-teal-300">
-                    {item.barcode.slice(-5)}
-                  </span>
-                </button>
-              ))}
+            <div className="flex items-start gap-1.5 text-xs font-bold text-gray-500 leading-relaxed">
+              <Barcode className="w-3.5 h-3.5 text-teal-600 shrink-0 mt-0.5" />
+              {t('استخدم باركود المنتج الموجود في مخزون الصيدلية أو أدخل الرقم يدوياً للبحث في الكتالوج.')}
             </div>
           </div>
         </div>

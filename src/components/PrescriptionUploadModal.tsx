@@ -3,18 +3,24 @@ import {
   FileText, Camera, X, Check, Phone, AlertCircle, Loader2,
   ShieldCheck, UserCheck, Sun, Frame, ScanLine, RefreshCw, TriangleAlert,
   ClipboardList, Fingerprint, BadgeCheck, CircleAlert, RotateCcw,
+  ShoppingCart, Plus, Search, Minus, PackageX, Sparkles,
 } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useOrder } from '@/context/OrderContext';
 import {
   submitPrescriptionVerification,
   getProductNamesRequiringRx,
   VERIFICATION_STAGES,
   RISK_LEVEL_META,
 } from '@/lib/prescriptions';
+import { buildRxCart, fetchRxCatalogProducts, searchRxProducts, type RxCartLine } from '@/lib/rxCart';
 import { warmUpOcr } from '@/lib/ocr';
 import { localizedError } from '@/lib/errorMessages';
+import type { Product } from '@/types';
+import type { FamilyMember } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 interface PrescriptionUploadModalProps {
   open: boolean;
@@ -28,6 +34,7 @@ interface OutcomeOk {
   fields: Record<string, string | undefined>;
   riskLevel: 'normal' | 'restricted' | 'narcotic';
   warnings: string[];
+  rawText?: string;
 }
 interface OutcomeRejected {
   kind: 'auto_rejected';
@@ -53,6 +60,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
   const { themeColors, verificationConfig } = useSettings();
   const { profile, user, setAuthModalOpen } = useCustomer();
   const { t, lang } = useLanguage();
+  const { addToCart, openCart } = useOrder();
 
   const [step, setStep] = useState<WizardStep>('guide');
   const [file, setFile] = useState<File | null>(null);
@@ -60,6 +68,8 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
   const [patientName, setPatientName] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
+  const [familyMemberId, setFamilyMemberId] = useState('');
   const [stageIndex, setStageIndex] = useState(-1);
   const [ocrPct, setOcrPct] = useState<number | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
@@ -67,10 +77,22 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  // ---------- سلة الروشتة الجاهزة ----------
+  const [rxLines, setRxLines] = useState<RxCartLine[]>([]);
+  const [buildingCart, setBuildingCart] = useState(false);
+  const [manualQuery, setManualQuery] = useState('');
+  const [manualResults, setManualResults] = useState<Product[]>([]);
+  const [cartBusy, setCartBusy] = useState(false);
+
   // تسخين محرك القراءة (تحميل النماذج) بمجرد فتح النافذة
   useEffect(() => {
     if (open) void warmUpOcr();
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    void supabase.from('family_members').select('*').eq('customer_id', user.id).order('created_at').then(({ data }) => setFamilyMembers((data || []) as FamilyMember[]));
+  }, [open, user]);
 
   useEffect(() => {
     if (open) {
@@ -83,10 +105,111 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
       setPatientName(profile?.full_name || '');
       setPhone(profile?.phone || '');
       setNotes('');
+      setFamilyMemberId('');
+      setRxLines([]);
+      setManualQuery('');
+      setManualResults([]);
+      setBuildingCart(false);
     }
   }, [open, profile?.full_name, profile?.phone]);
 
+  // بناء سلة جاهزة من نص الـ OCR عند نجاح الاستخراج
+  useEffect(() => {
+    if (step !== 'result' || outcome?.kind !== 'needs_review') return;
+    let cancelled = false;
+    setBuildingCart(true);
+    const build = async () => {
+      try {
+        const products = await fetchRxCatalogProducts();
+        if (cancelled) return;
+        setRxLines(buildRxCart(outcome.rawText || '', products));
+      } catch {
+        if (!cancelled) setRxLines([]);
+      } finally {
+        if (!cancelled) setBuildingCart(false);
+      }
+    };
+    void build();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, outcome]);
+
+  // بحث يدوي (debounce) لإضافة دواء لم يلتقطه الـ OCR
+  useEffect(() => {
+    const q = manualQuery.trim();
+    if (q.length < 2) {
+      setManualResults([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const results = await searchRxProducts(q).catch(() => [] as Product[]);
+      if (!cancelled) setManualResults(results);
+    }, 350);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [manualQuery]);
+
   if (!open) return null;
+
+  const setLineQty = (key: string, qty: number) => {
+    setRxLines((prev) =>
+      prev.map((l) => (l.key === key ? { ...l, qty: Math.max(1, Math.min(20, qty)) } : l))
+    );
+  };
+
+  const toggleLine = (key: string) => {
+    setRxLines((prev) =>
+      prev.map((l) => (l.key === key ? { ...l, selected: !l.selected } : l))
+    );
+  };
+
+  const addManualProduct = (product: Product) => {
+    setManualQuery('');
+    setManualResults([]);
+    setRxLines((prev) => {
+      if (prev.some((l) => l.product?.id === product.id)) return prev;
+      return [
+        ...prev,
+        {
+          key: `rx:${product.id}`,
+          name: product.name,
+          dosage: product.dosage || undefined,
+          qty: 1,
+          product,
+          matched: false,
+          available: product.is_available && (product.stock_quantity ?? 0) > 0,
+          selected: true,
+        } satisfies RxCartLine,
+      ];
+    });
+  };
+
+  const addSelectedToCart = () => {
+    const selected = rxLines.filter((l) => l.selected && l.available && l.product);
+    if (selected.length === 0 || !user) return;
+    setCartBusy(true);
+    let added = 0;
+    selected.forEach((l) => {
+      if (l.product) {
+        const ok = addToCart(l.product, l.product.pharmacy?.name, l.qty);
+        if (ok) added += l.qty;
+      }
+    });
+    setCartBusy(false);
+    if (added > 0) {
+      onClose();
+      openCart('cart');
+    }
+  };
+
+  const selectedCount = rxLines.filter((l) => l.selected && l.available && l.product).length;
+  const selectedTotal = rxLines
+    .filter((l) => l.selected && l.available && l.product)
+    .reduce((sum, l) => sum + (l.product?.price || 0) * l.qty, 0);
 
   const pickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -139,6 +262,7 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
         patientName: name,
         phone: ph,
         notes: notes.trim(),
+        familyMemberId: familyMemberId || null,
         cfg: verificationConfig,
         productNames,
         onProgress: (i) => setStageIndex(i),
@@ -375,6 +499,16 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                 />
               </div>
 
+              {familyMembers.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-gray-700">{t('الروشتة تخص')}</label>
+                  <select value={familyMemberId} onChange={(e) => setFamilyMemberId(e.target.value)} className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as string]: themeColors.priceColor }}>
+                    <option value="">{t('أنا / بدون تحديد')}</option>
+                    {familyMembers.map((member) => <option key={member.id} value={member.id}>{member.name}{member.relation ? ` - ${member.relation}` : ''}</option>)}
+                  </select>
+                </div>
+              )}
+
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs text-red-700 font-medium">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -478,12 +612,159 @@ export function PrescriptionUploadModal({ open, onClose }: PrescriptionUploadMod
                 </div>
               )}
 
+              {/* ---------- سلة الروشتة الجاهزة ---------- */}
+              <div className="rounded-2xl border-2 border-dashed p-3.5 space-y-3" style={{ borderColor: `${themeColors.priceColor}55` }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow" style={{ backgroundColor: themeColors.priceColor }}>
+                    <ShoppingCart className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-900">{t('سلتك الجاهزة من الروشتة 🛒')}</p>
+                    <p className="text-[10px] font-bold text-gray-500">
+                      {t('راجع الكميات والاختيارات ثم أكّد طلبك مباشرة — أو أضف أي دواء لم يلتقطه الفحص')}
+                    </p>
+                  </div>
+                </div>
+
+                {buildingCart ? (
+                  <div className="flex items-center justify-center gap-2 py-4 text-xs font-bold text-gray-500">
+                    <Loader2 className="w-4 h-4 animate-spin" style={{ color: themeColors.priceColor }} />
+                    {t('جاري تجهيز المنتجات من النص المكتشف...')}
+                  </div>
+                ) : rxLines.length === 0 ? (
+                  <div className="rounded-xl bg-gray-50 border border-gray-200 px-3 py-3 flex items-start gap-2">
+                    <PackageX className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-bold text-gray-600 leading-relaxed">
+                      {t('لم نتمكن من مطابقة أدوية السلة من الصورة. ابحث وأضف أدوية يدوياً من الخانة أدناه.')}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {rxLines.map((line) => (
+                      <div
+                        key={line.key}
+                        className={`rounded-xl border p-2.5 flex items-center gap-2.5 transition-opacity ${line.available ? 'bg-white border-gray-200' : 'bg-amber-50 border-amber-200'} ${line.selected ? '' : 'opacity-60'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={line.selected}
+                          disabled={!line.available}
+                          onChange={() => toggleLine(line.key)}
+                          className="w-4 h-4 accent-teal-600 shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-extrabold text-gray-900 truncate">{line.name}</p>
+                          <p className="text-[10px] text-gray-500 truncate">
+                            {line.dosage ? `${line.dosage} — ` : ''}
+                            {line.available
+                              ? t('متوفر — متوفر بالطلب')
+                              : t('غير متوفر حالياً (تم استبعادها من السلة)')}
+                          </p>
+                          {line.product && line.available && (
+                            <p className="text-[11px] font-black" style={{ color: themeColors.priceColor }}>
+                              {line.product.price} ج.م
+                            </p>
+                          )}
+                        </div>
+                        {line.available ? (
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              onClick={() => setLineQty(line.key, line.qty - 1)}
+                              disabled={line.qty <= 1}
+                              className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 disabled:opacity-40 transition-colors"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="w-8 text-center text-xs font-black text-gray-800 tabular-nums">{line.qty}</span>
+                            <button
+                              onClick={() => setLineQty(line.key, line.qty + 1)}
+                              disabled={line.qty >= 20}
+                              className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 disabled:opacity-40 transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-bold text-amber-700 shrink-0">{t('التحقق')}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* بحث يدوي لإضافة دواء */}
+                <div className="relative">
+                  <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                    <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                    <input
+                      value={manualQuery}
+                      onChange={(e) => setManualQuery(e.target.value)}
+                      placeholder={t('ابحث وأضف دواءً لم يلتقطه الفحص...')}
+                      className="flex-1 bg-transparent text-xs font-bold text-gray-800 focus:outline-none placeholder:font-semibold"
+                    />
+                  </div>
+                  {manualResults.length > 0 && (
+                    <div className="absolute z-20 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-xl max-h-44 overflow-y-auto">
+                      {manualResults.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => addManualProduct(p)}
+                          className="w-full px-3 py-2 text-start hover:bg-teal-50 transition-colors flex items-center justify-between gap-2 border-b border-gray-100 last:border-0"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-gray-900 truncate">{p.name}</p>
+                            <p className="text-[10px] text-gray-500 truncate">{p.pharmacy?.name || p.dosage || ''}</p>
+                          </div>
+                          <span className="text-[10px] font-black shrink-0" style={{ color: themeColors.priceColor }}>
+                            {p.price} ج.م
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {selectedCount > 0 && (
+                  <div className="flex items-center justify-between text-xs font-black text-gray-800 pt-1 border-t border-gray-100">
+                    <span>
+                      {selectedCount} {t('صنف')} × {t('إجمالي')}
+                    </span>
+                    <span className="tabular-nums" style={{ color: themeColors.priceColor }}>
+                      {selectedTotal} ج.م
+                    </span>
+                  </div>
+                )}
+              </div>
+
               <button
-                onClick={onClose}
-                className="w-full py-3 text-white font-bold text-sm rounded-2xl shadow-lg active:scale-95 transition-transform"
+                onClick={addSelectedToCart}
+                disabled={selectedCount === 0 || cartBusy}
+                className="w-full py-3.5 text-white font-extrabold text-sm rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
                 style={{ backgroundColor: themeColors.priceColor }}
               >
-                {t('تمام، في انتظار مراجعة الصيدلي')}
+                {cartBusy ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {t('جاري الإضافة للسلة...')}
+                  </>
+                ) : selectedCount > 0 ? (
+                  <>
+                    <ShoppingCart className="w-5 h-5" />
+                    {t('أضف للسلة وأكّد الطلب')}
+                    <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-black tabular-nums">{selectedCount}</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    {t('أضف أدوية للسلة أولاً ثم أكّد طلبك')}
+                  </>
+                )}
+              </button>
+              <button
+                onClick={onClose}
+                className="w-full py-2.5 text-xs font-bold text-gray-500 hover:bg-gray-50 rounded-xl transition-colors"
+              >
+                {t('تمام، في انتظار مراجعة الصيدلي فقط (بدون طلب)')}
               </button>
             </div>
           ) : outcome?.kind === 'auto_rejected' ? (

@@ -325,6 +325,16 @@ export const DEFAULT_FEATURES_CONFIG: FeaturesConfig = {
   pharmacyCompare: true,
 };
 
+export interface SubscriptionConfig {
+  enabled: boolean;
+  discountPercent: number;
+}
+
+export const DEFAULT_SUBSCRIPTION_CONFIG: SubscriptionConfig = {
+  enabled: true,
+  discountPercent: 5,
+};
+
 export interface WelcomePopupConfig {
   enabled: boolean;
   badgeText: string;
@@ -435,6 +445,7 @@ interface SettingsContextType {
   homepageConfig: HomepageConfig;
   loyaltyConfig: LoyaltyConfig;
   featuresConfig: FeaturesConfig;
+  subscriptionConfig: SubscriptionConfig;
   welcomeConfig: WelcomePopupConfig;
   verificationConfig: VerificationConfig;
   darkMode: boolean;
@@ -495,6 +506,7 @@ interface SettingsCache {
   homepageConfig: HomepageConfig;
   loyaltyConfig: LoyaltyConfig;
   featuresConfig: FeaturesConfig;
+  subscriptionConfig: SubscriptionConfig;
   welcomeConfig: WelcomePopupConfig;
   verificationConfig: VerificationConfig;
 }
@@ -533,6 +545,7 @@ const SettingsContext = createContext<SettingsContextType>({
   homepageConfig: DEFAULT_HOMEPAGE_CONFIG,
   loyaltyConfig: DEFAULT_LOYALTY_CONFIG,
   featuresConfig: DEFAULT_FEATURES_CONFIG,
+  subscriptionConfig: DEFAULT_SUBSCRIPTION_CONFIG,
   welcomeConfig: DEFAULT_WELCOME_POPUP_CONFIG,
   verificationConfig: DEFAULT_VERIFICATION_CONFIG,
   darkMode: false,
@@ -573,6 +586,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [featuresConfig, setFeaturesConfig] = useState<FeaturesConfig>(
     settingsCache ? { ...DEFAULT_FEATURES_CONFIG, ...settingsCache.featuresConfig } : DEFAULT_FEATURES_CONFIG,
   );
+  const [subscriptionConfig, setSubscriptionConfig] = useState<SubscriptionConfig>(
+    settingsCache ? { ...DEFAULT_SUBSCRIPTION_CONFIG, ...settingsCache.subscriptionConfig } : DEFAULT_SUBSCRIPTION_CONFIG,
+  );
   const [welcomeConfig, setWelcomeConfig] = useState<WelcomePopupConfig>(
     settingsCache ? { ...DEFAULT_WELCOME_POPUP_CONFIG, ...settingsCache.welcomeConfig } : DEFAULT_WELCOME_POPUP_CONFIG,
   );
@@ -610,6 +626,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     let homepage = { ...DEFAULT_HOMEPAGE_CONFIG };
     let loyalty = { ...DEFAULT_LOYALTY_CONFIG };
     let features = { ...DEFAULT_FEATURES_CONFIG };
+    let subscription = { ...DEFAULT_SUBSCRIPTION_CONFIG };
     let welcome = { ...DEFAULT_WELCOME_POPUP_CONFIG };
     let verification = { ...DEFAULT_VERIFICATION_CONFIG };
     if (siteSettings.features_json) {
@@ -665,6 +682,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (parsed && parsed.featuresConfig) {
           features = { ...DEFAULT_FEATURES_CONFIG, ...parsed.featuresConfig };
         }
+        if (parsed && parsed.subscriptionConfig) {
+          subscription = { ...DEFAULT_SUBSCRIPTION_CONFIG, ...parsed.subscriptionConfig };
+        }
         if (parsed && parsed.welcomeConfig) {
           welcome = { ...DEFAULT_WELCOME_POPUP_CONFIG, ...parsed.welcomeConfig };
         }
@@ -691,6 +711,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setHomepageConfig(homepage);
     setLoyaltyConfig(loyalty);
     setFeaturesConfig(features);
+    setSubscriptionConfig(subscription);
     setWelcomeConfig(welcome);
     setVerificationConfig(verification);
     setLoading(false);
@@ -707,6 +728,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       homepageConfig: homepage,
       loyaltyConfig: loyalty,
       featuresConfig: features,
+      subscriptionConfig: subscription,
       welcomeConfig: welcome,
       verificationConfig: verification,
     });
@@ -766,6 +788,7 @@ return (
         homepageConfig,
         loyaltyConfig,
         featuresConfig,
+        subscriptionConfig,
         welcomeConfig,
         verificationConfig,
         darkMode,

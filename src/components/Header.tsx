@@ -36,6 +36,7 @@ import { useOrder } from '@/context/OrderContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { supabase } from '@/lib/supabase';
 import { trackSearch } from '@/lib/searchHistory';
+import { smartSearch } from '@/lib/search';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
 import { categoryColor, categoryIcon, mergeCategories } from '@/lib/categoryStyles';
 import type { Product, Category } from '@/types';
@@ -238,17 +239,23 @@ export function Header() {
     if (searchQuery.trim().length > 1) {
       const fetchSuggestions = async () => {
         try {
+          const term = searchQuery.trim();
+          const pattern = `%${term}%`;
           const { data } = await supabase
             .from('products')
             .select('*, pharmacy:pharmacies(*)')
-            .ilike('name', `%${searchQuery.trim()}%`)
-            .limit(5);
-          if (data) {
-            setSuggestions(data as Product[]);
-            setShowSuggestions(true);
-          }
+            .or(`name.ilike.${pattern},name_en.ilike.${pattern},active_ingredient.ilike.${pattern},description.ilike.${pattern}`)
+            .eq('is_available', true)
+            .limit(20);
+          if (!data) return;
+          // Smart ranking: brand name, scientific (active ingredient), typo tolerance
+          const ranked = smartSearch(term, { products: data as Product[], onlyAvailable: true })
+            .slice(0, 6)
+            .map((r) => r.product);
+          setSuggestions(ranked as Product[]);
+          setShowSuggestions(true);
         } catch {
-          // fallback
+          // fallback: keep current suggestions
         }
       };
       const timeout = setTimeout(fetchSuggestions, 250);

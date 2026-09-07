@@ -48,6 +48,8 @@ export function Footer() {
     { label: 'البحث عن دواء أو منتج', action: () => navigate({ name: 'search', query: '' }) },
     { label: 'عروض وخصومات الأدوية', action: () => navigate({ name: 'search', query: 'خصم' }) },
     { label: 'صيدليات تعمل 24 ساعة', action: () => navigate({ name: 'category', slug: '24h' }) },
+    { label: 'محتوى صحي وموضوعات طبية', action: () => navigate({ name: 'health' }) },
+    { label: 'تتبع طلبك برقم الهاتف', action: () => navigate({ name: 'track' }) },
     { label: 'مركز المساعدة والتواصل', action: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
   ];
 

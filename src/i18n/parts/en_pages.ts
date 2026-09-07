@@ -59,4 +59,12 @@
   'اقترب النفاد — متبقي {0} يوم': 'Running low — {0} days left',
   'تنبيه نفاد الدواء 💊': 'Medication running out 💊',
   'أعد طلبه الآن من أقرب صيدلية.': 'Order it again now from the nearest pharmacy.',
+
+  // Smart search page
+  'بدائل أرخص لنفس المادة الفعالة': 'Cheaper alternatives with the same active ingredient',
+  'نفس المادة الفعالة بسعر أقل — استشر الصيدلي قبل التبديل': 'Same active ingredient at a lower price — ask your pharmacist before switching',
+  'أقرب صيدليات بها المنتج متوفراً فعلياً': 'Nearest pharmacies with the product actually in stock',
+  'صيدليات بها المنتج متوفراً فعلياً': 'Pharmacies with the product actually in stock',
+  'حسب مواقعك الحالية والمخزون المتاح': 'Based on your current location and available stock',
+  'الصيدليات ({0})': 'Pharmacies ({0})',
 };

@@ -3,13 +3,13 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useSettings } from '@/context/SettingsContext';
 import { supabase } from '@/lib/supabase';
 import { localizedDate } from '@/lib/format';
-import { X, Navigation, CheckCircle2, Phone } from 'lucide-react';
+import { X, Navigation, CheckCircle2, Phone, Clock3, AlertTriangle } from 'lucide-react';
 import { ORDER_TRACK_STEPS } from './types';
 import type { OrderRecord } from './types';
 
 export function OrderTrackingModal({ order, onClose }: { order: OrderRecord; onClose: () => void }) {
   const { t, lang } = useLanguage();
-  const { themeColors } = useSettings();
+  const { themeColors, paymentConfig } = useSettings();
   const [status, setStatus] = useState(order.status);
   const [updatedAt, setUpdatedAt] = useState(order.created_at);
 
@@ -46,6 +46,10 @@ export function OrderTrackingModal({ order, onClose }: { order: OrderRecord; onC
   };
 
   const progress = Math.min(100, Math.round((current / (ORDER_TRACK_STEPS.length - 1)) * 100));
+  const shippingNote = paymentConfig.shippingNote?.trim();
+  const estimatedMinutes = shippingNote && /30\s*(دقيقة|minute)/i.test(shippingNote) ? 30 : 24 * 60;
+  const estimatedAt = new Date(new Date(order.created_at).getTime() + estimatedMinutes * 60 * 1000);
+  const estimatePassed = status !== 'delivered' && status !== 'cancelled' && Date.now() > estimatedAt.getTime();
 
   return (
     <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -83,6 +87,20 @@ export function OrderTrackingModal({ order, onClose }: { order: OrderRecord; onC
               <span className="relative inline-flex rounded-full h-3.5 w-3.5" style={{ backgroundColor: themeColors.primaryColor }} />
             </span>
             <p className="text-xs font-extrabold text-slate-800 leading-relaxed">{liveMessages[status] || liveMessages.pending}</p>
+          </div>
+        )}
+
+        {!cancelled && (
+          <div className={`mb-5 rounded-2xl border p-4 ${estimatePassed ? 'border-amber-200 bg-amber-50' : 'border-slate-100 bg-slate-50/70'}`}>
+            <div className="flex items-start gap-3">
+              {estimatePassed ? <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" /> : <Clock3 className="w-5 h-5 text-slate-500 shrink-0" />}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-slate-800">{t('الوصول المتوقع مبدئياً')}</p>
+                <p className="mt-1 text-sm font-black text-slate-900">{localizedDate(estimatedAt.toISOString(), lang, { dateStyle: 'medium', hour: '2-digit', minute: '2-digit' })}</p>
+                {shippingNote && <p className="mt-1 text-[11px] font-bold leading-relaxed text-slate-500">{t(shippingNote)}</p>}
+                {estimatePassed && <p className="mt-2 text-[11px] font-black leading-relaxed text-amber-700">{t('قد يتأخر الطلب عن الموعد التقديري. سنحدّث الحالة فوراً عند حدوث أي تغيير.')}</p>}
+              </div>
+            </div>
           </div>
         )}
 

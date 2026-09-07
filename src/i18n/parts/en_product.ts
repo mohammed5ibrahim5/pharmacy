@@ -94,7 +94,7 @@
   // PriceCompareModal
   'قارن': 'Compare',
   'قارن الأسعار': 'Compare prices',
-  'قارن الأسعار والبدائل': 'Compare prices & alternatives',
+  'قارن الأسعار': 'Compare prices',
   'السعر الحالي': 'Current price',
   'نفس الدواء في صيدليات أخرى ({0})': 'Same medicine at other pharmacies ({0})',
   'الأرخص {0} ج.م': 'Cheapest {0} EGP',
@@ -116,4 +116,20 @@
   'التوصيل فقط': 'Delivery only',
   'لا توجد صيدليات متاحة للتوصيل حالياً': 'No pharmacies currently offer delivery',
   'قارن الصيدليات ({0})': 'Compare pharmacies ({0})',
+
+  // DoseGuideSection
+  'دليل الجرعات': 'Dosage guide',
+  'إرشادات الجرعة الآمنة لتجنب الجرعة الزائدة': 'Safe-dosing guidance to avoid overdose',
+  'الجرعة': 'Dose',
+  'مجم/كجم لكل جرعة': 'mg/kg per dose',
+  'مجم/كجم يومياً ÷ {0}': 'mg/kg per day ÷ {0}',
+  'التكرار': 'Frequency',
+  'كل {0} ساعات • {1} مرات يومياً': 'Every {0} hours • {1} doses daily',
+  'الحد الأقصى يومياً': 'Maximum daily',
+  'مناسب للأطفال': 'Suitable for children',
+  'من سن {0} أشهر': 'From {0} months of age',
+  'من الولادة بإشراف طبي': 'From birth under medical supervision',
+  'الأشكال المتاحة': 'Available forms',
+  'احسب جرعة الطفل لهذا الدواء': 'Calculate the child dose for this medicine',
+  'هذه المعلومات إرشادية، وتُعتمد بعد استشارة الصيدلي أو الطبيب': 'This information is for guidance only — always confirm with your pharmacist or doctor',
 };

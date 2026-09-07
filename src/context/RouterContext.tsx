@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { trackPageView } from '@/lib/analytics';
 
-export type AccountTab = 'orders' | 'prescriptions' | 'addresses' | 'favorites' | 'rewards' | 'reminders' | 'family';
+export type AccountTab = 'orders' | 'prescriptions' | 'addresses' | 'favorites' | 'rewards' | 'reminders' | 'family' | 'subscriptions';
 
 type Route =
   | { name: 'home' }
@@ -8,7 +9,10 @@ type Route =
   | { name: 'pharmacy'; id: string }
   | { name: 'category'; slug: string }
   | { name: 'categories' }
-  | { name: 'account'; tab: AccountTab };
+  | { name: 'account'; tab: AccountTab }
+  | { name: 'track' }
+  | { name: 'health' }
+  | { name: 'healthArticle'; slug: string };
 
 interface RouterContextType {
   route: Route;
@@ -23,7 +27,7 @@ const RouterContext = createContext<RouterContextType>({
 });
 
 function parseAccountTab(tab?: string): AccountTab {
-  if (tab === 'prescriptions' || tab === 'addresses' || tab === 'favorites' || tab === 'rewards' || tab === 'reminders') return tab;
+  if (tab === 'prescriptions' || tab === 'addresses' || tab === 'favorites' || tab === 'rewards' || tab === 'reminders' || tab === 'subscriptions') return tab;
   return 'orders';
 }
 
@@ -37,6 +41,9 @@ function parseHash(): Route {
   if (parts[0] === 'category' && parts[1]) return { name: 'category', slug: parts[1] };
   if (parts[0] === 'categories') return { name: 'categories' };
   if (parts[0] === 'account') return { name: 'account', tab: parseAccountTab(parts[1]) };
+  if (parts[0] === 'track') return { name: 'track' };
+  if (parts[0] === 'health' && parts[1]) return { name: 'healthArticle', slug: decodeURIComponent(parts[1]) };
+  if (parts[0] === 'health') return { name: 'health' };
   return { name: 'home' };
 }
 
@@ -48,6 +55,9 @@ function routeToHash(route: Route): string {
     case 'category': return `#/category/${route.slug}`;
     case 'categories': return '#/categories';
     case 'account': return `#/account/${route.tab}`;
+    case 'track': return '#/track';
+    case 'health': return '#/health';
+    case 'healthArticle': return `#/health/${encodeURIComponent(route.slug)}`;
   }
 }
 
@@ -81,9 +91,16 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (previousName.current !== route.name) {
       window.scrollTo({ top: 0 });
+      void trackPageView(route.name);
     }
     previousName.current = route.name;
   }, [route]);
+
+  // تسجيل أول زيارة عند فتح الموقع
+  useEffect(() => {
+    void trackPageView(route.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <RouterContext.Provider value={{ route, navigate, refreshKey }}>

@@ -28,6 +28,9 @@ import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
 import { CategoryPage } from '@/pages/CategoryPage';
 import { AllCategoriesPage } from '@/pages/AllCategoriesPage';
 import { AccountPage } from '@/pages/AccountPage';
+import { TrackOrderPage } from '@/pages/TrackOrderPage';
+import { HealthPage } from '@/pages/HealthPage';
+import { HealthArticlePage } from '@/pages/HealthArticlePage';
 import { Loader2, ShieldAlert } from 'lucide-react';
 
 const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
@@ -134,6 +137,9 @@ function SiteContent() {
           {route.name === 'category' && <CategoryPage slug={route.slug} />}
           {route.name === 'categories' && <AllCategoriesPage />}
           {route.name === 'account' && <AccountPage tab={route.tab} />}
+          {route.name === 'track' && <TrackOrderPage />}
+          {route.name === 'health' && <HealthPage />}
+          {route.name === 'healthArticle' && <HealthArticlePage slug={route.slug} />}
         </ErrorBoundary>
       </main>
       <Footer />

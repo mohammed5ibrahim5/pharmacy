@@ -13,18 +13,19 @@ import { RemindersTab } from './RemindersTab';
 import { FamilyTab } from './FamilyTab';
 import { AddressesTab } from './AddressesTab';
 import { FavoritesTab } from './FavoritesTab';
+import { SubscriptionsTab } from './SubscriptionsTab';
 import { EditProfileModal } from './EditProfileModal';
 import { OrderTrackingModal } from './OrderTrackingModal';
 import { OrderReviewModal } from '@/components/OrderReviewModal';
 import {
   ArrowLeft, PackageCheck, FileText, MapPin, Heart, User,
   Sparkles, LogOut, Pencil, ShieldCheck, Truck, Bell, Users,
-  CheckCircle2,
+  CheckCircle2, CalendarClock,
 } from 'lucide-react';
 
 export function AccountPage({ tab }: { tab: AccountTab }) {
   const { user, profile, setAuthModalOpen, signOut } = useCustomer();
-  const { settings, themeColors, loyaltyConfig, featuresConfig } = useSettings();
+  const { settings, themeColors, loyaltyConfig, featuresConfig, subscriptionConfig } = useSettings();
   const { navigate } = useRouter();
   const { t, lang } = useLanguage();
   const {
@@ -71,6 +72,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
 
   const tabs: { id: AccountTab; label: string; icon: React.ReactNode; count: number }[] = [
     { id: 'orders', label: t('طلباتي والشحنات'), icon: <PackageCheck className="w-4 h-4" />, count: 0 },
+    ...(subscriptionConfig.enabled ? [{ id: 'subscriptions' as AccountTab, label: t('اشتراكاتي الشهرية'), icon: <CalendarClock className="w-4 h-4" />, count: 0 }] : []),
     { id: 'prescriptions', label: t('الروشتات المحفوظة'), icon: <FileText className="w-4 h-4" />, count: 0 },
     ...(loyaltyConfig.enabled ? [{ id: 'rewards' as AccountTab, label: t('نقاطي ومكافآتي'), icon: <Sparkles className="w-4 h-4" />, count: 0 }] : []),
     ...(featuresConfig.reminders ? [{ id: 'reminders' as AccountTab, label: t('ملفي الطبي والدوائي'), icon: <Bell className="w-4 h-4" />, count: 0 }] : []),
@@ -189,6 +191,7 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
 
         <div className="lg:col-span-3 min-w-0">
           {tab === 'orders' && <OrdersTab onTrackingOrder={setTrackingOrder} onReviewOrder={setReviewOrder} />}
+          {tab === 'subscriptions' && <SubscriptionsTab />}
           {tab === 'prescriptions' && <PrescriptionsTab />}
           {tab === 'rewards' && <RewardsTab />}
           {tab === 'reminders' && <RemindersTab />}

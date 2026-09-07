@@ -3,7 +3,6 @@ import { AlertCircle } from 'lucide-react';
 import type { Product } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { useCustomer } from '@/context/CustomerContext';
 
 export interface CartItem {
   key: string;
@@ -62,7 +61,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [notice, setNotice] = useState<string | null>(null);
   const { storeConfig } = useSettings();
   const { t } = useLanguage();
-  const { user, setAuthModalOpen } = useCustomer();
 
   useEffect(() => {
     try {
@@ -81,11 +79,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const notify = (message: string) => setNotice(message);
 
   const addToCart = (product: Product, pharmacyName?: string, quantity = 1): boolean => {
-    if (!user) {
-      notify(t('╪│╪ش┘ّ┘ ╪»╪«┘ê┘┘â ╪ث┘ê┘╪د┘ï ┘╪ح╪╢╪د┘╪ر ╪د┘┘à┘╪ز╪ش╪د╪ز ╪ح┘┘ë ╪د┘╪│┘╪ر.'));
-      setAuthModalOpen(true);
-      return false;
-    }
     const catalogMode = !storeConfig.purchasesEnabled;
     if (catalogMode && !storeConfig.catalogMultiPharmacy && !product.for_all_pharmacies) {
       const cartPharmacyIds = new Set(
@@ -112,11 +105,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   };
 
   const updateCartQty = (key: string, quantity: number) => {
-    if (!user) {
-      notify(t('╪│╪ش┘ّ┘ ╪»╪«┘ê┘┘â ╪ث┘ê┘╪د┘ï ┘┘┘ê╪╡┘ê┘ ╪ح┘┘ë ╪│┘╪ر ╪د┘╪ز╪│┘ê┘é.'));
-      setAuthModalOpen(true);
-      return;
-    }
     if (quantity <= 0) {
       removeFromCart(key);
       return;
@@ -131,11 +119,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const clearCart = () => setCart([]);
 
   const openCart = (step: CartStep = 'cart') => {
-    if (!user) {
-      notify(t('╪│╪ش┘ّ┘ ╪»╪«┘ê┘┘â ╪ث┘ê┘╪د┘ï ┘┘┘ê╪╡┘ê┘ ╪ح┘┘ë ╪│┘╪ر ╪د┘╪ز╪│┘ê┘é.'));
-      setAuthModalOpen(true);
-      return;
-    }
     setCartStep(step);
     setCartOpen(true);
   };

@@ -1,11 +1,13 @@
-const CACHE_NAME = 'dawai-v1';
-const STATIC_CACHE = 'dawai-static-v1';
-const DYNAMIC_CACHE = 'dawai-dynamic-v1';
+const CACHE_NAME = 'dawai-v3';
+const STATIC_CACHE = 'dawai-static-v3';
+const DYNAMIC_CACHE = 'dawai-dynamic-v3';
 
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 // Install: cache static assets
@@ -29,7 +31,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for static
+// Fetch: network-first for navigations, cache-first for hashed assets
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -46,7 +48,25 @@ self.addEventListener('fetch', (event) => {
   // Skip external CDNs for Tesseract (always network)
   if (url.hostname.includes('cdn.jsdelivr.net') || url.hostname.includes('projectnaptha')) return;
 
-  // Static assets: cache-first
+  // Same-origin navigation (or index.html): network-first so new builds always load
+  if (url.origin === self.location.origin && (request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html')) {
+    event.respondWith(
+      fetch(request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      }).catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        return caches.match('/index.html') || new Response('Offline', { status: 503 });
+      })
+    );
+    return;
+  }
+
+  // Same-origin static assets: cache-first
   if (url.origin === self.location.origin) {
     event.respondWith(
       caches.match(request).then((cached) => {
@@ -57,13 +77,7 @@ self.addEventListener('fetch', (event) => {
             caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
           }
           return response;
-        }).catch(() => {
-          // Offline fallback for navigation
-          if (request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-          return new Response('Offline', { status: 503 });
-        });
+        }).catch(() => new Response('Offline', { status: 503 }));
       })
     );
     return;

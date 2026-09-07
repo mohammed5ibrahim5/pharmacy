@@ -95,14 +95,24 @@ export function PharmacyCard({ pharmacy }: Props) {
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-900/25 to-transparent" />
 
-          {/* Top-Left: Delivery Badge + Compare */}
+          {/* Top-Left: Delivery Badge + Open Status + Compare */}
           <div className="absolute top-3 start-3 flex items-center gap-1.5 z-10">
+            {pharmacy.is_24h ? (
+              <div className="backdrop-blur-md bg-emerald-950/85 border border-emerald-500/50 text-emerald-300 px-2.5 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{t('مفتوح الآن')}</span>
+              </div>
+            ) : pharmacy.is_active ? (
+              <div className="backdrop-blur-md bg-slate-950/75 border border-white/20 text-slate-100 px-2.5 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span>{t('مفتوح')}</span>
+              </div>
+            ) : null}
             {pharmacy.delivery_available && (
               <div
                 className="backdrop-blur-md text-white px-2.5 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg border"
                 style={{ backgroundColor: `${themeColors.priceColor}dd`, borderColor: `${themeColors.priceColor}55` }}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
                 <Truck className="w-3.5 h-3.5" />
                 <span>{t('توصيل')}</span>
               </div>

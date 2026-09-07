@@ -15,12 +15,18 @@ import {
   ClipboardList,
   ShieldAlert,
   ArrowLeftRight,
-  Flame
+  Flame,
+  CalendarClock,
+  Sparkles
 } from 'lucide-react';
 import type { Product, Discount } from '@/types';
 import { useSettings } from '@/context/SettingsContext';
 import { useOrder } from '@/context/OrderContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { SubstitutesModal } from '@/components/SubstitutesModal';
+import { SubscribeModal } from '@/components/SubscribeModal';
+import { DoseGuideSection } from '@/components/DoseGuideSection';
+import { DoseCalculatorModal } from '@/components/DoseCalculatorModal';
 
 interface Props {
   product: Product | null;
@@ -30,9 +36,13 @@ interface Props {
 
 export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
   const { t, lang } = useLanguage();
-  const { themeColors } = useSettings();
+  const { themeColors, subscriptionConfig } = useSettings();
   const { addToCart, cart } = useOrder();
   const [justAdded, setJustAdded] = useState(false);
+  const [subsOpen, setSubsOpen] = useState(false);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [calculatorKey, setCalculatorKey] = useState<string | undefined>(undefined);
 
   /* قفل سكرول الصفحة والمودال مفتوح */
   useEffect(() => {
@@ -203,6 +213,29 @@ export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
               </button>
             </div>
 
+            {subscriptionConfig.enabled && product.is_available && !product.requires_prescription && (
+              <button
+                type="button"
+                onClick={() => setSubscribeOpen(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black transition-all active:scale-98 shadow-xs"
+                style={{ color: themeColors.primaryColor, border: `1px solid ${themeColors.primaryColor}35` }}
+              >
+                <CalendarClock className="w-4 h-4" />
+                <span>{t('اشترك شهرياً — وفر {0}%', [subscriptionConfig.discountPercent ?? 5])}</span>
+              </button>
+            )}
+
+            {/* Substitutes Button */}
+            <button
+              type="button"
+              onClick={() => setSubsOpen(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100/70 text-teal-800 text-xs font-black transition-all active:scale-98 shadow-xs"
+            >
+              <ArrowLeftRight className="w-4 h-4 text-teal-600" />
+              <span>{t('عرض البدائل والمثائل المتاحة بنفس المادة')}</span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            </button>
+
             {/* Facts grid */}
             <div className="grid sm:grid-cols-2 gap-2">
               {facts.map((f) => (
@@ -240,6 +273,15 @@ export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
               </div>
             )}
 
+            {/* Dose guide */}
+            <DoseGuideSection
+              product={product}
+              onOpenCalculator={(key) => {
+                setCalculatorKey(key);
+                setCalculatorOpen(true);
+              }}
+            />
+
             {/* Quantity hint */}
             {!product.is_available && (
               <p className="text-[11px] font-bold text-red-600 flex items-center gap-1.5">
@@ -250,6 +292,14 @@ export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
           </div>
         </div>
       </div>
+      {subsOpen && <SubstitutesModal product={product} onClose={() => setSubsOpen(false)} />}
+      {subscribeOpen && <SubscribeModal product={product} pharmacyName={pharmacyName} onClose={() => setSubscribeOpen(false)} />}
+      {calculatorOpen && (
+        <DoseCalculatorModal
+          initialKey={calculatorKey}
+          onClose={() => setCalculatorOpen(false)}
+        />
+      )}
     </div>,
     document.body
   );
