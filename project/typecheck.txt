@@ -1,0 +1,9 @@
+
+> vite-react-typescript-starter@0.0.0 typecheck
+> tsc --noEmit -p tsconfig.app.json
+
+src/components/Header.tsx(324,81): error TS2353: Object literal may only specify known properties, and 'separatorColor' does not exist in type 'Properties<string | number, string & {}>'.
+src/components/PharmacyCard.tsx(104,94): error TS2322: Type '{ className: string; title: string; }' is not assignable to type 'IntrinsicAttributes & Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>'.
+src/pages/HomePage.tsx(357,18): error TS2304: Cannot find name 'HERO_TRENDING'.
+src/pages/HomePage.tsx(357,37): error TS7006: Parameter 'item' implicitly has an 'any' type.

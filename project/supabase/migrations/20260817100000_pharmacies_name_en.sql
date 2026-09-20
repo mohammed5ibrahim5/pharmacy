@@ -1,0 +1,1 @@
+ALTER TABLE pharmacies ADD COLUMN IF NOT EXISTS name_en text;

@@ -1,0 +1,10 @@
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS site_name_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS site_tagline_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS site_description_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_title_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS hero_subtitle_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS footer_text_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS announcement_text_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS about_title_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS about_text_en text;
+ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS contact_address_en text;

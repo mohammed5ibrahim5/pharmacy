@@ -1,0 +1,131 @@
+import { supabase } from '@/lib/supabase';
+import { insertNotification } from '@/lib/notifications';
+import type { LoyaltyTransaction, StockAlert, MedicationReminder } from '@/types';
+
+export async function fetchLoyaltyBalance(customerId: string): Promise<number> {
+  const { data } = await supabase
+    .from('customers')
+    .select('loyalty_points')
+    .eq('id', customerId)
+    .maybeSingle();
+  return Number((data as { loyalty_points?: number } | null)?.loyalty_points || 0);
+}
+
+export async function fetchLoyaltyHistory(customerId: string): Promise<LoyaltyTransaction[]> {
+  const { data } = await supabase
+    .from('loyalty_transactions')
+    .select('*')
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  return (data || []) as LoyaltyTransaction[];
+}
+
+export async function awardLoyaltyPoints(customerId: string, points: number, reason: string) {
+  // إضافة النقاط للرصيد الحالي
+  const { data: customer } = await supabase
+    .from('customers')
+    .select('loyalty_points')
+    .eq('id', customerId)
+    .maybeSingle();
+  const current = Number((customer as { loyalty_points?: number } | null)?.loyalty_points || 0);
+  const newBalance = current + points;
+  await supabase
+    .from('customers')
+    .update({ loyalty_points: newBalance })
+    .eq('id', customerId);
+  await supabase.from('loyalty_transactions').insert({
+    customer_id: customerId,
+    points,
+    reason,
+  });
+}
+
+export async function addStockAlert(customerId: string, productId: string) {
+  const { error } = await supabase.from('stock_alerts').insert({
+    customer_id: customerId,
+    product_id: productId,
+  });
+  if (error) throw error;
+}
+
+export async function removeStockAlert(customerId: string, productId: string) {
+  await supabase
+    .from('stock_alerts')
+    .delete()
+    .eq('customer_id', customerId)
+    .eq('product_id', productId);
+}
+
+export async function fetchStockAlerts(customerId: string): Promise<StockAlert[]> {
+  const { data } = await supabase
+    .from('stock_alerts')
+    .select('*, product:products(*)')
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false });
+  return (data || []) as StockAlert[];
+}
+
+export async function notifyStockAvailable(productId: string) {
+  const { data: alerts } = await supabase
+    .from('stock_alerts')
+    .select('*, customer:customers(*)')
+    .eq('product_id', productId);
+  const { data: product } = await supabase.from('products').select('name').eq('id', productId).maybeSingle();
+  if (!alerts || alerts.length === 0) return;
+  const productName = (product as { name: string } | null)?.name || 'المنتج الذي طلبته';
+  for (const alert of alerts as (StockAlert & { customer: { id: string } })[]) {
+    await insertNotification({
+      customerId: alert.customer_id,
+      type: 'stock',
+      title: 'الدواء أصبح متوفراً الآن',
+      body: 'لقد توفر {0} — اطلبه الآن قبل نفاد الكمية.'.replace('{0}', productName),
+    });
+  }
+  await supabase.from('stock_alerts').delete().eq('product_id', productId);
+}
+
+const REMINDERS_KEY = 'pharmacy_reminders';
+
+export function loadLocalReminders(): MedicationReminder[] {
+  try {
+    const raw = localStorage.getItem(REMINDERS_KEY);
+    return raw ? (JSON.parse(raw) as MedicationReminder[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalReminders(list: MedicationReminder[]) {
+  try {
+    localStorage.setItem(REMINDERS_KEY, JSON.stringify(list));
+  } catch {
+    // ignore
+  }
+}
+
+export type MedicationRunOutStatus = 'ok' | 'soon' | 'out';
+
+export function medicationRunOutInfo(r: MedicationReminder): { status: MedicationRunOutStatus; daysLeft: number | null } {
+  if (!r.refillDate) return { status: 'ok', daysLeft: null };
+  const target = new Date(r.refillDate).getTime();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const daysLeft = Math.ceil((target - today.getTime()) / 86400000);
+  if (daysLeft <= 0) return { status: 'out', daysLeft };
+  if (daysLeft <= 3) return { status: 'soon', daysLeft };
+  return { status: 'ok', daysLeft };
+}
+
+export function computeRefillDate(daysSupply: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysSupply);
+  return d.toISOString().slice(0, 10);
+}
+
+export async function requestNotificationPermission(): Promise<boolean> {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  const permission = await Notification.requestPermission();
+  return permission === 'granted';
+}

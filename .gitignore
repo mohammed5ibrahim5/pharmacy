@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Flutter
+dawai_app/.dart_tool/
+dawai_app/.flutter-plugins
+dawai_app/.flutter-plugins-dependencies
+dawai_app/.metadata
+dawai_app/build/
+dawai_app/android/.gradle/
+dawai_app/android/local.properties
+dawai_app/pubspec.lock
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+*.env.local
