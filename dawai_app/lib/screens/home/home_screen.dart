@@ -5,6 +5,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:image_picker/image_picker.dart';
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
+import '../../services/update_service.dart';
 import '../../models/pharmacy.dart';
 import '../../models/product.dart';
 import '../../models/category.dart';
@@ -45,7 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadData();
     _speech.initialize();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showWelcomePopup());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showWelcomePopup();
+      UpdateService.checkForUpdates(context);
+    });
   }
 
   void _showWelcomePopup() {
