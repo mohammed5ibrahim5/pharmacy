@@ -47,131 +47,160 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Background Gradient
-          Container(
-            height: MediaQuery.of(context).size.height * 0.45,
-            decoration: const BoxDecoration(
-              gradient: AppColors.heroGradient,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        body: Stack(
+          children: [
+            // Background Gradient
+            Container(
+              height: MediaQuery.of(context).size.height * 0.45,
+              decoration: const BoxDecoration(
+                gradient: AppColors.heroGradient,
+              ),
             ),
-          ),
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 500),
-                  child: Column(
-                    children: [
-                      // Logo & Title
-                      Hero(
-                        tag: 'app_logo',
-                        child: Container(
-                          width: 80, height: 80,
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    child: Column(
+                      children: [
+                        // Logo & Title
+                        Hero(
+                          tag: 'app_logo',
+                          child: Container(
+                            width: 80, height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.local_pharmacy, size: 40, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text('دوا', style: GoogleFonts.tajawal(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white)),
+                        const SizedBox(height: 8),
+                        Text('سجّل دخولك عشان تتابع طلباتك', style: GoogleFonts.tajawal(fontSize: 16, color: Colors.white.withValues(alpha: 0.9))),
+                        const SizedBox(height: 32),
+                        
+                        // Floating Card
+                        Container(
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
+                            color: isDark ? AppColors.darkSurface : theme.cardColor,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: isDark ? AppShadow.darkLg : AppShadow.lg,
+                            border: isDark ? Border.all(color: AppColors.darkBorder) : null,
                           ),
-                          child: const Icon(Icons.local_pharmacy, size: 40, color: Colors.white),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text('دوا', style: GoogleFonts.tajawal(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white)),
-                      const SizedBox(height: 8),
-                      Text('سجّل دخولك عشان تتابع طلباتك', style: GoogleFonts.tajawal(fontSize: 16, color: Colors.white.withValues(alpha: 0.9))),
-                      const SizedBox(height: 32),
-                      
-                      // Floating Card
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        decoration: BoxDecoration(
-                          color: theme.cardColor,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: theme.brightness == Brightness.light ? AppShadow.lg : AppShadow.darkMd,
-                        ),
-                        padding: const EdgeInsets.all(32),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              TextFormField(
-                                controller: _emailCtrl,
-                                textDirection: TextDirection.ltr,
-                                keyboardType: TextInputType.emailAddress,
-                                style: GoogleFonts.tajawal(),
-                                decoration: const InputDecoration(
-                                  hintText: 'البريد الإلكتروني',
-                                  prefixIcon: Icon(Icons.email_outlined),
+                          padding: const EdgeInsets.all(32),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                TextFormField(
+                                  controller: _emailCtrl,
+                                  textDirection: TextDirection.ltr,
+                                  keyboardType: TextInputType.emailAddress,
+                                  autofillHints: const [AutofillHints.email],
+                                  style: GoogleFonts.tajawal(color: isDark ? AppColors.darkText : AppColors.text),
+                                  decoration: const InputDecoration(
+                                    hintText: 'البريد الإلكتروني',
+                                    prefixIcon: Icon(Icons.email_outlined),
+                                  ),
+                                  validator: (v) {
+                                    if (v == null || v.isEmpty) return 'أدخل البريد الإلكتروني';
+                                    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                                    return emailRegex.hasMatch(v) ? null : 'بريد غير صحيح';
+                                  },
                                 ),
-                                validator: (v) => v != null && v.contains('@') ? null : 'بريد غير صحيح',
-                              ),
-                              const SizedBox(height: 20),
-                              TextFormField(
-                                controller: _passCtrl,
-                                textDirection: TextDirection.ltr,
-                                obscureText: _obscure,
-                                style: GoogleFonts.tajawal(),
-                                decoration: InputDecoration(
-                                  hintText: 'كلمة المرور',
-                                  prefixIcon: const Icon(Icons.lock_outline),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                                    onPressed: () => setState(() => _obscure = !_obscure),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _passCtrl,
+                                  textDirection: TextDirection.ltr,
+                                  obscureText: _obscure,
+                                  autofillHints: const [AutofillHints.password],
+                                  style: GoogleFonts.tajawal(color: isDark ? AppColors.darkText : AppColors.text),
+                                  decoration: InputDecoration(
+                                    hintText: 'كلمة المرور',
+                                    prefixIcon: const Icon(Icons.lock_outline),
+                                    suffixIcon: AnimatedSwitcher(
+                                      duration: const Duration(milliseconds: 200),
+                                      child: IconButton(
+                                        key: ValueKey(_obscure),
+                                        icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                                        onPressed: () => setState(() => _obscure = !_obscure),
+                                      ),
+                                    ),
+                                  ),
+                                  validator: (v) => v != null && v.length >= 6 ? null : '6 أحرف على الأقل',
+                                ),
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: TextButton(
+                                    onPressed: () {},
+                                    child: Text(
+                                      'نسيت كلمة المرور؟',
+                                      style: GoogleFonts.tajawal(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                validator: (v) => v != null && v.length >= 6 ? null : '6 أحرف على الأقل',
-                              ),
-                              const SizedBox(height: 32),
-                              Container(
-                                decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
-                                  borderRadius: BorderRadius.circular(AppRadius.md),
-                                ),
-                                child: ElevatedButton(
-                                  onPressed: _loading ? null : _login,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                const SizedBox(height: 20),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.primaryGradient,
+                                    borderRadius: BorderRadius.circular(AppRadius.md),
                                   ),
-                                  child: _loading
-                                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                                      : Text('تسجيل الدخول', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text('ليس لديك حساب؟ ', style: GoogleFonts.tajawal(fontSize: 14)),
-                                  GestureDetector(
-                                    onTap: () => context.push('/register'),
-                                    child: Text('إنشاء حساب جديد', style: GoogleFonts.tajawal(color: colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  child: ElevatedButton(
+                                    onPressed: _loading ? null : _login,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      shadowColor: Colors.transparent,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                    ),
+                                    child: _loading
+                                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                        : Text('تسجيل الدخول', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Center(
-                                child: TextButton(
-                                  onPressed: () => context.go('/'),
-                                  child: Text('التسوق بدون تسجيل', style: GoogleFonts.tajawal(color: colorScheme.secondary, fontWeight: FontWeight.w600, fontSize: 14)),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 24),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text('ليس لديك حساب؟ ', style: GoogleFonts.tajawal(fontSize: 14, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                                    GestureDetector(
+                                      onTap: () => context.push('/register'),
+                                      child: Text('إنشاء حساب جديد', style: GoogleFonts.tajawal(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Center(
+                                  child: TextButton(
+                                    onPressed: () => context.go('/'),
+                                    child: Text('التسوق بدون تسجيل', style: GoogleFonts.tajawal(color: isDark ? AppColors.darkTextMuted : AppColors.textMuted, fontWeight: FontWeight.w600, fontSize: 14)),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

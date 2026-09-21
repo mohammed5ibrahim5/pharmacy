@@ -34,6 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Product> _products = [];
   List<Category> _categories = [];
   bool _loading = true;
+  bool _hasError = false;
+  String _errorMsg = '';
   bool _listening = false;
   bool _showAnnouncement = true;
   bool _showWelcome = true;
@@ -62,7 +64,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _hasError = false;
+      _errorMsg = '';
+    });
     try {
       final results = await Future.wait([
         _api.getPharmacies(),
@@ -77,8 +83,14 @@ class _HomeScreenState extends State<HomeScreen> {
           _loading = false;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _hasError = true;
+          _errorMsg = 'فشل تحميل البيانات. تأكد من اتصال الإنترنت وحاول مرة أخرى.';
+        });
+      }
     }
   }
 
@@ -182,10 +194,12 @@ class _HomeScreenState extends State<HomeScreen> {
       body: RefreshIndicator(
         onRefresh: _loadData,
         color: AppColors.primary,
-        child: CustomScrollView(
-          controller: _scrollCtrl,
-          physics: const BouncingScrollPhysics(),
-          slivers: [
+        child: _hasError
+            ? _buildErrorState()
+            : CustomScrollView(
+                controller: _scrollCtrl,
+                physics: const BouncingScrollPhysics(),
+                slivers: [
             SliverToBoxAdapter(
               child: HeroHeader(
                 onSearch: _search,
@@ -237,7 +251,45 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             SliverToBoxAdapter(child: _buildTrustFeatures(padding)),
-            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
+            ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.errorSurface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.wifi_off_rounded, color: AppColors.error, size: 48),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'عذراً، حدث خطأ',
+              style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMsg,
+              style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh, size: 20),
+              label: Text('إعادة المحاولة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+            ),
           ],
         ),
       ),
@@ -251,18 +303,19 @@ class _HomeScreenState extends State<HomeScreen> {
       {'icon': Icons.shopping_cart_rounded, 'title': 'اطلب', 'desc': 'بضغطة زر', 'color': AppColors.secondary},
       {'icon': Icons.delivery_dining_rounded, 'title': 'استلم', 'desc': 'في بابك', 'color': AppColors.success},
     ];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: EdgeInsets.fromLTRB(padding, 20, padding, 0),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppShadow.sm,
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+        boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
       ),
       child: Column(
         children: [
-          Text('كيف يعمل التطبيق؟', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800)),
+          Text('كيف يعمل التطبيق؟', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.text)),
           const SizedBox(height: 4),
           Text('أربع خطوات بسيطة', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMuted)),
           const SizedBox(height: 20),
@@ -277,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(children: [
                   Container(width: 50, height: 50, decoration: BoxDecoration(color: (s['color'] as Color).withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(s['icon'] as IconData, color: s['color'] as Color, size: 24)),
                   const SizedBox(height: 8),
-                  Text(s['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13)),
+                  Text(s['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: isDark ? AppColors.darkText : AppColors.text)),
                   Text(s['desc'] as String, style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMuted)),
                 ]),
               );
@@ -289,6 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTestimonialsSection(double padding) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final reviews = [
       {'name': 'أحمد محمد', 'rating': 5.0, 'text': 'توصيل سريع جداً وأسعار معقولة. صار صيدليتي المفضلة!', 'avatar': 'أ'},
       {'name': 'سارة العلي', 'rating': 4.5, 'text': 'البحث بالصوت ممتاز وسهل الاستخدام. أنصح بالتطبيق.', 'avatar': 'س'},
@@ -299,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ماذا يقول مستخدمونا', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800)),
+          Text('ماذا يقول مستخدمونا', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.text)),
           const SizedBox(height: 4),
           Text('آراء حقيقية من عملاء دوا', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textMuted)),
           const SizedBox(height: 14),
@@ -315,10 +369,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 280,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: AppShadow.sm,
+                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+                    boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,6 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTrustFeatures(double padding) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = [
       {'icon': Icons.verified_user_rounded, 'title': 'صيدليات مرخصة', 'desc': '100% معتمدة', 'color': AppColors.primary},
       {'icon': Icons.attach_money_rounded, 'title': 'أسعار منافسة', 'desc': 'قارن واختار', 'color': AppColors.accent},
@@ -368,7 +423,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('لماذا دوا؟', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800)),
+          Text('لماذا دوا؟', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.text)),
           const SizedBox(height: 12),
           GridView.count(
             crossAxisCount: 2,
@@ -380,16 +435,16 @@ class _HomeScreenState extends State<HomeScreen> {
             children: items.map((item) => Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
-                boxShadow: AppShadow.xs,
+                border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+                boxShadow: isDark ? AppShadow.darkSm : AppShadow.xs,
               ),
               child: Row(children: [
                 Container(width: 40, height: 40, decoration: BoxDecoration(color: (item['color'] as Color).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(item['icon'] as IconData, color: item['color'] as Color, size: 22)),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text(item['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 12)),
+                  Text(item['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 12, color: isDark ? AppColors.darkText : AppColors.text)),
                   Text(item['desc'] as String, style: GoogleFonts.tajawal(fontSize: 10, color: AppColors.textMuted)),
                 ])),
               ]),

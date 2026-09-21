@@ -17,24 +17,19 @@ class PharmacyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: GestureDetector(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
         onTap: () => context.push('/pharmacy/${pharmacy.id}'),
         child: Container(
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: isDark ? AppColors.darkBorder : AppColors.border,
+            ),
+            boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
           ),
           child: Column(
             children: [
@@ -53,8 +48,12 @@ class PharmacyCard extends StatelessWidget {
                       errorWidget: (context, url, error) => Container(
                         width: 80,
                         height: 80,
-                        color: Colors.grey.shade100,
-                        child: const Icon(Icons.local_pharmacy, color: Colors.grey, size: 32),
+                        color: isDark ? AppColors.darkBorder : AppColors.borderLight,
+                        child: Icon(
+                          Icons.local_pharmacy,
+                          color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                          size: 32,
+                        ),
                       ),
                     ),
                   ),
@@ -74,7 +73,7 @@ class PharmacyCard extends StatelessWidget {
                                 style: GoogleFonts.tajawal(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
+                                  color: isDark ? AppColors.darkText : AppColors.text,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -83,15 +82,15 @@ class PharmacyCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: pharmacy.isActive ? Colors.green.shade50 : Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(4),
+                                color: pharmacy.isActive ? AppColors.successSurface : AppColors.errorSurface,
+                                borderRadius: BorderRadius.circular(AppRadius.xs),
                               ),
                               child: Text(
                                 pharmacy.isActive ? 'مفتوح' : 'مغلق',
                                 style: GoogleFonts.tajawal(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: pharmacy.isActive ? Colors.green : Colors.red,
+                                  color: pharmacy.isActive ? AppColors.success : AppColors.error,
                                 ),
                               ),
                             ),
@@ -100,14 +99,14 @@ class PharmacyCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.location_on, size: 14, color: Colors.grey.shade500),
+                            Icon(Icons.location_on_outlined, size: 14, color: isDark ? AppColors.darkTextMuted : AppColors.textSecondary),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 '${pharmacy.area ?? ''} ${pharmacy.address}',
                                 style: GoogleFonts.tajawal(
                                   fontSize: 12,
-                                  color: Colors.grey.shade600,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -118,7 +117,7 @@ class PharmacyCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            Icon(Icons.star_rounded, size: 16, color: Colors.amber.shade600),
+                            Icon(Icons.star_rounded, size: 16, color: AppColors.rating),
                             const SizedBox(width: 4),
                             Text(
                               pharmacy.rating.toStringAsFixed(1),
@@ -166,7 +165,6 @@ class PharmacyCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }

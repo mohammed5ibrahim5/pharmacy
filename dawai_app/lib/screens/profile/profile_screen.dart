@@ -68,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.location_on_outlined,
                       title: 'عناويني',
                       subtitle: 'إدارة عناوين التوصيل',
-                      onTap: () {},
+                      onTap: () => _showComingSoon('إدارة العناوين'),
                     ),
                   ],
                 ),
@@ -108,19 +108,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.language_outlined,
                       title: 'اللغة',
                       subtitle: 'العربية',
-                      onTap: () {},
+                      onTap: () => _showComingSoon('تغيير اللغة'),
                     ),
                     _buildSettingsItem(
                       icon: theme.brightness == Brightness.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
                       title: 'المظهر',
                       subtitle: theme.brightness == Brightness.dark ? 'الوضع الداكن' : 'الوضع الفاتح',
-                      onTap: () {},
+                      onTap: () => _showComingSoon('تبديل المظهر'),
                     ),
                     _buildSettingsItem(
                       icon: Icons.notifications_none_outlined,
                       title: 'الإشعارات',
                       subtitle: 'إدارة تفضيلات الإشعارات',
-                      onTap: () {},
+                      onTap: () => _showComingSoon('إعدادات الإشعارات'),
                     ),
                   ],
                 ),
@@ -134,13 +134,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.help_outline,
                       title: 'مركز المساعدة',
                       subtitle: 'الأسئلة الشائعة والدعم',
-                      onTap: () {},
+                      onTap: () => _showComingSoon('مركز المساعدة'),
                     ),
                     _buildSettingsItem(
                       icon: Icons.support_agent_outlined,
                       title: 'اتصل بنا',
                       subtitle: 'نحن هنا لمساعدتك',
-                      onTap: () {},
+                      onTap: () => _showComingSoon('صفحة الاتصال'),
                     ),
                   ],
                 ),
@@ -149,18 +149,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () async {
-                      await _api.signOut();
-                      if (mounted) {
-                        context.read<AppState>().clearCart();
-                        context.go('/');
-                      }
-                    },
+                    onPressed: () => _confirmLogout(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.error,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
                     ),
                     icon: const Icon(Icons.logout),
                     label: Text('تسجيل خروج', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -176,6 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildNotLoggedIn(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -186,23 +181,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.person_outline, size: 80, color: theme.colorScheme.primary),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySurface,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.person_outline, size: 60, color: AppColors.primary),
+                  ),
                   const SizedBox(height: 24),
                   Text('سجل دخولك لتتمكن من الوصول لملفك الشخصي وطلباتك', 
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkText : AppColors.text),
                   ),
                   const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () => context.push('/login'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
                       child: Text('تسجيل الدخول', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
-                  )
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => context.push('/register'),
+                      child: Text('إنشاء حساب جديد', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -213,8 +220,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildHeader(ThemeData theme) {
+    final topPadding = MediaQuery.of(context).padding.top;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+      padding: EdgeInsets.fromLTRB(20, topPadding + 20, 20, 30),
       decoration: const BoxDecoration(
         gradient: AppColors.heroGradient,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -249,11 +257,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSectionTitle(String title, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, right: 8),
       child: Text(
         title,
-        style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+        style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
       ),
     );
   }
@@ -315,6 +324,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icon(Icons.chevron_left_rounded, color: theme.iconTheme.color?.withValues(alpha: 0.5), size: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showComingSoon(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(children: [
+          const Icon(Icons.info_outline, color: Colors.white, size: 20),
+          const SizedBox(width: 8),
+          Text('$feature قريباً إن شاء الله', style: GoogleFonts.tajawal()),
+        ]),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+      ),
+    );
+  }
+
+  void _confirmLogout() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.errorSurface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.logout, color: AppColors.error, size: 22),
+            ),
+            const SizedBox(width: 10),
+            Text('تسجيل خروج', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'هل أنت متأكد من تسجيل الخروج؟',
+          style: GoogleFonts.tajawal(fontSize: 14, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('إلغاء', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _api.signOut();
+              if (mounted) {
+                context.read<AppState>().clearCart();
+                context.go('/');
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('تسجيل خروج', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

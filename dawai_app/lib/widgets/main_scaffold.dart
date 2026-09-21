@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +34,8 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentIndex = _getCurrentIndex(context);
     final appState = context.watch<AppState>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       extendBody: true,
@@ -60,19 +63,11 @@ class MainScaffold extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: Directionality(
-        textDirection: TextDirection.rtl,
-        child: Container(
-          margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
+      bottomNavigationBar: Container(
+          margin: EdgeInsets.only(left: 16, right: 16, bottom: bottomPadding + 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            boxShadow: isDark ? AppShadow.darkMd : AppShadow.md,
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(30),
@@ -80,7 +75,9 @@ class MainScaffold extends StatelessWidget {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10),
-                color: Colors.white.withValues(alpha: 0.85),
+                color: isDark
+                    ? AppColors.darkSurface.withValues(alpha: 0.92)
+                    : AppColors.surface.withValues(alpha: 0.92),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -95,14 +92,19 @@ class MainScaffold extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 
   Widget _buildNavItem(BuildContext context, int index, IconData icon, String label, int currentIndex) {
     final isSelected = currentIndex == index;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? AppColors.primaryLight : AppColors.primary;
+    final inactiveColor = isDark ? AppColors.darkTextMuted : AppColors.textSecondary;
     return GestureDetector(
-      onTap: () => _onItemTapped(context, index),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        _onItemTapped(context, index);
+      },
       behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -111,12 +113,12 @@ class MainScaffold extends StatelessWidget {
             duration: const Duration(milliseconds: 300),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
+              color: isSelected ? activeColor.withValues(alpha: 0.1) : Colors.transparent,
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
-              color: isSelected ? AppColors.primary : Colors.grey.shade500,
+              color: isSelected ? activeColor : inactiveColor,
               size: 26,
             ),
           ),
@@ -126,7 +128,7 @@ class MainScaffold extends StatelessWidget {
             style: GoogleFonts.tajawal(
               fontSize: 10,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? AppColors.primary : Colors.grey.shade600,
+              color: isSelected ? activeColor : inactiveColor,
             ),
           ),
           const SizedBox(height: 4),
@@ -135,7 +137,7 @@ class MainScaffold extends StatelessWidget {
             height: 4,
             width: isSelected ? 16 : 0,
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: activeColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
