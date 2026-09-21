@@ -40,7 +40,7 @@ export async function sendLocalNotification(title: string, body: string, icon?: 
   new Notification(title, { body, icon: icon || '/favicon.ico', badge: '/favicon.ico', tag: 'dawai-' + Date.now() });
 }
 
-export async function subscribeToOrderUpdates(orderId: string) {
+export async function subscribeToOrderUpdates(_: string) {
   const granted = await requestPushPermission();
   if (granted) {
     await registerPushSubscription();

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
-import '../../widgets/glass_container.dart';
 
 class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
@@ -79,10 +78,11 @@ class _HealthScreenState extends State<HealthScreen> {
                     ),
                     const SizedBox(height: 28),
                     // Daily Progress Glass Card
-                    GlassContainer(
-                      opacity: 0.25,
-                      color: Colors.white,
-                      borderRadius: 24,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
                       padding: const EdgeInsets.all(20),
                       child: Row(
                         children: [

@@ -9,17 +9,19 @@ import '../shared/widgets/app_button.dart';
 
 class PharmacyCard extends StatelessWidget {
   final Pharmacy pharmacy;
+  final VoidCallback? onTap;
 
   const PharmacyCard({
     super.key,
     required this.pharmacy,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
-        onTap: () => context.push('/pharmacy/${pharmacy.id}'),
+        onTap: onTap ?? () => context.push('/pharmacy/${pharmacy.id}'),
         child: Container(
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(12),
