@@ -272,9 +272,20 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
+  double _calculateDeliveryFee(AppState state) {
+    final uniquePharmacies = <String, double>{};
+    for (final item in state.cart) {
+      if (item.deliveryFee != null && !uniquePharmacies.containsKey(item.pharmacyId)) {
+        uniquePharmacies[item.pharmacyId] = item.deliveryFee!;
+      }
+    }
+    if (uniquePharmacies.isEmpty) return 20.0;
+    return uniquePharmacies.values.reduce((a, b) => a + b);
+  }
+
   Widget _buildSummaryCard(AppState state) {
     final subtotal = state.cartTotal;
-    const deliveryFee = 20.0;
+    final deliveryFee = _calculateDeliveryFee(state);
     final total = subtotal + deliveryFee;
 
     return Container(

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../models/pharmacy.dart';
 import '../../models/product.dart';
+import '../../shared/widgets/loading_widget.dart';
 
 class PharmacyDetailScreen extends StatefulWidget {
   final String id;
@@ -42,7 +44,12 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في تحميل الصيدلية: $e'), backgroundColor: AppColors.error),
+        );
+      }
     }
   }
 
@@ -119,7 +126,14 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(color: AppColors.primarySurface, borderRadius: const BorderRadius.vertical(top: Radius.circular(16))),
-                    child: Center(child: p.imageUrl != null ? Image.network(p.imageUrl!) : const Icon(Icons.medication, size: 40, color: AppColors.primary)),
+                    child: Center(child: p.imageUrl != null 
+                        ? CachedNetworkImage(
+                            imageUrl: p.imageUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const ShimmerBox(width: double.infinity, height: double.infinity),
+                            errorWidget: (context, url, error) => const Icon(Icons.medication, size: 40, color: AppColors.primary),
+                          )
+                        : const Icon(Icons.medication, size: 40, color: AppColors.primary)),
                   ),
                 ),
                 Padding(

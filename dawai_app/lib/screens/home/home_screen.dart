@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../services/update_service.dart';
@@ -52,19 +53,26 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _showWelcomePopup() {
+  void _showWelcomePopup() async {
     if (!_showWelcome) return;
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenWelcome = prefs.getBool('has_seen_welcome') ?? false;
+    if (hasSeenWelcome) return;
     _showWelcome = false;
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         contentPadding: EdgeInsets.zero,
         content: PromoBanner(
-          onShopNow: () => Navigator.pop(ctx),
+          onShopNow: () {
+            Navigator.pop(ctx);
+            prefs.setBool('has_seen_welcome', true);
+          },
         ),
       ),
-    );
+    ).then((_) => prefs.setBool('has_seen_welcome', true));
   }
 
   Future<void> _loadData() async {

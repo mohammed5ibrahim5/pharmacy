@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
+import '../../widgets/dose_calculator_modal.dart';
 
 class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
@@ -159,35 +160,49 @@ class _HealthScreenState extends State<HealthScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: _healthActionCard(
-                      icon: Icons.notifications_active_rounded,
-                      title: 'منبه الجرعات',
-                      subtitle: 'تذكير ريفيل',
-                      color: AppColors.primary,
-                      theme: theme,
-                      onTap: () => context.push('/refill-reminder'),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _healthActionCard(
+                          icon: Icons.notifications_active_rounded,
+                          title: 'منبه الجرعات',
+                          subtitle: 'تذكير ريفيل',
+                          color: AppColors.primary,
+                          theme: theme,
+                          onTap: () => context.push('/refill-reminder'),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _healthActionCard(
+                          icon: Icons.warning_amber_rounded,
+                          title: 'تفاعلات الدواء',
+                          subtitle: 'فحص التداخلات',
+                          color: AppColors.accentDark,
+                          theme: theme,
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('فاحص التداخلات الدوائية نشط وتلقائي عند طلب أي دواء!', style: GoogleFonts.tajawal()),
+                                backgroundColor: AppColors.accentDark,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _healthActionCard(
-                      icon: Icons.warning_amber_rounded,
-                      title: 'تفاعلات الدواء',
-                      subtitle: 'فحص التداخلات',
-                      color: AppColors.accentDark,
-                      theme: theme,
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('فاحص التداخلات الدوائية نشط وتلقائي عند طلب أي دواء!', style: GoogleFonts.tajawal()),
-                            backgroundColor: AppColors.accentDark,
-                          ),
-                        );
-                      },
-                    ),
+                  const SizedBox(height: 16),
+                  _healthActionCard(
+                    icon: Icons.calculate_rounded,
+                    title: 'حاسبة الجرعات',
+                    subtitle: 'حسب الوزن والعمر',
+                    color: AppColors.success,
+                    theme: theme,
+                    onTap: () => DoseCalculatorModal.show(context),
+                    fullWidth: true,
                   ),
                 ],
               ),
@@ -235,6 +250,7 @@ class _HealthScreenState extends State<HealthScreen> {
     required Color color,
     required ThemeData theme,
     required VoidCallback onTap,
+    bool fullWidth = false,
   }) {
     return GestureDetector(
       onTap: onTap,

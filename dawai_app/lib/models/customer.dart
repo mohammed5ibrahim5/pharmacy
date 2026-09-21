@@ -76,6 +76,7 @@ class CartItem {
   int quantity;
   final String? pharmacyName;
   final bool requiresPrescription;
+  final double? deliveryFee;
 
   CartItem({
     required this.key,
@@ -88,6 +89,7 @@ class CartItem {
     this.quantity = 1,
     this.pharmacyName,
     this.requiresPrescription = false,
+    this.deliveryFee,
   });
 
   double get totalPrice => price * quantity;

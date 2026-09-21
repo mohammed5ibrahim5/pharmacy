@@ -30,6 +30,9 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+    final isFavorite = appState.isFavorite(product.id);
+    
     return GestureDetector(
         onTap: onTap ?? () => context.push('/product/${product.id}'),
         child: Container(
@@ -114,12 +117,12 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (onFavoriteToggle != null)
+                  if (onFavoriteToggle != null || true)
                     Positioned(
                       bottom: 8,
                       left: 8,
                       child: GestureDetector(
-                        onTap: onFavoriteToggle,
+                        onTap: onFavoriteToggle ?? () => appState.toggleFavorite(product.id),
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(

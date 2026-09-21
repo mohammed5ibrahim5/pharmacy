@@ -59,21 +59,18 @@ class ApiService {
 
   // ──── Pharmacies ────
   Future<List<Pharmacy>> getPharmacies({String? search}) async {
-    final data = await _client
+    var query = _client
         .from('pharmacies')
         .select('*')
         .order('rating', ascending: false);
 
-    var list = (data as List).map((e) => Pharmacy.fromJson(e)).toList();
     if (search != null && search.isNotEmpty) {
       final q = search.toLowerCase();
-      list = list.where((p) =>
-        p.name.toLowerCase().contains(q) ||
-        (p.area?.toLowerCase().contains(q) ?? false) ||
-        p.address.toLowerCase().contains(q)
-      ).toList();
+      query = query.or('name.ilike.%$q%,area.ilike.%$q%,address.ilike.%$q%');
     }
-    return list;
+
+    final data = await query;
+    return (data as List).map((e) => Pharmacy.fromJson(e)).toList();
   }
 
   Future<Pharmacy?> getPharmacy(String id) async {
@@ -90,25 +87,21 @@ class ApiService {
   static const _productSelect = '*, pharmacy:pharmacies(id,name,logo_url,delivery_fee,delivery_available), category:categories(id,name,slug,icon)';
 
   Future<List<Product>> getProducts({String? pharmacyId, String? categoryId, String? search}) async {
-    final data = await _client
+    var query = _client
         .from('products')
         .select(_productSelect)
-        .order('name')
-        .limit(200);
+        .eq('is_available', true)
+        .order('name');
 
-    var list = (data as List).map((e) => Product.fromJson(e)).toList();
-    list = list.where((p) => p.isAvailable).toList();
-    if (pharmacyId != null) list = list.where((p) => p.pharmacyId == pharmacyId).toList();
-    if (categoryId != null) list = list.where((p) => p.categoryId == categoryId).toList();
+    if (pharmacyId != null) query = query.eq('pharmacy_id', pharmacyId);
+    if (categoryId != null) query = query.eq('category_id', categoryId);
     if (search != null && search.isNotEmpty) {
       final q = search.toLowerCase();
-      list = list.where((p) =>
-        p.name.toLowerCase().contains(q) ||
-        (p.nameEn?.toLowerCase().contains(q) ?? false) ||
-        (p.activeIngredient?.toLowerCase().contains(q) ?? false)
-      ).toList();
+      query = query.or('name.ilike.%$q%,name_en.ilike.%$q%,active_ingredient.ilike.%$q%');
     }
-    return list;
+
+    final data = await query.limit(200);
+    return (data as List).map((e) => Product.fromJson(e)).toList();
   }
 
   Future<Product?> getProduct(String id) async {
@@ -136,11 +129,11 @@ class ApiService {
     final data = await _client
         .from('order_groups')
         .select('*, orders(*, product:products(id,name,image_url,unit), pharmacy:pharmacies(id,name,logo_url))')
+        .eq('customer_id', customerRes['id'])
         .order('created_at', ascending: false)
         .limit(50);
 
-    final all = (data as List).map((e) => OrderGroup.fromJson(e)).toList();
-    return all.where((o) => o.customerId == customerRes['id']).toList();
+    return (data as List).map((e) => OrderGroup.fromJson(e)).toList();
   }
 
   Future<Map<String, dynamic>> placeOrder({
@@ -165,11 +158,12 @@ class ApiService {
     final data = await _client
         .from('reviews')
         .select('*')
+        .eq('pharmacy_id', pharmacyId)
+        .eq('is_visible', true)
         .order('created_at', ascending: false)
         .limit(50);
 
     return (data as List)
-        .where((e) => e['pharmacy_id'] == pharmacyId && e['is_visible'] == true)
         .map((e) => Review.fromJson(e))
         .toList();
   }
@@ -211,10 +205,9 @@ class ApiService {
 
     final data = await _client
         .from('notifications')
-        .select('*');
-    final list = (data as List).where((e) =>
-      e['customer_id'] == customerRes['id'] && e['read'] == false
-    ).toList();
-    return list.length;
+        .select('id')
+        .eq('customer_id', customerRes['id'])
+        .eq('read', false);
+    return (data as List).length;
   }
 }

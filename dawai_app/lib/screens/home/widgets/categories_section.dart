@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../../../models/category.dart';
 import '../../../models/product.dart';
+import '../../../shared/widgets/loading_widget.dart';
 
 class CategoriesSection extends StatelessWidget {
   final List<Category> categories;
@@ -25,7 +26,39 @@ class CategoriesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading || categories.isEmpty) return const SizedBox.shrink();
+    if (isLoading || categories.isEmpty) {
+      if (!isLoading) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: padding),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShimmerBox(width: 150, height: 20),
+                  SizedBox(height: 4),
+                  ShimmerBox(width: 100, height: 14),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 90,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: padding),
+                itemCount: 6,
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemBuilder: (context, i) => ShimmerBox(width: 80, height: 80, borderRadius: 16),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: 20),

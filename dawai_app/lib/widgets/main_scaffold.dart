@@ -6,10 +6,33 @@ import 'package:provider/provider.dart';
 import 'dart:ui';
 import '../config/theme.dart';
 import '../providers/app_state.dart';
+import '../providers/language_provider.dart';
+import '../services/api_service.dart';
 
-class MainScaffold extends StatelessWidget {
+class MainScaffold extends StatefulWidget {
   final Widget child;
   const MainScaffold({super.key, required this.child});
+
+  @override
+  State<MainScaffold> createState() => _MainScaffoldState();
+}
+
+class _MainScaffoldState extends State<MainScaffold> {
+  int _notificationCount = 0;
+  final ApiService _api = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final count = await _api.getUnreadNotificationsCount();
+      if (mounted) setState(() => _notificationCount = count);
+    } catch (_) {}
+  }
 
   int _getCurrentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
@@ -34,6 +57,7 @@ class MainScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentIndex = _getCurrentIndex(context);
     final appState = context.watch<AppState>();
+    final lang = context.watch<LanguageProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
@@ -41,7 +65,7 @@ class MainScaffold extends StatelessWidget {
       extendBody: true,
       body: SafeArea(
         bottom: false,
-        child: child,
+        child: widget.child,
       ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
@@ -52,7 +76,11 @@ class MainScaffold extends StatelessWidget {
               onPressed: () => context.push('/cart'),
               backgroundColor: AppColors.accent,
               mini: true,
-              child: const Icon(Icons.shopping_cart, color: Colors.white),
+              child: Badge(
+                label: Text('${appState.cartCount}', style: const TextStyle(fontSize: 10, color: Colors.white)),
+                backgroundColor: AppColors.error,
+                child: const Icon(Icons.shopping_cart, color: Colors.white),
+              ),
             ),
           const SizedBox(height: 10),
           FloatingActionButton(
@@ -81,11 +109,11 @@ class MainScaffold extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildNavItem(context, 0, Icons.home_rounded, 'الرئيسية', currentIndex),
-                    _buildNavItem(context, 1, Icons.favorite_rounded, 'صحتي', currentIndex),
-                    _buildNavItem(context, 2, Icons.local_pharmacy_rounded, 'الصيدليات', currentIndex),
-                    _buildNavItem(context, 3, Icons.receipt_long_rounded, 'طلباتي', currentIndex),
-                    _buildNavItem(context, 4, Icons.person_rounded, 'حسابي', currentIndex),
+                    _buildNavItem(context, 0, Icons.home_rounded, lang.t('nav_home'), currentIndex),
+                    _buildNavItem(context, 1, Icons.favorite_rounded, lang.t('nav_health'), currentIndex),
+                    _buildNavItem(context, 2, Icons.local_pharmacy_rounded, lang.t('nav_pharmacies'), currentIndex),
+                    _buildNavItem(context, 3, Icons.receipt_long_rounded, lang.t('nav_orders'), currentIndex, badge: _notificationCount),
+                    _buildNavItem(context, 4, Icons.person_rounded, lang.t('nav_profile'), currentIndex),
                   ],
                 ),
               ),
@@ -95,7 +123,7 @@ class MainScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(BuildContext context, int index, IconData icon, String label, int currentIndex) {
+  Widget _buildNavItem(BuildContext context, int index, IconData icon, String label, int currentIndex, {int badge = 0}) {
     final isSelected = currentIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = isDark ? AppColors.primaryLight : AppColors.primary;
@@ -116,10 +144,15 @@ class MainScaffold extends StatelessWidget {
               color: isSelected ? activeColor.withValues(alpha: 0.1) : Colors.transparent,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: isSelected ? activeColor : inactiveColor,
-              size: 26,
+            child: Badge(
+              isLabelVisible: badge > 0,
+              label: Text('$badge', style: const TextStyle(fontSize: 9, color: Colors.white)),
+              backgroundColor: AppColors.error,
+              child: Icon(
+                icon,
+                color: isSelected ? activeColor : inactiveColor,
+                size: 26,
+              ),
             ),
           ),
           const SizedBox(height: 4),

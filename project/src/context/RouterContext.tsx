@@ -31,9 +31,9 @@ function parseAccountTab(tab?: string): AccountTab {
   return 'orders';
 }
 
-function parseHash(): Route {
-  const hash = window.location.hash.replace(/^#\/?/, '');
-  const parts = hash.split('/').filter(Boolean);
+function parsePath(pathname: string): Route {
+  const path = pathname.replace(/^\//, '');
+  const parts = path.split('/').filter(Boolean);
 
   if (parts.length === 0) return { name: 'home' };
   if (parts[0] === 'search' && parts[1]) return { name: 'search', query: decodeURIComponent(parts[1]) };
@@ -47,32 +47,40 @@ function parseHash(): Route {
   return { name: 'home' };
 }
 
-function routeToHash(route: Route): string {
+function routeToPath(route: Route): string {
   switch (route.name) {
-    case 'home': return '#/';
-    case 'search': return `#/search/${encodeURIComponent(route.query)}`;
-    case 'pharmacy': return `#/pharmacy/${route.id}`;
-    case 'category': return `#/category/${route.slug}`;
-    case 'categories': return '#/categories';
-    case 'account': return `#/account/${route.tab}`;
-    case 'track': return '#/track';
-    case 'health': return '#/health';
-    case 'healthArticle': return `#/health/${encodeURIComponent(route.slug)}`;
+    case 'home': return '/';
+    case 'search': return `/search/${encodeURIComponent(route.query)}`;
+    case 'pharmacy': return `/pharmacy/${route.id}`;
+    case 'category': return `/category/${route.slug}`;
+    case 'categories': return '/categories';
+    case 'account': return `/account/${route.tab}`;
+    case 'track': return '/track';
+    case 'health': return '/health';
+    case 'healthArticle': return `/health/${encodeURIComponent(route.slug)}`;
   }
 }
 
+/** Backward-compatible: still read hash if present (migrating from old URLs) */
+function getCurrentPath(): string {
+  const hash = window.location.hash;
+  if (hash && hash.startsWith('#/') && hash.length > 2) {
+    return hash.replace(/^#/, '');
+  }
+  return window.location.pathname;
+}
+
 export function RouterProvider({ children }: { children: ReactNode }) {
-  const [route, setRoute] = useState<Route>(() => parseHash());
+  const [route, setRoute] = useState<Route>(() => parsePath(getCurrentPath()));
   const [refreshKey, setRefreshKey] = useState(0);
 
   const navigate = (newRoute: Route, opts?: { scrollToTop?: boolean }) => {
-    const hash = routeToHash(newRoute);
-    if (window.location.hash !== hash) {
-      window.location.hash = hash;
+    const path = routeToPath(newRoute);
+    const currentPath = getCurrentPath();
+    if (currentPath !== path) {
+      window.history.pushState({}, '', path);
     }
     setRoute(newRoute);
-    // Force dependents (e.g. SearchPage) to re-run even when the hash/query
-    // is unchanged, so pressing Enter always re-searches.
     setRefreshKey((k) => k + 1);
     if (opts?.scrollToTop !== false) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -80,13 +88,11 @@ export function RouterProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const handleHashChange = () => setRoute(parseHash());
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    const handlePopState = () => setRoute(parsePath(getCurrentPath()));
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Scroll back to the top only when switching to a different page/route,
-  // not when switching tabs inside the same page (e.g. account tabs).
   const previousName = useRef(route.name);
   useEffect(() => {
     if (previousName.current !== route.name) {
@@ -96,7 +102,6 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     previousName.current = route.name;
   }, [route]);
 
-  // تسجيل أول زيارة عند فتح الموقع
   useEffect(() => {
     void trackPageView(route.name);
     // eslint-disable-next-line react-hooks/exhaustive-deps

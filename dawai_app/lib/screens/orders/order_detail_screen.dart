@@ -34,7 +34,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في تحميل الطلب: $e'), backgroundColor: AppColors.error),
+        );
+      }
     }
   }
 

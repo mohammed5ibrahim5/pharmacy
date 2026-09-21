@@ -28,7 +28,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
       final orders = await _api.getMyOrders();
       if (mounted) setState(() { _orders = orders; _loading = false; });
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في تحميل الطلبات: $e'), backgroundColor: AppColors.error),
+        );
+      }
     }
   }
 

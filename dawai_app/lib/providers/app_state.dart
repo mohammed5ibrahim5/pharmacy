@@ -3,13 +3,18 @@ import '../models/customer.dart';
 import '../models/product.dart';
 import '../services/api_service.dart';
 import '../services/cart_service.dart';
+import '../services/favorites_service.dart';
 
 class AppState extends ChangeNotifier {
   final ApiService api = ApiService();
   final CartService _cartService = CartService();
+  final FavoritesService _favoritesService = FavoritesService();
 
   List<CartItem> _cart = [];
   List<CartItem> get cart => _cart;
+
+  List<String> _favoriteIds = [];
+  List<String> get favoriteIds => _favoriteIds;
 
   int get cartCount => _cart.fold(0, (sum, item) => sum + item.quantity);
   double get cartTotal => _cart.fold(0, (sum, item) => sum + item.totalPrice);
@@ -18,6 +23,23 @@ class AppState extends ChangeNotifier {
 
   void loadCart() async {
     _cart = await _cartService.getCart();
+    notifyListeners();
+  }
+
+  void loadFavorites() async {
+    _favoriteIds = await _favoritesService.getFavorites();
+    notifyListeners();
+  }
+
+  bool isFavorite(String productId) => _favoriteIds.contains(productId);
+
+  void toggleFavorite(String productId) async {
+    await _favoritesService.toggleFavorite(productId);
+    if (_favoriteIds.contains(productId)) {
+      _favoriteIds.remove(productId);
+    } else {
+      _favoriteIds.add(productId);
+    }
     notifyListeners();
   }
 
@@ -38,6 +60,7 @@ class AppState extends ChangeNotifier {
         quantity: 1,
         pharmacyName: pharmacyName ?? product.pharmacy?.name,
         requiresPrescription: product.requiresPrescription,
+        deliveryFee: product.pharmacy?.deliveryFee,
       ));
     }
     _cartService.saveCart(_cart);

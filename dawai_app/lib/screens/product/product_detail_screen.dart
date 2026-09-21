@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../models/product.dart';
 import '../../providers/app_state.dart';
+import '../../shared/widgets/loading_widget.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String id;
@@ -18,6 +20,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final ApiService _api = ApiService();
   Product? _product;
   bool _loading = true;
+  int _quantity = 1;
 
   @override
   void initState() {
@@ -30,7 +33,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       final p = await _api.getProduct(widget.id);
       if (mounted) setState(() { _product = p; _loading = false; });
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في تحميل المنتج: $e'), backgroundColor: AppColors.error),
+        );
+      }
     }
   }
 
@@ -55,7 +63,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 color: Colors.white,
                 padding: const EdgeInsets.all(40),
                 child: p.imageUrl != null 
-                    ? Image.network(p.imageUrl!, fit: BoxFit.contain)
+                    ? CachedNetworkImage(
+                        imageUrl: p.imageUrl!,
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => const ShimmerBox(width: double.infinity, height: 200),
+                        errorWidget: (context, url, error) => const Icon(Icons.medication, size: 100, color: AppColors.primary),
+                      )
                     : const Icon(Icons.medication, size: 100, color: AppColors.primary),
               ),
             ),
@@ -113,22 +126,57 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, -5))],
         ),
         child: SafeArea(
-          child: SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton.icon(
-              onPressed: p.isAvailable ? () {
-                context.read<AppState>().addToCart(p, pharmacyName: p.pharmacy?.name);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت الإضافة للسلة'), backgroundColor: AppColors.success));
-              } : null,
-              icon: const Icon(Icons.add_shopping_cart),
-              label: Text('أضف للسلة', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primarySurface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
+                      icon: const Icon(Icons.remove, size: 20),
+                      color: AppColors.primary,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('$_quantity', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    ),
+                    IconButton(
+                      onPressed: () => setState(() => _quantity++),
+                      icon: const Icon(Icons.add, size: 20),
+                      color: AppColors.primary,
+                    ),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: p.isAvailable ? () {
+                      for (var i = 0; i < _quantity; i++) {
+                        context.read<AppState>().addToCart(p, pharmacyName: p.pharmacy?.name);
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('تمت إضافة $_quantity للسلة', style: GoogleFonts.tajawal()),
+                        backgroundColor: AppColors.success,
+                      ));
+                    } : null,
+                    icon: const Icon(Icons.add_shopping_cart, size: 20),
+                    label: Text('أضف للسلة', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

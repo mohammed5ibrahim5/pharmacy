@@ -5,6 +5,8 @@ const Map<String, String> arTranslations = {
 
   // Bottom Navigation
   'nav_home': 'الرئيسية',
+  'nav_health': 'صحتي',
+  'nav_pharmacies': 'الصيدليات',
   'nav_orders': 'طلباتي',
   'nav_profile': 'حسابي',
 
@@ -19,16 +21,16 @@ const Map<String, String> arTranslations = {
   'home_show_map': 'إظهار الخريطة',
   'home_show_list': 'إظهار القائمة',
   'home_share': 'مشاركة',
-  'home_promo_title': 'خصم 20% على أول طلب',
-  'home_promo_code': 'استخدم كود: DAWAI20',
+  'home_promo_title': 'خصم 15% على أول طلب',
+  'home_promo_code': 'استخدم كود: DAWAI15',
   'home_available': 'متوفر',
   'home_unavailable': 'غير متوفر',
   'home_delivery': 'توصيل',
   'home_share_text': 'دوأ - أقرب صيدلية ليك في أي مكان!\nحمّل التطبيق الآن',
 
   // Banner / Ads
-  'banner_discount_title': 'خصم 20% على أول طلب',
-  'banner_discount_code': 'استخدم كود: DAWAI20',
+  'banner_discount_title': 'خصم 15% على أول طلب',
+  'banner_discount_code': 'استخدم كود: DAWAI15',
 
   // Profile Screen
   'profile_login_prompt': 'سجّل دخولك عشان تشوف حسابك',

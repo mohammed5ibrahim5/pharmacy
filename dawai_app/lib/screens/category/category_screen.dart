@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../models/product.dart';
 import '../../models/category.dart';
+import '../../shared/widgets/loading_widget.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String slug;
@@ -48,7 +50,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'حدث خطأ';
+        _error = 'حدث خطأ: $e';
         _loading = false;
       });
     }
@@ -115,7 +117,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             ),
                             child: Center(
                               child: p.imageUrl != null 
-                                  ? Image.network(p.imageUrl!)
+                                  ? CachedNetworkImage(
+                                      imageUrl: p.imageUrl!,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => const ShimmerBox(width: double.infinity, height: double.infinity),
+                                      errorWidget: (context, url, error) => Icon(Icons.medication, size: 48, color: catColor),
+                                    )
                                   : Icon(Icons.medication, size: 48, color: catColor),
                             ),
                           ),

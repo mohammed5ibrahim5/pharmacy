@@ -5,6 +5,8 @@ const Map<String, String> enTranslations = {
 
   // Bottom Navigation
   'nav_home': 'Home',
+  'nav_health': 'Health',
+  'nav_pharmacies': 'Pharmacies',
   'nav_orders': 'My Orders',
   'nav_profile': 'My Account',
 
@@ -19,16 +21,16 @@ const Map<String, String> enTranslations = {
   'home_show_map': 'Show Map',
   'home_show_list': 'Show List',
   'home_share': 'Share',
-  'home_promo_title': '20% off on your first order',
-  'home_promo_code': 'Use code: DAWAI20',
+  'home_promo_title': '15% off on your first order',
+  'home_promo_code': 'Use code: DAWAI15',
   'home_available': 'Available',
   'home_unavailable': 'Unavailable',
   'home_delivery': 'Delivery',
   'home_share_text': 'Dawai - Nearest pharmacy to you anywhere!\nDownload the app now',
 
   // Banner / Ads
-  'banner_discount_title': '20% off on your first order',
-  'banner_discount_code': 'Use code: DAWAI20',
+  'banner_discount_title': '15% off on your first order',
+  'banner_discount_code': 'Use code: DAWAI15',
 
   // Profile Screen
   'profile_login_prompt': 'Sign in to view your account',

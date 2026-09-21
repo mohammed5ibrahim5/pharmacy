@@ -21,8 +21,11 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-icons': ['lucide-react'],
+          'vendor-xlsx': ['xlsx'],
         },
       },
     },
+    target: 'es2020',
+    minify: 'esbuild',
   },
 });

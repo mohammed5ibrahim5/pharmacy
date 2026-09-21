@@ -14,6 +14,8 @@ import '../screens/prescription/prescription_upload_screen.dart';
 import '../screens/search/search_screen.dart';
 import '../screens/category/category_screen.dart';
 import '../screens/health/health_screen.dart';
+import '../screens/health/refill_reminder_screen.dart';
+import '../screens/loyalty/loyalty_screen.dart';
 import '../widgets/main_scaffold.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -44,5 +46,7 @@ final GoRouter appRouter = GoRouter(
       return SearchScreen(initialQuery: query);
     }),
     GoRoute(path: '/category/:slug', builder: (_, state) => CategoryScreen(slug: state.pathParameters['slug']!)),
+    GoRoute(path: '/loyalty', builder: (_, __) => const LoyaltyScreen()),
+    GoRoute(path: '/refill-reminder', builder: (_, __) => const RefillReminderScreen()),
   ],
 );

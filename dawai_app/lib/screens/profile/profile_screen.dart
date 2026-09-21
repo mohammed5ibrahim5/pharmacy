@@ -6,6 +6,8 @@ import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../models/customer.dart';
 import '../../providers/app_state.dart';
+import '../../providers/theme_provider.dart';
+import '../../providers/language_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -34,7 +36,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final profile = await _api.getMyProfile();
       if (mounted) setState(() { _profile = profile; _loading = false; });
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في تحميل الملف الشخصي: $e'), backgroundColor: AppColors.error),
+        );
+      }
     }
   }
 
@@ -107,14 +114,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildSettingsItem(
                       icon: Icons.language_outlined,
                       title: 'اللغة',
-                      subtitle: 'العربية',
-                      onTap: () => _showComingSoon('تغيير اللغة'),
+                      subtitle: context.watch<LanguageProvider>().currentLanguageName,
+                      onTap: () => context.read<LanguageProvider>().toggleLanguage(),
                     ),
                     _buildSettingsItem(
                       icon: theme.brightness == Brightness.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
                       title: 'المظهر',
                       subtitle: theme.brightness == Brightness.dark ? 'الوضع الداكن' : 'الوضع الفاتح',
-                      onTap: () => _showComingSoon('تبديل المظهر'),
+                      onTap: () => context.read<ThemeProvider>().toggleTheme(),
                     ),
                     _buildSettingsItem(
                       icon: Icons.notifications_none_outlined,

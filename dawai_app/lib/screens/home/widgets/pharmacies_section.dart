@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../../../models/pharmacy.dart';
 import '../../../widgets/pharmacy_card.dart';
+import '../../../shared/widgets/loading_widget.dart';
 
 class PharmaciesSection extends StatefulWidget {
   final List<Pharmacy> pharmacies;
@@ -41,7 +42,39 @@ class _PharmaciesSectionState extends State<PharmaciesSection> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.isLoading || widget.pharmacies.isEmpty) return const SizedBox.shrink();
+    if (widget.isLoading || widget.pharmacies.isEmpty) {
+      if (!widget.isLoading) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: widget.padding),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShimmerBox(width: 160, height: 20),
+                  SizedBox(height: 4),
+                  ShimmerBox(width: 100, height: 14),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 175,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: widget.padding),
+                itemCount: 4,
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemBuilder: (context, i) => const SizedBox(width: 210, child: PharmacyCardShimmer()),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     final tabs = ['الأقرب إليك', 'الأعلى تقييماً', 'توصيل سريع', '24 ساعة'];
     final filtered = _filteredPharmacies;

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../../../models/product.dart';
 import '../../../widgets/product_card.dart';
+import '../../../shared/widgets/loading_widget.dart';
 
 class ProductsSection extends StatelessWidget {
   final List<Product> products;
@@ -22,7 +23,36 @@ class ProductsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const SizedBox.shrink(); // Could replace with shimmer loading
+      return Padding(
+        padding: const EdgeInsets.only(top: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: padding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const ShimmerBox(width: 180, height: 20),
+                  const SizedBox(height: 4),
+                  const ShimmerBox(width: 120, height: 14),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 240,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: padding),
+                itemCount: 4,
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
+                itemBuilder: (context, i) => const SizedBox(width: 160, child: ProductCardShimmer()),
+              ),
+            ),
+          ],
+        ),
+      );
     }
     if (products.isEmpty) return const SizedBox.shrink();
 
