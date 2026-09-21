@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_distribution/firebase_app_distribution.dart';
 import 'config/supabase_config.dart';
+import 'config/firebase_options.dart';
 import 'providers/app_state.dart';
 import 'providers/theme_provider.dart';
 import 'providers/language_provider.dart';
@@ -11,12 +14,25 @@ import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
   await NotificationService().init();
   runApp(const MyApp());
+  _checkForUpdate();
+}
+
+void _checkForUpdate() async {
+  try {
+    final firebaseAppDistribution = FirebaseAppDistribution.instance;
+    await firebaseAppDistribution.updateIfNewReleaseAvailable();
+  } catch (e) {
+    debugPrint('App Distribution update check failed: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
