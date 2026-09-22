@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import 'dart:ui';
 import '../config/theme.dart';
 import '../providers/app_state.dart';
@@ -20,18 +21,28 @@ class MainScaffold extends StatefulWidget {
 class _MainScaffoldState extends State<MainScaffold> {
   int _notificationCount = 0;
   final ApiService _api = ApiService();
+  Timer? _notificationTimer;
 
   @override
   void initState() {
     super.initState();
     _loadNotifications();
+    _notificationTimer = Timer.periodic(const Duration(minutes: 5), (_) => _loadNotifications());
+  }
+
+  @override
+  void dispose() {
+    _notificationTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadNotifications() async {
     try {
       final count = await _api.getUnreadNotificationsCount();
       if (mounted) setState(() => _notificationCount = count);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Failed to load notifications: $e');
+    }
   }
 
   int _getCurrentIndex(BuildContext context) {
@@ -100,7 +111,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(30),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 color: isDark

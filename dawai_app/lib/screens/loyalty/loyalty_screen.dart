@@ -13,86 +13,123 @@ class LoyaltyScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('نقاط الولاء', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => context.pop(),
-        ),
       ),
-      body: Center(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(32),
+              width: double.infinity,
+              padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: AppColors.accentSurface,
-                shape: BoxShape.circle,
+                gradient: AppColors.heroGradient,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))],
               ),
-              child: const Icon(Icons.star_rounded, size: 64, color: AppColors.accent),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                    child: const Icon(Icons.star_rounded, size: 36, color: Colors.white),
+                  ),
+                  const SizedBox(height: 12),
+                  Text('نقاطك الحالية', style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text('0', style: GoogleFonts.tajawal(color: Colors.white, fontSize: 52, fontWeight: FontWeight.w900)),
+                  Text('نقطة', style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 16)),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'نظام ولاء دوا',
-              style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.text),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'اجمع نقاطك مع كل طلب واستبدلها بخصومات حصرية',
-              style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textMuted),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            _buildPointsCard(),
-            const SizedBox(height: 32),
-            _buildBenefitRow(Icons.add_circle_outline, '1 نقطة لكل 10 جنيه صرف'),
+            const SizedBox(height: 28),
+            _buildSectionTitle('كيف تجمع النقاط؟'),
             const SizedBox(height: 12),
-            _buildBenefitRow(Icons.redeem, '100 نقطة = خصم 10 جنيه'),
+            _buildBenefitCard(Icons.shopping_cart_rounded, '1 نقطة لكل 10 ج.م صرف', 'مع كل طلب في التطبيق'),
+            const SizedBox(height: 10),
+            _buildBenefitCard(Icons.star_rounded, ' PointFive نقاط إضافية', 'عند تقييم الصيدلية'),
+            const SizedBox(height: 10),
+            _buildBenefitCard(Icons.card_giftcard, 'نقاط مزدوجة', 'في عيد ميلادك'),
+            const SizedBox(height: 28),
+            _buildSectionTitle('كيف تستبدل النقاط؟'),
             const SizedBox(height: 12),
-            _buildBenefitRow(Icons.card_giftcard, 'مكافآت عيد ميلاد مزدوجة'),
+            _buildBenefitCard(Icons.money_off_rounded, '100 نقطة = 10 ج.م خصم', 'خصم مباشر على طلبك'),
+            const SizedBox(height: 10),
+            _buildBenefitCard(Icons.local_shipping_rounded, '50 نقطة = توصيل مجاني', 'لمرة واحدة'),
+            const SizedBox(height: 28),
+            _buildSectionTitle('مستويات الولاء'),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildLevelCard(Icons.bronze, 'برونزي', '0', AppColors.accent),
+                const SizedBox(width: 10),
+                _buildLevelCard(Icons.silver, 'فضي', '200', AppColors.textMuted),
+                const SizedBox(width: 10),
+                _buildLevelCard(Icons.emoji_events, 'ذهبي', '500', AppColors.accent),
+              ],
+            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPointsCard() {
+  Widget _buildSectionTitle(String title) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Text(title, style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.text)),
+    );
+  }
+
+  Widget _buildBenefitCard(IconData icon, String title, String subtitle) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 32),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: AppColors.heroGradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8)),
-        ],
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppShadow.xs,
       ),
-      child: Column(
+      child: Row(
         children: [
-          Text('نقاطك الحالية', style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 14)),
-          const SizedBox(height: 8),
-          Text('0', style: GoogleFonts.tajawal(color: Colors.white, fontSize: 48, fontWeight: FontWeight.w900)),
-          Text('نقطة', style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 16)),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: AppColors.accentSurface, borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, size: 22, color: AppColors.accent),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.text)),
+                Text(subtitle, style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMuted)),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  static Widget _buildBenefitRow(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.accentSurface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 20, color: AppColors.accent),
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Text(text, style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.text))),
-        ],
+  Widget _buildLevelCard(IconData icon, String name, String points, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 28, color: color),
+            const SizedBox(height: 6),
+            Text(name, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.text)),
+            Text('$points نقطة', style: GoogleFonts.tajawal(fontSize: 10, color: AppColors.textMuted)),
+          ],
+        ),
       ),
     );
   }

@@ -15,6 +15,8 @@ class _HealthScreenState extends State<HealthScreen> {
   int _dosesTaken = 3;
   final int _dosesTotal = 4;
 
+  double get _doseProgress => _dosesTotal > 0 ? _dosesTaken / _dosesTotal : 0.0;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -22,10 +24,9 @@ class _HealthScreenState extends State<HealthScreen> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Header
           SliverToBoxAdapter(
             child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 60, 20, 32),
+              padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 10, 20, 32),
               decoration: const BoxDecoration(
                 gradient: AppColors.heroGradient,
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -95,14 +96,14 @@ class _HealthScreenState extends State<HealthScreen> {
                                 width: 70,
                                 height: 70,
                                 child: CircularProgressIndicator(
-                                  value: _dosesTaken / _dosesTotal,
+                                  value: _doseProgress,
                                   strokeWidth: 8,
                                   backgroundColor: Colors.white.withValues(alpha: 0.2),
                                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                                 ),
                               ),
                               Text(
-                                '${((_dosesTaken / _dosesTotal) * 100).toInt()}%',
+                                '${(_doseProgress * 100).toInt()}%',
                                 style: GoogleFonts.tajawal(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w900,

@@ -15,6 +15,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   final ApiService _api = ApiService();
   List<OrderGroup> _orders = [];
   bool _loading = true;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -23,31 +24,55 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() { _loading = true; _hasError = false; });
     try {
       final orders = await _api.getMyOrders();
       if (mounted) setState(() { _orders = orders; _loading = false; });
     } catch (e) {
-      if (mounted) {
-        setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل الطلبات: $e'), backgroundColor: AppColors.error),
-        );
-      }
+      if (mounted) setState(() { _loading = false; _hasError = true; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(backgroundColor: AppColors.background, body: Center(child: CircularProgressIndicator()));
-    
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('طلباتي', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         elevation: 0,
       ),
-      body: _orders.isEmpty ? _buildEmptyState() : _buildOrdersList(),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : _hasError
+              ? _buildErrorState()
+              : _orders.isEmpty
+                  ? _buildEmptyState()
+                  : _buildOrdersList(),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(color: AppColors.errorSurface, shape: BoxShape.circle),
+            child: const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.error),
+          ),
+          const SizedBox(height: 16),
+          Text('فشل تحميل الطلبات', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          Text('تحقق من الاتصال بالإنترنت', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _load,
+            icon: const Icon(Icons.refresh, size: 20),
+            label: Text('إعادة المحاولة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -60,22 +85,22 @@ class _OrdersScreenState extends State<OrdersScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: AppColors.primarySurface, shape: BoxShape.circle),
-              child: const Icon(Icons.receipt_long, size: 80, color: AppColors.primary),
+              decoration: const BoxDecoration(color: AppColors.primarySurface, shape: BoxShape.circle),
+              child: const Icon(Icons.receipt_long_rounded, size: 64, color: AppColors.primary),
             ),
-            const SizedBox(height: 24),
-            Text('ما في طلبات بعد', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.text)),
+            const SizedBox(height: 20),
+            Text('ما في طلبات بعد', style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            Text('ابدأ بالتسوق واطلب أدوية بكل سهولة', style: GoogleFonts.tajawal(color: AppColors.textMuted, fontSize: 16), textAlign: TextAlign.center),
-            const SizedBox(height: 32),
+            Text('ابدأ بالتسوق واطلب أدوية بكل سهولة', style: GoogleFonts.tajawal(color: AppColors.textMuted, fontSize: 14), textAlign: TextAlign.center),
+            const SizedBox(height: 28),
             ElevatedButton(
               onPressed: () => context.go('/'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: Text('تصفح المنتجات', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text('تصفح المنتجات', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -89,7 +114,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _orders.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (ctx, i) => _OrderCard(order: _orders[i]),
       ),
     );
@@ -102,8 +127,9 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(order.status);
+    final statusColor = AppColors.getStatusColor(order.status);
     final statusLabel = AppColors.getStatusLabel(order.status);
+    final shortId = order.id.length > 8 ? order.id.substring(0, 8) : order.id;
 
     return InkWell(
       onTap: () => context.push('/order/${order.id}'),
@@ -122,31 +148,27 @@ class _OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('طلب #${order.id.substring(0, 8)}', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.text)),
+                Text('طلب #$shortId', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.text)),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
                   ),
-                  child: Text(statusLabel, style: GoogleFonts.tajawal(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                  child: Text(statusLabel, style: GoogleFonts.tajawal(color: statusColor, fontWeight: FontWeight.w700, fontSize: 11)),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.calendar_today, size: 16, color: AppColors.textMuted),
-                const SizedBox(width: 8),
-                Text('${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}', style: GoogleFonts.tajawal(color: AppColors.textSecondary, fontSize: 14)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.inventory_2_outlined, size: 16, color: AppColors.textMuted),
-                const SizedBox(width: 8),
-                Text('${order.orders.length} منتجات', style: GoogleFonts.tajawal(color: AppColors.textSecondary, fontSize: 14)),
+                const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.textMuted),
+                const SizedBox(width: 6),
+                Text(_formatDate(order.createdAt), style: GoogleFonts.tajawal(color: AppColors.textSecondary, fontSize: 13)),
+                const SizedBox(width: 16),
+                const Icon(Icons.inventory_2_outlined, size: 14, color: AppColors.textMuted),
+                const SizedBox(width: 6),
+                Text('${order.orders.length} ${order.orders.length == 1 ? 'منتج' : 'منتجات'}', style: GoogleFonts.tajawal(color: AppColors.textSecondary, fontSize: 13)),
               ],
             ),
             const Padding(
@@ -156,8 +178,8 @@ class _OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('الإجمالي:', style: GoogleFonts.tajawal(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.bold)),
-                Text('${order.totalPrice.toStringAsFixed(0)} ج.م', style: GoogleFonts.tajawal(fontWeight: FontWeight.w900, color: AppColors.primary, fontSize: 18)),
+                Text('الإجمالي', style: GoogleFonts.tajawal(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text('${order.totalPrice.toStringAsFixed(0)} ج.م', style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 17)),
               ],
             ),
           ],
@@ -166,13 +188,7 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'pending': return Colors.amber;
-      case 'confirmed': return Colors.blue;
-      case 'delivered': return Colors.green;
-      case 'cancelled': return Colors.red;
-      default: return AppColors.primary;
-    }
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 }

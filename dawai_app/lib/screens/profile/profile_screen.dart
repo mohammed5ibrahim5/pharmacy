@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../models/customer.dart';
@@ -229,7 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildHeader(ThemeData theme) {
     final topPadding = MediaQuery.of(context).padding.top;
     return Container(
-      padding: EdgeInsets.fromLTRB(20, topPadding + 20, 20, 30),
+      padding: EdgeInsets.fromLTRB(20, topPadding + 10, 20, 30),
       decoration: const BoxDecoration(
         gradient: AppColors.heroGradient,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -247,10 +248,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: CircleAvatar(
                 radius: 50,
                 backgroundColor: theme.colorScheme.surface,
-                backgroundImage: _profile?.avatarUrl != null ? NetworkImage(_profile!.avatarUrl!) : null,
-                child: _profile?.avatarUrl == null
-                    ? Text((_profile?.fullName ?? 'م')[0].toUpperCase(), style: GoogleFonts.tajawal(fontSize: 40, color: theme.colorScheme.primary, fontWeight: FontWeight.bold))
-                    : null,
+                child: _profile?.avatarUrl != null
+                    ? ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: _profile!.avatarUrl!,
+                          width: 100, height: 100, fit: BoxFit.cover,
+                          placeholder: (ctx, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                          errorWidget: (ctx, url, error) => Text(
+                            (_profile?.fullName ?? 'م').isNotEmpty ? (_profile?.fullName ?? 'م')[0] : 'م',
+                            style: GoogleFonts.tajawal(fontSize: 40, color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      )
+                    : Text(
+                        (_profile?.fullName ?? 'م').isNotEmpty ? (_profile?.fullName ?? 'م')[0] : 'م',
+                        style: GoogleFonts.tajawal(fontSize: 40, color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
             const SizedBox(height: 16),
@@ -402,31 +415,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showEditDialog() {
     final nameCtrl = TextEditingController(text: _profile?.fullName ?? '');
     final phoneCtrl = TextEditingController(text: _profile?.phone ?? '');
+    bool saving = false;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('تعديل الحساب', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: nameCtrl, textDirection: TextDirection.rtl, style: GoogleFonts.tajawal(), decoration: const InputDecoration(labelText: 'الاسم', prefixIcon: Icon(Icons.person_outline))),
-              const SizedBox(height: 16),
-              TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, textDirection: TextDirection.ltr, style: GoogleFonts.tajawal(), decoration: const InputDecoration(labelText: 'الموبايل', prefixIcon: Icon(Icons.phone_outlined))),
-            ],
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text('تعديل الحساب', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameCtrl, textDirection: TextDirection.rtl, style: GoogleFonts.tajawal(), decoration: const InputDecoration(labelText: 'الاسم', prefixIcon: Icon(Icons.person_outline))),
+                const SizedBox(height: 16),
+                TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, textDirection: TextDirection.ltr, style: GoogleFonts.tajawal(), decoration: const InputDecoration(labelText: 'الموبايل', prefixIcon: Icon(Icons.phone_outlined))),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(onPressed: saving ? null : () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal())),
+            ElevatedButton(
+              onPressed: saving ? null : () async {
+                setDialogState(() => saving = true);
+                await _api.updateProfile(fullName: nameCtrl.text.trim(), phone: phoneCtrl.text.trim());
+                if (mounted) { Navigator.pop(ctx); _load(); }
+              },
+              child: saving
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal())),
-          ElevatedButton(
-            onPressed: () async {
-              await _api.updateProfile(fullName: nameCtrl.text.trim(), phone: phoneCtrl.text.trim());
-              if (mounted) { Navigator.pop(ctx); _load(); }
-            },
-            child: Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }
