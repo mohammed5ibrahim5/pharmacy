@@ -51,26 +51,32 @@ class HeroHeader extends StatelessWidget {
         if (showAnnouncement)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: const BoxDecoration(gradient: AppColors.accentGradient),
-            child: GestureDetector(
-              onTap: onDismissAnnouncement,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.local_offer_rounded, color: Colors.white, size: 16),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'خصم 15% على أول طلب — استخدم كود: DAWAI15',
-                      style: GoogleFonts.tajawal(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
-                      textAlign: TextAlign.center,
-                    ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.local_offer_rounded, color: Colors.white, size: 16),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'خصم 15% على أول طلب — استخدم كود: DAWAI15',
+                    style: GoogleFonts.tajawal(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(width: 6),
-                  Icon(Icons.close, color: Colors.white.withValues(alpha: 0.8), size: 16),
-                ],
-              ),
+                ),
+                GestureDetector(
+                  onTap: onDismissAnnouncement,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.close, color: Colors.white, size: 14),
+                  ),
+                ),
+              ],
             ),
           ),
         Container(
@@ -111,9 +117,6 @@ class HeroHeader extends StatelessWidget {
                   child: CustomPaint(painter: _DotPatternPainter()),
                 ),
               ),
-              const Positioned(top: 60, right: 20, child: Text('💊', style: TextStyle(fontSize: 32))),
-              const Positioned(top: 100, left: 15, child: Text('🩺', style: TextStyle(fontSize: 24))),
-              Positioned(bottom: 40, right: isWide ? 160 : 50, child: const Text('🏥', style: TextStyle(fontSize: 28))),
               Padding(
                 padding: EdgeInsets.fromLTRB(padding, 48, padding, 24),
                 child: Column(

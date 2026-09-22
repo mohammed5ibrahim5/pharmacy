@@ -316,6 +316,53 @@ class _HomeScreenState extends State<HomeScreen> {
       {'icon': Icons.delivery_dining_rounded, 'title': 'استلم', 'desc': 'في بابك', 'color': AppColors.success},
     ];
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isSmall = MediaQuery.of(context).size.width < 380;
+
+    if (isSmall) {
+      return Container(
+        margin: EdgeInsets.fromLTRB(padding, 20, padding, 0),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+          boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
+        ),
+        child: Column(
+          children: [
+            Text('كيف يعمل التطبيق؟', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.text)),
+            const SizedBox(height: 14),
+            ...steps.asMap().entries.map((entry) {
+              final s = entry.value;
+              final isLast = entry.key == steps.length - 1;
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(width: 40, height: 40, decoration: BoxDecoration(color: (s['color'] as Color).withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(s['icon'] as IconData, color: s['color'] as Color, size: 20)),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(s['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: isDark ? AppColors.darkText : AppColors.text)),
+                          Text(s['desc'] as String, style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  if (!isLast) ...[
+                    const SizedBox(height: 10),
+                    Container(height: 1, margin: const EdgeInsets.only(right: 52), decoration: BoxDecoration(gradient: LinearGradient(colors: [AppColors.primary.withValues(alpha: 0.2), AppColors.accent.withValues(alpha: 0.2)]))),
+                    const SizedBox(height: 10),
+                  ],
+                ],
+              );
+            }),
+          ],
+        ),
+      );
+    }
+
     return Container(
       margin: EdgeInsets.fromLTRB(padding, 20, padding, 0),
       padding: const EdgeInsets.all(20),
@@ -370,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Text('آراء حقيقية من عملاء دوا', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textMuted)),
           const SizedBox(height: 14),
           SizedBox(
-            height: 140,
+            height: 120,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: reviews.length,
@@ -443,14 +490,14 @@ class _HomeScreenState extends State<HomeScreen> {
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
-            childAspectRatio: 2.2,
+            childAspectRatio: 2.4,
             children: items.map((item) => Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
-                boxShadow: isDark ? AppShadow.darkSm : AppShadow.xs,
+                boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
               ),
               child: Row(children: [
                 Container(width: 40, height: 40, decoration: BoxDecoration(color: (item['color'] as Color).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(item['icon'] as IconData, color: item['color'] as Color, size: 22)),

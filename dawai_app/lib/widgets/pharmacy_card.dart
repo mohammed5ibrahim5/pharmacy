@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../models/pharmacy.dart';
 import '../config/theme.dart';
 import '../shared/widgets/loading_widget.dart';
-import '../shared/widgets/app_button.dart';
 
 class PharmacyCard extends StatelessWidget {
   final Pharmacy pharmacy;
@@ -23,7 +22,6 @@ class PharmacyCard extends StatelessWidget {
     return GestureDetector(
         onTap: onTap ?? () => context.push('/pharmacy/${pharmacy.id}'),
         child: Container(
-          margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
@@ -38,30 +36,27 @@ class PharmacyCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Logo
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: CachedNetworkImage(
                       imageUrl: pharmacy.logoUrl ?? '',
-                      width: 80,
-                      height: 80,
+                      width: 64,
+                      height: 64,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => const ShimmerBox(width: 80, height: 80),
+                      placeholder: (context, url) => const ShimmerBox(width: 64, height: 64),
                       errorWidget: (context, url, error) => Container(
-                        width: 80,
-                        height: 80,
+                        width: 64,
+                        height: 64,
                         color: isDark ? AppColors.darkBorder : AppColors.borderLight,
                         child: Icon(
                           Icons.local_pharmacy,
                           color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
-                          size: 32,
+                          size: 28,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  
-                  // Details
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,7 +68,7 @@ class PharmacyCard extends StatelessWidget {
                               child: Text(
                                 pharmacy.name,
                                 style: GoogleFonts.tajawal(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                   color: isDark ? AppColors.darkText : AppColors.text,
                                 ),
@@ -101,13 +96,13 @@ class PharmacyCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.location_on_outlined, size: 14, color: isDark ? AppColors.darkTextMuted : AppColors.textSecondary),
+                            Icon(Icons.location_on_outlined, size: 12, color: isDark ? AppColors.darkTextMuted : AppColors.textSecondary),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 '${pharmacy.area ?? ''} ${pharmacy.address}',
                                 style: GoogleFonts.tajawal(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                 ),
                                 maxLines: 1,
@@ -116,15 +111,15 @@ class PharmacyCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Row(
                           children: [
-                            Icon(Icons.star_rounded, size: 16, color: AppColors.rating),
-                            const SizedBox(width: 4),
+                            Icon(Icons.star_rounded, size: 14, color: AppColors.rating),
+                            const SizedBox(width: 2),
                             Text(
                               pharmacy.rating.toStringAsFixed(1),
                               style: GoogleFonts.tajawal(
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -132,12 +127,12 @@ class PharmacyCard extends StatelessWidget {
                             if (pharmacy.deliveryAvailable)
                               Row(
                                 children: [
-                                  Icon(Icons.delivery_dining, size: 16, color: AppColors.primary),
-                                  const SizedBox(width: 4),
+                                  Icon(Icons.delivery_dining, size: 14, color: AppColors.primary),
+                                  const SizedBox(width: 2),
                                   Text(
-                                    pharmacy.is24h ? 'توصيل 24 ساعة' : 'توصيل متاح',
+                                    pharmacy.is24h ? '24 ساعة' : 'توصيل',
                                     style: GoogleFonts.tajawal(
-                                      fontSize: 11,
+                                      fontSize: 10,
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -150,19 +145,6 @@ class PharmacyCard extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Divider(height: 1),
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: AppButton(
-                  text: 'عرض المنتجات',
-                  onPressed: () => context.push('/pharmacy/${pharmacy.id}'),
-                  type: ButtonType.secondary,
-                  isFullWidth: true,
-                ),
               ),
             ],
           ),

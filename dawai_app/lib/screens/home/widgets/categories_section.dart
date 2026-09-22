@@ -6,7 +6,7 @@ import '../../../models/category.dart';
 import '../../../models/product.dart';
 import '../../../shared/widgets/loading_widget.dart';
 
-class CategoriesSection extends StatelessWidget {
+class CategoriesSection extends StatefulWidget {
   final List<Category> categories;
   final List<Product> products;
   final bool isLoading;
@@ -25,16 +25,44 @@ class CategoriesSection extends StatelessWidget {
   });
 
   @override
+  State<CategoriesSection> createState() => _CategoriesSectionState();
+}
+
+class _CategoriesSectionState extends State<CategoriesSection> {
+  bool _showLeftArrow = false;
+  bool _showRightArrow = true;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.scrollCtrl.addListener(_updateArrows);
+  }
+
+  @override
+  void dispose() {
+    widget.scrollCtrl.removeListener(_updateArrows);
+    super.dispose();
+  }
+
+  void _updateArrows() {
+    final pos = widget.scrollCtrl.position;
+    setState(() {
+      _showLeftArrow = pos.pixels > 20;
+      _showRightArrow = pos.pixels < pos.maxScrollExtent - 20;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (isLoading || categories.isEmpty) {
-      if (!isLoading) return const SizedBox.shrink();
+    if (widget.isLoading || widget.categories.isEmpty) {
+      if (!widget.isLoading) return const SizedBox.shrink();
       return Padding(
         padding: const EdgeInsets.only(top: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: padding),
+              padding: EdgeInsets.symmetric(horizontal: widget.padding),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -49,7 +77,7 @@ class CategoriesSection extends StatelessWidget {
               height: 90,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: padding),
+                padding: EdgeInsets.symmetric(horizontal: widget.padding),
                 itemCount: 6,
                 separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (context, i) => ShimmerBox(width: 80, height: 80, borderRadius: 16),
@@ -66,7 +94,7 @@ class CategoriesSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: padding),
+            padding: EdgeInsets.symmetric(horizontal: widget.padding),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -86,10 +114,13 @@ class CategoriesSection extends StatelessWidget {
                     Text('تسوق حسب الفئة', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
-                  child: Text('عرض الكل', style: GoogleFonts.tajawal(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                GestureDetector(
+                  onTap: () => context.push('/search'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
+                    child: Text('عرض الكل', style: GoogleFonts.tajawal(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                  ),
                 ),
               ],
             ),
@@ -100,15 +131,15 @@ class CategoriesSection extends StatelessWidget {
             child: Stack(
               children: [
                 ListView.separated(
-                  controller: scrollCtrl,
+                  controller: widget.scrollCtrl,
                   scrollDirection: Axis.horizontal,
-                  padding: EdgeInsets.symmetric(horizontal: padding + 8),
-                  itemCount: categories.length,
+                  padding: EdgeInsets.symmetric(horizontal: widget.padding + 8),
+                  itemCount: widget.categories.length,
                   separatorBuilder: (_, _i) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
-                    final cat = categories[index];
+                    final cat = widget.categories[index];
                     final gradient = AppColors.getCategoryGradient(cat.slug);
-                    final count = products.where((p) => p.categoryId == cat.id).length;
+                    final count = widget.products.where((p) => p.categoryId == cat.id).length;
                     return GestureDetector(
                       onTap: () => context.push('/category/${cat.slug}'),
                       child: Container(
@@ -148,26 +179,28 @@ class CategoriesSection extends StatelessWidget {
                     );
                   },
                 ),
-                Positioned(
-                  left: 4, top: 0, bottom: 0,
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: () => scrollCtrl.animateTo(scrollCtrl.offset - 140, duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
-                      child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle, boxShadow: AppShadow.sm, border: Border.all(color: AppColors.border)),
-                        child: const Icon(Icons.chevron_left, size: 20, color: AppColors.text)),
+                if (_showLeftArrow)
+                  Positioned(
+                    left: 4, top: 0, bottom: 0,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () => widget.scrollCtrl.animateTo(widget.scrollCtrl.offset - 140, duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
+                        child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle, boxShadow: AppShadow.sm, border: Border.all(color: AppColors.border)),
+                          child: const Icon(Icons.chevron_left, size: 20, color: AppColors.text)),
+                      ),
                     ),
                   ),
-                ),
-                Positioned(
-                  right: 4, top: 0, bottom: 0,
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: () => scrollCtrl.animateTo(scrollCtrl.offset + 140, duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
-                      child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle, boxShadow: AppShadow.sm, border: Border.all(color: AppColors.border)),
-                        child: const Icon(Icons.chevron_right, size: 20, color: AppColors.text)),
+                if (_showRightArrow)
+                  Positioned(
+                    right: 4, top: 0, bottom: 0,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () => widget.scrollCtrl.animateTo(widget.scrollCtrl.offset + 140, duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
+                        child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle, boxShadow: AppShadow.sm, border: Border.all(color: AppColors.border)),
+                          child: const Icon(Icons.chevron_right, size: 20, color: AppColors.text)),
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

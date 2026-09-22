@@ -16,6 +16,8 @@ class ProductCard extends StatelessWidget {
   final double? originalPrice;
   final bool isFavorite;
   final VoidCallback? onFavoriteToggle;
+  final String? badge;
+  final Color? badgeColor;
 
   const ProductCard({
     super.key,
@@ -26,6 +28,8 @@ class ProductCard extends StatelessWidget {
     this.originalPrice,
     this.isFavorite = false,
     this.onFavoriteToggle,
+    this.badge,
+    this.badgeColor,
   });
 
   @override
@@ -89,6 +93,26 @@ class ProductCard extends StatelessWidget {
                         ),
                         child: Text(
                           'روشتة',
+                          style: GoogleFonts.tajawal(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (badge != null)
+                    Positioned(
+                      top: 8,
+                      right: product.requiresPrescription ? 56 : 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: badgeColor ?? AppColors.accent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          badge!,
                           style: GoogleFonts.tajawal(
                             color: Colors.white,
                             fontSize: 10,
