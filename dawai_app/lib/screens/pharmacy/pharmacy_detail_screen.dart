@@ -436,7 +436,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
           child: ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.lg),
             child: Image.network(
-              'https://maps.googleapis.com/maps/api/staticmap?center=${p.latitude},${p.longitude}&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C${p.latitude},${p.longitude}',
+              'https://staticmap.openstreetmap.de/staticmap.php?center=${p.latitude},${p.longitude}&zoom=15&size=600x300&markers=${p.latitude},${p.longitude},red-pushpin',
               fit: BoxFit.cover,
               errorBuilder: (ctx, error, stack) => Container(
                 color: AppColors.borderLight,
@@ -620,5 +620,5 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
     color: AppColors.surface,
     child: tabBar,
   );
-  @override bool shouldRebuild(_SliverAppBarDelegate oldDelegate) => false;
+  @override bool shouldRebuild(_SliverAppBarDelegate oldDelegate) => tabBar != oldDelegate.tabBar;
 }

@@ -148,7 +148,9 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
             const SizedBox(height: 16),
             // Add medication
             GestureDetector(
-              onTap: () {},
+              onTap: () {
+                _showAddMedicationDialog();
+              },
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -169,6 +171,53 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
             const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAddMedicationDialog() {
+    final nameCtrl = TextEditingController();
+    final doseCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('إضافة دواء', style: GoogleFonts.tajawal(fontWeight: FontWeight.w800)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: InputDecoration(hintText: 'اسم الدواء', hintStyle: GoogleFonts.tajawal()),
+              style: GoogleFonts.tajawal(),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: doseCtrl,
+              decoration: InputDecoration(hintText: 'الجرعة (مثلاً 500mg)', hintStyle: GoogleFonts.tajawal()),
+              style: GoogleFonts.tajawal(),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal())),
+          FilledButton(
+            onPressed: () {
+              if (nameCtrl.text.isNotEmpty) {
+                setState(() {
+                  _medications.add({
+                    'name': nameCtrl.text,
+                    'dose': doseCtrl.text.isNotEmpty ? doseCtrl.text : 'غير محدد',
+                    'frequency': 'حسب الحاجة',
+                    'enabled': true,
+                  });
+                });
+                Navigator.pop(ctx);
+              }
+            },
+            child: Text('إضافة', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

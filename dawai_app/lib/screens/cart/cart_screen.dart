@@ -79,8 +79,7 @@ class _CartScreenState extends State<CartScreen> {
   Map<String, List<CartItem>> _groupByPharmacy(List<CartItem> items) {
     final map = <String, List<CartItem>>{};
     for (final item in items) {
-      final name = item.pharmacyName ?? 'صيدلية غير معروفة';
-      map.putIfAbsent(name, () => []).add(item);
+      map.putIfAbsent(item.pharmacyId, () => []).add(item);
     }
     return map;
   }
@@ -124,7 +123,10 @@ class _CartScreenState extends State<CartScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               children: [
-                ...grouped.entries.map((entry) => _buildPharmacyGroup(entry.key, entry.value, state)),
+                ...grouped.entries.map((entry) {
+                  final pharmacyName = entry.value.first.pharmacyName ?? 'صيدلية غير معروفة';
+                  return _buildPharmacyGroup(pharmacyName, entry.value, state);
+                }),
                 const SizedBox(height: 16),
                 _buildSectionTitle('عنوان التوصيل'),
                 const SizedBox(height: 10),

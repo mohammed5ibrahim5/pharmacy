@@ -111,7 +111,7 @@ class SiteSettings {
   final String? announcementText;
 
   SiteSettings({
-    this.siteName = 'صيدليتي',
+    this.siteName = 'دوا',
     this.siteNameEn,
     this.siteTagline = 'صيدلياتك القريبة منك في مكان واحد',
     this.logoUrl,
@@ -128,7 +128,7 @@ class SiteSettings {
 
   factory SiteSettings.fromJson(Map<String, dynamic> json) {
     return SiteSettings(
-      siteName: json['site_name'] ?? 'صيدليتي',
+      siteName: json['site_name'] ?? 'دوا',
       siteNameEn: json['site_name_en'],
       siteTagline: json['site_tagline'] ?? '',
       logoUrl: json['logo_url'],

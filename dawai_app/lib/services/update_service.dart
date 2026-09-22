@@ -31,15 +31,20 @@ class UpdateService {
   }
 
   static bool _isNewerVersion(String latest, String current) {
-    final latestParts = latest.split('.').map(int.parse).toList();
-    final currentParts = current.split('.').map(int.parse).toList();
+    try {
+      final latestParts = latest.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+      final currentParts = current.split('.').map((p) => int.tryParse(p) ?? 0).toList();
 
-    for (var i = 0; i < latestParts.length; i++) {
-      if (i >= currentParts.length) return true;
-      if (latestParts[i] > currentParts[i]) return true;
-      if (latestParts[i] < currentParts[i]) return false;
+      for (var i = 0; i < latestParts.length; i++) {
+        if (i >= currentParts.length) return true;
+        if (latestParts[i] > currentParts[i]) return true;
+        if (latestParts[i] < currentParts[i]) return false;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Version parse error: $e');
+      return false;
     }
-    return false;
   }
 
   static void _showUpdateDialog(

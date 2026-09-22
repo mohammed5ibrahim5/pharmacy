@@ -136,8 +136,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('مندوب الصيدلية: كابتن أحمد', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text('يصل خلال 15 دقيقة تقريباً', style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.bold)),
+                        Text('مندوب الصيدلية', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(o.status == 'shipped' ? 'جاري التوصيل الآن' : 'في انتظار التأكيد', style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),

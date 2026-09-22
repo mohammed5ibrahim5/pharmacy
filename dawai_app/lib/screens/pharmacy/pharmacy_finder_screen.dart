@@ -52,7 +52,25 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
   void _applyFilters() {
     var list = _pharmacies.where((p) => p.name.contains(_searchQuery)).toList();
     if (_filterDelivery) list = list.where((p) => p.deliveryAvailable).toList();
-    if (_filterOpenNow) list = list.where((p) => p.is24h).toList();
+    if (_filterOpenNow) {
+      final now = TimeOfDay.now();
+      final nowMinutes = now.hour * 60 + now.minute;
+      list = list.where((p) {
+        if (p.is24h) return true;
+        if (p.openingHours == null || p.openingHours!.isEmpty) return true;
+        try {
+          final parts = p.openingHours!.split('-');
+          if (parts.length == 2) {
+            final openParts = parts[0].trim().split(':');
+            final closeParts = parts[1].trim().split(':');
+            final openMinutes = int.parse(openParts[0]) * 60 + int.parse(openParts[1]);
+            final closeMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
+            return nowMinutes >= openMinutes && nowMinutes <= closeMinutes;
+          }
+        } catch (_) {}
+        return true;
+      }).toList();
+    }
     if (_filter24h) list = list.where((p) => p.is24h).toList();
     setState(() => _filtered = list);
   }

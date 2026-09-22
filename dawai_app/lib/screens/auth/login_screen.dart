@@ -46,7 +46,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     
     return GestureDetector(
@@ -142,7 +141,31 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Align(
                                   alignment: Alignment.centerLeft,
                                   child: TextButton(
-                                    onPressed: () {},
+                                    onPressed: () async {
+                                      if (_emailCtrl.text.trim().isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                          content: Text('أدخل بريدك الإلكتروني أولاً', style: GoogleFonts.tajawal()),
+                                          backgroundColor: AppColors.warning,
+                                        ));
+                                        return;
+                                      }
+                                      try {
+                                        await _api.resetPassword(_emailCtrl.text.trim());
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                            content: Text('تم إرسال رابط إعادة تعيين كلمة المرور على بريدك', style: GoogleFonts.tajawal()),
+                                            backgroundColor: AppColors.success,
+                                          ));
+                                        }
+                                      } catch (e) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                            content: Text('خطأ: ${e.toString()}', style: GoogleFonts.tajawal()),
+                                            backgroundColor: AppColors.error,
+                                          ));
+                                        }
+                                      }
+                                    },
                                     child: Text(
                                       'نسيت كلمة المرور؟',
                                       style: GoogleFonts.tajawal(

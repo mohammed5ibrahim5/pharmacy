@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../services/update_service.dart';
@@ -179,9 +180,16 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text('إلغاء', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
           ),
           ElevatedButton.icon(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              context.push('/pharmacy-finder');
+              final uri = Uri(scheme: 'tel', path: '16000');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri);
+              } else {
+                if (mounted) {
+                  context.push('/pharmacy-finder');
+                }
+              }
             },
             icon: const Icon(Icons.phone_in_talk, size: 18),
             label: Text('اتصال عاجل', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
