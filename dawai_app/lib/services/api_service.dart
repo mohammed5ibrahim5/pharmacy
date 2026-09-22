@@ -59,7 +59,7 @@ class ApiService {
 
   // ──── Pharmacies ────
   Future<List<Pharmacy>> getPharmacies({String? search}) async {
-    var query = _client
+    dynamic query = _client
         .from('pharmacies')
         .select('*')
         .order('rating', ascending: false);
@@ -87,7 +87,7 @@ class ApiService {
   static const _productSelect = '*, pharmacy:pharmacies(id,name,logo_url,delivery_fee,delivery_available), category:categories(id,name,slug,icon)';
 
   Future<List<Product>> getProducts({String? pharmacyId, String? categoryId, String? search}) async {
-    var query = _client
+    dynamic query = _client
         .from('products')
         .select(_productSelect)
         .eq('is_available', true)

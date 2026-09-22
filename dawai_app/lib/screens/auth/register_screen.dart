@@ -186,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   Text('لديك حساب بالفعل؟ ', style: GoogleFonts.tajawal(fontSize: 14)),
                                   GestureDetector(
                                     onTap: () => context.pop(),
-                                    child: Text('سجّل دخولك', style: GoogleFonts.tajawal(color: colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
+                                    child: Text('سجّل دخولك', style: GoogleFonts.tajawal(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
                                   ),
                                 ],
                               ),

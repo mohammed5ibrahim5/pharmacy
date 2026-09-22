@@ -61,9 +61,9 @@ class LoyaltyScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildLevelCard(Icons.bronze, 'برونزي', '0', AppColors.accent),
+                _buildLevelCard(Icons.star, 'برونزي', '0', AppColors.accent),
                 const SizedBox(width: 10),
-                _buildLevelCard(Icons.silver, 'فضي', '200', AppColors.textMuted),
+                _buildLevelCard(Icons.emoji_events, 'فضي', '200', AppColors.textMuted),
                 const SizedBox(width: 10),
                 _buildLevelCard(Icons.emoji_events, 'ذهبي', '500', AppColors.accent),
               ],
