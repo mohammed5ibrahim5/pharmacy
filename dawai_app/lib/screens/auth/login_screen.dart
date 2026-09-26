@@ -151,14 +151,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                       }
                                       try {
                                         await _api.resetPassword(_emailCtrl.text.trim());
-                                        if (mounted) {
+                                        if (context.mounted) {
                                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                             content: Text('تم إرسال رابط إعادة تعيين كلمة المرور على بريدك', style: GoogleFonts.tajawal()),
                                             backgroundColor: AppColors.success,
                                           ));
                                         }
                                       } catch (e) {
-                                        if (mounted) {
+                                        if (context.mounted) {
                                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                             content: Text('خطأ: ${e.toString()}', style: GoogleFonts.tajawal()),
                                             backgroundColor: AppColors.error,

@@ -438,7 +438,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: saving ? null : () async {
                 setDialogState(() => saving = true);
                 await _api.updateProfile(fullName: nameCtrl.text.trim(), phone: phoneCtrl.text.trim());
-                if (mounted) { Navigator.pop(ctx); _load(); }
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) _load();
               },
               child: saving
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))

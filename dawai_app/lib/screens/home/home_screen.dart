@@ -128,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _listening = false);
         }
       },
-      localeId: 'ar_EG',
+      listenOptions: stt.SpeechListenOptions(localeId: 'ar_EG'),
     );
   }
 
@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 await launchUrl(uri);
               } else {
                 if (mounted) {
-                  context.push('/pharmacy-finder');
+                  this.context.push('/pharmacy-finder');
                 }
               }
             },

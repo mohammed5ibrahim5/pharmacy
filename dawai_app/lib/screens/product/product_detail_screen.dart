@@ -102,7 +102,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   child: Icon(Icons.share_rounded, size: 18, color: isDark ? AppColors.darkText : AppColors.text),
                 ),
-                onPressed: () => Share.share('${p.name} - ${p.price} ج.م'),
+                onPressed: () => SharePlus.instance.share(ShareParams(text: '${p.name} - ${p.price} ج.م')),
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
