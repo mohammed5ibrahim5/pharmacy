@@ -27,15 +27,15 @@ final GoRouter appRouter = GoRouter(
     ShellRoute(
       builder: (context, state, child) => MainScaffold(child: child),
       routes: [
-        GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
-        GoRoute(path: '/health', builder: (_, __) => const HealthScreen()),
-        GoRoute(path: '/pharmacy-finder', builder: (_, __) => const PharmacyFinderScreen()),
-        GoRoute(path: '/orders', builder: (_, __) => const OrdersScreen()),
-        GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+        GoRoute(path: '/', builder: (_, _) => const HomeScreen()),
+        GoRoute(path: '/health', builder: (_, _) => const HealthScreen()),
+        GoRoute(path: '/pharmacy-finder', builder: (_, _) => const PharmacyFinderScreen()),
+        GoRoute(path: '/orders', builder: (_, _) => const OrdersScreen()),
+        GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
       ],
     ),
-    GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
-    GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+    GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+    GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
     GoRoute(path: '/pharmacy/:id', builder: (_, state) {
       final id = state.pathParameters['id'] ?? '';
       return id.isNotEmpty ? PharmacyDetailScreen(id: id) : const HomeScreen();
@@ -44,12 +44,12 @@ final GoRouter appRouter = GoRouter(
       final id = state.pathParameters['id'] ?? '';
       return id.isNotEmpty ? ProductDetailScreen(id: id) : const HomeScreen();
     }),
-    GoRoute(path: '/cart', builder: (_, __) => const CartScreen()),
+    GoRoute(path: '/cart', builder: (_, _) => const CartScreen()),
     GoRoute(path: '/order/:id', builder: (_, state) {
       final id = state.pathParameters['id'] ?? '';
       return id.isNotEmpty ? OrderDetailScreen(id: id) : const HomeScreen();
     }),
-    GoRoute(path: '/prescription-upload', builder: (_, __) => const PrescriptionUploadScreen()),
+    GoRoute(path: '/prescription-upload', builder: (_, _) => const PrescriptionUploadScreen()),
     GoRoute(path: '/search', builder: (_, state) {
       final query = state.uri.queryParameters['q'] ?? '';
       return SearchScreen(initialQuery: query);
@@ -58,7 +58,7 @@ final GoRouter appRouter = GoRouter(
       final slug = state.pathParameters['slug'] ?? '';
       return slug.isNotEmpty ? CategoryScreen(slug: slug) : const HomeScreen();
     }),
-    GoRoute(path: '/loyalty', builder: (_, __) => const LoyaltyScreen()),
-    GoRoute(path: '/refill-reminder', builder: (_, __) => const RefillReminderScreen()),
+    GoRoute(path: '/loyalty', builder: (_, _) => const LoyaltyScreen()),
+    GoRoute(path: '/refill-reminder', builder: (_, _) => const RefillReminderScreen()),
   ],
 );

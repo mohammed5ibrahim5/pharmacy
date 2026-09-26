@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
 
@@ -76,7 +75,7 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                     subtitle: Text('إشعارات قبل انتهاء الدواء', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMuted)),
                     value: _enabled,
                     onChanged: (v) => setState(() => _enabled = v),
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                     contentPadding: EdgeInsets.zero,
                   ),
                   const Divider(),
@@ -139,7 +138,7 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                     Switch(
                       value: m['enabled'],
                       onChanged: (v) => setState(() => _medications[i]['enabled'] = v),
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
                     ),
                   ],
                 ),

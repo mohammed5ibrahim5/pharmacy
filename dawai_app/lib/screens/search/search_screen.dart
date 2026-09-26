@@ -7,7 +7,6 @@ import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../models/product.dart';
 import '../../models/pharmacy.dart';
-import '../../shared/widgets/loading_widget.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -278,7 +277,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: _pharmacyResults.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (ctx, i) {
         final p = _pharmacyResults[i];
         return GestureDetector(

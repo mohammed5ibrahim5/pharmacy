@@ -114,7 +114,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _orders.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (ctx, i) => _OrderCard(order: _orders[i]),
       ),
     );

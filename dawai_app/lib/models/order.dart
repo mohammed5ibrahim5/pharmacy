@@ -1,5 +1,4 @@
 import 'product.dart';
-import 'pharmacy.dart';
 
 class OrderGroup {
   final String id;

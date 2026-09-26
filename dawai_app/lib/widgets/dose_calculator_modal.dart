@@ -115,7 +115,6 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
 
       case 'Azithromycin':
         final singleDose = (weight * 10).clamp(50, 500);
-        final maxDaily = singleDose;
         return {
           'singleDose': singleDose.toStringAsFixed(0),
           'maxDaily': singleDose.toStringAsFixed(0),
@@ -127,7 +126,6 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
 
       case 'Cetirizine':
         final singleDose = weight >= 30 ? 10.0 : (weight * 0.25).clamp(2.5, 5);
-        final maxDaily = singleDose;
         return {
           'singleDose': singleDose.toStringAsFixed(1),
           'maxDaily': singleDose.toStringAsFixed(1),

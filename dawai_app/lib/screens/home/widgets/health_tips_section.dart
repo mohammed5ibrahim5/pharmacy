@@ -37,7 +37,7 @@ class HealthTipsSection extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: tips.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
               itemBuilder: (ctx, i) {
                 final t = tips[i];
                 final color = t['color'] as Color;

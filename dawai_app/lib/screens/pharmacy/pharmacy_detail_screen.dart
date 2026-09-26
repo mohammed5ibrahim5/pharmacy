@@ -392,7 +392,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Text('${p.price.toStringAsFixed(0)}', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                      Text(p.price.toStringAsFixed(0), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
                       const SizedBox(width: 2),
                       Text('ج.م', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
                     ],

@@ -12,7 +12,7 @@ class HealthScreen extends StatefulWidget {
 }
 
 class _HealthScreenState extends State<HealthScreen> {
-  int _dosesTaken = 3;
+  final int _dosesTaken = 3;
   final int _dosesTotal = 4;
 
   double get _doseProgress => _dosesTotal > 0 ? _dosesTaken / _dosesTotal : 0.0;

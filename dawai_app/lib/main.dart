@@ -8,7 +8,6 @@ import 'providers/theme_provider.dart';
 import 'providers/language_provider.dart';
 import 'router/app_router.dart';
 import 'services/notification_service.dart';
-import 'services/update_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

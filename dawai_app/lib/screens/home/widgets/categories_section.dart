@@ -135,7 +135,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                   scrollDirection: Axis.horizontal,
                   padding: EdgeInsets.symmetric(horizontal: widget.padding + 8),
                   itemCount: widget.categories.length,
-                  separatorBuilder: (_, _i) => const SizedBox(width: 12),
+                  separatorBuilder: (_, i) => const SizedBox(width: 12),
                   itemBuilder: (context, index) {
                     final cat = widget.categories[index];
                     final gradient = AppColors.getCategoryGradient(cat.slug);

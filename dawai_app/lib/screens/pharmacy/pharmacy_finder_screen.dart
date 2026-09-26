@@ -266,7 +266,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
         itemCount: _filtered.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (ctx, i) => _buildPharmacyCard(_filtered[i]),
       ),
     );
