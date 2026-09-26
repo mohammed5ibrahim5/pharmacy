@@ -180,7 +180,7 @@ void main() {
       final json = <String, dynamic>{};
       final settings = SiteSettings.fromJson(json);
 
-      expect(settings.siteName, 'صيدليتي');
+      expect(settings.siteName, 'دوا');
       expect(settings.siteNameEn, isNull);
       expect(settings.siteTagline, '');
       expect(settings.logoUrl, isNull);
@@ -198,7 +198,7 @@ void main() {
     test('constructor defaults match factory defaults', () {
       final settings = SiteSettings();
 
-      expect(settings.siteName, 'صيدليتي');
+      expect(settings.siteName, 'دوا');
       expect(settings.siteTagline, 'صيدلياتك القريبة منك في مكان واحد');
       expect(settings.primaryColor, '#0d9488');
       expect(settings.secondaryColor, '#0f766e');
