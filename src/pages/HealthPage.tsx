@@ -47,9 +47,27 @@ export function HealthPage() {
             <Stethoscope className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white mb-2">{t('موسوعة صحتك ودوائك')}</h1>
-          <p className="text-sm text-white/85 font-medium leading-relaxed max-w-2xl mx-auto">
+          <p className="text-sm text-white/85 font-medium leading-relaxed max-w-2xl mx-auto mb-6">
             {t('معلومات توعوية موثوقة عن الأدوية الشائعة، جرعاتها، تداخلاتها، وكيفية استخدامها بأمان — من صيدلية صيدليتي.')}
           </p>
+
+          {/* Daily Dose Progress Widget Card */}
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 max-w-md mx-auto flex items-center justify-between text-white text-end">
+            <div className="flex items-center space-x-3 space-x-reverse">
+              <div className="relative w-12 h-12 flex items-center justify-center">
+                <svg className="w-12 h-12 transform -rotate-90">
+                  <circle cx="24" cy="24" r="20" stroke="rgba(255,255,255,0.2)" strokeWidth="4" fill="transparent" />
+                  <circle cx="24" cy="24" r="20" stroke="#ffffff" strokeWidth="4" fill="transparent" strokeDasharray="125" strokeDashoffset="31" />
+                </svg>
+                <span className="absolute text-xs font-black">75%</span>
+              </div>
+              <div className="text-right">
+                <h4 className="text-xs font-bold">جرعاتك اليومية المتبقية</h4>
+                <p className="text-[11px] text-white/80">تم تناول 3 من 4 جرعات محددة اليوم</p>
+              </div>
+            </div>
+            <span className="px-3 py-1.5 bg-white/20 rounded-xl text-[11px] font-bold">مكتمل جزئياً</span>
+          </div>
         </div>
       </div>
 

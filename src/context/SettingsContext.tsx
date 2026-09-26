@@ -1,11 +1,12 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig, StoreConfig, HowItWorksConfig, HomepageConfig } from '@/types';
-import type { PaymentConfig } from '@/lib/orders';
+import type { PaymentConfig, CommissionConfig } from '@/lib/orders';
 import { DEFAULT_VERIFICATION_CONFIG, type VerificationConfig } from '@/lib/prescriptions';
 
 export { DEFAULT_VERIFICATION_CONFIG };
 export type { VerificationConfig };
+export type { CommissionConfig } from '@/lib/orders';
 
 export interface ThemeColors {
   headerBg: string;
@@ -253,6 +254,18 @@ export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
   shippingNote: 'التوصيل داخل المعادي خلال 30 دقيقة، وفي باقي المناطق خلال 24 ساعة',
 };
 
+export const DEFAULT_COMMISSION_CONFIG: CommissionConfig = {
+  enabled: false,
+  percentage: '5',
+  minCommission: '2',
+  maxCommission: '50',
+  subscriptionPlans: [
+    { id: 'basic', name: 'الأساسية', price: 0, description: 'عمولة 5% فقط' },
+    { id: 'pro', name: 'الاحترافية', price: 500, description: '500 ج.م شهرياً + عمولة 5%' },
+    { id: 'enterprise', name: 'المؤسسات', price: 1500, description: '1500 ج.م شهرياً + عمولة 5% + دعم مخصص' },
+  ],
+};
+
 export const DEFAULT_STORE_CONFIG: StoreConfig = {
   purchasesEnabled: true,
   contactMessage: 'للشراء يرجى التواصل مع الصيدلية مباشرة',
@@ -439,6 +452,7 @@ interface SettingsContextType {
   headerConfig: HeaderConfig;
   footerConfig: FooterConfig;
   paymentConfig: PaymentConfig;
+  commissionConfig: CommissionConfig;
   heroConfig: HeroConfig;
   howItWorksConfig: HowItWorksConfig;
   storeConfig: StoreConfig;
@@ -509,6 +523,7 @@ interface SettingsCache {
   subscriptionConfig: SubscriptionConfig;
   welcomeConfig: WelcomePopupConfig;
   verificationConfig: VerificationConfig;
+  commissionConfig: CommissionConfig;
 }
 
 function loadSettingsCache(): SettingsCache | null {
@@ -539,6 +554,7 @@ const SettingsContext = createContext<SettingsContextType>({
   headerConfig: DEFAULT_HEADER_CONFIG,
   footerConfig: DEFAULT_FOOTER_CONFIG,
   paymentConfig: DEFAULT_PAYMENT_CONFIG,
+  commissionConfig: DEFAULT_COMMISSION_CONFIG,
   heroConfig: DEFAULT_HERO_CONFIG,
   howItWorksConfig: DEFAULT_HOW_IT_WORKS_CONFIG,
   storeConfig: DEFAULT_STORE_CONFIG,
@@ -567,6 +583,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   );
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>(
     settingsCache ? { ...DEFAULT_PAYMENT_CONFIG, ...settingsCache.paymentConfig } : DEFAULT_PAYMENT_CONFIG,
+  );
+  const [commissionConfig, setCommissionConfig] = useState<CommissionConfig>(
+    settingsCache ? { ...DEFAULT_COMMISSION_CONFIG, ...settingsCache.commissionConfig } : DEFAULT_COMMISSION_CONFIG,
   );
   const [heroConfig, setHeroConfig] = useState<HeroConfig>(
     settingsCache ? { ...DEFAULT_HERO_CONFIG, ...settingsCache.heroConfig } : DEFAULT_HERO_CONFIG,
@@ -620,6 +639,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     let header = { ...DEFAULT_HEADER_CONFIG };
     let footer = { ...DEFAULT_FOOTER_CONFIG };
     let payment = { ...DEFAULT_PAYMENT_CONFIG };
+    let commission = { ...DEFAULT_COMMISSION_CONFIG };
     let hero = { ...DEFAULT_HERO_CONFIG };
     let howItWorks = { ...DEFAULT_HOW_IT_WORKS_CONFIG };
     let store = { ...DEFAULT_STORE_CONFIG };
@@ -643,6 +663,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
         if (parsed && parsed.paymentConfig) {
           payment = { ...DEFAULT_PAYMENT_CONFIG, ...parsed.paymentConfig };
+        }
+        if (parsed && parsed.commissionConfig) {
+          commission = { ...DEFAULT_COMMISSION_CONFIG, ...parsed.commissionConfig };
         }
         if (parsed && parsed.heroConfig) {
           hero = { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
@@ -705,6 +728,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setHeaderConfig(header);
     setFooterConfig(footer);
     setPaymentConfig(payment);
+    setCommissionConfig(commission);
     setHeroConfig(hero);
     setHowItWorksConfig(howItWorks);
     setStoreConfig(store);
@@ -722,6 +746,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       headerConfig: header,
       footerConfig: footer,
       paymentConfig: payment,
+      commissionConfig: commission,
       heroConfig: hero,
       howItWorksConfig: howItWorks,
       storeConfig: store,
@@ -782,6 +807,7 @@ return (
         headerConfig,
         footerConfig,
         paymentConfig,
+        commissionConfig,
         heroConfig,
         howItWorksConfig,
         storeConfig,

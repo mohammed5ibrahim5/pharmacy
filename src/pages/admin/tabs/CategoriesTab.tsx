@@ -3,15 +3,17 @@ import { Plus, Edit2, Trash2, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { CATEGORY_ICON_MAP, categoryColor, categoryIcon } from '@/lib/categoryStyles';
-import { Field, Modal, inputClass } from './shared';
+import { Field, Modal, inputClass, useToast, ConfirmModal } from './shared';
 import type { Category } from '@/types';
 
 export function CategoriesTab() {
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Category | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -28,8 +30,9 @@ export function CategoriesTab() {
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذه الفئة؟')) return;
-    await supabase.from('categories').delete().eq('id', id);
+    const { error } = await supabase.from('categories').delete().eq('id', id);
+    if (error) { toast('حدث خطأ أثناء الحذف', 'error'); return; }
+    toast('تم الحذف بنجاح');
     fetchCategories();
   };
 
@@ -50,7 +53,7 @@ export function CategoriesTab() {
               <div key={cat.id} className="bg-white rounded-xl border border-gray-100 p-4 text-center group">
                 <div className="flex justify-end gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => { setEditing(cat); setShowForm(true); }} className="w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center"><Edit2 className="w-3.5 h-3.5 text-gray-600" /></button>
-                  <button onClick={() => handleDelete(cat.id)} className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
+                  <button onClick={() => setDeleteTarget(cat.id)} className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
                 </div>
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ backgroundColor: `${color}18`, color }}><CatIcon className="w-6 h-6" /></div>
                 <p className="text-sm font-medium text-gray-900">{cat.name}</p>
@@ -60,7 +63,8 @@ export function CategoriesTab() {
           })}
         </div>
       )}
-      {showForm && <CategoryForm category={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchCategories(); setShowForm(false); setEditing(null); }} />}
+      {showForm && <CategoryForm category={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchCategories(); setShowForm(false); setEditing(null); toast('تم الحفظ بنجاح'); }} />}
+      <ConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) handleDelete(deleteTarget); setDeleteTarget(null); }} title="حذف الفئة" message="هل أنت متأكد من حذف هذه الفئة؟ لا يمكن التراجع عن هذا الإجراء." danger confirmLabel="حذف" />
     </div>
   );
 }

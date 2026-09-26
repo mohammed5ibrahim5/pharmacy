@@ -1,7 +1,9 @@
-import { Printer, X, MapPin, Phone, Wallet } from 'lucide-react';
+import { useRef } from 'react';
+import { Printer, X, MapPin, Phone, Wallet, Download } from 'lucide-react';
 import type { SiteSettings } from '@/types';
 import { ORDER_STATUS_META } from '@/lib/orders';
 import { useLanguage } from '@/context/LanguageContext';
+import { generateInvoicePdf } from '@/lib/invoice-pdf';
 
 interface InvoiceOrderItem {
   id: string;
@@ -40,6 +42,7 @@ function paymentLabel(method: string | null): string {
 
 export function InvoiceModal({ open, order, settings, onClose }: InvoiceModalProps) {
   const { lang } = useLanguage();
+  const invoiceRef = useRef<HTMLDivElement>(null);
   if (!open) return null;
 
   const subtotal = order.orders.reduce((s, o) => s + Number(o.total_price || 0), 0);
@@ -235,6 +238,17 @@ export function InvoiceModal({ open, order, settings, onClose }: InvoiceModalPro
               طباعة الفاتورة
             </button>
             <button
+              onClick={() => {
+                if (invoiceRef.current) {
+                  generateInvoicePdf(invoiceRef.current, invoiceNo);
+                }
+              }}
+              className="invoice-no-print flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-xs font-black active:scale-95 transition-all shadow-md text-white"
+            >
+              <Download className="w-3.5 h-3.5" />
+              تحميل PDF
+            </button>
+            <button
               onClick={onClose}
               className="invoice-no-print w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
             >
@@ -244,7 +258,7 @@ export function InvoiceModal({ open, order, settings, onClose }: InvoiceModalPro
         </div>
 
         {/* Invoice body */}
-        <div className="invoice-area flex-1 overflow-y-auto bg-white px-5 py-6">{invoiceBody}</div>
+        <div ref={invoiceRef} className="invoice-area flex-1 overflow-y-auto bg-white px-5 py-6">{invoiceBody}</div>
       </div>
     </div>
   );

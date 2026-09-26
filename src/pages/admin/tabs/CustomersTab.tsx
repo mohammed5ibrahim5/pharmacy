@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, Search, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
-import { inputClass } from './shared';
+import { inputClass, useToast, ConfirmModal } from './shared';
 
 interface CustomerRow {
   id: string;
@@ -24,9 +24,11 @@ interface CustomerProfileLike {
 
 export function CustomersTab() {
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [rows, setRows] = useState<CustomerRow[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -60,8 +62,9 @@ export function CustomersTab() {
   );
 
   const handleDelete = async (id: string) => {
-    if (!confirm('حذف هذا العميل نهائياً؟ لا يمكن التراجع عن هذا الإجراء.')) return;
-    await supabase.from('customers').delete().eq('id', id);
+    const { error } = await supabase.from('customers').delete().eq('id', id);
+    if (error) { toast('حدث خطأ أثناء الحذف', 'error'); return; }
+    toast('تم الحذف بنجاح');
     setRows((prev) => prev.filter((r) => r.id !== id));
   };
 
@@ -113,7 +116,7 @@ export function CustomersTab() {
                   <td className="p-3 text-xs text-gray-400">{new Date(r.created_at).toLocaleDateString('ar-EG')}</td>
                   <td className="p-3">
                     <button
-                      onClick={() => handleDelete(r.id)}
+                      onClick={() => setDeleteTarget(r.id)}
                       className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center transition-colors"
                       title="حذف العميل"
                     >
@@ -126,6 +129,7 @@ export function CustomersTab() {
           </table>
         </div>
       )}
+      <ConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) handleDelete(deleteTarget); setDeleteTarget(null); }} title="حذف العميل" message="هل أنت متأكد من حذف هذا العميل نهائياً؟ لا يمكن التراجع عن هذا الإجراء." danger confirmLabel="حذف" />
     </div>
   );
 }

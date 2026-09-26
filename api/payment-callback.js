@@ -14,7 +14,10 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 function verifyHmac(obj, header) {
   const secret = process.env.PAYMOB_HMAC_SECRET;
-  if (!secret || !header) return true; // not configured ظ¤ accept (dev mode)
+  if (!secret || !header) {
+    console.warn('[payment-callback] HMAC secret not configured - rejecting request (not in dev mode)');
+    return false;
+  }
   const data = { ...obj };
   delete data.data;
   const sorted = Object.keys(data)

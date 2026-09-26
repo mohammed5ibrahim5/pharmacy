@@ -4,7 +4,7 @@ import { localizedError } from '@/lib/errorMessages';
 
 // ===== ┘ê╪╢╪╣ ╪ز╪ش╪▒┘è╪ذ┘è ┘┘â┘ê╪» ╪د┘╪ز╪ص┘é┘é (OTP) ╪ذ╪»┘ê┘ ╪ح╪▒╪│╪د┘ SMS ╪ص┘é┘è┘é┘è =====
 // ╪د┘┘â┘ê╪» ┘è╪╕┘ç╪▒ ╪»╪د╪«┘ ╪د┘╪ز╪╖╪ذ┘è┘é╪î ┘ê╪د┘╪ز╪ص┘é┘é ┘è┘╪╣┘ّ┘ ╪ش┘╪│╪ر Supabase ╪ص┘é┘è┘é┘è╪ر (Anonymous).
-const DEMO_OTP_ENABLED = true;
+const DEMO_OTP_ENABLED = import.meta.env.VITE_DEMO_OTP === 'true';
 const demoOtpStore = new Map<string, string>();
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));

@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   LayoutDashboard, Store, Package, Settings, X, TrendingDown, List, ArrowLeft,
   Cross, LogOut, Users, Menu, ShoppingCart, Sparkles, FileText, Ticket, Inbox,
@@ -25,6 +27,7 @@ import {
   AnalyticsTab,
   SettingsTab,
 } from './admin/tabs';
+import { ToastProvider } from './admin/tabs/shared';
 
 type AdminTab = 'dashboard' | 'orders' | 'prescriptions' | 'pharmacies' | 'products' | 'categories' | 'discounts' | 'coupons' | 'reviews' | 'customers' | 'subscribers' | 'stockAlerts' | 'loyalty' | 'doseRules' | 'analytics' | 'settings';
 
@@ -103,6 +106,7 @@ export function AdminPage() {
   };
 
   return (
+    <ToastProvider>
     <div className={`min-h-screen bg-gray-50 flex ${adminDark ? 'admin-dark' : ''}`} dir="rtl">
       {sidebarOpen && (
         <div
@@ -223,24 +227,35 @@ export function AdminPage() {
         </div>
 
         <div className="p-4 sm:p-6">
-          {activeTab === 'dashboard' && <DashboardTab />}
-          {activeTab === 'analytics' && <AnalyticsTab />}
-          {activeTab === 'orders' && <OrdersTab />}
-          {activeTab === 'prescriptions' && <PrescriptionsTab />}
-          {activeTab === 'pharmacies' && <PharmaciesTab />}
-          {activeTab === 'products' && <ProductsTab />}
-          {activeTab === 'categories' && <CategoriesTab />}
-          {activeTab === 'discounts' && <DiscountsTab />}
-          {activeTab === 'coupons' && <CouponsTab />}
-          {activeTab === 'reviews' && <ReviewsTab />}
-          {activeTab === 'customers' && <CustomersTab />}
-          {activeTab === 'stockAlerts' && <StockAlertsTab />}
-          {activeTab === 'loyalty' && <LoyaltyTab />}
-          {activeTab === 'doseRules' && <DoseRulesTab />}
-          {activeTab === 'subscribers' && <SubscribersTab />}
-          {activeTab === 'settings' && <SettingsTab />}
+          <Suspense
+            fallback={
+              <div className="min-h-[40vh] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              </div>
+            }
+          >
+            <ErrorBoundary key={activeTab}>
+              {activeTab === 'dashboard' && <DashboardTab />}
+              {activeTab === 'analytics' && <AnalyticsTab />}
+              {activeTab === 'orders' && <OrdersTab />}
+              {activeTab === 'prescriptions' && <PrescriptionsTab />}
+              {activeTab === 'pharmacies' && <PharmaciesTab />}
+              {activeTab === 'products' && <ProductsTab />}
+              {activeTab === 'categories' && <CategoriesTab />}
+              {activeTab === 'discounts' && <DiscountsTab />}
+              {activeTab === 'coupons' && <CouponsTab />}
+              {activeTab === 'reviews' && <ReviewsTab />}
+              {activeTab === 'customers' && <CustomersTab />}
+              {activeTab === 'stockAlerts' && <StockAlertsTab />}
+              {activeTab === 'loyalty' && <LoyaltyTab />}
+              {activeTab === 'doseRules' && <DoseRulesTab />}
+              {activeTab === 'subscribers' && <SubscribersTab />}
+              {activeTab === 'settings' && <SettingsTab />}
+            </ErrorBoundary>
+          </Suspense>
         </div>
       </main>
     </div>
+    </ToastProvider>
   );
 }

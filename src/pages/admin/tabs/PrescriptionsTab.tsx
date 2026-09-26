@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  ShieldCheck, Check, X, Search, Phone, User, Star, Clock, Send, Loader2,
-  Eye, EyeOff, TrendingDown, Plus, Edit2, Trash2, Copy, Ban, BadgeCheck,
+  ShieldCheck, X, Phone, User, Clock, Send, Loader2,
+  Plus, Trash2, Copy, Ban, BadgeCheck, Search as SearchIcon, Download,
   ClipboardList, CircleAlert, TriangleAlert, Fingerprint, Stethoscope,
-  CreditCard, Banknote, Info, MessageCircle, Badge, Layers,
+  CreditCard, Banknote, Info, MessageCircle,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
@@ -17,16 +17,17 @@ import {
   deletePrescription, approvePrescription, rejectPrescription, requestClarification,
   recordDispense, validateNationalId, fetchAuditLog, fetchDoctors, saveDoctor, deleteDoctor,
 } from '@/lib/prescriptions';
-import { Field, Modal, inputClass } from './shared';
+import { useToast, ConfirmModal } from './shared';
 
 export function PrescriptionsTab() {
   const { settings } = useSettings();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'queue' | 'doctors'>('queue');
   const [list, setList] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | PipelineStatus>('needs_review');
-  const [toast, setToast] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [auditLog, setAuditLog] = useState<{ id: string; actor_type: string; action: string; details: Record<string, unknown> | null; created_at: string }[]>([]);
@@ -39,11 +40,9 @@ export function PrescriptionsTab() {
   const [nid, setNid] = useState('');
   const [deliveredBy, setDeliveredBy] = useState('');
   const [nidError, setNidError] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ type: string; data?: unknown } | null>(null);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2600);
-  };
+  const showToast = (msg: string) => { toast(msg); };
 
   const fetchRx = useCallback(async () => {
     setLoading(true);
@@ -109,11 +108,47 @@ export function PrescriptionsTab() {
     [list]
   );
 
-  const filtered = filter === 'all' ? list : list.filter((r) => pipelineOf(r) === filter);
+  const filtered = useMemo(() => {
+    let result = filter === 'all' ? list : list.filter((r) => pipelineOf(r) === filter);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter((r) => {
+        const name = (r.patient_name || r.customer?.full_name || '').toLowerCase();
+        const phone = r.phone || '';
+        const doctor = (r.ocr_data?.doctor_name || '').toLowerCase();
+        const refCode = (r.reference_code || '').toLowerCase();
+        return name.includes(q) || phone.includes(q) || doctor.includes(q) || refCode.includes(q);
+      });
+    }
+    return result;
+  }, [list, filter, search]);
+
+  const exportCSV = useCallback(() => {
+    const headers = ['التاريخ', 'الحالة', 'الاسم', 'الهاتف', 'الدكتور', 'رقم النقابة', 'الكود المرجعي', 'الخطورة'];
+    const rows = filtered.map((rx) => [
+      new Date(rx.created_at).toLocaleDateString('ar-EG'),
+      pipelineOf(rx),
+      rx.patient_name || rx.customer?.full_name || '',
+      rx.phone,
+      rx.ocr_data?.doctor_name || '',
+      rx.ocr_data?.doctor_syndicate_no || '',
+      rx.reference_code || '',
+      rx.risk_level || 'normal',
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `prescriptions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('تم تصدير البيانات بنجاح');
+  }, [filtered, toast]);
 
   const handleApprove = async () => {
     if (!selected) return;
-    if (!confirm('اعتماد هذه الروشتة وإصدار كود مرجعي فريد؟')) return;
+    setConfirmAction({ type: 'approve' });
     setBusy(true);
     try {
       const code = await approvePrescription(selected, user?.id || null);
@@ -203,7 +238,7 @@ export function PrescriptionsTab() {
   };
 
   const handleDelete = async (rx: Prescription) => {
-    if (!confirm('حذف هذه الروشتة نهائياً؟')) return;
+    setConfirmAction({ type: 'deleteRx', data: rx });
     try {
       await deletePrescription(rx.id, rx.image_url);
       showToast('تم حذف الروشتة');
@@ -232,12 +267,6 @@ export function PrescriptionsTab() {
 
   return (
     <div className="space-y-4">
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl animate-fade-in flex items-center gap-2">
-          <Check className="w-4 h-4 text-teal-400" />
-          {toast}
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -283,6 +312,27 @@ export function PrescriptionsTab() {
         <DoctorsRegistryView onToast={showToast} />
       ) : (
         <>
+          {/* Search */}
+          <div className="relative">
+            <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="بحث بالاسم أو رقم الهاتف أو اسم الدكتور أو الكود المرجعي..."
+              className="w-full pr-10 pl-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-300"
+            />
+            {filtered.length > 0 && (
+              <button
+                onClick={exportCSV}
+                className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-700 text-[10px] font-bold hover:bg-teal-100 transition-colors"
+              >
+                <Download className="w-3 h-3" />
+                تصدير
+              </button>
+            )}
+          </div>
+
           {/* Filter tabs */}
           <div className="p-1.5 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-x-auto scrollbar-none flex items-center gap-1.5">
             {filterTabs.map((ft) => {
@@ -720,6 +770,43 @@ export function PrescriptionsTab() {
           })()}
         </>
       )}
+
+      <ConfirmModal
+        open={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={async () => {
+          if (!confirmAction) return;
+          const action = confirmAction;
+          setConfirmAction(null);
+          if (action.type === 'approve') {
+            if (!selected) return;
+            setBusy(true);
+            try {
+              const code = await approvePrescription(selected, user?.id || null);
+              showToast(`تم الاعتماد ✅ الكود المرجعي: ${code}`);
+              try { navigator.clipboard?.writeText(code); } catch { /* ignore */ }
+              setSelectedId(null);
+              fetchRx();
+            } catch (err) {
+              showToast(translateError((err as { message?: string })?.message || '').ar || 'فشل الاعتماد');
+            } finally { setBusy(false); }
+          } else if (action.type === 'deleteRx') {
+            const rx = action.data as Prescription;
+            try {
+              await deletePrescription(rx.id, rx.image_url);
+              showToast('تم حذف الروشتة');
+              setSelectedId(null);
+              fetchRx();
+            } catch (err) {
+              showToast(translateError((err as { message?: string })?.message || '').ar || 'فشل الحذف');
+            }
+          }
+        }}
+        title={confirmAction?.type === 'approve' ? 'اعتماد الروشتة' : 'حذف الروشتة'}
+        message={confirmAction?.type === 'approve' ? 'هل تريد اعتماد هذه الروشتة وإصدار كود مرجعي فريد؟' : 'هل أنت متأكد من حذف هذه الروشتة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'}
+        danger={confirmAction?.type !== 'approve'}
+        confirmLabel={confirmAction?.type === 'approve' ? 'اعتماد' : 'حذف'}
+      />
     </div>
   );
 }
@@ -734,6 +821,7 @@ function DoctorsRegistryView({ onToast }: { onToast: (msg: string) => void }) {
   const [syndicateNo, setSyndicateNo] = useState('');
   const [docName, setDocName] = useState('');
   const [specialty, setSpecialty] = useState('');
+  const [deleteDocTarget, setDeleteDocTarget] = useState<typeof docs[number] | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -780,15 +868,20 @@ function DoctorsRegistryView({ onToast }: { onToast: (msg: string) => void }) {
     }
   };
 
-  const handleDeleteDoc = async (doc: typeof docs[number]) => {
-    if (!confirm(`حذف الدكتور ${doc.doctor_name} من السجل؟`)) return;
+  const handleDeleteDoc = (doc: typeof docs[number]) => {
+    setDeleteDocTarget(doc);
+  };
+
+  const confirmDeleteDoc = async () => {
+    if (!deleteDocTarget) return;
     try {
-      await deleteDoctor(doc.id);
+      await deleteDoctor(deleteDocTarget.id);
       onToast('تم الحذف');
       load();
     } catch {
       onToast('فشل الحذف');
     }
+    setDeleteDocTarget(null);
   };
 
   return (
@@ -864,6 +957,15 @@ function DoctorsRegistryView({ onToast }: { onToast: (msg: string) => void }) {
           ))}
         </div>
       )}
+      <ConfirmModal
+        open={!!deleteDocTarget}
+        onClose={() => setDeleteDocTarget(null)}
+        onConfirm={confirmDeleteDoc}
+        title="حذف الدكتور"
+        message={`هل أنت متأكد من حذف الدكتور ${deleteDocTarget?.doctor_name || ''} من السجل؟ لا يمكن التراجع عن هذا الإجراء.`}
+        danger
+        confirmLabel="حذف"
+      />
     </div>
   );
 }

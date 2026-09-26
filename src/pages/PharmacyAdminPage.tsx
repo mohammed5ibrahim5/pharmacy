@@ -110,7 +110,7 @@ function OwnerLogin() {
 
 function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigate: (tab: OwnerTab) => void }) {
   const { settings } = useSettings();
-  const [stats, setStats] = useState<{ products: number; available: number; orders: number; pending: number; revenue: number; avgRating: number } | null>(null);
+  const [stats, setStats] = useState<{ products: number; available: number; orders: number; pending: number; revenue: number; avgRating: number; monthlyCommission: number; monthlyOrders: number } | null>(null);
   const [bestSellers, setBestSellers] = useState<{ name: string; qty: number; revenue: number }[]>([]);
   const [lowStock, setLowStock] = useState<{ id: string; name: string; stock_quantity: number; is_available: boolean }[]>([]);
   const [recentOrders, setRecentOrders] = useState<{ id: string; customerName: string; status: string; total_price: number; created_at: string }[]>([]);
@@ -119,7 +119,7 @@ function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigat
     if (!pharmacy) return;
     let cancelled = false;
     (async () => {
-      const [p, a, o, pend, revenueRes, ratingRes, sellersRes, lowRes, recentRes] = await Promise.all([
+      const [p, a, o, pend, revenueRes, ratingRes, sellersRes, lowRes, recentRes, commissionRes] = await Promise.all([
         supabase.from('products').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id),
         supabase.from('products').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id).eq('is_available', true),
         supabase.from('orders').select('id', { count: 'exact', head: true }).eq('pharmacy_id', pharmacy.id),
@@ -129,6 +129,7 @@ function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigat
         supabase.from('orders').select('total_price, quantity, product:products(name)').eq('pharmacy_id', pharmacy.id).limit(1000),
         supabase.from('products').select('id, name, stock_quantity, reorder_level, is_available').eq('pharmacy_id', pharmacy.id).order('stock_quantity').limit(8),
         supabase.from('orders').select('id, status, total_price, created_at, customer:customers(full_name)').eq('pharmacy_id', pharmacy.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('order_groups').select('platform_commission, created_at, orders!inner(pharmacy_id)').gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
       ]);
       if (cancelled) return;
 
@@ -149,6 +150,12 @@ function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigat
       });
       const best = Object.values(byProduct).sort((x, y) => y.qty - x.qty).slice(0, 5);
 
+      // Monthly commission for this pharmacy
+      const commissionData = commissionRes.data as { platform_commission: number; orders: { pharmacy_id: string }[] }[] | null;
+      const monthlyCommission = (commissionData || [])
+        .filter((g) => Array.isArray(g.orders) && g.orders.some((o) => o.pharmacy_id === pharmacy.id))
+        .reduce((sum, g) => sum + (Number(g.platform_commission) || 0), 0);
+
       setStats({
         products: p.count || 0,
         available: a.count || 0,
@@ -156,6 +163,8 @@ function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigat
         pending: pend.count || 0,
         revenue,
         avgRating: Math.round(avgRating * 10) / 10,
+        monthlyCommission,
+        monthlyOrders: commissionData?.length || 0,
       });
       setBestSellers(best);
       setLowStock((lowRes.data || []).filter((item) => Number(item.stock_quantity) <= Number(item.reorder_level ?? 5)) as { id: string; name: string; stock_quantity: number; is_available: boolean }[]);
@@ -187,6 +196,8 @@ function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigat
     { label: 'إجمالي الطلبات', value: stats?.orders, icon: <ShoppingCart className="w-5 h-5" />, bg: 'bg-amber-50 text-amber-600 border-amber-200' },
     { label: 'طلبات قيد المراجعة', value: stats?.pending, icon: <Clock className="w-5 h-5" />, bg: 'bg-violet-50 text-violet-600 border-violet-200' },
     { label: 'إيرادات مبيعات', value: stats?.revenue != null ? `${Number(stats.revenue).toFixed(0)} ج.م` : '—', icon: <Wallet className="w-5 h-5" />, bg: 'bg-green-50 text-green-600 border-green-200' },
+    { label: 'عمولة المنصة (هذا الشهر)', value: stats?.monthlyCommission != null ? `${Number(stats.monthlyCommission).toFixed(0)} ج.م` : '—', icon: <AlertTriangle className="w-5 h-5" />, bg: 'bg-amber-50 text-amber-600 border-amber-200' },
+    { label: 'طلبات هذا الشهر', value: stats?.monthlyOrders ?? '—', icon: <TrendingUp className="w-5 h-5" />, bg: 'bg-purple-50 text-purple-600 border-purple-200' },
     { label: 'متوسط التقييم', value: stats?.avgRating ? `${stats.avgRating} / 5` : '—', icon: <Star className="w-5 h-5" />, bg: 'bg-yellow-50 text-yellow-600 border-yellow-200' },
   ];
 
@@ -214,6 +225,10 @@ function OwnerOverview({ pharmacy, onNavigate }: { pharmacy: Pharmacy; onNavigat
                 <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5" />{pharmacy.rating}</span>
                 {pharmacy.delivery_available && <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5" />توصيل</span>}
                 {pharmacy.accept_insurance && <span className="flex items-center gap-1"><Shield className="w-3.5 h-3.5" />تأمين</span>}
+                <span className="text-amber-600 font-bold">عمولة: {pharmacy.commission_rate || 5}%</span>
+                <span className="text-blue-600 font-bold">
+                  خطة: {pharmacy.subscription_plan === 'enterprise' ? 'المؤسسات' : pharmacy.subscription_plan === 'pro' ? 'الاحترافية' : 'الأساسية'}
+                </span>
               </div>
             </div>
             <div className="flex gap-2">

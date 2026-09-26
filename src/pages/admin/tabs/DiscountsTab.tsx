@@ -2,17 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { TrendingDown, Plus, Edit2, Trash2, Eye, EyeOff, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
-import { Field, Modal, inputClass } from './shared';
+import { Field, Modal, inputClass, useToast, ConfirmModal } from './shared';
 import type { Pharmacy, Product, Discount } from '@/types';
 
 export function DiscountsTab() {
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [discounts, setDiscounts] = useState<(Discount & { product?: Product; pharmacy?: Pharmacy })[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Discount | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const fetchDiscounts = useCallback(async () => {
     setLoading(true);
@@ -27,8 +29,8 @@ export function DiscountsTab() {
     supabase.from('pharmacies').select('*').order('name').then(({ data }) => setPharmacies((data || []) as Pharmacy[]));
   }, [fetchDiscounts]);
 
-  const handleDelete = async (id: string) => { if (!confirm('حذف هذا الخصم؟')) return; await supabase.from('discounts').delete().eq('id', id); fetchDiscounts(); };
-  const toggleActive = async (d: Discount) => { await supabase.from('discounts').update({ is_active: !d.is_active }).eq('id', d.id); fetchDiscounts(); };
+  const handleDelete = async (id: string) => { const { error } = await supabase.from('discounts').delete().eq('id', id); if (error) { toast('حدث خطأ أثناء الحذف', 'error'); return; } toast('تم الحذف بنجاح'); fetchDiscounts(); };
+  const toggleActive = async (d: Discount) => { const { error } = await supabase.from('discounts').update({ is_active: !d.is_active }).eq('id', d.id); if (error) { toast('حدث خطأ', 'error'); return; } toast(d.is_active ? 'تم الإيقاف' : 'تم التفعيل'); fetchDiscounts(); };
 
   return (
     <div>
@@ -56,13 +58,14 @@ export function DiscountsTab() {
               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
                 <button onClick={() => { setEditing(d); setShowForm(true); }} className="flex-1 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-600 flex items-center justify-center gap-1"><Edit2 className="w-3 h-3" /> تعديل</button>
                 <button onClick={() => toggleActive(d)} className="flex-1 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-600 flex items-center justify-center gap-1">{d.is_active ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}{d.is_active ? 'إيقاف' : 'تفعيل'}</button>
-                <button onClick={() => handleDelete(d.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
+                <button onClick={() => setDeleteTarget(d.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
               </div>
             </div>
           ))}
         </div>
       )}
-      {showForm && <DiscountForm discount={editing} products={products} pharmacies={pharmacies} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchDiscounts(); setShowForm(false); setEditing(null); }} />}
+      {showForm && <DiscountForm discount={editing} products={products} pharmacies={pharmacies} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchDiscounts(); setShowForm(false); setEditing(null); toast('تم الحفظ بنجاح'); }} />}
+      <ConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) handleDelete(deleteTarget); setDeleteTarget(null); }} title="حذف الخصم" message="هل أنت متأكد من حذف هذا الخصم؟ لا يمكن التراجع عن هذا الإجراء." danger confirmLabel="حذف" />
     </div>
   );
 }

@@ -291,12 +291,20 @@ html.dark body { background-color: #070d1a; color: #e2e8f0; }
 
 html.dark .bg-white,
 .admin-dark .bg-white { background-color: #111827 !important; }
+html.dark .bg-white\/80,
 html.dark .bg-white\/85,
 html.dark .bg-white\/90,
 html.dark .bg-white\/95,
+.admin-dark .bg-white\/80,
 .admin-dark .bg-white\/85,
 .admin-dark .bg-white\/90,
 .admin-dark .bg-white\/95 { background-color: #1a2435 !important; }
+html.dark .bg-white\/10,
+html.dark .bg-white\/15,
+html.dark .bg-white\/20,
+.admin-dark .bg-white\/10,
+.admin-dark .bg-white\/15,
+.admin-dark .bg-white\/20 { background-color: rgba(255,255,255,0.05) !important; }
 html.dark .bg-gray-50,
 .admin-dark .bg-gray-50 { background-color: #0d1426 !important; }
 html.dark .bg-gray-50\/80,
@@ -309,6 +317,16 @@ html.dark .bg-gray-100,
 html.dark .bg-slate-100,
 .admin-dark .bg-gray-100,
 .admin-dark .bg-slate-100 { background-color: #1a2435 !important; }
+html.dark .ambient-glow-bg {
+  background: radial-gradient(circle at 50% 0%, rgba(13, 148, 136, 0.12) 0%, rgba(7, 13, 26, 0.8) 45%, #070d1a 100%) !important;
+}
+html.dark .bg-\[radial-gradient\(rgba\(0\,0\,0\,0\.04\)_0\.5px\,transparent_0\.5px\)\] {
+  background-image: radial-gradient(rgba(255,255,255,0.04) 0.5px, transparent 0.5px) !important;
+}
+
+html.dark .bg-pink-50 {
+  background-color: rgba(236, 72, 153, 0.15) !important;
+}
 
 /* Additional bg colors for admin dark mode */
 .admin-dark .bg-gray-200 { background-color: #1e2e45 !important; }

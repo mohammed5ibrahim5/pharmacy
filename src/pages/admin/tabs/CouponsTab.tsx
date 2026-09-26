@@ -2,21 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { Ticket, Plus, Edit2, Trash2, Eye, EyeOff, Copy, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
-import { Field, Modal, inputClass } from './shared';
+import { Field, Modal, inputClass, useToast, ConfirmModal } from './shared';
 import type { Coupon } from '@/types';
 
 export function CouponsTab() {
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Coupon | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2200);
-  };
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const fetchCoupons = useCallback(async () => {
     setLoading(true);
@@ -30,20 +26,22 @@ export function CouponsTab() {
   }, [fetchCoupons]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('حذف هذا الكود؟')) return;
-    await supabase.from('coupons').delete().eq('id', id);
-    showToast('تم حذف الكود');
+    const { error } = await supabase.from('coupons').delete().eq('id', id);
+    if (error) { toast('حدث خطأ أثناء الحذف', 'error'); return; }
+    toast('تم حذف الكود');
     fetchCoupons();
   };
 
   const toggleActive = async (c: Coupon) => {
-    await supabase.from('coupons').update({ is_active: !c.is_active }).eq('id', c.id);
+    const { error } = await supabase.from('coupons').update({ is_active: !c.is_active }).eq('id', c.id);
+    if (error) { toast('حدث خطأ', 'error'); return; }
+    toast(c.is_active ? 'تم الإيقاف' : 'تم التفعيل');
     fetchCoupons();
   };
 
   const handleCopy = (code: string) => {
     navigator.clipboard?.writeText(code);
-    showToast('تم نسخ الكود');
+    toast('تم نسخ الكود');
   };
 
   const isExpired = (c: Coupon) => !!c.expires_at && new Date(c.expires_at) < new Date();
@@ -52,11 +50,6 @@ export function CouponsTab() {
 
   return (
     <div>
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl animate-fade-in">
-          {toast}
-        </div>
-      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-sm text-gray-500">إنشاء أكواد خصم يمكن للعملاء استخدامها عند الطلب</h2>
@@ -102,14 +95,15 @@ export function CouponsTab() {
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
                   <button onClick={() => { setEditing(c); setShowForm(true); }} className="flex-1 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-600 flex items-center justify-center gap-1"><Edit2 className="w-3 h-3" /> تعديل</button>
                   <button onClick={() => toggleActive(c)} className="flex-1 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-600 flex items-center justify-center gap-1">{c.is_active ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}{c.is_active ? 'إيقاف' : 'تفعيل'}</button>
-                  <button onClick={() => handleDelete(c.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
+                  <button onClick={() => setDeleteTarget(c.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
                 </div>
               </div>
             );
           })}
         </div>
       )}
-      {showForm && <CouponForm coupon={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchCoupons(); setShowForm(false); setEditing(null); showToast(editing ? 'تم تحديث الكود' : 'تم إضافة الكود'); }} />}
+      {showForm && <CouponForm coupon={editing} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchCoupons(); setShowForm(false); setEditing(null); toast(editing ? 'تم تحديث الكود' : 'تم إضافة الكود'); }} />}
+      <ConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) handleDelete(deleteTarget); setDeleteTarget(null); }} title="حذف كود الخصم" message="هل أنت متأكد من حذف هذا الكود؟ لا يمكن التراجع عن هذا الإجراء." danger confirmLabel="حذف" />
     </div>
   );
 }

@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Wallet, ShoppingCart, Store, Package, List, TrendingDown, Ticket, Users,
   BellRing, Sparkles, Activity, Loader2, Ban, MessageCircle, BadgePercent,
-  Save, Info, AlertTriangle, RefreshCw, Cross, Check, Eye, EyeOff,
+  Save, AlertTriangle, RefreshCw, Cross,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings, type WelcomePopupConfig } from '@/context/SettingsContext';
@@ -111,9 +111,7 @@ export function DashboardTab() {
         updated_at: new Date().toISOString(),
       }).eq('id', settings.id);
       await refresh();
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch { /* ignore toggle error */ } finally {
       setSavingCatalogWhatsapp(false);
     }
   };
@@ -132,9 +130,7 @@ export function DashboardTab() {
         updated_at: new Date().toISOString(),
       }).eq('id', settings.id);
       await refresh();
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch { /* ignore toggle error */ } finally {
       setTogglingPurchases(false);
     }
   };
@@ -153,9 +149,7 @@ export function DashboardTab() {
         updated_at: new Date().toISOString(),
       }).eq('id', settings.id);
       await refresh();
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch { /* ignore toggle error */ } finally {
       setTogglingCatalogMultiPharmacy(false);
     }
   };
@@ -193,8 +187,7 @@ export function DashboardTab() {
       await refresh();
       setWelcomeSavedMsg('تم حفظ إعدادات الرسالة الترحيبية');
       setTimeout(() => setWelcomeSavedMsg(null), 2500);
-    } catch (e) {
-      console.error(e);
+    } catch {
       setWelcomeSavedMsg('حدث خطأ أثناء الحفظ');
     } finally {
       setSavingWelcome(false);

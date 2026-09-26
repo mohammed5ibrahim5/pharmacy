@@ -2,20 +2,21 @@ import { useState, useEffect } from 'react';
 import {
   Settings, Cross, Megaphone, Sparkles, List, Wallet, LayoutDashboard, Phone, Globe,
   Truck, ShieldCheck, Shield, Users, Star, Zap, FileText, Store, Info, Save, Check,
-  BadgePercent, BellRing, Bell, Baby, Scale,
+  BadgePercent, BellRing, Bell, Baby, Scale, Coins,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import {
   useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG,
   DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG,
   DEFAULT_STORE_CONFIG, DEFAULT_HOMEPAGE_CONFIG, DEFAULT_LOYALTY_CONFIG,
-  DEFAULT_FEATURES_CONFIG,
+  DEFAULT_FEATURES_CONFIG, DEFAULT_COMMISSION_CONFIG,
   type ThemeColors, type LoyaltyConfig, type FeaturesConfig, type WelcomePopupConfig,
+  type CommissionConfig,
 } from '@/context/SettingsContext';
 import { translateError } from '@/lib/errorMessages';
 import { HERO_BADGE_ICON_MAP, heroBadgeIcon } from '@/lib/heroBadges';
 import { ImageUploader } from '@/components/ImageUploader';
-import { Field, SettingsSection, Toggle, FeatureToggle, ColorField, ImageUrlField, inputClass, withAlphaHex } from './shared';
+import { Field, SettingsSection, Toggle, FeatureToggle, ColorField, ImageUrlField, inputClass, withAlphaHex, useToast, ConfirmModal } from './shared';
 import type { SiteSettings, FooterConfig, HeroConfig, HowItWorksConfig, HomepageConfig } from '@/types';
 
 const settingsNav = [
@@ -26,6 +27,7 @@ const settingsNav = [
   { id: 'payment', label: 'الدفع والشحن', icon: <Wallet className="w-4 h-4" /> },
   { id: 'content', label: 'المحتوى والأقسام', icon: <LayoutDashboard className="w-4 h-4" /> },
   { id: 'features', label: 'الميزات والولاء', icon: <Sparkles className="w-4 h-4" /> },
+  { id: 'commission', label: 'العمولة والاشتراكات', icon: <Coins className="w-4 h-4" /> },
   { id: 'contact', label: 'التواصل', icon: <Phone className="w-4 h-4" /> },
   { id: 'footer', label: 'التذييل (Footer)', icon: <Globe className="w-4 h-4" /> },
 ] as const;
@@ -33,23 +35,21 @@ type SettingsTabKey = (typeof settingsNav)[number]['id'];
 
 export function SettingsTab() {
   const { settings, refresh, themeColors } = useSettings();
+  const { toast } = useToast();
   const [form, setForm] = useState<SiteSettings>(settings);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [settingsSubTab, setSettingsSubTab] = useState<SettingsTabKey>('identity');
+  const [resetConfirm, setResetConfirm] = useState<'hero' | 'footer' | null>(null);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2500);
-  };
+  const showToast = (msg: string) => { toast(msg); };
 
   const [colors, setColors] = useState<ThemeColors>(() => {
     if (settings.features_json) {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.themeColors) return { ...DEFAULT_THEME_COLORS, ...parsed.themeColors };
-      } catch (e) { console.error(e); }
+      } catch { /* corrupted settings — fall back to defaults */ }
     }
     return { ...DEFAULT_THEME_COLORS };
   });
@@ -59,7 +59,7 @@ export function SettingsTab() {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.headerConfig) return { ...DEFAULT_HEADER_CONFIG, ...parsed.headerConfig };
-      } catch (e) { console.error(e); }
+      } catch { /* corrupted settings — fall back to defaults */ }
     }
     return { ...DEFAULT_HEADER_CONFIG };
   });
@@ -69,7 +69,7 @@ export function SettingsTab() {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.footerConfig) return { ...DEFAULT_FOOTER_CONFIG, ...parsed.footerConfig };
-      } catch (e) { console.error(e); }
+      } catch { /* corrupted settings — fall back to defaults */ }
     }
     return { ...DEFAULT_FOOTER_CONFIG };
   });
@@ -79,9 +79,19 @@ export function SettingsTab() {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.paymentConfig) return { ...DEFAULT_PAYMENT_CONFIG, ...parsed.paymentConfig };
-      } catch (e) { console.error(e); }
+      } catch { /* corrupted settings — fall back to defaults */ }
     }
     return { ...DEFAULT_PAYMENT_CONFIG };
+  });
+
+  const [commissionCfg, setCommissionCfg] = useState<CommissionConfig>(() => {
+    if (settings.features_json) {
+      try {
+        const parsed = JSON.parse(settings.features_json);
+        if (parsed && parsed.commissionConfig) return { ...DEFAULT_COMMISSION_CONFIG, ...parsed.commissionConfig };
+      } catch { /* corrupted settings — fall back to defaults */ }
+    }
+    return { ...DEFAULT_COMMISSION_CONFIG };
   });
 
   const [heroCfg, setHeroCfg] = useState<HeroConfig>(() => {
@@ -89,7 +99,7 @@ export function SettingsTab() {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.heroConfig) return { ...DEFAULT_HERO_CONFIG, ...parsed.heroConfig };
-      } catch (e) { console.error(e); }
+      } catch { /* corrupted settings — fall back to defaults */ }
     }
     return { ...DEFAULT_HERO_CONFIG };
   });
@@ -99,7 +109,7 @@ export function SettingsTab() {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.howItWorksConfig) return { ...DEFAULT_HOW_IT_WORKS_CONFIG, ...parsed.howItWorksConfig };
-      } catch (e) { console.error(e); }
+      } catch { /* corrupted settings — fall back to defaults */ }
     }
     return { ...DEFAULT_HOW_IT_WORKS_CONFIG };
   });
@@ -109,7 +119,7 @@ export function SettingsTab() {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.loyaltyConfig) return { ...DEFAULT_LOYALTY_CONFIG, ...parsed.loyaltyConfig };
-      } catch (e) { console.error(e); }
+      } catch { /* corrupted settings — fall back to defaults */ }
     }
     return { ...DEFAULT_LOYALTY_CONFIG };
   });
@@ -119,7 +129,7 @@ export function SettingsTab() {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.featuresConfig) return { ...DEFAULT_FEATURES_CONFIG, ...parsed.featuresConfig };
-      } catch (e) { console.error(e); }
+      } catch { /* corrupted settings — fall back to defaults */ }
     }
     return { ...DEFAULT_FEATURES_CONFIG };
   });
@@ -129,7 +139,7 @@ export function SettingsTab() {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.homepageConfig) return { ...DEFAULT_HOMEPAGE_CONFIG, ...parsed.homepageConfig };
-      } catch (e) { console.error(e); }
+      } catch { /* corrupted settings — fall back to defaults */ }
     }
     return { ...DEFAULT_HOMEPAGE_CONFIG };
   });
@@ -140,7 +150,7 @@ export function SettingsTab() {
       try {
         const parsed = JSON.parse(settings.features_json);
         if (parsed && parsed.welcomeConfig) return { ...ctxWelcome, ...parsed.welcomeConfig };
-      } catch (e) { console.error(e); }
+      } catch { /* corrupted settings — fall back to defaults */ }
     }
     return { ...ctxWelcome };
   });
@@ -165,10 +175,10 @@ export function SettingsTab() {
     try {
       const p = settings.features_json ? JSON.parse(settings.features_json) : {};
       if (p && p.storeConfig) existingStoreConfig = { ...DEFAULT_STORE_CONFIG, ...p.storeConfig };
-    } catch (e) { console.error(e); }
+    } catch { /* corrupted settings — fall back to defaults */ }
     const updatedFeaturesJson = JSON.stringify({
       themeColors: colors, headerConfig: headerCfg, footerConfig: footerCfg,
-      paymentConfig: paymentCfg, heroConfig: heroCfg, howItWorksConfig: howCfg,
+      paymentConfig: paymentCfg, commissionConfig: commissionCfg, heroConfig: heroCfg, howItWorksConfig: howCfg,
       storeConfig: existingStoreConfig, homepageConfig: homepageCfg,
       loyaltyConfig: loyaltyCfg, featuresConfig: featuresCfg, welcomeConfig: welcomeCfgLocal,
     });
@@ -335,7 +345,7 @@ export function SettingsTab() {
                 </h3>
                 <p className="text-xs text-gray-500 mt-1.5">تحكم في نصوص وأزرار وأرقام القسم الأول للرئيسية — ثم احفظ من الأسفل.</p>
               </div>
-              <button type="button" onClick={() => { if (window.confirm('هل أنت متأكد من إعادة تعيين إعدادات القسم الرئيسي إلى الافتراضي؟')) setHeroCfg({ ...DEFAULT_HERO_CONFIG }); }} className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all">إعادة تعيين الافتراضي</button>
+              <button type="button" onClick={() => setResetConfirm('hero')} className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all">إعادة تعيين الافتراضي</button>
             </div>
           </div>
           <SettingsSection title="أقسام الهيرو" icon={<LayoutDashboard className="w-5 h-5" />}>
@@ -539,6 +549,72 @@ export function SettingsTab() {
         </div>
       )}
 
+      {settingsSubTab === 'commission' && (
+        <div className="space-y-6">
+          <SettingsSection title="إعدادات العمولة" icon={<Coins className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">نسبة العمولة التي تأخدها المنصة من كل طلب. يتم حسابها تلقائياً عند إنشاء الطلب.</p>
+            <label className="flex items-center gap-2 cursor-pointer mb-5"><input type="checkbox" checked={commissionCfg.enabled} onChange={(e) => setCommissionCfg({ ...commissionCfg, enabled: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm text-gray-700">تفعيل نظام العمولة</span></label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Field label="نسبة العمولة (%)"><input type="number" min="0" max="100" step="0.5" value={commissionCfg.percentage} onChange={(e) => setCommissionCfg({ ...commissionCfg, percentage: e.target.value })} className={inputClass} dir="ltr" placeholder="مثال: 5" /></Field>
+              <Field label="حد أدنى للعمولة (ج.م)"><input type="number" min="0" step="0.5" value={commissionCfg.minCommission} onChange={(e) => setCommissionCfg({ ...commissionCfg, minCommission: e.target.value })} className={inputClass} dir="ltr" placeholder="مثال: 2" /></Field>
+              <Field label="حد أعلى للعمولة (ج.م)"><input type="number" min="0" step="0.5" value={commissionCfg.maxCommission} onChange={(e) => setCommissionCfg({ ...commissionCfg, maxCommission: e.target.value })} className={inputClass} dir="ltr" placeholder="مثال: 50" /></Field>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">مثال: طلب بقيمة 200 ج.م × {commissionCfg.percentage}% = {Number(commissionCfg.percentage) * 2} ج.م عمولة (بحد أدنى {commissionCfg.minCommission} ج.م وأعلى {commissionCfg.maxCommission} ج.م)</p>
+          </SettingsSection>
+
+          <SettingsSection title="خطط الاشتراك للصيدليات" icon={<BadgePercent className="w-5 h-5" />}>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed">الشهر الأول مجاني (عمولة بس). بعد كده الصيدلية بتختار خطة اشتراك شهري.</p>
+            <div className="space-y-3">
+              {commissionCfg.subscriptionPlans.map((plan, idx) => (
+                <div key={plan.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={plan.name}
+                        onChange={(e) => {
+                          const newPlans = [...commissionCfg.subscriptionPlans];
+                          newPlans[idx] = { ...plan, name: e.target.value };
+                          setCommissionCfg({ ...commissionCfg, subscriptionPlans: newPlans });
+                        }}
+                        className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold"
+                        placeholder="اسم الخطة"
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        value={plan.price}
+                        onChange={(e) => {
+                          const newPlans = [...commissionCfg.subscriptionPlans];
+                          newPlans[idx] = { ...plan, price: Number(e.target.value) || 0 };
+                          setCommissionCfg({ ...commissionCfg, subscriptionPlans: newPlans });
+                        }}
+                        className="w-28 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-bold"
+                        dir="ltr"
+                      />
+                      <span className="text-xs text-gray-400 font-bold">ج.م/شهر</span>
+                    </div>
+                    <input
+                      value={plan.description}
+                      onChange={(e) => {
+                        const newPlans = [...commissionCfg.subscriptionPlans];
+                        newPlans[idx] = { ...plan, description: e.target.value };
+                        setCommissionCfg({ ...commissionCfg, subscriptionPlans: newPlans });
+                      }}
+                      className="w-full mt-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-500"
+                      placeholder="وصف الخطة"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700 leading-relaxed">
+              <Info className="w-4 h-4 inline-block align-middle ms-1" />
+              الصيدليات الجدية بتاخد أول شهر مجاني. بعد كده بت挑 خطة اشتراك + العمولة بتفضل 5% على كل طلب.
+            </div>
+          </SettingsSection>
+        </div>
+      )}
+
       {settingsSubTab === 'contact' && (
         <div className="space-y-6">
           <SettingsSection title="معلومات التواصل" icon={<Phone className="w-5 h-5" />}>
@@ -571,7 +647,7 @@ export function SettingsTab() {
                 </h3>
                 <p className="text-xs text-gray-500 mt-1.5">تحكم في أقسام التذييل ونصوصه بالكامل — إظهار/إخفاء وتعديل المحتوى ثم احفظ من الأسفل.</p>
               </div>
-              <button type="button" onClick={() => { if (window.confirm('هل أنت متأكد من إعادة تعيين إعدادات التذييل إلى الافتراضي؟')) setFooterCfg({ ...DEFAULT_FOOTER_CONFIG }); }} className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all">إعادة تعيين الافتراضي</button>
+              <button type="button" onClick={() => setResetConfirm('footer')} className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all">إعادة تعيين الافتراضي</button>
             </div>
           </div>
           <SettingsSection title="أقسام التذييل" icon={<LayoutDashboard className="w-5 h-5" />}>
@@ -670,7 +746,19 @@ export function SettingsTab() {
           </button>
         </div>
       </div>
-      {toast && <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-white text-xs font-bold shadow-xl" style={{ backgroundColor: '#dc2626' }}>{toast}</div>}
+      <ConfirmModal
+        open={!!resetConfirm}
+        onClose={() => setResetConfirm(null)}
+        onConfirm={() => {
+          if (resetConfirm === 'hero') setHeroCfg({ ...DEFAULT_HERO_CONFIG });
+          else if (resetConfirm === 'footer') setFooterCfg({ ...DEFAULT_FOOTER_CONFIG });
+          setResetConfirm(null);
+        }}
+        title={resetConfirm === 'hero' ? 'إعادة تعيين إعدادات الهيرو' : 'إعادة تعيين إعدادات التذييل'}
+        message={resetConfirm === 'hero' ? 'هل أنت متأكد من إعادة تعيين إعدادات القسم الرئيسي إلى الافتراضي؟ جميع التغييرات الحالية ستُفقد.' : 'هل أنت متأكد من إعادة تعيين إعدادات التذييل إلى الافتراضي؟ جميع التغييرات الحالية ستُفقد.'}
+        danger
+        confirmLabel="إعادة التعيين"
+      />
     </div>
   );
 }

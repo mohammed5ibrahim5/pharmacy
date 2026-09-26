@@ -903,8 +903,7 @@ export function HomePage() {
         ) : activePharmacyTab === 'favorite' && displayedPharmacies.length === 0 ? (
           <div className="py-16 text-center bg-white rounded-3xl border border-gray-200 animate-fade-in">
             <div
-              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-              style={{ backgroundColor: '#fdf2f8' }}
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-pink-50"
             >
               <Heart className="w-8 h-8 text-pink-500" />
             </div>

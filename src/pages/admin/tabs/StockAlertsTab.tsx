@@ -3,6 +3,7 @@ import { BellRing, Trash2, Loader2, Pill } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { notifyStockAvailable } from '@/lib/loyalty';
+import { useToast, ConfirmModal } from './shared';
 
 type StockAlertRow = {
   id: string;
@@ -13,15 +14,12 @@ type StockAlertRow = {
 
 export function StockAlertsTab() {
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [list, setList] = useState<StockAlertRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [notifyingId, setNotifyingId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2200);
-  };
+  const [notifyTarget, setNotifyTarget] = useState<StockAlertRow | null>(null);
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
 
   const fetchAlerts = useCallback(async () => {
     setLoading(true);
@@ -39,35 +37,31 @@ export function StockAlertsTab() {
   }, [fetchAlerts]);
 
   const handleNotify = async (alert: StockAlertRow) => {
-    if (!confirm(`إرسال إشعار "الدواء أصبح متوفراً" لهذا العميل الآن وحذف طلبه؟`)) return;
     setNotifyingId(alert.id);
     const { error } = await supabase.from('products').update({ is_available: true }).eq('id', alert.product.id);
     if (!error) {
       await notifyStockAvailable(alert.product.id);
-      showToast('تم إرسال الإشعار وإعادة تفعيل المنتج');
+      toast('تم إرسال الإشعار وإعادة تفعيل المنتج');
+    } else {
+      toast('حدث خطأ', 'error');
     }
     setNotifyingId(null);
     fetchAlerts();
   };
 
   const handleDeleteAll = async () => {
-    if (!confirm('حذف جميع طلبات تنبيه التوفر؟')) return;
-    await supabase.from('stock_alerts').delete().neq('id', '');
+    const { error } = await supabase.from('stock_alerts').delete().neq('id', '');
+    if (error) { toast('حدث خطأ أثناء الحذف', 'error'); return; }
+    toast('تم حذف جميع الطلبات');
     fetchAlerts();
   };
 
   return (
     <div>
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl">
-          {toast}
-        </div>
-      )}
-
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h2 className="text-sm text-gray-500">طلبات "نبهني عند التوفر": {list.length}</h2>
         {list.length > 0 && (
-          <button onClick={handleDeleteAll} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 bg-white text-xs font-bold text-red-600 hover:bg-red-50">
+          <button onClick={() => setDeleteAllConfirm(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 bg-white text-xs font-bold text-red-600 hover:bg-red-50">
             <Trash2 className="w-3.5 h-3.5" /> حذف الكل
           </button>
         )}
@@ -106,7 +100,7 @@ export function StockAlertsTab() {
                   </span>
                   {!productAvailable && (
                     <button
-                      onClick={() => handleNotify(alert)}
+                      onClick={() => setNotifyTarget(alert)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-white text-[11px] font-bold hover:brightness-110 active:scale-95 transition-all"
                       style={{ backgroundColor: settings.primary_color }}
                     >
@@ -120,6 +114,23 @@ export function StockAlertsTab() {
           })}
         </div>
       )}
+      <ConfirmModal
+        open={!!notifyTarget}
+        onClose={() => setNotifyTarget(null)}
+        onConfirm={() => { if (notifyTarget) handleNotify(notifyTarget); setNotifyTarget(null); }}
+        title="إرسال إشعار التوفر"
+        message={`هل تريد إرسال إشعار "الدواء أصبح متوفراً" لهذا العميل؟`}
+        confirmLabel="إرسال"
+      />
+      <ConfirmModal
+        open={deleteAllConfirm}
+        onClose={() => setDeleteAllConfirm(false)}
+        onConfirm={() => { handleDeleteAll(); setDeleteAllConfirm(false); }}
+        title="حذف جميع الطلبات"
+        message="هل أنت متأكد من حذف جميع طلبات تنبيه التوفر؟ لا يمكن التراجع عن هذا الإجراء."
+        danger
+        confirmLabel="حذف الكل"
+      />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { translateError } from '@/lib/errorMessages';
 import { notifyStockAvailable } from '@/lib/loyalty';
-import { Field, Modal, ImageUrlField, inputClass } from './shared';
+import { Field, Modal, ImageUrlField, inputClass, useToast, ConfirmModal } from './shared';
 import type { Pharmacy, Product, Category } from '@/types';
 import { InventoryImportModal } from './InventoryImportModal';
 import { InventoryBatchModal } from './InventoryBatchModal';
@@ -13,6 +13,7 @@ const UNIT_OPTIONS = ['قطعة', 'شريط', 'علبة', 'زجاجة', 'أمب�
 
 export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -23,6 +24,7 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [batchProduct, setBatchProduct] = useState<Product | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -44,12 +46,12 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
   const filtered = products.filter((p) => !filterPharmacy || p.pharmacy_id === filterPharmacy).filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
   const handleDelete = async (id: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) {
-      alert('فشل حذف المنتج: ' + ((translateError(error.message).ar) || error.message));
+      toast('فشل حذف المنتج: ' + ((translateError(error.message).ar) || error.message), 'error');
       return;
     }
+    toast('تم حذف المنتج بنجاح');
     fetchProducts();
   };
 
@@ -116,7 +118,7 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
                       <td className="p-3"><div className="flex items-center justify-center gap-1">
                         <button onClick={() => { setEditing(product); setShowForm(true); }} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center"><Edit2 className="w-4 h-4 text-gray-600" /></button>
                         <button onClick={() => setBatchProduct(product)} className="w-8 h-8 rounded-lg hover:bg-teal-50 flex items-center justify-center" title="إدارة التشغيلات"><PackagePlus className="w-4 h-4 text-teal-600" /></button>
-                        <button onClick={() => handleDelete(product.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-4 h-4 text-red-500" /></button>
+                        <button onClick={() => setDeleteTarget(product.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-4 h-4 text-red-500" /></button>
                       </div></td>
                     </tr>
                   );
@@ -127,15 +129,17 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
         </div>
       )}
 
-      {showForm && <ProductForm product={editing} pharmacies={pharmacies} categories={categories} lockedPharmacy={pharmacyId ? { id: pharmacyId, name: '' } : undefined} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchProducts(); setShowForm(false); setEditing(null); }} />}
+      {showForm && <ProductForm product={editing} pharmacies={pharmacies} categories={categories} lockedPharmacy={pharmacyId ? { id: pharmacyId, name: '' } : undefined} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchProducts(); setShowForm(false); setEditing(null); toast('تم الحفظ بنجاح'); }} />}
       {showImport && <InventoryImportModal lockedPharmacyId={pharmacyId} onClose={() => setShowImport(false)} onSaved={() => { fetchProducts(); setShowImport(false); }} />}
       {batchProduct && <InventoryBatchModal productId={batchProduct.id} productName={batchProduct.name} onClose={() => setBatchProduct(null)} onSaved={() => { fetchProducts(); }} />}
+      <ConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) handleDelete(deleteTarget); setDeleteTarget(null); }} title="حذف المنتج" message="هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء." danger confirmLabel="حذف" />
     </div>
   );
 }
 
 export function ProductForm({ product, pharmacies, categories, onClose, onSaved, lockedPharmacy }: { product: Product | null; pharmacies: Pharmacy[]; categories: Category[]; onClose: () => void; onSaved: () => void; lockedPharmacy?: { id: string; name: string } }) {
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [form, setForm] = useState({
     name: product?.name || '', name_en: product?.name_en || '', description: product?.description || '',
     price: product?.price?.toString() || '', unit: product?.unit || 'قطعة', image_url: product?.image_url || '',
@@ -184,7 +188,7 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
     setSaving(false);
     if (saveErr) {
       const msg = (saveErr as { message?: string })?.message || '';
-      alert('فشل حفظ المنتج: ' + (translateError(msg).ar || msg));
+      toast('فشل حفظ المنتج: ' + (translateError(msg).ar || msg), 'error');
       return;
     }
     onSaved();

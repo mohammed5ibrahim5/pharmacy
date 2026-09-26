@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Store, Plus, Edit2, Trash2, Search, MapPin, Phone, Star, Truck, Save,
+  Plus, Edit2, Trash2, Search, MapPin, Phone, Star, Truck, Save,
   Clock, Shield, Loader2, Check, Copy, ExternalLink, Navigation, Link2,
-  KeyRound, UserCog, X, Info,
+  KeyRound, UserCog,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
@@ -10,7 +10,7 @@ import { translateError } from '@/lib/errorMessages';
 import {
   PHARMACY_SECTION_KEYS, PHARMACY_SECTIONS_META, type PharmacySectionKey,
 } from '@/lib/pharmacySections';
-import { Field, Modal, ImageUrlField, inputClass } from './shared';
+import { Field, Modal, ImageUrlField, inputClass, useToast } from './shared';
 import type { Pharmacy, PharmacyOwner } from '@/types';
 
 export function PharmaciesTab() {
@@ -145,6 +145,13 @@ export function PharmaciesTab() {
                   <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{pharmacy.phone}</span>
                   {pharmacy.delivery_available && <span className="flex items-center gap-1"><Truck className="w-3 h-3" />توصيل</span>}
                   {pharmacy.accept_insurance && <span className="flex items-center gap-1"><Shield className="w-3 h-3" />تأمين</span>}
+                  <span className="text-amber-600 font-bold">
+                    {pharmacy.commission_rate ? `${pharmacy.commission_rate}%` : '5%'} عمولة
+                  </span>
+                  <span className="text-blue-600 font-bold">
+                    {pharmacy.subscription_plan === 'enterprise' ? 'مؤسسات' :
+                     pharmacy.subscription_plan === 'pro' ? 'احترافية' : 'أساسية'}
+                  </span>
                 </div>
 
                 {/* Pharmacy owner account */}
@@ -402,7 +409,7 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
               <Field label="رقم الهاتف"><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} dir="ltr" placeholder="01012345678" /></Field>
             </div>
             <Field label="البريد الإلكتروني *"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} dir="ltr" placeholder="owner@example.com" /></Field>
-            <Field label="كلمة المرور * (6 أحرف على الأقل)"><input type="text" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} dir="ltr" placeholder="••••••••" /></Field>
+            <Field label="كلمة المرور * (6 أحرف على الأقل)"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} dir="ltr" placeholder="••••••••" /></Field>
             <button onClick={handleCreate} disabled={saving} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-white text-sm font-bold disabled:opacity-50 hover:brightness-110 active:scale-[0.99] transition-all" style={{ backgroundColor: settings.primary_color }}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCog className="w-4 h-4" />} إنشاء حساب المالك
             </button>
@@ -419,6 +426,7 @@ function OwnerAccountModal({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy;
 
 export function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmacy | null; onClose: () => void; onSaved: () => void }) {
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [form, setForm] = useState({
     name: pharmacy?.name || '', name_en: pharmacy?.name_en || '', description: pharmacy?.description || '',
     logo_url: pharmacy?.logo_url || '', cover_url: pharmacy?.cover_url || '',
@@ -430,6 +438,8 @@ export function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmac
     opening_hours: pharmacy?.opening_hours || '', is_24h: pharmacy?.is_24h ?? false,
     has_parking: pharmacy?.has_parking ?? false, accept_insurance: pharmacy?.accept_insurance ?? false,
     website_url: pharmacy?.website_url || '', pharmacy_type: pharmacy?.pharmacy_type || 'حديثة',
+    commission_rate: pharmacy?.commission_rate?.toString() || '',
+    subscription_plan: pharmacy?.subscription_plan || 'basic',
   });
   const [saving, setSaving] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -461,12 +471,12 @@ export function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmac
 
   const handleSave = async () => {
     setSaving(true);
-    const payload = { ...form, latitude: parseFloat(form.latitude) || 0, longitude: parseFloat(form.longitude) || 0, rating: parseFloat(form.rating) || 5.0, delivery_fee: parseFloat(form.delivery_fee) || 0, updated_at: new Date().toISOString() };
+    const payload = { ...form, latitude: parseFloat(form.latitude) || 0, longitude: parseFloat(form.longitude) || 0, rating: parseFloat(form.rating) || 5.0, delivery_fee: parseFloat(form.delivery_fee) || 0, commission_rate: form.commission_rate ? parseFloat(form.commission_rate) : null, updated_at: new Date().toISOString() };
     const { error } = pharmacy
       ? await supabase.from('pharmacies').update(payload).eq('id', pharmacy.id)
       : await supabase.from('pharmacies').insert(payload);
     setSaving(false);
-    if (error) { alert('فشل حفظ الصيدلية: ' + (translateError(error.message).ar || error.message)); return; }    onSaved();
+    if (error) { toast('فشل حفظ الصيدلية: ' + (translateError(error.message).ar || error.message), 'error'); return; }    onSaved();
   };
 
   return (
@@ -528,6 +538,10 @@ export function PharmacyForm({ pharmacy, onClose, onSaved }: { pharmacy: Pharmac
           <Field label="رسوم التوصيل"><input value={form.delivery_fee} onChange={(e) => setForm({ ...form, delivery_fee: e.target.value })} className={inputClass} dir="ltr" type="number" /></Field>
           <Field label="المدينة"><input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className={inputClass} placeholder="القاهرة" /></Field>
           <Field label="نوع الصيدلية"><select value={form.pharmacy_type} onChange={(e) => setForm({ ...form, pharmacy_type: e.target.value })} className={inputClass}><option value="حديثة">حديثة</option><option value="شعبية">شعبية</option><option value="متخصصة">متخصصة</option></select></Field>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <Field label="نسبة العمولة (% — فارغ = الافتراضي 5%)"><input value={form.commission_rate} onChange={(e) => setForm({ ...form, commission_rate: e.target.value })} className={inputClass} dir="ltr" type="number" min="0" max="100" step="0.5" placeholder="5" /></Field>
+          <Field label="خطة الاشتراك"><select value={form.subscription_plan} onChange={(e) => setForm({ ...form, subscription_plan: e.target.value })} className={inputClass}><option value="basic">الأساسية (مجاناً)</option><option value="pro">الاحترافية (500 ج.م/شهر)</option><option value="enterprise">المؤسسات (1500 ج.م/شهر)</option></select></Field>
         </div>
         <Field label="رابط موقع الصيدلية"><input value={form.website_url} onChange={(e) => setForm({ ...form, website_url: e.target.value })} className={inputClass} dir="ltr" placeholder="https://..." /></Field>
         <ImageUrlField label="رابط شعار الصيدلية (Logo)" value={form.logo_url} onChange={(v) => setForm({ ...form, logo_url: v })} />

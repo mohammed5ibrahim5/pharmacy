@@ -32,6 +32,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { BarcodeScannerModal } from '@/components/BarcodeScannerModal';
 import { LocationSelectorModal } from '@/components/LocationSelectorModal';
 import { PrescriptionUploadModal } from '@/components/PrescriptionUploadModal';
+import { SymptomCheckerModal } from '@/components/SymptomCheckerModal';
 import { useOrder } from '@/context/OrderContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { supabase } from '@/lib/supabase';
@@ -78,6 +79,7 @@ export function Header() {
   const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
+  const [symptomModalOpen, setSymptomModalOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Product[]>([]);
@@ -595,6 +597,21 @@ export function Header() {
                 <Moon className={`absolute inset-0 m-auto w-[19px] h-[19px] transition-all duration-300 ${darkMode ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} strokeWidth={2.25} />
               </button>
 
+              {/* فاحص الأعراض الذكي زر هيدر */}
+              <button
+                onClick={() => setSymptomModalOpen(true)}
+                className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-full border text-xs font-bold transition-all duration-200 hover:scale-105"
+                style={{
+                  backgroundColor: `${themeColors.primaryColor}15`,
+                  color: themeColors.primaryColor,
+                  borderColor: `${themeColors.primaryColor}30`,
+                }}
+                title={t('فاحص الأعراض المبدئي')}
+              >
+                <Pill className="w-4 h-4 animate-bounce" />
+                <span>{t('فاحص الأعراض')}</span>
+              </button>
+
               <NotificationsBell />
 
               <button
@@ -908,6 +925,10 @@ export function Header() {
       <PrescriptionUploadModal
         open={prescriptionModalOpen}
         onClose={() => setPrescriptionModalOpen(false)}
+      />
+      <SymptomCheckerModal
+        isOpen={symptomModalOpen}
+        onClose={() => setSymptomModalOpen(false)}
       />
     </>
   );

@@ -41,6 +41,21 @@ export interface PaymentConfig {
   shippingNote: string;
 }
 
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+}
+
+export interface CommissionConfig {
+  enabled: boolean;
+  percentage: string;
+  minCommission: string;
+  maxCommission: string;
+  subscriptionPlans: SubscriptionPlan[];
+}
+
 export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
   vodafoneCash: '',
   instapay: '',
@@ -50,6 +65,18 @@ export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
   showOnlinePayment: true,
   cashOnDeliveryFee: '10',
   shippingNote: 'التوصيل داخل المعادي خلال 30 دقيقة، وفي باقي المناطق خلال 24 ساعة',
+};
+
+export const DEFAULT_COMMISSION_CONFIG: CommissionConfig = {
+  enabled: false,
+  percentage: '5',
+  minCommission: '2',
+  maxCommission: '50',
+  subscriptionPlans: [
+    { id: 'basic', name: 'الأساسية', price: 0, description: 'عمولة 5% فقط' },
+    { id: 'pro', name: 'الاحترافية', price: 500, description: '500 ج.م شهرياً + عمولة 5%' },
+    { id: 'enterprise', name: 'المؤسسات', price: 1500, description: '1500 ج.م شهرياً + عمولة 5% + دعم مخصص' },
+  ],
 };
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {

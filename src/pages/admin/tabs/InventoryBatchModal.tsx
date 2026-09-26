@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, CalendarDays, PackagePlus, Save, Trash2, X } from 'lucide-react';
+import { AlertTriangle, CalendarDays, PackagePlus, Save, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Modal, inputClass } from './shared';
 

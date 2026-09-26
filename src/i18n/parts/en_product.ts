@@ -1,4 +1,4 @@
-﻿export const en_product: Record<string, string> = {
+export const en_product: Record<string, string> = {
   'خصم {0}%': '{0}% off',
   'وفر {0}%': 'Save {0}%',
   'نظرة سريعة': 'Quick view',
@@ -93,7 +93,6 @@
 
   // PriceCompareModal
   'قارن': 'Compare',
-  'قارن الأسعار': 'Compare prices',
   'قارن الأسعار': 'Compare prices',
   'السعر الحالي': 'Current price',
   'نفس الدواء في صيدليات أخرى ({0})': 'Same medicine at other pharmacies ({0})',

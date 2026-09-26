@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { BadgePercent, X, Copy, Check, ShoppingBag, Ticket } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
@@ -14,11 +14,11 @@ export function WelcomePopup() {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const endOfDay = (() => {
+  const endOfDay = useMemo(() => {
     const d = new Date();
     d.setHours(23, 59, 59, 999);
     return d;
-  })();
+  }, []);
   const countdown = useCountdown(open && welcomeConfig.showCountdown ? endOfDay : null);
 
   useEffect(() => {

@@ -33,6 +33,9 @@ export interface Pharmacy {
   accept_insurance: boolean;
   website_url: string | null;
   pharmacy_type: string | null;
+  commission_rate: number | null;
+  subscription_plan: string | null;
+  subscription_started_at: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -2,23 +2,22 @@ import { useState, useEffect, useCallback } from 'react';
 import { MessageSquareQuote, Plus, Trash2, Eye, EyeOff, Star, ChevronUp, ChevronDown, X, Check, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
+import { useToast, ConfirmModal } from './shared';
 import type { Pharmacy, Review } from '@/types';
 
 export function ReviewsTab() {
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [list, setList] = useState<Review[]>([]);
   const [pharmacies, setPharmacies] = useState<Pick<Pharmacy, 'id' | 'name'>[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [form, setForm] = useState({ pharmacy_id: '', customer_name: '', rating: 5, comment: '', is_visible: true });
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2200);
-  };
+  const showToast = (msg: string) => { toast(msg); };
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -65,8 +64,8 @@ export function ReviewsTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('حذف هذا التقييم نهائياً؟')) return;
-    await supabase.from('reviews').delete().eq('id', id);
+    const { error } = await supabase.from('reviews').delete().eq('id', id);
+    if (error) { toast('حدث خطأ أثناء الحذف', 'error'); return; }
     showToast('تم حذف التقييم');
     fetchReviews();
   };
@@ -108,12 +107,6 @@ export function ReviewsTab() {
 
   return (
     <div>
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl animate-fade-in">
-          {toast}
-        </div>
-      )}
-
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h2 className="text-sm text-gray-500">إدارة تقييمات العملاء — إظهار/إخفاء وترتيب يظهر كما هو في المتجر</h2>
@@ -175,7 +168,7 @@ export function ReviewsTab() {
                     ) : r.is_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                     {r.is_visible ? 'ظاهر' : 'مخفي'}
                   </button>
-                  <button onClick={() => handleDelete(r.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center" title="حذف">
+                  <button onClick={() => setDeleteTarget(r.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center" title="حذف">
                     <Trash2 className="w-3.5 h-3.5 text-red-500" />
                   </button>
                 </div>
@@ -257,6 +250,7 @@ export function ReviewsTab() {
           </div>
         </div>
       )}
+      <ConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) handleDelete(deleteTarget); setDeleteTarget(null); }} title="حذف التقييم" message="هل أنت متأكد من حذف هذا التقييم نهائياً؟ لا يمكن التراجع عن هذا الإجراء." danger confirmLabel="حذف" />
     </div>
   );
 }

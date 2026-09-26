@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Package, Store, ShoppingCart, Layers, MapPin, Info, Wallet, Truck, Send,
-  Printer, Loader2, BadgeCheck, Banknote, Image as ImageIcon, BellRing, Timer,
+  Printer, Image as ImageIcon, BellRing, Timer, Search as SearchIcon, Download, Coins,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
@@ -16,6 +16,7 @@ import { insertNotification } from '@/lib/notifications';
 import { awardLoyaltyPoints } from '@/lib/loyalty';
 import type { Pharmacy, Product } from '@/types';
 import { soundAlert } from '@/lib/soundAlert';
+import { useToast } from './shared';
 
 interface OrderRecord {
   id: string;
@@ -50,6 +51,7 @@ interface OrderGroupRecord {
   payment_screenshot_url: string | null;
   delivery_fee: number;
   total_price: number;
+  platform_commission: number;
   created_at: string;
 }
 
@@ -66,23 +68,22 @@ interface GroupView {
   payment_number: string | null;
   payment_screenshot_url: string | null;
   total: number;
+  platform_commission: number;
 }
 
 export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
-  const { settings, loyaltyConfig } = useSettings();
+  const { settings, loyaltyConfig, commissionConfig } = useSettings();
+  const { toast } = useToast();
   const [list, setList] = useState<OrderRecord[]>([]);
   const [groups, setGroups] = useState<OrderGroupRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | (typeof ORDER_STATUSES)[number]>('all');
-  const [toast, setToast] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [invoiceView, setInvoiceView] = useState<GroupView | null>(null);
   const [newOrderAlert, setNewOrderAlert] = useState(false);
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2200);
-  };
+  const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -94,7 +95,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
     if (pharmacyId) query = query.eq('pharmacy_id', pharmacyId);
     const { data, error } = await query;
     setList((data || []) as OrderRecord[]);
-    if (error) showToast(translateError(error.message).ar);
+    if (error) toast(translateError(error.message).ar);
     const { data: gData } = await supabase
       .from('order_groups')
       .select('*')
@@ -123,8 +124,8 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
 
   const acceptOrder = async (orderId: string, accepted: boolean) => {
     const { error } = await supabase.rpc('accept_pharmacy_order', { p_order_id: orderId, p_accept: accepted });
-    if (error) showToast(translateError(error.message).ar);
-    else { showToast(accepted ? 'تم قبول الطلب' : 'تم رفض الطلب'); await fetchOrders(); }
+    if (error) toast(translateError(error.message).ar);
+    else { toast(accepted ? 'تم قبول الطلب' : 'تم رفض الطلب'); await fetchOrders(); }
   };
 
   const views = useMemo<GroupView[]>(() => {
@@ -156,6 +157,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
         payment_number: grp?.payment_number ?? first?.payment_number ?? null,
         payment_screenshot_url: grp?.payment_screenshot_url ?? first?.payment_screenshot_url ?? null,
         total: grp ? Number(grp.total_price || 0) : orders.reduce((s, o) => s + Number(o.total_price || 0), 0),
+        platform_commission: Number(grp?.platform_commission || 0),
       });
     });
     standalone.forEach((o) => {
@@ -172,6 +174,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
         payment_number: o.payment_number,
         payment_screenshot_url: o.payment_screenshot_url,
         total: Number(o.total_price || 0),
+        platform_commission: 0,
       });
     });
     result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -209,7 +212,7 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
     }
     setUpdatingId(null);
     if (errors.length > 0) {
-      showToast(translateError(errors[0]).ar);
+      toast(translateError(errors[0]).ar);
     } else {
       await fetchOrders();
       const first = scopedOrders[0];
@@ -235,27 +238,118 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
             
             if (earnedPoints > 0) {
               await awardLoyaltyPoints(first.customer_id, earnedPoints, `مكافأة طلب ${isScopedGroup ? 'موحّد' : ''} من ${groups.length} صيدلية`);
-              showToast(`تم منح ${earnedPoints} نقطة ولاء للعميل`);
+              toast(`تم منح ${earnedPoints} نقطة ولاء للعميل`);
             }
           } catch (loyaltyErr) {
             console.error('Failed to award loyalty points:', loyaltyErr);
           }
         }
       }
-      showToast('تم تحديث حالة الطلب بنجاح');
+      toast('تم تحديث حالة الطلب بنجاح');
     }
   };
 
-  const filtered = filter === 'all' ? views : views.filter((v) => v.status === filter);
+  const filtered = useMemo(() => {
+    let result = filter === 'all' ? views : views.filter((v) => v.status === filter);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter((v) => {
+        const customerName = v.orders[0]?.customer?.full_name?.toLowerCase() || '';
+        const customerPhone = v.orders[0]?.customer?.phone || '';
+        const productId = v.key.toLowerCase();
+        const address = v.address?.toLowerCase() || '';
+        return customerName.includes(q) || customerPhone.includes(q) || productId.includes(q) || address.includes(q);
+      });
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom).getTime();
+      result = result.filter((v) => new Date(v.created_at).getTime() >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo + 'T23:59:59').getTime();
+      result = result.filter((v) => new Date(v.created_at).getTime() <= to);
+    }
+    return result;
+  }, [views, filter, search, dateFrom, dateTo]);
+
+  const exportCSV = useCallback(() => {
+    const headers = ['التاريخ', 'الحالة', 'العميل', 'الهاتف', 'المنتج', 'الصيدلية', 'الكمية', 'السعر', 'عمولة المنصة', 'العنوان', 'ملاحظات'];
+    const rows = filtered.map((v) => {
+      const o = v.orders[0];
+      return [
+        new Date(v.created_at).toLocaleDateString('ar-EG'),
+        v.status,
+        o.customer?.full_name || '',
+        o.customer?.phone || '',
+        v.orders.map((x) => x.product?.name || '').join(' + '),
+        v.orders.map((x) => x.pharmacy?.name || '').join(' + '),
+        v.orders.reduce((s, x) => s + x.quantity, 0),
+        Number(v.total).toFixed(2),
+        Number(v.platform_commission).toFixed(2),
+        v.address || '',
+        v.note || '',
+      ];
+    });
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('تم تصدير البيانات بنجاح');
+  }, [filtered, toast]);
 
   return (
     <div className="space-y-5">
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-gray-900 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl animate-fade-in">
-          {toast}
-        </div>
-      )}
       {newOrderAlert && <button onClick={() => setNewOrderAlert(false)} className="fixed top-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-teal-700 px-5 py-3 text-xs font-black text-white shadow-xl"><BellRing className="h-4 w-4" />طلب جديد وصل للصيدلية — اضغط للإخفاء</button>}
+
+      {/* Search + Date filter */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+        <div className="relative flex-1">
+          <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="بحث بالاسم أو رقم الهاتف أو العنوان..."
+            className="w-full pr-10 pl-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-300"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-300"
+          />
+          <span className="text-xs text-gray-400 font-bold">←</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-300"
+          />
+          {(search || dateFrom || dateTo) && (
+            <button
+              onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); }}
+              className="px-3 py-2.5 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold hover:bg-gray-200 transition-colors"
+            >
+              مسح الفلتر
+            </button>
+          )}
+          {filtered.length > 0 && (
+            <button
+              onClick={exportCSV}
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 text-xs font-bold hover:bg-teal-100 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              تصدير CSV
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -471,6 +565,14 @@ export function OrdersTab({ pharmacyId }: { pharmacyId?: string }) {
                           <Truck className="w-3 h-3" /> رسوم التوصيل
                         </span>
                         <span className="text-gray-700">{deliveryFee.toFixed(2)} ج.م</span>
+                      </div>
+                    )}
+                    {view.platform_commission > 0 && (
+                      <div className="flex items-center justify-between text-[11px] font-bold text-amber-600">
+                        <span className="flex items-center gap-1">
+                          <Coins className="w-3 h-3" /> عمولة المنصة ({commissionConfig.percentage}%)
+                        </span>
+                        <span>{view.platform_commission.toFixed(2)} ج.م</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between pt-1 border-t border-gray-100">

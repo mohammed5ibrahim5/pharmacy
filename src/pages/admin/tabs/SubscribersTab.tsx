@@ -2,12 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { Inbox, Mail, Trash2, Copy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSettings } from '@/context/SettingsContext';
+import { useToast, ConfirmModal } from './shared';
 import type { NewsletterSubscriber } from '@/types';
 
 export function SubscribersTab() {
   const { settings } = useSettings();
+  const { toast } = useToast();
   const [list, setList] = useState<NewsletterSubscriber[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const fetchSubs = useCallback(async () => {
     setLoading(true);
@@ -21,8 +24,9 @@ export function SubscribersTab() {
   }, [fetchSubs]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('حذف هذا المشترك؟')) return;
-    await supabase.from('newsletter_subscribers').delete().eq('id', id);
+    const { error } = await supabase.from('newsletter_subscribers').delete().eq('id', id);
+    if (error) { toast('حدث خطأ أثناء الحذف', 'error'); return; }
+    toast('تم الحذف بنجاح');
     fetchSubs();
   };
 
@@ -55,11 +59,12 @@ export function SubscribersTab() {
                 <p className="text-sm font-medium text-gray-800 truncate" dir="ltr">{s.email}</p>
                 <p className="text-[11px] text-gray-400">اشترك في {new Date(s.created_at).toLocaleDateString('ar-EG')}</p>
               </div>
-              <button onClick={() => handleDelete(s.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
+              <button onClick={() => setDeleteTarget(s.id)} className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
             </div>
           ))}
         </div>
       )}
+      <ConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) handleDelete(deleteTarget); setDeleteTarget(null); }} title="حذف المشترك" message="هل أنت متأكد من حذف هذا المشترك؟" danger confirmLabel="حذف" />
     </div>
   );
 }
