@@ -6,6 +6,7 @@ build/
 
 # Flutter
 dawai_app/dawai-app.apk
+dawai_app/.metadata
 
 # IDE
 .vscode/
