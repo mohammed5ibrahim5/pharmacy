@@ -95,10 +95,14 @@ class PharmacyCardShimmer extends StatelessWidget {
                 const ShimmerBox(width: 100, height: 14),
                 const SizedBox(height: 12),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const ShimmerBox(width: 80, height: 14),
-                    const ShimmerBox(width: 60, height: 14),
+                    const Flexible(
+                      child: ShimmerBox(width: 80, height: 14),
+                    ),
+                    const SizedBox(width: 8),
+                    const Flexible(
+                      child: ShimmerBox(width: 60, height: 14),
+                    ),
                   ],
                 ),
               ],
