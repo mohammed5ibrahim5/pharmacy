@@ -33,6 +33,28 @@ jobs:
 
       - run: flutter pub get
       - run: flutter analyze --no-pub || true
+
+      # Release signing. build.gradle.kts hard-gates packageRelease on
+      # android/key.properties (git-ignored, never committed), so the two files
+      # are restored from repository secrets before the build. Secrets hold
+      # base64 of the exact local files: key.properties stays byte-identical,
+      # and its relative storeFile=upload-keystore.jks resolves against
+      # android/app/, where the keystore is written here.
+      - name: Restore release signing
+        env:
+          KS_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_B64 }}
+          KP_B64: ${{ secrets.ANDROID_KEY_PROPERTIES_B64 }}
+        run: |
+          set -euo pipefail
+          test -n "$KS_B64" || { echo "ANDROID_UPLOAD_KEYSTORE_B64 secret is empty/missing" >&2; exit 1; }
+          test -n "$KP_B64" || { echo "ANDROID_KEY_PROPERTIES_B64 secret is empty/missing" >&2; exit 1; }
+          printf '%s' "$KS_B64" | base64 -d > android/app/upload-keystore.jks
+          printf '%s' "$KP_B64" | base64 -d > android/key.properties
+          # Fail fast with a readable message instead of Gradle's gate.
+          test -s android/app/upload-keystore.jks || { echo "keystore decoded to an empty file" >&2; exit 1; }
+          test -s android/key.properties || { echo "key.properties decoded to an empty file" >&2; exit 1; }
+          echo "release signing restored: $(wc -c < android/app/upload-keystore.jks) byte keystore"
+
       - run: flutter build apk --release --no-pub
 
       - uses: actions/upload-artifact@v4
