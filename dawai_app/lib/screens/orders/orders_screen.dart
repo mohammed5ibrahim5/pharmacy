@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
 import '../../models/order.dart';
+import '../../core/utils/format.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -35,19 +38,60 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final signedIn = _api.currentUser != null;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('طلباتي', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         elevation: 0,
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : _hasError
-              ? _buildErrorState()
-              : _orders.isEmpty
-                  ? _buildEmptyState()
-                  : _buildOrdersList(),
+      body: !signedIn
+          // getMyOrders() returns an empty list for guests, which used to be
+          // rendered as "no orders yet" — misleading for someone who simply
+          // has not signed in.
+          ? _buildGuestState()
+          : _loading
+              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+              : _hasError
+                  ? _buildErrorState()
+                  : _orders.isEmpty
+                      ? _buildEmptyState()
+                      : _buildOrdersList(),
+    );
+  }
+
+  Widget _buildGuestState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), shape: BoxShape.circle),
+              child: const Icon(Icons.receipt_long_rounded, size: 56, color: AppColors.primary),
+            ),
+            const SizedBox(height: 20),
+            Text('سجّل دخولك لعرض طلباتك', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            Text('تتبّع الطلبات وسجل الشراء متاح بعد تسجيل الدخول.',
+                style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)), textAlign: TextAlign.center),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => context.push('/login'),
+              icon: const Icon(Icons.login_rounded, size: 20),
+              label: Text('تسجيل الدخول', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -58,13 +102,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(color: AppColors.errorSurface, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.errorSurfaceOf(context), shape: BoxShape.circle),
             child: const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.error),
           ),
           const SizedBox(height: 16),
           Text('فشل تحميل الطلبات', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text('تحقق من الاتصال بالإنترنت', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+          Text('تحقق من الاتصال بالإنترنت', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: _load,
@@ -85,13 +129,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(color: AppColors.primarySurface, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), shape: BoxShape.circle),
               child: const Icon(Icons.receipt_long_rounded, size: 64, color: AppColors.primary),
             ),
             const SizedBox(height: 20),
             Text('ما في طلبات بعد', style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            Text('ابدأ بالتسوق واطلب أدوية بكل سهولة', style: GoogleFonts.tajawal(color: AppColors.textMuted, fontSize: 14), textAlign: TextAlign.center),
+            Text('ابدأ بالتسوق واطلب أدوية بكل سهولة', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context), fontSize: 14), textAlign: TextAlign.center),
             const SizedBox(height: 28),
             ElevatedButton(
               onPressed: () => context.go('/'),
@@ -112,6 +156,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.separated(
+        // With 0-2 orders the list cannot overscroll on its own, so
+        // pull-to-refresh would otherwise never trigger on the common case.
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         itemCount: _orders.length,
         separatorBuilder: (_, _) => const SizedBox(height: 12),
@@ -128,17 +175,18 @@ class _OrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = AppColors.getStatusColor(order.status);
-    final statusLabel = AppColors.getStatusLabel(order.status);
-    final shortId = order.id.length > 8 ? order.id.substring(0, 8) : order.id;
+    final statusLabel =
+        context.watch<LanguageProvider>().statusLabel(order.status);
+    final orderRef = shortId(order.id);
 
     return InkWell(
       onTap: () => context.push('/order/${order.id}'),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceOf(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.borderOf(context)),
           boxShadow: AppShadow.sm,
         ),
         padding: const EdgeInsets.all(16),
@@ -148,7 +196,7 @@ class _OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('طلب #$shortId', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.text)),
+                Text('طلب #$orderRef', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textOf(context))),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -162,13 +210,13 @@ class _OrderCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.textMuted),
+                Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.textMutedOf(context)),
                 const SizedBox(width: 6),
-                Text(_formatDate(order.createdAt), style: GoogleFonts.tajawal(color: AppColors.textSecondary, fontSize: 13)),
+                Text(_formatDate(order.createdAt), style: GoogleFonts.tajawal(color: AppColors.textSecondaryOf(context), fontSize: 13)),
                 const SizedBox(width: 16),
-                const Icon(Icons.inventory_2_outlined, size: 14, color: AppColors.textMuted),
+                Icon(Icons.inventory_2_outlined, size: 14, color: AppColors.textMutedOf(context)),
                 const SizedBox(width: 6),
-                Text('${order.orders.length} ${order.orders.length == 1 ? 'منتج' : 'منتجات'}', style: GoogleFonts.tajawal(color: AppColors.textSecondary, fontSize: 13)),
+                Text('${order.orders.length} ${order.orders.length == 1 ? 'منتج' : 'منتجات'}', style: GoogleFonts.tajawal(color: AppColors.textSecondaryOf(context), fontSize: 13)),
               ],
             ),
             const Padding(
@@ -178,7 +226,7 @@ class _OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('الإجمالي', style: GoogleFonts.tajawal(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text('الإجمالي', style: GoogleFonts.tajawal(color: AppColors.textSecondaryOf(context), fontSize: 13, fontWeight: FontWeight.w600)),
                 Text('${order.totalPrice.toStringAsFixed(0)} ج.م', style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 17)),
               ],
             ),

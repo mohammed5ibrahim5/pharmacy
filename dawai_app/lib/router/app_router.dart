@@ -16,6 +16,7 @@ import '../screens/category/category_screen.dart';
 import '../screens/health/health_screen.dart';
 import '../screens/health/refill_reminder_screen.dart';
 import '../screens/loyalty/loyalty_screen.dart';
+import '../screens/errors/not_found_screen.dart';
 import '../widgets/main_scaffold.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -61,4 +62,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/loyalty', builder: (_, _) => const LoyaltyScreen()),
     GoRoute(path: '/refill-reminder', builder: (_, _) => const RefillReminderScreen()),
   ],
+  // Deep links, typos and stale notification URLs used to land on go_router's
+  // default page, which reads like a stack trace.
+  errorBuilder: (_, state) => NotFoundScreen(uri: state.uri),
 );

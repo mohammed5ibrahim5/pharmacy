@@ -31,6 +31,17 @@ class LanguageProvider extends ChangeNotifier {
     return _translations[_currentLanguageCode]?[key] ?? key;
   }
 
+  /// Label for an order status, from the shared `status_*` keys.
+  ///
+  /// Anything the translation table does not know yet is passed through
+  /// verbatim rather than showing the raw key, so a status added on the
+  /// backend still renders while the missing entry gets filled in.
+  String statusLabel(String status) {
+    final key = 'status_$status';
+    final translated = t(key);
+    return translated == key ? status : translated;
+  }
+
   Future<void> _loadSavedLanguage() async {
     try {
       final prefs = await SharedPreferences.getInstance();

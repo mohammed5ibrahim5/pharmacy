@@ -55,7 +55,7 @@ class HealthTipsSection extends StatelessWidget {
                       Icon(t['icon'] as IconData, color: color, size: 26),
                       const Spacer(),
                       Text(t['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13)),
-                      Text(t['desc'] as String, style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMuted)),
+                      Text(t['desc'] as String, style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMutedOf(context))),
                     ],
                   ),
                 );

@@ -331,6 +331,31 @@ if (-not (Test-Path -LiteralPath (Join-Path $RepoRoot '.git'))) {
     throw "Not a git repository: $RepoRoot"
 }
 
+# ---- release signing -----------------------------------------------------
+# An APK signed with the debug keystore can be re-signed by anyone (the debug
+# password is public knowledge) and Play rejects it outright, so a release
+# must never leave this machine without the real keystore.
+$keystorePropsPath = Join-Path $AppDir 'android\key.properties'
+$keystorePath      = Join-Path $AppDir 'android\app\upload-keystore.jks'
+if (-not (Test-Path -LiteralPath $keystorePropsPath)) {
+    $msg = @(
+        "Missing $keystorePropsPath."
+        'Generate a release keystore first, e.g.'
+        '  keytool -genkeypair -v -keystore android/app/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload -storepass <pass> -keypass <pass> -dname "CN=Dawai,O=Dawai,L=Cairo,C=EG"'
+        'then create android/key.properties with storeFile, storePassword, keyAlias and keyPassword.'
+    ) -join [Environment]::NewLine
+    throw $msg
+}
+if (-not (Test-Path -LiteralPath $keystorePath)) {
+    throw "android/key.properties exists but the keystore it points at is missing: $keystorePath"
+}
+foreach ($secretPath in @('dawai_app/android/key.properties', 'dawai_app/android/app/upload-keystore.jks')) {
+    $tracked = @((Invoke-Git -GitArgs @('ls-files', '--', $secretPath) -Quiet -AllowFail).Output)
+    if ($tracked.Count -gt 0) {
+        throw "$secretPath is tracked by git - it must be ignored. Run: git rm --cached '$secretPath'"
+    }
+}
+
 $branch = (Invoke-Git -GitArgs @('rev-parse', '--abbrev-ref', 'HEAD') -Quiet).Output[0]
 if ($branch -ne 'master') {
     throw "This script must run on branch 'master' (current: $branch). The OTA manifest URL is pinned to /master/."

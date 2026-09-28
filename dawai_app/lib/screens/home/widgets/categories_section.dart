@@ -3,12 +3,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../../../models/category.dart';
-import '../../../models/product.dart';
 import '../../../shared/widgets/loading_widget.dart';
 
 class CategoriesSection extends StatefulWidget {
   final List<Category> categories;
-  final List<Product> products;
+
+  /// Products-per-category, keyed by category id. Kept as counts rather than
+  /// the product rows themselves so the home screen does not have to download
+  /// the catalog to draw these badges.
+  final Map<String, int> productCounts;
   final bool isLoading;
   final ScrollController scrollCtrl;
   final bool isWide;
@@ -17,7 +20,7 @@ class CategoriesSection extends StatefulWidget {
   const CategoriesSection({
     super.key,
     required this.categories,
-    required this.products,
+    required this.productCounts,
     required this.isLoading,
     required this.scrollCtrl,
     required this.isWide,
@@ -29,13 +32,27 @@ class CategoriesSection extends StatefulWidget {
 }
 
 class _CategoriesSectionState extends State<CategoriesSection> {
-  bool _showLeftArrow = false;
-  bool _showRightArrow = true;
+  /// Whether the strip can still be scrolled towards its start (the flag is
+  /// driven purely by `pixels`, so it says nothing about which side of the
+  /// screen that edge sits on — in RTL the start is on the right).
+  bool _canScrollBack = false;
+  bool _canScrollForward = true;
 
   @override
   void initState() {
     super.initState();
     widget.scrollCtrl.addListener(_updateArrows);
+    _updateArrows();
+  }
+
+  @override
+  void didUpdateWidget(covariant CategoriesSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.scrollCtrl, widget.scrollCtrl)) {
+      oldWidget.scrollCtrl.removeListener(_updateArrows);
+      widget.scrollCtrl.addListener(_updateArrows);
+      _updateArrows();
+    }
   }
 
   @override
@@ -44,16 +61,30 @@ class _CategoriesSectionState extends State<CategoriesSection> {
     super.dispose();
   }
 
+  /// Arrow visibility is driven by the parent's scroll controller, which can
+  /// notify while no ListView is attached (e.g. while the shimmer placeholder
+  /// is on screen). Guarding on `hasClients` avoids a "ScrollController not
+  /// attached" throw, and only calling setState when a flag actually flips
+  /// keeps every scroll tick from rebuilding the whole category strip.
   void _updateArrows() {
+    if (!widget.scrollCtrl.hasClients) return;
     final pos = widget.scrollCtrl.position;
+    final canBack = pos.pixels > 20;
+    final canForward = pos.pixels < pos.maxScrollExtent - 20;
+    if (canBack == _canScrollBack && canForward == _canScrollForward) return;
+    if (!mounted) return;
     setState(() {
-      _showLeftArrow = pos.pixels > 20;
-      _showRightArrow = pos.pixels < pos.maxScrollExtent - 20;
+      _canScrollBack = canBack;
+      _canScrollForward = canForward;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    // The strip starts on the left in LTR and on the right in RTL, so the
+    // position of each arrow and the direction it points must follow the
+    // reading direction — `offset` always counts toward the start edge.
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
     if (widget.isLoading || widget.categories.isEmpty) {
       if (!widget.isLoading) return const SizedBox.shrink();
       return Padding(
@@ -103,7 +134,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.primarySurface, borderRadius: BorderRadius.circular(8)),
+                      decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), borderRadius: BorderRadius.circular(8)),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(Icons.shopping_bag_outlined, size: 14, color: AppColors.primary),
                         const SizedBox(width: 4),
@@ -139,7 +170,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                   itemBuilder: (context, index) {
                     final cat = widget.categories[index];
                     final gradient = AppColors.getCategoryGradient(cat.slug);
-                    final count = widget.products.where((p) => p.categoryId == cat.id).length;
+                    final count = widget.productCounts[cat.id] ?? 0;
                     return GestureDetector(
                       onTap: () => context.push('/category/${cat.slug}'),
                       child: Container(
@@ -179,25 +210,25 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                     );
                   },
                 ),
-                if (_showLeftArrow)
-                  Positioned(
-                    left: 4, top: 0, bottom: 0,
+                if (_canScrollBack)
+                  PositionedDirectional(
+                    start: 4, top: 0, bottom: 0,
                     child: Center(
                       child: GestureDetector(
                         onTap: () => widget.scrollCtrl.animateTo(widget.scrollCtrl.offset - 140, duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
-                        child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle, boxShadow: AppShadow.sm, border: Border.all(color: AppColors.border)),
-                          child: const Icon(Icons.chevron_left, size: 20, color: AppColors.text)),
+                        child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.surfaceOf(context), shape: BoxShape.circle, boxShadow: AppShadow.sm, border: Border.all(color: AppColors.borderOf(context))),
+                          child: Icon(isRtl ? Icons.chevron_right : Icons.chevron_left, size: 20, color: AppColors.textOf(context))),
                       ),
                     ),
                   ),
-                if (_showRightArrow)
-                  Positioned(
-                    right: 4, top: 0, bottom: 0,
+                if (_canScrollForward)
+                  PositionedDirectional(
+                    end: 4, top: 0, bottom: 0,
                     child: Center(
                       child: GestureDetector(
                         onTap: () => widget.scrollCtrl.animateTo(widget.scrollCtrl.offset + 140, duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
-                        child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.surface, shape: BoxShape.circle, boxShadow: AppShadow.sm, border: Border.all(color: AppColors.border)),
-                          child: const Icon(Icons.chevron_right, size: 20, color: AppColors.text)),
+                        child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.surfaceOf(context), shape: BoxShape.circle, boxShadow: AppShadow.sm, border: Border.all(color: AppColors.borderOf(context))),
+                          child: Icon(isRtl ? Icons.chevron_left : Icons.chevron_right, size: 20, color: AppColors.textOf(context))),
                       ),
                     ),
                   ),

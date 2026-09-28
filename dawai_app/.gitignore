@@ -44,5 +44,18 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Release signing. The keystore and its passwords must never be committed:
+# anyone holding them can publish an update that upgrades over every
+# installed copy of the app. Back both files up outside the repository.
+/android/key.properties
+/android/app/upload-keystore.jks
+*.jks
+*.keystore
+
 # Widget Preview related
 .widget_preview/
+
+# Local Android SDK tooling downloaded during machine setup — ~150 MB of
+# cmdline-tools that only belong on this machine.
+temp_cmdtools.zip
+temp_extracted/

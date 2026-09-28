@@ -59,9 +59,9 @@ class _AppTextFieldState extends State<AppTextField> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = isDark ? AppColors.primaryLight : AppColors.primary;
     final bgColor = isDark ? AppColors.darkBorder : AppColors.borderLight;
-    final borderColor = isDark ? AppColors.darkBorder : AppColors.border;
-    final textColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
-    final mutedColor = isDark ? AppColors.darkTextMuted : AppColors.textMuted;
+    final borderColor = isDark ? AppColors.darkBorder : AppColors.borderOf(context);
+    final textColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondaryOf(context);
+    final mutedColor = isDark ? AppColors.darkTextMuted : AppColors.textMutedOf(context);
 
     return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,7 +104,7 @@ class _AppTextFieldState extends State<AppTextField> {
               maxLines: widget.isPassword ? 1 : widget.maxLines,
               style: GoogleFonts.tajawal(
                 fontSize: 16,
-                color: isDark ? AppColors.darkText : AppColors.text,
+                color: isDark ? AppColors.darkText : AppColors.textOf(context),
               ),
               decoration: InputDecoration(
                 hintText: widget.hint,

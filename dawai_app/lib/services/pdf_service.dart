@@ -2,6 +2,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/order.dart';
+import '../core/utils/format.dart';
 
 class PdfService {
   static Future<void> generateOrderReceipt(OrderGroup order) async {
@@ -27,7 +28,7 @@ class PdfService {
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('رقم الطلب: #${order.id.substring(0, 8)}'),
+            pw.Text('رقم الطلب: #${shortId(order.id)}'),
             pw.Text('التاريخ: ${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}'),
           ],
         ),
@@ -36,11 +37,15 @@ class PdfService {
         pw.SizedBox(height: 8),
         pw.TableHelper.fromTextArray(
           headers: ['المنتج', 'العدد', 'السعر'],
-          data: order.orders.map((item) => [
-            item.product?.name ?? '-',
-            '${item.quantity}',
-            '${item.totalPrice.toStringAsFixed(0)} ج.م',
-          ]).toList(),
+          data: order.orders.isEmpty
+              ? [
+                  ['-', '-', '-'],
+                ]
+              : order.orders.map((item) => [
+                  item.product?.name ?? '-',
+                  '${item.quantity}',
+                  '${item.totalPrice.toStringAsFixed(0)} ج.م',
+                ]).toList(),
           headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
           cellAlignment: pw.Alignment.center,
           headerAlignment: pw.Alignment.center,
@@ -91,7 +96,7 @@ class PdfService {
 
     await Printing.layoutPdf(
       onLayout: (format) async => pdf.save(),
-      name: 'فاتورة_${order.id.substring(0, 8)}',
+      name: 'فاتورة_${shortId(order.id)}',
     );
   }
 

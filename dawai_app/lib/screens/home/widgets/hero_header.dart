@@ -207,7 +207,7 @@ class HeroHeader extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _buildSearchBar(),
+                    _buildSearchBar(context),
                     const SizedBox(height: 14),
                     _buildTrendingTags(),
                   ],
@@ -220,7 +220,7 @@ class HeroHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(BuildContext context) {
     return Container(
       height: 56,
       decoration: BoxDecoration(
@@ -244,17 +244,17 @@ class HeroHeader extends StatelessWidget {
             child: TextField(
               controller: searchController,
               onSubmitted: onSearch,
-              textAlign: TextAlign.right,
-              style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.text),
+              textAlign: TextAlign.start,
+              style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textOf(context)),
               decoration: InputDecoration(
                 hintText: 'ابحث باسم الدواء، الصيدلية أو المادة الفعالة...',
-                hintStyle: GoogleFonts.tajawal(color: AppColors.textMuted, fontSize: 13),
+                hintStyle: GoogleFonts.tajawal(color: AppColors.textMutedOf(context), fontSize: 13),
                 border: InputBorder.none,
                 filled: false,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
                 prefixIcon: searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18, color: AppColors.textMuted),
+                        icon: Icon(Icons.clear, size: 18, color: AppColors.textMutedOf(context)),
                         onPressed: () {
                           searchController.clear();
                         },
@@ -271,7 +271,7 @@ class HeroHeader extends StatelessWidget {
           Container(
             width: 46,
             height: 46,
-            margin: const EdgeInsets.only(left: 6),
+            margin: const EdgeInsetsDirectional.only(start: 6),
             decoration: BoxDecoration(
               gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(16),
@@ -295,7 +295,7 @@ class HeroHeader extends StatelessWidget {
           Icon(Icons.trending_up, size: 14, color: Colors.white.withValues(alpha: 0.7)),
           const SizedBox(width: 6),
           ...tags.map((t) => Padding(
-            padding: const EdgeInsets.only(left: 6),
+            padding: const EdgeInsetsDirectional.only(start: 6),
             child: GestureDetector(
               onTap: () {
                 searchController.text = t;

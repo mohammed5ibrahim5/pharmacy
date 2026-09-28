@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FavoritesService {
@@ -9,27 +10,21 @@ class FavoritesService {
     final prefs = await _prefs;
     final json = prefs.getString(_key);
     if (json == null) return [];
-    final List<dynamic> list = jsonDecode(json);
-    return list.cast<String>();
+    try {
+      final List<dynamic> list = jsonDecode(json);
+      return list.cast<String>();
+    } catch (_) {
+      // Corrupt or legacy data used to throw a FormatException/TypeError out
+      // of AppState.loadFavorites(), which is a `void async` method — so the
+      // failure was unhandled, `_favoriteIds` never loaded and no rebuild
+      // ever fired. Match CartService and start from an empty list instead.
+      debugPrint('discarding corrupt favorites payload');
+      return [];
+    }
   }
 
   Future<void> saveFavorites(List<String> productIds) async {
     final prefs = await _prefs;
     await prefs.setString(_key, jsonEncode(productIds));
-  }
-
-  Future<bool> isFavorite(String productId) async {
-    final favorites = await getFavorites();
-    return favorites.contains(productId);
-  }
-
-  Future<void> toggleFavorite(String productId) async {
-    final favorites = await getFavorites();
-    if (favorites.contains(productId)) {
-      favorites.remove(productId);
-    } else {
-      favorites.add(productId);
-    }
-    await saveFavorites(favorites);
   }
 }

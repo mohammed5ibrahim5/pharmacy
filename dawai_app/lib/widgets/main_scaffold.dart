@@ -116,7 +116,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 color: isDark
                     ? AppColors.darkSurface.withValues(alpha: 0.92)
-                    : AppColors.surface.withValues(alpha: 0.92),
+                    : AppColors.surfaceOf(context).withValues(alpha: 0.92),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -138,7 +138,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     final isSelected = currentIndex == index;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = isDark ? AppColors.primaryLight : AppColors.primary;
-    final inactiveColor = isDark ? AppColors.darkTextMuted : AppColors.textSecondary;
+    final inactiveColor = isDark ? AppColors.darkTextMuted : AppColors.textSecondaryOf(context);
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();

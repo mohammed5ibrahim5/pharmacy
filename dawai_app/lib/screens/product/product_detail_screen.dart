@@ -52,13 +52,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(color: AppColors.errorSurface, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: AppColors.errorSurfaceOf(context), shape: BoxShape.circle),
                 child: const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.error),
               ),
               const SizedBox(height: 16),
               Text('الدواء غير موجود', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
-              Text('تحقق من الاتصال بالإنترنت وحاول مرة أخرى', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+              Text('تحقق من الاتصال بالإنترنت وحاول مرة أخرى', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: _load,
@@ -75,7 +75,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final maxQty = p.stockQuantity > 0 ? p.stockQuantity : 99;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -88,7 +88,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   color: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.9),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: isDark ? AppColors.darkText : AppColors.text),
+                child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: isDark ? AppColors.darkText : AppColors.textOf(context)),
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -100,14 +100,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     color: isDark ? AppColors.darkSurface : Colors.white.withValues(alpha: 0.9),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.share_rounded, size: 18, color: isDark ? AppColors.darkText : AppColors.text),
+                  child: Icon(Icons.share_rounded, size: 18, color: isDark ? AppColors.darkText : AppColors.textOf(context)),
                 ),
                 onPressed: () => SharePlus.instance.share(ShareParams(text: '${p.name} - ${p.price} ج.م')),
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                color: isDark ? AppColors.darkSurface : AppColors.primarySurface,
+                color: isDark ? AppColors.darkSurface : AppColors.primarySurfaceOf(context),
                 padding: const EdgeInsets.fromLTRB(24, 80, 24, 24),
                 child: p.imageUrl != null
                     ? CachedNetworkImage(
@@ -124,7 +124,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkBackground : AppColors.background,
+                color: isDark ? AppColors.darkBackground : AppColors.backgroundOf(context),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
               ),
               child: Column(
@@ -137,10 +137,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(p.name, style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.text)),
+                            Text(p.name, style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
                             if (p.activeIngredient != null) ...[
                               const SizedBox(height: 4),
-                              Text(p.activeIngredient!, style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textMuted)),
+                              Text(p.activeIngredient!, style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textMutedOf(context))),
                             ],
                           ],
                         ),
@@ -149,7 +149,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(p.price.toStringAsFixed(0), style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.primary)),
-                          Text('ج.م', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                          Text('ج.م', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
                         ],
                       ),
                     ],
@@ -162,18 +162,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     runSpacing: 8,
                     children: [
                       if (p.requiresPrescription)
-                        _buildBadge(Icons.warning_rounded, 'روشتة', AppColors.warning, AppColors.warningSurface),
+                        _buildBadge(Icons.warning_rounded, 'روشتة', AppColors.warning, AppColors.warningSurfaceOf(context)),
                       if (!p.isAvailable)
-                        _buildBadge(Icons.inventory_2_outlined, 'نفدت', AppColors.error, AppColors.errorSurface),
+                        _buildBadge(Icons.inventory_2_outlined, 'نفدت', AppColors.error, AppColors.errorSurfaceOf(context)),
                       if (p.isAvailable && p.stockQuantity > 0 && p.stockQuantity <= 10)
-                        _buildBadge(Icons.inventory_rounded, 'متبقي ${p.stockQuantity}', AppColors.accent, AppColors.accentSurface),
+                        _buildBadge(Icons.inventory_rounded, 'متبقي ${p.stockQuantity}', AppColors.accent, AppColors.accentSurfaceOf(context)),
                     ],
                   ),
 
                   const SizedBox(height: 20),
-                  Text('الوصف', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? AppColors.darkText : AppColors.text)),
+                  Text('الوصف', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
                   const SizedBox(height: 8),
-                  Text(p.description ?? 'لا يوجد وصف متاح', style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textSecondary, height: 1.6)),
+                  Text(p.description ?? 'لا يوجد وصف متاح', style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textSecondaryOf(context), height: 1.6)),
 
                   if (p.manufacturer != null) ...[
                     const SizedBox(height: 16),
@@ -198,7 +198,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       bottomSheet: Container(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : AppColors.surface,
+          color: isDark ? AppColors.darkSurface : AppColors.surfaceOf(context),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4))],
         ),
         child: SafeArea(
@@ -208,7 +208,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               // Quantity
               Container(
                 decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
+                  color: AppColors.primarySurfaceOf(context),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
@@ -237,9 +237,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   height: 52,
                   child: ElevatedButton.icon(
                     onPressed: p.isAvailable ? () {
-                      for (var i = 0; i < _quantity; i++) {
-                        context.read<AppState>().addToCart(p, pharmacyName: p.pharmacy?.name);
-                      }
+                      context.read<AppState>().addToCart(
+                            p,
+                            pharmacyName: p.pharmacy?.name,
+                            quantity: _quantity,
+                          );
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text('تمت إضافة $_quantity للسلة', style: GoogleFonts.tajawal()),
                         backgroundColor: AppColors.success,
@@ -248,7 +250,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     icon: const Icon(Icons.add_shopping_cart_rounded, size: 20),
                     label: Text(p.isAvailable ? 'أضف للسلة' : 'نفدت', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: p.isAvailable ? AppColors.primary : AppColors.textMuted,
+                      backgroundColor: p.isAvailable ? AppColors.primary : AppColors.textMutedOf(context),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
@@ -284,8 +286,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
-              Text(value, style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textSecondary)),
+              Text(label, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
+              Text(value, style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textSecondaryOf(context))),
             ],
           ),
         ),

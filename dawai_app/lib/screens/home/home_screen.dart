@@ -36,6 +36,10 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Pharmacy> _pharmacies = [];
   List<Product> _products = [];
   List<Category> _categories = [];
+
+  /// Products-per-category, fetched separately from [_products] so the badges
+  /// stay accurate without pulling the whole catalog into memory.
+  Map<String, int> _categoryCounts = {};
   bool _loading = true;
   bool _hasError = false;
   String _errorMsg = '';
@@ -47,11 +51,34 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadData();
-    _speech.initialize();
+    _initSpeech();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showWelcomePopup();
       UpdateService.checkForUpdates(context);
     });
+  }
+
+  @override
+  void dispose() {
+    // The State previously had no dispose() at all: three controllers leaked
+    // on every navigation and, worse, an in-flight recognition session kept
+    // the microphone hot after leaving the screen.
+    _speech.cancel();
+    _searchCtrl.dispose();
+    _scrollCtrl.dispose();
+    _catScrollCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Speech recognition is a nice-to-have; if the plugin cannot start (no
+  /// service on the device, permission denied) we must degrade quietly rather
+  /// than leave the mic icon stuck in its "listening" state.
+  Future<void> _initSpeech() async {
+    try {
+      await _speech.initialize();
+    } catch (_) {
+      debugPrint('speech_to_text failed to initialize');
+    }
   }
 
   void _showWelcomePopup() async {
@@ -85,14 +112,18 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final results = await Future.wait([
         _api.getPharmacies(),
-        _api.getProducts(),
+        // ProductsSection draws at most 8 cards, so there is no reason to ask
+        // for (and deserialize) the whole catalog on every home visit.
+        _api.getProducts(limit: 12),
         _api.getCategories(),
+        _api.getCategoryProductCounts(),
       ]);
       if (mounted) {
         setState(() {
           _pharmacies = results[0] as List<Pharmacy>;
           _products = results[1] as List<Product>;
           _categories = results[2] as List<Category>;
+          _categoryCounts = results[3] as Map<String, int>;
           _loading = false;
         });
       }
@@ -113,23 +144,56 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _startVoiceSearch() async {
+  Future<void> _startVoiceSearch() async {
     if (_listening) {
       await _speech.stop();
-      setState(() => _listening = false);
+      if (mounted) setState(() => _listening = false);
       return;
     }
-    setState(() => _listening = true);
-    await _speech.listen(
-      onResult: (result) {
-        if (result.finalResult) {
-          _searchCtrl.text = result.recognizedWords;
-          _search(result.recognizedWords);
+
+    // Initialize lazily here as well: initState's attempt may still be in
+    // flight, or may have failed because the user denied the mic permission.
+    try {
+      final available = await _speech.initialize();
+      if (!mounted) return;
+      if (!available) {
+        setState(() => _listening = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تعذّر الوصول إلى الميكروفون. تحقّق من إذن الميكروفون.',
+                style: GoogleFonts.tajawal()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+      setState(() => _listening = true);
+      await _speech.listen(
+        onResult: (result) {
+          if (!result.finalResult) return;
+          final words = result.recognizedWords;
+          _searchCtrl.text = words;
+          if (!mounted) {
+            // The screen is gone: never leave the mic running.
+            _speech.stop();
+            return;
+          }
           setState(() => _listening = false);
-        }
-      },
-      listenOptions: stt.SpeechListenOptions(localeId: 'ar_EG'),
-    );
+          _search(words);
+        },
+        listenOptions: stt.SpeechListenOptions(localeId: 'ar_EG'),
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() => _listening = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تعذّر إجراء البحث الصوتي.', style: GoogleFonts.tajawal()),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _searchByImage() async {
@@ -154,14 +218,17 @@ class _HomeScreenState extends State<HomeScreen> {
   void _triggerEmergencySos() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      // The dialog's own context is named separately so the handler below can
+      // still reach the State's context (guarded by `mounted`) after the route
+      // has been popped.
+      builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.errorSurface,
+                color: AppColors.errorSurfaceOf(context),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.emergency, color: AppColors.error, size: 24),
@@ -176,20 +243,20 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('إلغاء', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: Text('إلغاء', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
           ),
           ElevatedButton.icon(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogCtx);
+              // Android 11+ package-visibility rules make canLaunchUrl throw
+              // or return false for tel: without a <queries> entry, so try to
+              // dial first and only fall back when the platform refuses.
               final uri = Uri(scheme: 'tel', path: '16000');
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri);
-              } else {
-                if (mounted) {
-                  this.context.push('/pharmacy-finder');
-                }
-              }
+              try {
+                if (await launchUrl(uri)) return;
+              } catch (_) {}
+              if (mounted) context.push('/pharmacy-finder');
             },
             icon: const Icon(Icons.phone_in_talk, size: 18),
             label: Text('اتصال عاجل', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
@@ -235,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SliverToBoxAdapter(
               child: CategoriesSection(
                 categories: _categories,
-                products: _products,
+                productCounts: _categoryCounts,
                 isLoading: _loading,
                 scrollCtrl: _catScrollCtrl,
                 isWide: isWide,
@@ -288,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.errorSurface,
+                color: AppColors.errorSurfaceOf(context),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.wifi_off_rounded, color: AppColors.error, size: 48),
@@ -301,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               _errorMsg,
-              style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textSecondary),
+              style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textSecondaryOf(context)),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -333,12 +400,12 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderOf(context)),
           boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
         ),
         child: Column(
           children: [
-            Text('كيف يعمل التطبيق؟', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.text)),
+            Text('كيف يعمل التطبيق؟', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
             const SizedBox(height: 14),
             ...steps.asMap().entries.map((entry) {
               final s = entry.value;
@@ -352,15 +419,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(s['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: isDark ? AppColors.darkText : AppColors.text)),
-                          Text(s['desc'] as String, style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMuted)),
+                          Text(s['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
+                          Text(s['desc'] as String, style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMutedOf(context))),
                         ],
                       ),
                     ],
                   ),
                   if (!isLast) ...[
                     const SizedBox(height: 10),
-                    Container(height: 1, margin: const EdgeInsets.only(right: 52), decoration: BoxDecoration(gradient: LinearGradient(colors: [AppColors.primary.withValues(alpha: 0.2), AppColors.accent.withValues(alpha: 0.2)]))),
+                    Container(height: 1, margin: const EdgeInsetsDirectional.only(end: 52), decoration: BoxDecoration(gradient: LinearGradient(colors: [AppColors.primary.withValues(alpha: 0.2), AppColors.accent.withValues(alpha: 0.2)]))),
                     const SizedBox(height: 10),
                   ],
                 ],
@@ -377,14 +444,14 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderOf(context)),
         boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
       ),
       child: Column(
         children: [
-          Text('كيف يعمل التطبيق؟', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.text)),
+          Text('كيف يعمل التطبيق؟', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
           const SizedBox(height: 4),
-          Text('أربع خطوات بسيطة', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMuted)),
+          Text('أربع خطوات بسيطة', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
           const SizedBox(height: 20),
           Row(
             children: List.generate(steps.length * 2 - 1, (index) {
@@ -397,8 +464,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(children: [
                   Container(width: 50, height: 50, decoration: BoxDecoration(color: (s['color'] as Color).withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(s['icon'] as IconData, color: s['color'] as Color, size: 24)),
                   const SizedBox(height: 8),
-                  Text(s['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: isDark ? AppColors.darkText : AppColors.text)),
-                  Text(s['desc'] as String, style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMuted)),
+                  Text(s['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
+                  Text(s['desc'] as String, style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMutedOf(context))),
                 ]),
               );
             }),
@@ -420,9 +487,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ماذا يقول مستخدمونا', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.text)),
+          Text('ماذا يقول مستخدمونا', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
           const SizedBox(height: 4),
-          Text('آراء حقيقية من عملاء دوا', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textMuted)),
+          Text('آراء حقيقية من عملاء دوا', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textMutedOf(context))),
           const SizedBox(height: 14),
           SizedBox(
             height: 120,
@@ -438,7 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderOf(context)),
                     boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
                   ),
                   child: Column(
@@ -448,7 +515,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           CircleAvatar(
                             radius: 20,
-                            backgroundColor: AppColors.primarySurface,
+                            backgroundColor: AppColors.primarySurfaceOf(context),
                             child: Text(r['avatar'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.primary)),
                           ),
                           const SizedBox(width: 10),
@@ -464,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 10),
                       Expanded(
-                        child: Text(r['text'] as String, style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textSecondary, height: 1.5)),
+                        child: Text(r['text'] as String, style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textSecondaryOf(context), height: 1.5)),
                       ),
                     ],
                   ),
@@ -490,7 +557,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('لماذا دوا؟', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.text)),
+          Text('لماذا دوا؟', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
           const SizedBox(height: 12),
           GridView.count(
             crossAxisCount: 2,
@@ -504,15 +571,15 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+                border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderOf(context)),
                 boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
               ),
               child: Row(children: [
                 Container(width: 40, height: 40, decoration: BoxDecoration(color: (item['color'] as Color).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(item['icon'] as IconData, color: item['color'] as Color, size: 22)),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text(item['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 12, color: isDark ? AppColors.darkText : AppColors.text)),
-                  Text(item['desc'] as String, style: GoogleFonts.tajawal(fontSize: 10, color: AppColors.textMuted)),
+                  Text(item['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 12, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
+                  Text(item['desc'] as String, style: GoogleFonts.tajawal(fontSize: 10, color: AppColors.textMutedOf(context))),
                 ])),
               ]),
             )).toList(),
