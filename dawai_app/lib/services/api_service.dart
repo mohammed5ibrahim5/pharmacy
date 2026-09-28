@@ -169,6 +169,16 @@ class ApiService {
   /// Screens used to pull the whole result set (capped, silently, at 200
   /// rows) and slice it themselves; a catalogue past that cap simply stopped
   /// returning rows with nothing on screen to say so.
+  ///
+  /// A window starting past the end of the set is answered with `416`
+  /// (`PGRST103`) by PostgREST — verified against the live project, which says
+  /// `An offset of 24 was requested, but there are only 10 rows.` Callers
+  /// page with `offset: items.length`, so this only happens when rows are
+  /// delisted between two pages. Raising it would be worse than useless: the
+  /// screen keeps `hasMore` set, so every subsequent scroll re-requests the
+  /// same impossible window for as long as the screen is open. An empty page
+  /// whose total equals the offset ends the list cleanly, and the headers
+  /// still show how many rows are really on screen.
   Future<ProductPage> getProductPage({
     String? pharmacyId,
     String? categoryId,
@@ -177,21 +187,30 @@ class ApiService {
     int limit = productPageSize,
     int offset = 0,
   }) async {
-    final res = await _paged(
-      _productQuery(
-        pharmacyId: pharmacyId,
-        categoryId: categoryId,
-        search: search,
-        otcOnly: otcOnly,
-      ),
-      limit: limit,
-      offset: offset,
-    ).count(CountOption.exact).timeout(netTimeout);
+    try {
+      final res = await _paged(
+        _productQuery(
+          pharmacyId: pharmacyId,
+          categoryId: categoryId,
+          search: search,
+          otcOnly: otcOnly,
+        ),
+        limit: limit,
+        offset: offset,
+      ).count(CountOption.exact).timeout(netTimeout);
 
-    return ProductPage(
-      products: res.data.map(Product.fromJson).toList(),
-      total: res.count,
-    );
+      return ProductPage(
+        products: res.data.map(Product.fromJson).toList(),
+        total: res.count,
+      );
+    } on PostgrestException catch (e) {
+      // The code comes from the JSON body, not the status line, so it is
+      // PGRST103 rather than 416; both spellings are accepted.
+      if (e.code == 'PGRST103' || e.code == '416') {
+        return ProductPage(products: const [], total: offset);
+      }
+      rethrow;
+    }
   }
 
   /// Products without the total, for callers that only want a single window.

@@ -59,6 +59,25 @@ the same window in a loop), must not latch after the first call (appending
 rows emits no scroll notification, so paging would never resume), and must
 ignore horizontal strips nested inside cards.
 
+`test/services/product_page_test.dart` stands up a real `HttpServer` that
+answers like PostgREST, so `getProductPage` is driven through the actual
+postgrest-dart parsing path. It pins the three behaviours that are only
+discoverable by talking to the server (all confirmed against the live project):
+
+| Request | Response | Why it matters |
+| --- | --- | --- |
+| no `Prefer: count` | `Content-Range: 0-9/*` | the total is *unknown*; the client must ask for it |
+| `Prefer: count=exact`, partial page | **206** + `0-9/1500` | only a success because `isSuccessStatusCode` is `200..299` — a client demanding exactly 200 breaks as soon as the catalogue outgrows one page |
+| `offset` past the last row | **416** + `{"code":"PGRST103"}` | the code arrives in the body, not the status line |
+
+Note that `TestWidgetsFlutterBinding` installs an `HttpOverrides` that answers
+every request with 400 (that is what lets `route_smoke_test` run with no
+backend). This test nulls that override for the length of
+`Supabase.initialize` — and it has to cover the *construction*, because
+`IOClient` evaluates `HttpClient()` in its own constructor, so a client built
+outside the window is mocked for good. `HttpOverrides.runZoned` does not work
+for this: its `createHttpClient` callback re-enters itself.
+
 `test/widget_test.dart` is the stock Flutter counter demo: it pumps a
 self-contained `_TestApp` that shares no code with this app, so its
 "App renders without crashing" says nothing about the real screens. It is kept
@@ -76,7 +95,7 @@ The category, search and pharmacy screens ask for `productPageSize` (24) rows
 and append the next window when `LoadMoreOnScroll` sees the user within 600px
 of the end.
 
-Two details are load-bearing:
+Three details are load-bearing:
 
 - **`order('name').order('id')`.** `name` repeats constantly in a pharmacy
   catalogue, and a sort key that does not totally order the rows lets a record
@@ -86,6 +105,13 @@ Two details are load-bearing:
   all travel in the query. `category_screen` used to download every product in
   the catalogue to show one category, and its OTC switch re-ran `.where()` for
   every grid cell on every build.
+- **A window past the end is not an error.** `getProductPage` absorbs PostgREST's
+  `416`/`PGRST103` and reports an empty page whose total equals the offset,
+  which closes the list. Surfacing the error instead would be actively harmful:
+  the screen keeps `hasMore` set, so every subsequent scroll re-requests the
+  same impossible window for as long as the screen is open. This only triggers
+  when rows are delisted between two pages — the offset is always
+  `items.length`, so the only way past the end is the data changing underneath.
 
 `getProducts()` deliberately keeps a default `limit` of 200 for callers that
 do not page: a call site that has not been taught to page should lose rows
