@@ -51,7 +51,10 @@ class AppColors {
   // Text
   static const Color text = Color(0xFF0F172A);           // Primary text (slate-900)
   static const Color textSecondary = Color(0xFF475569);   // Secondary text (slate-600)
-  static const Color textMuted = Color(0xFF94A3B8);       // Muted text (slate-400)
+  // slate-500 rather than slate-400: #94A3B8 on the white background is only
+  // 2.57:1 (WCAG AA needs 4.5:1) and this token is used as real body/caption
+  // text in dozens of places. #64748B measures 5.07:1 on #FFFFFF.
+  static const Color textMuted = Color(0xFF64748B);       // Muted text (slate-500)
   static const Color textLight = Color(0xFFCBD5E1);       // Light text (slate-300)
 
   // Borders
@@ -68,9 +71,53 @@ class AppColors {
   static const Color darkSurfaceElevated = Color(0xFF334155); // Dark elevated (slate-700)
   static const Color darkText = Color(0xFFF1F5F9);        // Dark primary text
   static const Color darkTextSecondary = Color(0xFFCBD5E1); // Dark secondary text
-  static const Color darkTextMuted = Color(0xFF64748B);    // Dark muted text
+  // Was #64748B, which measures only 2.7:1 on darkSurface (#1E293B). Slate-400
+  // measures 5.6:1 — the light/dark muted tokens are deliberately swapped.
+  static const Color darkTextMuted = Color(0xFF94A3B8);    // Dark muted text
   static const Color darkBorder = Color(0xFF334155);       // Dark borders
   static const Color darkBorderLight = Color(0xFF1E293B);  // Dark light borders
+
+  // ─── THEME-AWARE RESOLUTION ──────────────────────────────────────────────
+  // The constants above are pinned to one theme, so screens that used them
+  // directly rendered white cards on a dark scaffold (or dark text on a dark
+  // card) once the user switched themes. Prefer these helpers over the raw
+  // constants anywhere a value depends on the current brightness.
+
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  static Color backgroundOf(BuildContext context) =>
+      isDark(context) ? darkBackground : background;
+  static Color surfaceOf(BuildContext context) =>
+      isDark(context) ? darkSurface : surface;
+  static Color surfaceElevatedOf(BuildContext context) =>
+      isDark(context) ? darkSurfaceElevated : surfaceElevated;
+  static Color textOf(BuildContext context) => isDark(context) ? darkText : text;
+  static Color textSecondaryOf(BuildContext context) =>
+      isDark(context) ? darkTextSecondary : textSecondary;
+  static Color textMutedOf(BuildContext context) =>
+      isDark(context) ? darkTextMuted : textMuted;
+  static Color borderOf(BuildContext context) =>
+      isDark(context) ? darkBorder : border;
+  static Color dividerOf(BuildContext context) =>
+      isDark(context) ? darkBorder : divider;
+
+  /// Tints for the "surface" chips (primary/accent/error backgrounds).
+  ///
+  /// The light tints (#CCFBF1, #FEF3C7, #FEE2E2) are unreadable behind light
+  /// text, so dark mode gets a low-opacity tint of the parent colour instead.
+  static Color primarySurfaceOf(BuildContext context) =>
+      isDark(context) ? primary.withValues(alpha: 0.18) : primarySurface;
+  static Color accentSurfaceOf(BuildContext context) =>
+      isDark(context) ? accent.withValues(alpha: 0.18) : accentSurface;
+  static Color errorSurfaceOf(BuildContext context) =>
+      isDark(context) ? error.withValues(alpha: 0.18) : errorSurface;
+  static Color successSurfaceOf(BuildContext context) =>
+      isDark(context) ? success.withValues(alpha: 0.18) : successSurface;
+  static Color warningSurfaceOf(BuildContext context) =>
+      isDark(context) ? warning.withValues(alpha: 0.18) : warningSurface;
+  static Color infoSurfaceOf(BuildContext context) =>
+      isDark(context) ? info.withValues(alpha: 0.18) : infoSurface;
 
   // ─── CATEGORY PALETTE ────────────────────────────────────────────────────
   static const Map<String, Color> categoryColors = {
@@ -165,18 +212,7 @@ class AppColors {
     }
   }
 
-  static String getStatusLabel(String status) {
-    switch (status) {
-      case 'pending': return 'قيد المراجعة';
-      case 'confirmed': return 'تم التأكيد';
-      case 'shipped': return 'في الطريق';
-      case 'delivered': return 'تم التسليم';
-      case 'cancelled': return 'ملغي';
-      default: return status;
-    }
-  }
 }
-
 // ══════════════════════════════════════════════════════════════════════════════
 // SPACING SYSTEM
 // ══════════════════════════════════════════════════════════════════════════════
@@ -265,26 +301,36 @@ class AppShadow {
 class AppTypography {
   AppTypography._();
 
-  static TextStyle h1({Color? color}) => GoogleFonts.tajawal(
-    fontSize: 28, fontWeight: FontWeight.w800, color: color ?? AppColors.text, height: 1.3,
+  // The five heading/body helpers take a context: their default colour has to
+  // follow the active theme, otherwise every call site that does not pass an
+  // explicit colour rendered slate-900 text on a slate-900 card in dark mode.
+  static TextStyle h1(BuildContext context, {Color? color}) => GoogleFonts.tajawal(
+    fontSize: 28, fontWeight: FontWeight.w800,
+    color: color ?? AppColors.textOf(context), height: 1.3,
   );
 
-  static TextStyle h2({Color? color}) => GoogleFonts.tajawal(
-    fontSize: 22, fontWeight: FontWeight.w800, color: color ?? AppColors.text, height: 1.3,
+  static TextStyle h2(BuildContext context, {Color? color}) => GoogleFonts.tajawal(
+    fontSize: 22, fontWeight: FontWeight.w800,
+    color: color ?? AppColors.textOf(context), height: 1.3,
   );
 
-  static TextStyle h3({Color? color}) => GoogleFonts.tajawal(
-    fontSize: 18, fontWeight: FontWeight.w700, color: color ?? AppColors.text, height: 1.4,
+  static TextStyle h3(BuildContext context, {Color? color}) => GoogleFonts.tajawal(
+    fontSize: 18, fontWeight: FontWeight.w700,
+    color: color ?? AppColors.textOf(context), height: 1.4,
   );
 
-  static TextStyle body({Color? color}) => GoogleFonts.tajawal(
-    fontSize: 14, fontWeight: FontWeight.w500, color: color ?? AppColors.textSecondary, height: 1.5,
+  static TextStyle body(BuildContext context, {Color? color}) => GoogleFonts.tajawal(
+    fontSize: 14, fontWeight: FontWeight.w500,
+    color: color ?? AppColors.textSecondaryOf(context), height: 1.5,
   );
 
-  static TextStyle caption({Color? color}) => GoogleFonts.tajawal(
-    fontSize: 12, fontWeight: FontWeight.w500, color: color ?? AppColors.textMuted, height: 1.4,
+  static TextStyle caption(BuildContext context, {Color? color}) => GoogleFonts.tajawal(
+    fontSize: 12, fontWeight: FontWeight.w500,
+    color: color ?? AppColors.textMutedOf(context), height: 1.4,
   );
 
+  // These three sit on fixed-colour surfaces (gradient buttons, badges, price
+  // accents), so their defaults are theme-independent by design.
   static TextStyle button({Color? color}) => GoogleFonts.tajawal(
     fontSize: 14, fontWeight: FontWeight.w700, color: color ?? Colors.white, height: 1.3,
   );

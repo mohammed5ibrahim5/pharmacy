@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 import '../../models/product.dart';
 import '../../models/category.dart';
 import '../../shared/widgets/loading_widget.dart';
+import '../../shared/widgets/load_more_on_scroll.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String slug;
@@ -22,7 +23,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
   bool _otcOnly = false;
 
   Category? _currentCategory;
-  List<Product> _allProducts = [];
+  List<Product> _products = [];
+
+  /// Total rows matching the current filters, across every page. Drives the
+  /// "N منتج" header and decides whether another page exists, so no trailing
+  /// empty request is needed to discover the end of the list.
+  int _total = 0;
+  bool _hasMore = false;
+  bool _loadingMore = false;
 
   @override
   void initState() {
@@ -31,36 +39,87 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   Future<void> _loadData() async {
-    setState(() { _loading = true; _hasError = false; });
+    setState(() { _loading = true; _hasError = false; _loadingMore = false; });
     try {
-      final results = await Future.wait([
-        _api.getCategories(),
-        _api.getProducts(),
-      ]);
+      final categories = await _api.getCategories();
       if (!mounted) return;
-
-      final categories = results[0] as List<Category>;
-      final products = results[1] as List<Product>;
-      final cat = categories.where((c) => c.slug == widget.slug).firstOrNull;
-      final catProducts = cat != null
-          ? products.where((p) => p.categoryId == cat.id).toList()
-          : products;
-
-      setState(() {
-        _currentCategory = cat;
-        _allProducts = catProducts;
-        _loading = false;
-      });
+      _currentCategory = categories.where((c) => c.slug == widget.slug).firstOrNull;
+      await _reloadProducts();
     } catch (e) {
       if (!mounted) return;
       setState(() { _loading = false; _hasError = true; });
     }
   }
 
-  List<Product> get _filteredProducts {
-    var list = _allProducts;
-    if (_otcOnly) list = list.where((p) => !p.requiresPrescription).toList();
-    return list;
+  /// Page zero. Assumes [_currentCategory] has already been resolved.
+  Future<void> _reloadProducts() async {
+    final page = await _fetchPage(0);
+    if (!mounted) return;
+    setState(() {
+      _applyPage(page, replace: true);
+      _loading = false;
+      _loadingMore = false;
+    });
+  }
+
+  Future<ProductPage> _fetchPage(int offset) async {
+    final cat = _currentCategory;
+    // An unknown slug has nothing to list. Asking without a category id would
+    // hand back the entire catalogue under a title none of it belongs to —
+    // which is what this screen used to do for every slug, by loading all
+    // products and filtering them in the client.
+    if (cat == null) return const ProductPage(products: [], total: 0);
+    return _api.getProductPage(
+      categoryId: cat.id,
+      otcOnly: _otcOnly,
+      offset: offset,
+    );
+  }
+
+  void _applyPage(ProductPage page, {required bool replace}) {
+    _products = replace ? page.products : [..._products, ...page.products];
+    _total = page.total;
+    _hasMore = _products.length < _total;
+  }
+
+  /// Invoked from scroll notifications, i.e. constantly. The guard flips
+  /// [_loadingMore] *before* the first `await` so the next notification
+  /// cannot queue a duplicate request for the same window. On failure it
+  /// stays retryable: scrolling again is the affordance already under the
+  /// user's thumb.
+  Future<void> _loadMore() async {
+    if (_loading || _hasError || _loadingMore || !_hasMore) return;
+    _loadingMore = true;
+    setState(() {});
+    try {
+      final page = await _fetchPage(_products.length);
+      if (!mounted) return;
+      setState(() {
+        _applyPage(page, replace: false);
+        _loadingMore = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadingMore = false);
+    }
+  }
+
+  /// The OTC switch now travels in the query rather than being a client-side
+  /// `.where()` re-run for every grid cell on every build, so flipping it
+  /// has to start over at page zero.
+  Future<void> _toggleOtc() async {
+    setState(() {
+      _otcOnly = !_otcOnly;
+      _loading = true;
+      _hasError = false;
+      _loadingMore = false;
+    });
+    try {
+      await _reloadProducts();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _loading = false; _hasError = true; });
+    }
   }
 
   @override
@@ -69,7 +128,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final catColor = AppColors.getCategoryColor(widget.slug);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
         backgroundColor: catColor,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -78,7 +137,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           if (!_loading && !_hasError)
             IconButton(
               icon: Icon(_otcOnly ? Icons.filter_alt : Icons.filter_alt_outlined, color: Colors.white),
-              onPressed: () => setState(() => _otcOnly = !_otcOnly),
+              onPressed: _toggleOtc,
               tooltip: 'بدون وصفة طبية فقط',
             ),
         ],
@@ -87,7 +146,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           ? _buildLoadingState(catColor)
           : _hasError
               ? _buildErrorState()
-              : _filteredProducts.isEmpty
+              : _products.isEmpty
                   ? _buildEmptyState()
                   : _buildProductGrid(catColor),
     );
@@ -111,13 +170,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(color: AppColors.errorSurface, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.errorSurfaceOf(context), shape: BoxShape.circle),
             child: const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.error),
           ),
           const SizedBox(height: 16),
           Text('فشل تحميل المنتجات', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text('تحقق من الاتصال بالإنترنت', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+          Text('تحقق من الاتصال بالإنترنت', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: _loadData,
@@ -136,33 +195,43 @@ class _CategoryScreenState extends State<CategoryScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(color: AppColors.primarySurface, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), shape: BoxShape.circle),
             child: const Icon(Icons.medication_outlined, size: 48, color: AppColors.primary),
           ),
           const SizedBox(height: 16),
           Text('لا توجد منتجات', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text(_otcOnly ? 'لا توجد منتجات بدون وصفة طبية' : 'لم تُضف منتجات لهذه الفئة بعد', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+          Text(_otcOnly ? 'لا توجد منتجات بدون وصفة طبية' : 'لم تُضف منتجات لهذه الفئة بعد', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
         ],
       ),
     );
   }
 
   Widget _buildProductGrid(Color catColor) {
+    // The paging trigger wraps the grid from outside so the body below is
+    // unchanged whether or not there is another page waiting.
+    return LoadMoreOnScroll(
+      onLoadMore: _loadMore,
+      threshold: 600,
+      child: _buildGridBody(catColor),
+    );
+  }
+
+  Widget _buildGridBody(Color catColor) {
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
-              Text('${_filteredProducts.length} منتج', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+              Text('$_total منتج', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
               const Spacer(),
               if (_otcOnly)
                 GestureDetector(
                   onTap: () => setState(() => _otcOnly = false),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: AppColors.primarySurface, borderRadius: BorderRadius.circular(AppRadius.full)),
+                    decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), borderRadius: BorderRadius.circular(AppRadius.full)),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Text('بدون وصفة', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary)),
                       const SizedBox(width: 4),
@@ -179,15 +248,22 @@ class _CategoryScreenState extends State<CategoryScreen> {
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.72,
             ),
-            itemCount: _filteredProducts.length,
+            // One extra cell while the next page is in flight, drawn as a
+            // spinner rather than an empty card.
+            itemCount: _products.length + (_loadingMore ? 1 : 0),
             itemBuilder: (ctx, i) {
-              final p = _filteredProducts[i];
+              if (i >= _products.length) {
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+                );
+              }
+              final p = _products[i];
               return GestureDetector(
                 onTap: () => context.push('/product/${p.id}'),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surface, borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border), boxShadow: AppShadow.sm,
+                    color: AppColors.surfaceOf(context), borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.borderOf(context)), boxShadow: AppShadow.sm,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

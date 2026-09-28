@@ -21,7 +21,7 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
         title: Text('تذكير إعادة الطلب', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         elevation: 0,
@@ -68,42 +68,50 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: _cardDecoration(),
-              child: Column(
-                children: [
-                  SwitchListTile(
-                    title: Text('تفعيل التذكير', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                    subtitle: Text('إشعارات قبل انتهاء الدواء', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMuted)),
-                    value: _enabled,
-                    onChanged: (v) => setState(() => _enabled = v),
-                    activeThumbColor: AppColors.primary,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  const Divider(),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(' reminding_days_before'.replaceAll('_', ' '), style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                    subtitle: Text('تذكير قبل $_daysBefore أيام من انتهاء الجرعة', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMuted)),
-                    trailing: Container(
-                      decoration: BoxDecoration(color: AppColors.primarySurface, borderRadius: BorderRadius.circular(10)),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove, size: 18),
-                            color: AppColors.primary,
-                            onPressed: _daysBefore > 1 ? () => setState(() => _daysBefore--) : null,
-                          ),
-                          Text('$_daysBefore', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 16)),
-                          IconButton(
-                            icon: const Icon(Icons.add, size: 18),
-                            color: AppColors.primary,
-                            onPressed: _daysBefore < 14 ? () => setState(() => _daysBefore++) : null,
-                          ),
-                        ],
+              // ListTile paints its background and ripple on the nearest
+              // Material ancestor, so leaving it directly under this coloured
+              // DecoratedBox puts the splash *behind* the card and it never
+              // shows. A transparent Material here stops the colour from
+              // swallowing the ink without changing how the card looks.
+              child: Material(
+                type: MaterialType.transparency,
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      title: Text('تفعيل التذكير', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
+                      subtitle: Text('إشعارات قبل انتهاء الدواء', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
+                      value: _enabled,
+                      onChanged: (v) => setState(() => _enabled = v),
+                      activeThumbColor: AppColors.primary,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    const Divider(),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('مدة التذكير', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
+                      subtitle: Text('تذكير قبل $_daysBefore أيام من انتهاء الجرعة', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
+                      trailing: Container(
+                        decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), borderRadius: BorderRadius.circular(10)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove, size: 18),
+                              color: AppColors.primary,
+                              onPressed: _daysBefore > 1 ? () => setState(() => _daysBefore--) : null,
+                            ),
+                            Text('$_daysBefore', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 16)),
+                            IconButton(
+                              icon: const Icon(Icons.add, size: 18),
+                              color: AppColors.primary,
+                              onPressed: _daysBefore < 14 ? () => setState(() => _daysBefore++) : null,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -122,7 +130,7 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: AppColors.primarySurface, borderRadius: BorderRadius.circular(12)),
+                      decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), borderRadius: BorderRadius.circular(12)),
                       child: const Icon(Icons.medication_rounded, color: AppColors.primary, size: 22),
                     ),
                     const SizedBox(width: 12),
@@ -131,7 +139,7 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(m['name'], style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14)),
-                          Text('${m['dose']} - ${m['frequency']}', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMuted)),
+                          Text('${m['dose']} - ${m['frequency']}', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
                         ],
                       ),
                     ),
@@ -153,7 +161,7 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppColors.surfaceOf(context),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
                 ),
@@ -222,14 +230,14 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
-    return Text(title, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.text));
+    return Text(title, style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textOf(context)));
   }
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
-      color: AppColors.surface,
+      color: AppColors.surfaceOf(context),
       borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: AppColors.border),
+      border: Border.all(color: AppColors.borderOf(context)),
       boxShadow: AppShadow.xs,
     );
   }

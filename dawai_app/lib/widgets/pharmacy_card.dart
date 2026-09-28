@@ -27,7 +27,7 @@ class PharmacyCard extends StatelessWidget {
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
-              color: isDark ? AppColors.darkBorder : AppColors.border,
+              color: isDark ? AppColors.darkBorder : AppColors.borderOf(context),
             ),
             boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
           ),
@@ -50,7 +50,7 @@ class PharmacyCard extends StatelessWidget {
                         color: isDark ? AppColors.darkBorder : AppColors.borderLight,
                         child: Icon(
                           Icons.local_pharmacy,
-                          color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                          color: isDark ? AppColors.darkTextMuted : AppColors.textMutedOf(context),
                           size: 28,
                         ),
                       ),
@@ -70,7 +70,7 @@ class PharmacyCard extends StatelessWidget {
                                 style: GoogleFonts.tajawal(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? AppColors.darkText : AppColors.text,
+                                  color: isDark ? AppColors.darkText : AppColors.textOf(context),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -79,7 +79,7 @@ class PharmacyCard extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: pharmacy.isActive ? AppColors.successSurface : AppColors.errorSurface,
+                                color: pharmacy.isActive ? AppColors.successSurfaceOf(context) : AppColors.errorSurfaceOf(context),
                                 borderRadius: BorderRadius.circular(AppRadius.xs),
                               ),
                               child: Text(
@@ -96,14 +96,14 @@ class PharmacyCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.location_on_outlined, size: 12, color: isDark ? AppColors.darkTextMuted : AppColors.textSecondary),
+                            Icon(Icons.location_on_outlined, size: 12, color: isDark ? AppColors.darkTextMuted : AppColors.textSecondaryOf(context)),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 '${pharmacy.area ?? ''} ${pharmacy.address}',
                                 style: GoogleFonts.tajawal(
                                   fontSize: 11,
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondaryOf(context),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

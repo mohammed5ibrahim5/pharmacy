@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
+import '../../core/utils/api_error.dart';
+import '../../core/utils/direction.dart';
+import '../../shared/widgets/load_more_on_scroll.dart';
 import '../../services/api_service.dart';
 import '../../models/product.dart';
 import '../../models/pharmacy.dart';
@@ -25,7 +28,20 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _searched = false;
   String _filter = 'products';
 
+  /// The text currently being paged through — later pages must keep using it
+  /// even if the field has since been edited but not yet re-submitted.
+  String _query = '';
+
   List<Product> _productResults = [];
+  int _productTotal = 0;
+  bool _hasMoreProducts = false;
+  bool _loadingMore = false;
+
+  /// Bumped on every search. Responses that arrive for an older query are
+  /// dropped instead of overwriting the newer ones, which is easy to hit with
+  /// 400ms of debounce on a slow connection.
+  int _searchSeq = 0;
+
   List<Pharmacy> _pharmacyResults = [];
 
   @override
@@ -48,25 +64,77 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _performSearch(String query) async {
     if (query.trim().isEmpty) return;
-    setState(() { _loading = true; _searched = true; });
+    final seq = ++_searchSeq;
+    final q = query.trim();
+    setState(() {
+      _loading = true;
+      _searched = true;
+      _query = q;
+      _loadingMore = false;
+    });
     try {
       final results = await Future.wait([
-        _api.getProducts(search: query),
-        _api.getPharmacies(search: query),
+        _api.getProductPage(search: q, offset: 0),
+        _api.getPharmacies(search: q),
       ]);
-      if (!mounted) return;
+      if (!mounted || seq != _searchSeq) return;
       setState(() {
-        _productResults = results[0] as List<Product>;
+        final page = results[0] as ProductPage;
+        _productResults = page.products;
+        _productTotal = page.total;
+        _hasMoreProducts = _productResults.length < _productTotal;
         _pharmacyResults = results[1] as List<Pharmacy>;
         _loading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || seq != _searchSeq) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ في البحث: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text(friendlyError(e, fallback: 'تعذّر إجراء البحث. حاول مرة أخرى.'), style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
       );
     }
+  }
+
+  /// Fetches the next page of product results for [_query].
+  ///
+  /// Guards behave like [CategoryScreen]'s: flip the flag before awaiting so
+  /// the flood of scroll notifications cannot start a second request, and on
+  /// failure leave the list retryable rather than dead.
+  Future<void> _loadMoreProducts() async {
+    if (_loading || _loadingMore || !_hasMoreProducts) return;
+    _loadingMore = true;
+    final seq = _searchSeq;
+    setState(() {});
+    try {
+      final page = await _api.getProductPage(
+        search: _query,
+        offset: _productResults.length,
+      );
+      if (!mounted || seq != _searchSeq) return;
+      setState(() {
+        _productResults = [..._productResults, ...page.products];
+        _productTotal = page.total;
+        _hasMoreProducts = _productResults.length < _productTotal;
+        _loadingMore = false;
+      });
+    } catch (e) {
+      if (!mounted || seq != _searchSeq) return;
+      setState(() => _loadingMore = false);
+    }
+  }
+
+  void _clearResults() {
+    _searchCtrl.clear();
+    ++_searchSeq;
+    setState(() {
+      _searched = false;
+      _query = '';
+      _productResults = [];
+      _productTotal = 0;
+      _hasMoreProducts = false;
+      _loadingMore = false;
+      _pharmacyResults = [];
+    });
   }
 
   @override
@@ -80,7 +148,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
         elevation: 0,
         backgroundColor: AppColors.primary,
@@ -103,10 +171,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 if (_searchCtrl.text.isNotEmpty)
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white70, size: 20),
-                    onPressed: () {
-                      _searchCtrl.clear();
-                      setState(() { _searched = false; _productResults = []; _pharmacyResults = []; });
-                    },
+                    onPressed: _clearResults,
                   ),
                 IconButton(
                   icon: const Icon(Icons.search, color: Colors.white),
@@ -144,7 +209,7 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           const CircularProgressIndicator(color: AppColors.primary),
           const SizedBox(height: 16),
-          Text('جاري البحث...', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+          Text('جاري البحث...', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
         ],
       ),
     );
@@ -152,7 +217,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildFilters() {
     return Container(
-      color: AppColors.surface,
+      color: AppColors.surfaceOf(context),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -168,13 +233,13 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildFilterChip(String value, String label) {
     final isSelected = _filter == value;
     return ChoiceChip(
-      label: Text(label, style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : AppColors.text)),
+      label: Text(label, style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : AppColors.textOf(context))),
       selected: isSelected,
       onSelected: (selected) {
         if (selected) setState(() => _filter = value);
       },
       selectedColor: AppColors.primary,
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
     );
   }
 
@@ -185,13 +250,13 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(color: AppColors.primarySurface, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), shape: BoxShape.circle),
             child: const Icon(Icons.search_rounded, size: 48, color: AppColors.primary),
           ),
           const SizedBox(height: 16),
-          Text('ابدأ البحث', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.text)),
+          Text('ابدأ البحث', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textOf(context))),
           const SizedBox(height: 8),
-          Text('ابحث عن الأدوية والصيدليات القريبة', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+          Text('ابحث عن الأدوية والصيدليات القريبة', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
         ],
       ),
     );
@@ -204,33 +269,47 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(color: AppColors.warningSurface, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.warningSurfaceOf(context), shape: BoxShape.circle),
             child: const Icon(Icons.search_off_rounded, size: 48, color: AppColors.warning),
           ),
           const SizedBox(height: 16),
-          Text('لا توجد نتائج', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.text)),
+          Text('لا توجد نتائج', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textOf(context))),
           const SizedBox(height: 8),
-          Text('جرب كلمات بحث مختلفة', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+          Text('جرب كلمات بحث مختلفة', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
         ],
       ),
     );
   }
 
   Widget _buildProductResults() {
+    return LoadMoreOnScroll(
+      onLoadMore: _loadMoreProducts,
+      threshold: 600,
+      child: _buildProductGrid(),
+    );
+  }
+
+  Widget _buildProductGrid() {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.72,
       ),
-      itemCount: _productResults.length,
+      // One extra cell while the next page is in flight, drawn as a spinner.
+      itemCount: _productResults.length + (_loadingMore ? 1 : 0),
       itemBuilder: (ctx, i) {
+        if (i >= _productResults.length) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+          );
+        }
         final p = _productResults[i];
         return GestureDetector(
           onTap: () => context.push('/product/${p.id}'),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surface, borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border), boxShadow: AppShadow.sm,
+              color: AppColors.surfaceOf(context), borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderOf(context)), boxShadow: AppShadow.sm,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,8 +317,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primarySurface,
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySurfaceOf(context),
                       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                     ),
                     child: p.imageUrl != null
@@ -285,14 +364,14 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.surface, borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border), boxShadow: AppShadow.xs,
+              color: AppColors.surfaceOf(context), borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.borderOf(context)), boxShadow: AppShadow.xs,
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: AppColors.primarySurface, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), borderRadius: BorderRadius.circular(12)),
                   child: const Icon(Icons.local_pharmacy_rounded, color: AppColors.primary, size: 22),
                 ),
                 const SizedBox(width: 12),
@@ -302,11 +381,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     children: [
                       Text(p.name, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14)),
                       const SizedBox(height: 2),
-                      Text(p.address, style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(p.address, style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context)), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_left_rounded, color: AppColors.textMuted),
+                Icon(forwardIconOf(context), color: AppColors.textMutedOf(context)),
               ],
             ),
           ),

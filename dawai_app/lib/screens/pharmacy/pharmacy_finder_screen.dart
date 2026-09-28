@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
+import '../../core/utils/direction.dart';
 import '../../services/api_service.dart';
 import '../../services/location_service.dart';
 import '../../models/pharmacy.dart';
@@ -19,10 +20,12 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
   final ApiService _api = ApiService();
   final LocationService _locationService = LocationService();
   final MapController _mapController = MapController();
+  final TextEditingController _searchCtrl = TextEditingController();
   List<Pharmacy> _pharmacies = [];
   List<Pharmacy> _filtered = [];
   bool _loading = true;
   bool _showMap = false;
+  String? _error;
   LatLng? _userLocation;
   String _searchQuery = '';
   bool _filterOpenNow = false;
@@ -35,50 +38,105 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  /// Loads the pharmacy list and, best effort, the user's location.
+  ///
+  /// Location is deliberately non-fatal: a denied permission or a GPS timeout
+  /// (LocationService caps the fix at 10s) must not prevent the list from
+  /// rendering, so only the pharmacy query can put this screen into an error
+  /// state — and even then the user gets a retry button rather than a spinner
+  /// that never resolves.
   Future<void> _loadData() async {
-    setState(() => _loading = true);
-    final pos = await _locationService.getCurrentPosition();
-    if (pos != null) _userLocation = LatLng(pos.latitude, pos.longitude);
-    final pharmacies = await _api.getPharmacies();
-    if (mounted) {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final results = await Future.wait<dynamic>([
+        _locationService.getCurrentPosition().catchError((_) => null),
+        _api.getPharmacies(),
+      ]);
+      final pos = results[0];
+      final pharmacies = results[1] as List<Pharmacy>;
+      if (!mounted) return;
       setState(() {
+        if (pos != null) _userLocation = LatLng(pos.latitude, pos.longitude);
         _pharmacies = pharmacies;
         _loading = false;
       });
       _applyFilters();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'تعذّر تحميل الصيدليات. تحقّق من اتصالك بالإنترنت.';
+      });
     }
   }
 
   void _applyFilters() {
-    var list = _pharmacies.where((p) => p.name.contains(_searchQuery)).toList();
+    final query = _searchQuery.trim();
+    var list = _pharmacies
+        .where((p) => query.isEmpty || p.name.contains(query))
+        .toList();
     if (_filterDelivery) list = list.where((p) => p.deliveryAvailable).toList();
-    if (_filterOpenNow) {
-      final now = TimeOfDay.now();
-      final nowMinutes = now.hour * 60 + now.minute;
-      list = list.where((p) {
-        if (p.is24h) return true;
-        if (p.openingHours == null || p.openingHours!.isEmpty) return true;
-        try {
-          final parts = p.openingHours!.split('-');
-          if (parts.length == 2) {
-            final openParts = parts[0].trim().split(':');
-            final closeParts = parts[1].trim().split(':');
-            final openMinutes = int.parse(openParts[0]) * 60 + int.parse(openParts[1]);
-            final closeMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
-            return nowMinutes >= openMinutes && nowMinutes <= closeMinutes;
-          }
-        } catch (_) {}
-        return true;
-      }).toList();
-    }
+    if (_filterOpenNow) list = list.where(_isOpenNow).toList();
     if (_filter24h) list = list.where((p) => p.is24h).toList();
     setState(() => _filtered = list);
+  }
+
+  /// Whether [p] is open at the current time.
+  ///
+  /// Schedules are stored either as `HH:mm-HH:mm` (24h) or as a 12-hour range
+  /// such as `9:00 AM - 10:00 PM`; the previous parser called `int.parse` on
+  /// the `"00 AM"` fragment, the resulting FormatException was swallowed and
+  /// every pharmacy fell through to `return true`. A schedule we cannot read
+  /// is now treated as "don't know" and the pharmacy is excluded while the
+  /// filter is on, rather than reported as always open.
+  bool _isOpenNow(Pharmacy p) {
+    if (p.is24h) return true;
+    final hours = p.openingHours?.trim();
+    if (hours == null || hours.isEmpty) return true;
+
+    final parts = hours.split('-');
+    if (parts.length != 2) return false;
+    final open = _parseHour(parts[0]);
+    final close = _parseHour(parts[1]);
+    if (open == null || close == null) return false;
+
+    final now = TimeOfDay.now();
+    final nowMinutes = now.hour * 60 + now.minute;
+    return nowMinutes >= open && nowMinutes <= close;
+  }
+
+  /// Parses `14:30` or `9:00 AM` into minutes since midnight.
+  int? _parseHour(String raw) {
+    final value = raw.trim().toUpperCase();
+    final match = RegExp(r'^(\d{1,2}):(\d{2})\s*(AM|PM)?$').firstMatch(value);
+    if (match == null) return null;
+    var hour = int.tryParse(match.group(1)!);
+    final minute = int.tryParse(match.group(2)!);
+    if (hour == null || minute == null || hour > 23 || minute > 59) return null;
+
+    final meridiem = match.group(3);
+    if (meridiem != null) {
+      if (hour > 12) return null;
+      if (meridiem == 'AM' && hour == 12) hour = 0;
+      if (meridiem == 'PM' && hour != 12) hour += 12;
+    }
+    return hour * 60 + minute;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -88,19 +146,58 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
             Expanded(
               child: _loading
                   ? _buildLoadingState()
-                  : _showMap
-                      ? _buildMap()
-                      : _buildList(),
+                  : _error != null
+                      ? _buildErrorState()
+                      : _showMap
+                          ? _buildMap()
+                          : _buildList(),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => setState(() => _showMap = !_showMap),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: Icon(_showMap ? Icons.list_rounded : Icons.map_rounded),
-        label: Text(_showMap ? 'القائمة' : 'الخريطة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+      floatingActionButton: _error != null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => setState(() => _showMap = !_showMap),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              icon: Icon(_showMap ? Icons.list_rounded : Icons.map_rounded),
+              label: Text(_showMap ? 'القائمة' : 'الخريطة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+            ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.errorSurfaceOf(context),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.wifi_off_rounded, size: 44, color: AppColors.error),
+            ),
+            const SizedBox(height: 16),
+            Text('مشكلة في التحميل', style: AppTypography.h3(context), textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Text(
+              _error ?? '',
+              style: AppTypography.caption(context),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: Text('إعادة المحاولة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -113,7 +210,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primarySurface,
+              color: AppColors.primarySurfaceOf(context),
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: const Icon(Icons.local_pharmacy_rounded, color: AppColors.primary, size: 24),
@@ -123,8 +220,13 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('الصيدليات القريبة', style: AppTypography.h2()),
-                Text('${_filtered.length} صيدلية متاحة', style: AppTypography.caption()),
+                Text('الصيدليات القريبة', style: AppTypography.h2(context)),
+                Text(
+                  // `_filtered` is only populated after `_applyFilters()`, so
+                  // during the initial load this used to flash "0 صيدلية".
+                  _loading ? 'جاري التحميل...' : '${_filtered.length} صيدلية متاحة',
+                  style: AppTypography.caption(context),
+                ),
               ],
             ),
           ),
@@ -138,22 +240,30 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceOf(context),
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.borderOf(context)),
           boxShadow: AppShadow.sm,
         ),
         child: TextField(
+          controller: _searchCtrl,
           onChanged: (v) { _searchQuery = v; _applyFilters(); },
-          style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.text),
+          style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textOf(context)),
           decoration: InputDecoration(
             hintText: 'ابحث عن صيدلية...',
-            hintStyle: GoogleFonts.tajawal(color: AppColors.textMuted, fontSize: 14),
-            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 22),
+            hintStyle: GoogleFonts.tajawal(color: AppColors.textMutedOf(context), fontSize: 14),
+            prefixIcon: Icon(Icons.search_rounded, color: AppColors.textMutedOf(context), size: 22),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
+                    tooltip: 'مسح البحث',
                     icon: const Icon(Icons.close_rounded, size: 20),
-                    onPressed: () { _searchQuery = ''; _applyFilters(); },
+                    onPressed: () {
+                      // Clearing the backing string alone left the typed text
+                      // on screen: the field had no controller.
+                      _searchCtrl.clear();
+                      setState(() => _searchQuery = '');
+                      _applyFilters();
+                    },
                   )
                 : null,
             border: InputBorder.none,
@@ -205,10 +315,10 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.surface,
+          color: selected ? AppColors.primary : AppColors.surfaceOf(context),
           borderRadius: BorderRadius.circular(AppRadius.full),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
+            color: selected ? AppColors.primary : AppColors.borderOf(context),
             width: 1.5,
           ),
         ),
@@ -217,7 +327,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
           style: GoogleFonts.tajawal(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : AppColors.textSecondary,
+            color: selected ? Colors.white : AppColors.textSecondaryOf(context),
           ),
         ),
       ),
@@ -231,7 +341,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
         children: [
           const CircularProgressIndicator(color: AppColors.primary),
           const SizedBox(height: 16),
-          Text('جاري تحميل الصيدليات...', style: AppTypography.body()),
+          Text('جاري تحميل الصيدليات...', style: AppTypography.body(context)),
         ],
       ),
     );
@@ -246,15 +356,15 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.primarySurface,
+                color: AppColors.primarySurfaceOf(context),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.local_pharmacy_outlined, size: 48, color: AppColors.primary),
             ),
             const SizedBox(height: 16),
-            Text('لا توجد صيدليات', style: AppTypography.h3()),
+            Text('لا توجد صيدليات', style: AppTypography.h3(context)),
             const SizedBox(height: 8),
-            Text('جرب البحث بكلمات مختلفة', style: AppTypography.caption()),
+            Text('جرب البحث بكلمات مختلفة', style: AppTypography.caption(context)),
           ],
         ),
       );
@@ -264,6 +374,9 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
       onRefresh: _loadData,
       color: AppColors.primary,
       child: ListView.separated(
+        // Without this the list cannot overscroll when it is short, so
+        // pull-to-refresh silently never fires.
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
         itemCount: _filtered.length,
         separatorBuilder: (_, _) => const SizedBox(height: 12),
@@ -277,9 +390,9 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
       onTap: () => context.push('/pharmacy/${p.id}'),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceOf(context),
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.borderOf(context)),
           boxShadow: AppShadow.sm,
         ),
         child: Column(
@@ -294,7 +407,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
                     ? CachedNetworkImage(
                         imageUrl: p.coverUrl!,
                         fit: BoxFit.cover,
-                        placeholder: (ctx, url) => Container(color: AppColors.primarySurface),
+                        placeholder: (ctx, url) => Container(color: AppColors.primarySurfaceOf(context)),
                         errorWidget: (ctx, url, error) => _buildPlaceholderCover(),
                       )
                     : _buildPlaceholderCover(),
@@ -309,13 +422,13 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(p.name, style: AppTypography.h3(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        child: Text(p.name, style: AppTypography.h3(context), maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
                       if (p.is24h)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: AppColors.successSurface,
+                            color: AppColors.successSurfaceOf(context),
                             borderRadius: BorderRadius.circular(AppRadius.full),
                           ),
                           child: Text('24 ساعة', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.success)),
@@ -325,10 +438,10 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textMuted),
+                      Icon(Icons.location_on_outlined, size: 16, color: AppColors.textMutedOf(context)),
                       const SizedBox(width: 4),
                       Expanded(
-                        child: Text(p.address, style: AppTypography.caption(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        child: Text(p.address, style: AppTypography.caption(context), maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
                     ],
                   ),
@@ -339,7 +452,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.accentSurface,
+                          color: AppColors.accentSurfaceOf(context),
                           borderRadius: BorderRadius.circular(AppRadius.full),
                         ),
                         child: Row(
@@ -357,7 +470,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.infoSurface,
+                            color: AppColors.infoSurfaceOf(context),
                             borderRadius: BorderRadius.circular(AppRadius.full),
                           ),
                           child: Row(
@@ -373,10 +486,10 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: AppColors.primarySurface,
+                          color: AppColors.primarySurfaceOf(context),
                           borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
-                        child: const Icon(Icons.chevron_left_rounded, size: 20, color: AppColors.primary),
+                        child: Icon(forwardIconOf(context), size: 20, color: AppColors.primary),
                       ),
                     ],
                   ),

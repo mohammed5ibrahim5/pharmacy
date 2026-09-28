@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
+import '../../core/utils/api_error.dart';
 import '../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('خطأ: ${e.toString()}', style: GoogleFonts.tajawal()),
+          content: Text(friendlyError(e, fallback: 'تعذّر تسجيل الدخول. حاول مرة أخرى.'), style: GoogleFonts.tajawal()),
           backgroundColor: Theme.of(context).colorScheme.error,
         ));
       }
@@ -105,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   textDirection: TextDirection.ltr,
                                   keyboardType: TextInputType.emailAddress,
                                   autofillHints: const [AutofillHints.email],
-                                  style: GoogleFonts.tajawal(color: isDark ? AppColors.darkText : AppColors.text),
+                                  style: GoogleFonts.tajawal(color: isDark ? AppColors.darkText : AppColors.textOf(context)),
                                   decoration: const InputDecoration(
                                     hintText: 'البريد الإلكتروني',
                                     prefixIcon: Icon(Icons.email_outlined),
@@ -122,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   textDirection: TextDirection.ltr,
                                   obscureText: _obscure,
                                   autofillHints: const [AutofillHints.password],
-                                  style: GoogleFonts.tajawal(color: isDark ? AppColors.darkText : AppColors.text),
+                                  style: GoogleFonts.tajawal(color: isDark ? AppColors.darkText : AppColors.textOf(context)),
                                   decoration: InputDecoration(
                                     hintText: 'كلمة المرور',
                                     prefixIcon: const Icon(Icons.lock_outline),
@@ -139,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 const SizedBox(height: 12),
                                 Align(
-                                  alignment: Alignment.centerLeft,
+                                  alignment: AlignmentDirectional.centerStart,
                                   child: TextButton(
                                     onPressed: () async {
                                       if (_emailCtrl.text.trim().isEmpty) {
@@ -160,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       } catch (e) {
                                         if (context.mounted) {
                                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                            content: Text('خطأ: ${e.toString()}', style: GoogleFonts.tajawal()),
+                                            content: Text(friendlyError(e, fallback: 'تعذّر إرسال رابط الاستعادة. تأكد من البريد وحاول مرة أخرى.'), style: GoogleFonts.tajawal()),
                                             backgroundColor: AppColors.error,
                                           ));
                                         }
@@ -198,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text('ليس لديك حساب؟ ', style: GoogleFonts.tajawal(fontSize: 14, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                                    Text('ليس لديك حساب؟ ', style: GoogleFonts.tajawal(fontSize: 14, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondaryOf(context))),
                                     GestureDetector(
                                       onTap: () => context.push('/register'),
                                       child: Text('إنشاء حساب جديد', style: GoogleFonts.tajawal(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14)),
@@ -209,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Center(
                                   child: TextButton(
                                     onPressed: () => context.go('/'),
-                                    child: Text('التسوق بدون تسجيل', style: GoogleFonts.tajawal(color: isDark ? AppColors.darkTextMuted : AppColors.textMuted, fontWeight: FontWeight.w600, fontSize: 14)),
+                                    child: Text('التسوق بدون تسجيل', style: GoogleFonts.tajawal(color: isDark ? AppColors.darkTextMuted : AppColors.textMutedOf(context), fontWeight: FontWeight.w600, fontSize: 14)),
                                   ),
                                 ),
                               ],

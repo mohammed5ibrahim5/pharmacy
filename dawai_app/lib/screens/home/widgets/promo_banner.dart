@@ -12,7 +12,7 @@ class PromoBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceOf(context),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -47,7 +47,7 @@ class PromoBanner extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.accentSurface,
+                    color: AppColors.accentSurfaceOf(context),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
                   ),
@@ -58,14 +58,14 @@ class PromoBanner extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: AppColors.surfaceOf(context),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: AppColors.accent, width: 2, strokeAlign: BorderSide.strokeAlignInside),
                         ),
                         child: Text('DAWAI15', style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.accent, letterSpacing: 3)),
                       ),
                       const SizedBox(height: 8),
-                      Text('على أول طلب لك', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textMuted)),
+                      Text('على أول طلب لك', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textMutedOf(context))),
                     ],
                   ),
                 ),

@@ -19,28 +19,42 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _pickImage(ImageSource source) async {
-    final picked = await _picker.pickImage(source: source, imageQuality: 85);
-    if (picked != null) {
+    try {
+      final picked = await _picker.pickImage(source: source, imageQuality: 85);
+      if (picked == null) return;
+      if (!mounted) return;
       setState(() {
         _imageFile = File(picked.path);
         _analysisResult = null;
       });
-      _analyzePrescription();
+      await _analyzePrescription();
+    } catch (e) {
+      // pickImage throws a PlatformException when the camera permission is
+      // denied, no camera is present, or the activity was destroyed; without
+      // this the error escaped the tap handler with no feedback.
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تعذّر فتح الكاميرا. تحقّق من إذن الوصول إليها.',
+              style: GoogleFonts.tajawal()),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
   Future<void> _analyzePrescription() async {
     setState(() => _analyzing = true);
+    // Stand-in for the real recognition step: there is no OCR endpoint yet,
+    // so the copy must not claim that drugs were read off the image.
     await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      setState(() {
-        _analyzing = false;
-        _analysisResult = 'تم التعرف الذكي على الروشتة والأدوية المطلوبة:\n\n'
-            '• باراسيتامول 500mg\n'
-            '• سيتريزين 10mg\n\n'
-            'سيتم تأكيد الطلب بعد مراجعة الصيدلي المختص.';
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _analyzing = false;
+      _analysisResult = 'تم إرفاق الروشتة بنجاح.\n\n'
+          'سيراجعها الصيدلي المختص ويجهّز الأدوية المذكورة فيها، '
+          'وسيصلك إشعار عند تأكيد الطلب.';
+    });
   }
 
   @override
@@ -56,7 +70,7 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.primarySurface,
+                color: AppColors.primarySurfaceOf(context),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.primaryLight),
               ),
@@ -104,9 +118,9 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppColors.surfaceOf(context),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: AppColors.borderOf(context)),
                 ),
                 child: Column(
                   children: [
@@ -127,7 +141,7 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.successSurface,
+                          color: AppColors.successSurfaceOf(context),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
                         ),

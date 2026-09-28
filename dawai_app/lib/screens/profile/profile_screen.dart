@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
+import '../../core/utils/api_error.dart';
+import '../../core/utils/direction.dart';
 import '../../services/api_service.dart';
 import '../../models/customer.dart';
 import '../../providers/app_state.dart';
@@ -40,7 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل الملف الشخصي: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text(friendlyError(e, fallback: 'تعذّر تحميل الملف الشخصي.'), style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
         );
       }
     }
@@ -192,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.primarySurface,
+                      color: AppColors.primarySurfaceOf(context),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.person_outline, size: 60, color: AppColors.primary),
@@ -200,7 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 24),
                   Text('سجل دخولك لتتمكن من الوصول لملفك الشخصي وطلباتك', 
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkText : AppColors.text),
+                    style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkText : AppColors.textOf(context)),
                   ),
                   const SizedBox(height: 32),
                   SizedBox(
@@ -279,10 +281,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildSectionTitle(String title, ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12, right: 8),
+      padding: const EdgeInsetsDirectional.only(bottom: 12, end: 8),
       child: Text(
         title,
-        style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+        style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondaryOf(context)),
       ),
     );
   }
@@ -341,7 +343,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            Icon(Icons.chevron_left_rounded, color: theme.iconTheme.color?.withValues(alpha: 0.5), size: 20),
+            Icon(forwardIconOf(context), color: theme.iconTheme.color?.withValues(alpha: 0.5), size: 20),
           ],
         ),
       ),
@@ -374,7 +376,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.errorSurface,
+                color: AppColors.errorSurfaceOf(context),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.logout, color: AppColors.error, size: 22),
@@ -385,12 +387,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         content: Text(
           'هل أنت متأكد من تسجيل الخروج؟',
-          style: GoogleFonts.tajawal(fontSize: 14, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+          style: GoogleFonts.tajawal(fontSize: 14, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondaryOf(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('إلغاء', style: GoogleFonts.tajawal(color: AppColors.textMuted)),
+            child: Text('إلغاء', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -437,9 +439,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ElevatedButton(
               onPressed: saving ? null : () async {
                 setDialogState(() => saving = true);
-                await _api.updateProfile(fullName: nameCtrl.text.trim(), phone: phoneCtrl.text.trim());
-                if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) _load();
+                try {
+                  await _api.updateProfile(fullName: nameCtrl.text.trim(), phone: phoneCtrl.text.trim());
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (mounted) _load();
+                } catch (e) {
+                  // Without this the exception escaped the tap handler and
+                  // `saving` stayed true, leaving both buttons permanently
+                  // disabled and the dialog impossible to close.
+                  if (!ctx.mounted) return;
+                  setDialogState(() => saving = false);
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(
+                      content: Text('تعذّر حفظ التعديلات. تحقّق من الاتصال وحاول مرة أخرى.',
+                          style: GoogleFonts.tajawal()),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
               },
               child: saving
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
@@ -448,6 +465,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
+    ).whenComplete(() {
+      nameCtrl.dispose();
+      phoneCtrl.dispose();
+    });
   }
 }

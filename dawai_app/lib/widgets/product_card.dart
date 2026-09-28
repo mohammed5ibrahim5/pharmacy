@@ -47,7 +47,7 @@ class ProductCard extends StatelessWidget {
             border: Border.all(
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.darkBorder
-                  : AppColors.border,
+                  : AppColors.borderOf(context),
             ),
             boxShadow: Theme.of(context).brightness == Brightness.dark
                 ? AppShadow.darkSm
@@ -76,15 +76,15 @@ class ProductCard extends StatelessWidget {
                           Icons.image_not_supported_outlined,
                           color: Theme.of(context).brightness == Brightness.dark
                               ? AppColors.darkTextMuted
-                              : AppColors.textMuted,
+                              : AppColors.textMutedOf(context),
                         ),
                       ),
                     ),
                   ),
                   if (product.requiresPrescription)
-                    Positioned(
+                    PositionedDirectional(
                       top: 8,
-                      right: 8,
+                      end: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
@@ -102,9 +102,9 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
                   if (badge != null)
-                    Positioned(
+                    PositionedDirectional(
                       top: 8,
-                      right: product.requiresPrescription ? 56 : 8,
+                      end: product.requiresPrescription ? 56 : 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
@@ -122,9 +122,9 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
                   if (showDiscount && originalPrice != null && originalPrice! > product.price)
-                    Positioned(
+                    PositionedDirectional(
                       top: 8,
-                      left: 8,
+                      start: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
@@ -142,9 +142,9 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
                   if (onFavoriteToggle != null || true)
-                    Positioned(
+                    PositionedDirectional(
                       bottom: 8,
-                      left: 8,
+                      start: 8,
                       child: GestureDetector(
                         onTap: onFavoriteToggle ?? () => appState.toggleFavorite(product.id),
                         child: Container(
@@ -163,7 +163,7 @@ class ProductCard extends StatelessWidget {
                                 ? AppColors.error
                                 : (Theme.of(context).brightness == Brightness.dark
                                     ? AppColors.darkTextMuted
-                                    : AppColors.textMuted),
+                                    : AppColors.textMutedOf(context)),
                           ),
                         ),
                       ),
@@ -184,7 +184,7 @@ class ProductCard extends StatelessWidget {
                         fontSize: 14,
                         color: Theme.of(context).brightness == Brightness.dark
                             ? AppColors.darkText
-                            : AppColors.text,
+                            : AppColors.textOf(context),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -197,7 +197,7 @@ class ProductCard extends StatelessWidget {
                           fontSize: 11,
                           color: Theme.of(context).brightness == Brightness.dark
                               ? AppColors.darkTextMuted
-                              : AppColors.textSecondary,
+                              : AppColors.textSecondaryOf(context),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -218,7 +218,7 @@ class ProductCard extends StatelessWidget {
                                   fontSize: 10,
                                   color: Theme.of(context).brightness == Brightness.dark
                                       ? AppColors.darkTextMuted
-                                      : AppColors.textMuted,
+                                      : AppColors.textMutedOf(context),
                                   decoration: TextDecoration.lineThrough,
                                 ),
                               ),

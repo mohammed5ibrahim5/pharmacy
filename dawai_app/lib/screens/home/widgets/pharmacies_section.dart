@@ -114,7 +114,7 @@ class _PharmaciesSectionState extends State<PharmaciesSection> {
                   label: Text(tabs[i], style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600)),
                   selected: isSelected,
                   selectedColor: AppColors.primary,
-                  labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.text),
+                  labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.textOf(context)),
                   onSelected: (selected) {
                     if (selected) setState(() => _selectedPharmacyTab = i);
                   },

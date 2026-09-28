@@ -67,8 +67,8 @@ class AppButton extends StatelessWidget {
         decoration = BoxDecoration(
           gradient: LinearGradient(
             colors: [AppColors.primary, activeColor],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+            begin: AlignmentDirectional.centerStart,
+            end: AlignmentDirectional.centerEnd,
           ),
           borderRadius: BorderRadius.circular(AppRadius.md),
           boxShadow: [
@@ -104,7 +104,7 @@ class AppButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
           decoration: onPressed == null
               ? decoration.copyWith(
-                  color: isDark ? AppColors.darkTextMuted : AppColors.textMuted,
+                  color: isDark ? AppColors.darkTextMuted : AppColors.textMutedOf(context),
                   border: null,
                   gradient: null,
                   boxShadow: [],

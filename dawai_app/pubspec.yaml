@@ -52,3 +52,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Tajawal is bundled so the Arabic UI never renders in a fallback face:
+  # google_fonts otherwise downloads each weight from fonts.gstatic.com on
+  # first paint and caches it on device, which means a flash of the wrong font
+  # on first launch and no Tajawal at all while offline. The file names match
+  # the Google Fonts API naming (`<Family>-<Variant>.ttf`) that google_fonts
+  # uses to look a face up in the asset manifest.
+  assets:
+    - assets/fonts/

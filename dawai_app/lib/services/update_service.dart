@@ -13,7 +13,8 @@ class UpdateService {
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
-      final response = await http.get(Uri.parse(_versionUrl));
+      final response =
+          await http.get(Uri.parse(_versionUrl)).timeout(const Duration(seconds: 10));
       if (response.statusCode != 200) return;
 
       final data = json.decode(response.body);

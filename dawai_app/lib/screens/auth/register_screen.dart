@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../config/theme.dart';
+import '../../core/utils/api_error.dart';
 import '../../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -33,23 +34,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
-      await _api.signUp(
+      final response = await _api.signUp(
         email: _emailCtrl.text.trim(),
         password: _passCtrl.text,
         fullName: _nameCtrl.text.trim(),
         phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('تم إنشاء الحساب بنجاح!', style: GoogleFonts.tajawal()),
-          backgroundColor: AppColors.success,
-        ));
+      if (!mounted) return;
+
+      // With email confirmation enabled Supabase returns session == null:
+      // nobody is signed in yet. Claiming success and landing on Home used to
+      // leave the user "logged out" while believing their account was ready.
+      final needsConfirmation = response.session == null;
+      final alreadyRegistered = response.user?.identities?.isEmpty ?? false;
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          alreadyRegistered
+              ? 'هذا البريد الإلكتروني مسجّل بالفعل.'
+              : needsConfirmation
+                  ? 'تم إرسال رابط التأكيد إلى بريدك — أكّد الحساب ثم سجّل الدخول.'
+                  : 'تم إنشاء الحساب بنجاح!',
+          style: GoogleFonts.tajawal(),
+        ),
+        backgroundColor: alreadyRegistered ? AppColors.error : AppColors.success,
+      ));
+      if (alreadyRegistered) {
+        context.go('/login');
+      } else if (needsConfirmation) {
+        context.go('/login');
+      } else {
         context.go('/');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('خطأ: ${e.toString()}', style: GoogleFonts.tajawal()),
+          content: Text(friendlyError(e, fallback: 'تعذّر إنشاء الحساب. حاول مرة أخرى.'),
+              style: GoogleFonts.tajawal()),
           backgroundColor: Theme.of(context).colorScheme.error,
         ));
       }

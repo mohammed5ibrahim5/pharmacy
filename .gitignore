@@ -8,6 +8,12 @@ build/
 dawai_app/dawai-app.apk
 dawai_app/.metadata
 
+# Release signing - never commit the keystore or its passwords
+dawai_app/android/key.properties
+dawai_app/android/app/upload-keystore.jks
+*.jks
+*.keystore
+
 # IDE
 .vscode/
 .idea/

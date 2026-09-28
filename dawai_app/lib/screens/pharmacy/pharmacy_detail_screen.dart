@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
+import '../../core/utils/api_error.dart';
+import '../../shared/widgets/load_more_on_scroll.dart';
 import '../../services/api_service.dart';
 import '../../models/pharmacy.dart';
 import '../../models/product.dart';
@@ -20,6 +22,14 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
   final ApiService _api = ApiService();
   Pharmacy? _pharmacy;
   List<Product> _products = [];
+
+  /// Total products this pharmacy has, used by the tab label. It is read from
+  /// the query rather than from `_products.length`, which now only counts the
+  /// pages loaded so far.
+  int _total = 0;
+  bool _hasMore = false;
+  bool _loadingMore = false;
+
   bool _loading = true;
   late TabController _tabController;
 
@@ -34,12 +44,13 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
     try {
       final results = await Future.wait([
         _api.getPharmacy(widget.id),
-        _api.getProducts(pharmacyId: widget.id),
+        _api.getProductPage(pharmacyId: widget.id, offset: 0),
       ]);
       if (mounted) {
+        final page = results[1] as ProductPage;
         setState(() {
           _pharmacy = results[0] as Pharmacy?;
-          _products = results[1] as List<Product>;
+          _applyPage(page, replace: true);
           _loading = false;
         });
       }
@@ -47,9 +58,37 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل الصيدلية: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text(friendlyError(e, fallback: 'تعذّر تحميل الصيدلية.'), style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
         );
       }
+    }
+  }
+
+  void _applyPage(ProductPage page, {required bool replace}) {
+    _products = replace ? page.products : [..._products, ...page.products];
+    _total = page.total;
+    _hasMore = _products.length < _total;
+  }
+
+  /// Scroll-triggered; flips `_loadingMore` before awaiting so the next
+  /// notification cannot duplicate the request, and stays retryable on error.
+  Future<void> _loadMore() async {
+    if (_loading || _loadingMore || !_hasMore) return;
+    _loadingMore = true;
+    setState(() {});
+    try {
+      final page = await _api.getProductPage(
+        pharmacyId: widget.id,
+        offset: _products.length,
+      );
+      if (!mounted) return;
+      setState(() {
+        _applyPage(page, replace: false);
+        _loadingMore = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadingMore = false);
     }
   }
 
@@ -75,7 +114,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
-              Text('صيدلية غير موجودة', style: AppTypography.h3()),
+              Text('صيدلية غير موجودة', style: AppTypography.h3(context)),
             ],
           ),
         ),
@@ -84,7 +123,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
     final p = _pharmacy!;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(p),
@@ -95,13 +134,13 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
               TabBar(
                 controller: _tabController,
                 labelColor: AppColors.primary,
-                unselectedLabelColor: AppColors.textMuted,
+                unselectedLabelColor: AppColors.textMutedOf(context),
                 indicatorColor: AppColors.primary,
                 indicatorWeight: 3,
                 labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14),
                 unselectedLabelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.w500, fontSize: 14),
                 tabs: [
-                  Tab(text: 'المنتجات (${_products.length})'),
+                  Tab(text: 'المنتجات ($_total)'),
                   Tab(text: 'العنوان'),
                   Tab(text: 'التواصل'),
                 ],
@@ -163,14 +202,49 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
         if (p.phone != null)
           IconButton(
             icon: const Icon(Icons.call_rounded),
-            onPressed: () => launchUrl(Uri.parse('tel:${p.phone}')),
+            tooltip: 'اتصال',
+            onPressed: () => _openExternal('tel:${p.phone}'),
           ),
         if (p.whatsapp != null)
           IconButton(
             icon: const Icon(Icons.chat_rounded),
-            onPressed: () => launchUrl(Uri.parse('https://wa.me/${p.whatsapp}')),
+            tooltip: 'واتساب',
+            onPressed: () => _openExternal('https://wa.me/${p.whatsapp}'),
           ),
       ],
+    );
+  }
+
+  /// Opens [raw] with the platform handler.
+  ///
+  /// Every contact action used to fire-and-forget `launchUrl`, so a device
+  /// with no WhatsApp/mail handler — or a malformed `websiteUrl`/`phone` from
+  /// the backend — threw a PlatformException inside the tap callback with no
+  /// feedback. This reports the failure instead of crashing silently.
+  Future<void> _openExternal(String raw) async {
+    final uri = Uri.tryParse(raw);
+    if (uri == null) {
+      _showLaunchError();
+      return;
+    }
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        _showLaunchError();
+      }
+    } catch (_) {
+      _showLaunchError();
+    }
+  }
+
+  void _showLaunchError() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('تعذّر فتح الرابط على هذا الجهاز.', style: GoogleFonts.tajawal()),
+        backgroundColor: AppColors.error,
+      ),
     );
   }
 
@@ -187,10 +261,10 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.name, style: AppTypography.h2()),
+                    Text(p.name, style: AppTypography.h2(context)),
                     if (p.nameEn != null) ...[
                       const SizedBox(height: 2),
-                      Text(p.nameEn!, style: AppTypography.caption(color: AppColors.textMuted)),
+                      Text(p.nameEn!, style: AppTypography.caption(context, color: AppColors.textMutedOf(context))),
                     ],
                   ],
                 ),
@@ -199,7 +273,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
+                    color: AppColors.primarySurfaceOf(context),
                     borderRadius: BorderRadius.circular(AppRadius.full),
                   ),
                   child: Text(p.pharmacyType!, style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary)),
@@ -214,11 +288,11 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildInfoChip(Icons.star_rounded, '${p.rating}', AppColors.accent, AppColors.accentSurface),
-              if (p.is24h) _buildInfoChip(Icons.access_time_rounded, '24 ساعة', AppColors.success, AppColors.successSurface),
-              if (p.deliveryAvailable) _buildInfoChip(Icons.delivery_dining_rounded, 'يوصل', AppColors.info, AppColors.infoSurface),
-              if (p.hasParking) _buildInfoChip(Icons.local_parking_rounded, 'موقف سيارات', AppColors.textSecondary, AppColors.borderLight),
-              if (p.acceptInsurance) _buildInfoChip(Icons.shield_rounded, 'تأمين صحي', AppColors.textSecondary, AppColors.borderLight),
+              _buildInfoChip(Icons.star_rounded, '${p.rating}', AppColors.accent, AppColors.accentSurfaceOf(context)),
+              if (p.is24h) _buildInfoChip(Icons.access_time_rounded, '24 ساعة', AppColors.success, AppColors.successSurfaceOf(context)),
+              if (p.deliveryAvailable) _buildInfoChip(Icons.delivery_dining_rounded, 'يوصل', AppColors.info, AppColors.infoSurfaceOf(context)),
+              if (p.hasParking) _buildInfoChip(Icons.local_parking_rounded, 'موقف سيارات', AppColors.textSecondaryOf(context), AppColors.borderLight),
+              if (p.acceptInsurance) _buildInfoChip(Icons.shield_rounded, 'تأمين صحي', AppColors.textSecondaryOf(context), AppColors.borderLight),
             ],
           ),
 
@@ -228,16 +302,16 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: AppColors.surfaceOf(context),
               borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: AppColors.borderOf(context)),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
+                    color: AppColors.primarySurfaceOf(context),
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: const Icon(Icons.location_on_outlined, size: 20, color: AppColors.primary),
@@ -247,9 +321,9 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('العنوان', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                      Text('العنوان', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
                       const SizedBox(height: 2),
-                      Text(p.address, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.text), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Text(p.address, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textOf(context)), maxLines: 2, overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
@@ -264,16 +338,16 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: AppColors.surfaceOf(context),
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: AppColors.borderOf(context)),
               ),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.accentSurface,
+                      color: AppColors.accentSurfaceOf(context),
                       borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
                     child: const Icon(Icons.schedule_rounded, size: 20, color: AppColors.accent),
@@ -283,9 +357,9 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('مواعيد العمل', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                        Text('مواعيد العمل', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
                         const SizedBox(height: 2),
-                        Text(p.openingHours!, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.text)),
+                        Text(p.openingHours!, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textOf(context))),
                       ],
                     ),
                   ),
@@ -325,28 +399,41 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: AppColors.primarySurface, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), shape: BoxShape.circle),
               child: const Icon(Icons.medication_outlined, size: 48, color: AppColors.primary),
             ),
             const SizedBox(height: 16),
-            Text('لا توجد منتجات', style: AppTypography.h3()),
+            Text('لا توجد منتجات', style: AppTypography.h3(context)),
             const SizedBox(height: 8),
-            Text('لم تُضف منتجات لهذه الصيدلية بعد', style: AppTypography.caption()),
+            Text('لم تُضف منتجات لهذه الصيدلية بعد', style: AppTypography.caption(context)),
           ],
         ),
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.68,
+    return LoadMoreOnScroll(
+      onLoadMore: _loadMore,
+      threshold: 600,
+      child: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.68,
+        ),
+        // One extra cell while the next page is in flight, drawn as a spinner
+        // rather than an empty card.
+        itemCount: _products.length + (_loadingMore ? 1 : 0),
+        itemBuilder: (ctx, i) {
+          if (i >= _products.length) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+            );
+          }
+          return _buildProductCard(_products[i]);
+        },
       ),
-      itemCount: _products.length,
-      itemBuilder: (ctx, i) => _buildProductCard(_products[i]),
     );
   }
 
@@ -355,9 +442,9 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
       onTap: () => context.push('/product/${p.id}'),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceOf(context),
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.borderOf(context)),
           boxShadow: AppShadow.xs,
         ),
         child: Column(
@@ -367,7 +454,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: AppColors.primarySurface,
+                  color: AppColors.primarySurfaceOf(context),
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 ),
                 child: p.imageUrl != null
@@ -394,7 +481,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                     children: [
                       Text(p.price.toStringAsFixed(0), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
                       const SizedBox(width: 2),
-                      Text('ج.م', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                      Text('ج.م', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
                     ],
                   ),
                 ],
@@ -413,7 +500,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
         if (p.description != null && p.description!.isNotEmpty) ...[
           _buildSectionTitle('عن الصيدلية'),
           const SizedBox(height: 10),
-          Text(p.description!, style: GoogleFonts.tajawal(fontSize: 14, height: 1.6, color: AppColors.textSecondary)),
+          Text(p.description!, style: GoogleFonts.tajawal(fontSize: 14, height: 1.6, color: AppColors.textSecondaryOf(context))),
           const SizedBox(height: 24),
         ],
         _buildSectionTitle('الخدمات'),
@@ -431,7 +518,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
           height: 180,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: AppColors.borderOf(context)),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -440,7 +527,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
               fit: BoxFit.cover,
               errorBuilder: (ctx, error, stack) => Container(
                 color: AppColors.borderLight,
-                child: const Center(child: Icon(Icons.map_outlined, size: 48, color: AppColors.textMuted)),
+                child: Center(child: Icon(Icons.map_outlined, size: 48, color: AppColors.textMutedOf(context))),
               ),
             ),
           ),
@@ -462,7 +549,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
             title: 'الهاتف',
             subtitle: p.phone!,
             color: AppColors.success,
-            onTap: () => launchUrl(Uri.parse('tel:${p.phone}')),
+            onTap: () => _openExternal('tel:${p.phone}'),
           ),
 
         if (p.whatsapp != null) ...[
@@ -472,7 +559,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
             title: 'واتساب',
             subtitle: p.whatsapp!,
             color: AppColors.whatsapp,
-            onTap: () => launchUrl(Uri.parse('https://wa.me/${p.whatsapp}')),
+            onTap: () => _openExternal('https://wa.me/${p.whatsapp}'),
           ),
         ],
 
@@ -483,7 +570,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
             title: 'البريد الإلكتروني',
             subtitle: p.email!,
             color: AppColors.info,
-            onTap: () => launchUrl(Uri.parse('mailto:${p.email}')),
+            onTap: () => _openExternal('mailto:${p.email}'),
           ),
         ],
 
@@ -494,7 +581,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
             title: 'الموقع الإلكتروني',
             subtitle: p.websiteUrl!,
             color: AppColors.secondary,
-            onTap: () => launchUrl(Uri.parse(p.websiteUrl!)),
+            onTap: () => _openExternal(p.websiteUrl!),
           ),
         ],
 
@@ -507,7 +594,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.infoSurface,
+              color: AppColors.infoSurfaceOf(context),
               borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
             ),
@@ -521,7 +608,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                     children: [
                       Text('التوصيل متاح', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.info)),
                       const SizedBox(height: 4),
-                      Text('رسوم التوصيل: ${p.deliveryFee} ج.م', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textSecondary)),
+                      Text('رسوم التوصيل: ${p.deliveryFee} ج.م', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textSecondaryOf(context))),
                     ],
                   ),
                 ),
@@ -534,7 +621,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
   }
 
   Widget _buildSectionTitle(String title) {
-    return Text(title, style: AppTypography.h3());
+    return Text(title, style: AppTypography.h3(context));
   }
 
   Widget _buildServiceRow(IconData icon, String label, String value) {
@@ -545,7 +632,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primarySurface,
+              color: AppColors.primarySurfaceOf(context),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Icon(icon, size: 18, color: AppColors.primary),
@@ -555,8 +642,8 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.text)),
-                Text(value, style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMuted)),
+                Text(label, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textOf(context))),
+                Text(value, style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
               ],
             ),
           ),
@@ -577,9 +664,9 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceOf(context),
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.borderOf(context)),
           boxShadow: AppShadow.xs,
         ),
         child: Row(
@@ -597,13 +684,13 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.text)),
+                  Text(title, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textOf(context))),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(subtitle, style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context)), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
-            Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppColors.textMuted),
+            Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: AppColors.textMutedOf(context)),
           ],
         ),
       ),
@@ -617,7 +704,7 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   @override double get minExtent => tabBar.preferredSize.height;
   @override double get maxExtent => tabBar.preferredSize.height;
   @override Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) => Container(
-    color: AppColors.surface,
+    color: AppColors.surfaceOf(context),
     child: tabBar,
   );
   @override bool shouldRebuild(_SliverAppBarDelegate oldDelegate) => tabBar != oldDelegate.tabBar;

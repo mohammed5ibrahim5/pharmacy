@@ -150,8 +150,8 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
       maxChildSize: 0.95,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceOf(context),
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: ListView(
@@ -163,7 +163,7 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: AppColors.borderOf(context),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -193,14 +193,14 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
                           style: GoogleFonts.tajawal(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.text,
+                            color: AppColors.textOf(context),
                           ),
                         ),
                         Text(
                           'لحساب الجرعة المناسبة حسب الوزن والعمر',
                           style: GoogleFonts.tajawal(
                             fontSize: 13,
-                            color: AppColors.textMuted,
+                            color: AppColors.textMutedOf(context),
                           ),
                         ),
                       ],
@@ -214,7 +214,7 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
                 style: GoogleFonts.tajawal(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.text,
+                  color: AppColors.textOf(context),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -229,10 +229,10 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
                     value: _selectedDrug,
                     hint: Text(
                       'اختر دواءً...',
-                      style: GoogleFonts.tajawal(color: AppColors.textMuted),
+                      style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)),
                     ),
                     isExpanded: true,
-                    dropdownColor: AppColors.surface,
+                    dropdownColor: AppColors.surfaceOf(context),
                     items: _drugs.map((drug) {
                       return DropdownMenuItem(
                         value: drug['name'],
@@ -244,7 +244,7 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
                               drug['ar']!,
                               style: GoogleFonts.tajawal(
                                 fontSize: 15,
-                                color: AppColors.text,
+                                color: AppColors.textOf(context),
                               ),
                             ),
                           ],
@@ -267,7 +267,7 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
                           style: GoogleFonts.tajawal(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.text,
+                            color: AppColors.textOf(context),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
@@ -277,7 +277,7 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
                           decoration: InputDecoration(
                             hintText: 'مثال: 20',
                             prefixIcon: const Icon(Icons.monitor_weight_outlined, size: 20),
-                            hintStyle: GoogleFonts.tajawal(color: AppColors.textMuted),
+                            hintStyle: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)),
                           ),
                         ),
                       ],
@@ -293,7 +293,7 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
                           style: GoogleFonts.tajawal(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.text,
+                            color: AppColors.textOf(context),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
@@ -303,7 +303,7 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
                           decoration: InputDecoration(
                             hintText: 'مثال: 5',
                             prefixIcon: const Icon(Icons.cake_outlined, size: 20),
-                            hintStyle: GoogleFonts.tajawal(color: AppColors.textMuted),
+                            hintStyle: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)),
                           ),
                         ),
                       ],
@@ -375,7 +375,7 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
                             style: GoogleFonts.tajawal(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.text,
+                              color: AppColors.textOf(context),
                             ),
                           ),
                         ],
@@ -491,7 +491,7 @@ class _DoseCalculatorModalState extends State<DoseCalculatorModal> {
             label,
             style: GoogleFonts.tajawal(
               fontSize: 14,
-              color: AppColors.textMuted,
+              color: AppColors.textMutedOf(context),
             ),
           ),
           Container(
