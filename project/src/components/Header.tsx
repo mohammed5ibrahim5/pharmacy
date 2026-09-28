@@ -372,7 +372,7 @@ export function Header() {
             </button>
 
             {/* SEARCH HUB - Desktop */}
-            <div className="hidden md:flex flex-1 max-w-2xl flex-col relative" ref={searchRef}>
+            <div className="hidden md:flex flex-1 min-w-0 max-w-2xl flex-col relative" ref={searchRef}>
               <form onSubmit={handleSearchSubmit} className="w-full relative group">
                 <div
                   className="relative flex items-center h-11 lg:h-12 rounded-full border backdrop-blur-md transition-all duration-300 focus-within:shadow-lg focus-within:border-opacity-40"

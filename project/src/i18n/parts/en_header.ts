@@ -95,7 +95,7 @@
   'تم تحديث الصورة بنجاح': 'Photo updated successfully',
   'تم حفظ رقم الهاتف': 'Phone number saved',
   'دخول / حساب': 'Login / Account',
-  'إدارة طلباتك وروشتاتك': 'Manage your orders and prescriptions',
+  'إدارة طلباتك وروشتاتك': 'Orders & prescriptions',
   'دخول': 'Login',
   'عميل': 'Customer',
   'صورة': 'Photo',

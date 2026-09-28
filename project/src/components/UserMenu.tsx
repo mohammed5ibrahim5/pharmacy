@@ -228,9 +228,9 @@ export function UserMenu() {
         >
           <UserCircle2 className="w-4 h-4" />
         </div>
-        <div className="text-start leading-tight hidden sm:block">
-          <span className="block font-bold">{t('دخول / حساب')}</span>
-          <span className="text-[10px] text-gray-500 font-normal">{t('إدارة طلباتك وروشتاتك')}</span>
+        <div className="text-start leading-tight hidden sm:block min-w-0 max-w-[112px]">
+          <span className="block font-bold truncate">{t('دخول / حساب')}</span>
+          <span className="block text-[10px] text-gray-500 font-normal truncate">{t('إدارة طلباتك وروشتاتك')}</span>
         </div>
         <span className="sm:hidden font-bold">{t('دخول')}</span>
       </button>
@@ -262,14 +262,14 @@ export function UserMenu() {
           )}
           <span className="absolute -bottom-0.5 -end-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
         </span>
-        <div className="hidden sm:block text-start leading-tight">
-          <div className="flex items-center gap-1">
-            <span className="text-[11px] font-extrabold text-gray-900 max-w-[84px] truncate">
+        <div className="hidden sm:block text-start leading-tight min-w-0 max-w-[104px]">
+          <div className="flex items-center gap-1 min-w-0">
+            <span className="text-[11px] font-extrabold text-gray-900 truncate min-w-0">
               {profile?.full_name || t('عميل متميز')}
             </span>
-            <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400" />
+            <Sparkles className="w-3 h-3 shrink-0 text-amber-500 fill-amber-400" />
           </div>
-          <p className="text-[9px] font-semibold" style={{ color: themeColors.primaryColor }}>{t('حسابي والخدمات')}</p>
+          <p className="text-[9px] font-semibold truncate" style={{ color: themeColors.primaryColor }}>{t('حسابي والخدمات')}</p>
         </div>
         <ChevronDown className={`w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
