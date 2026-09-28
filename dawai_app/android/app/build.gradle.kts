@@ -57,6 +57,12 @@ android {
 
     buildTypes {
         release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             // Falls back to the debug keystore so that configuration (and
             // `flutter build apk --debug`) never fails, but packageRelease
             // below refuses to actually produce a debug-signed artifact: the

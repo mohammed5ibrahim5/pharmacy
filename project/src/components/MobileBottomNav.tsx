@@ -1,4 +1,5 @@
-import { Home, Search, User, Heart, MessageCircle, ShoppingCart } from 'lucide-react';
+import React from 'react';
+import { Home, Heart, Store, FileText, User, ShoppingCart, Camera, MessageCircle } from 'lucide-react';
 import { useSettings } from '@/context/SettingsContext';
 import { useRouter } from '@/context/RouterContext';
 import { useCustomer } from '@/context/CustomerContext';
@@ -15,61 +16,49 @@ export function MobileBottomNav() {
 
   const whatsappDigits = settings.contact_whatsapp ? settings.contact_whatsapp.replace(/\D/g, '') : null;
 
-  const items: { id: string; label: string; icon: React.ReactNode; active: boolean; onClick: () => void }[] = [
+  const items = [
     {
       id: 'home',
       label: t('الرئيسية'),
-      icon: <Home className="w-5 h-5" />,
+      icon: Home,
       active: route.name === 'home',
       onClick: () => navigate({ name: 'home' }),
     },
     {
-      id: 'search',
-      label: t('بحث'),
-      icon: <Search className="w-5 h-5" />,
-      active: route.name === 'search' || route.name === 'category',
+      id: 'health',
+      label: t('صحة'),
+      icon: Heart,
+      active: route.name === 'health' || route.name === 'healthArticle',
+      onClick: () => navigate({ name: 'health' }),
+    },
+    {
+      id: 'pharmacies',
+      label: t('الصيدليات'),
+      icon: Store,
+      active: route.name === 'search' || route.name === 'pharmacy',
       onClick: () => navigate({ name: 'search', query: '' }),
     },
     {
-      id: 'favorites',
-      label: t('المفضلة'),
-      icon: <Heart className="w-5 h-5" />,
-      active: route.name === 'account' && route.tab === 'favorites',
+      id: 'orders',
+      label: t('طلباتي'),
+      icon: FileText,
+      active: route.name === 'track' || (route.name === 'account' && route.tab === 'orders'),
       onClick: () => {
         if (user) {
-          navigate({ name: 'account', tab: 'favorites' });
+          navigate({ name: 'account', tab: 'orders' });
         } else {
-          setAuthModalOpen(true);
+          navigate({ name: 'track' });
         }
       },
     },
     {
-      id: 'cart',
-      label: t('السلة'),
-      icon: (
-        <span className="relative">
-          <ShoppingCart className="w-5 h-5" />
-          {cartCount > 0 && (
-            <span
-              className="absolute -top-2 -start-2.5 min-w-4 h-4 px-0.5 rounded-full text-[9px] font-black text-white flex items-center justify-center animate-bounce-in"
-              style={{ backgroundColor: themeColors.priceColor }}
-            >
-              {cartCount > 99 ? '99+' : cartCount}
-            </span>
-          )}
-        </span>
-      ),
-      active: false,
-      onClick: () => openCart('cart'),
-    },
-    {
-      id: 'account',
+      id: 'profile',
       label: t('حسابي'),
-      icon: <User className="w-5 h-5" />,
-      active: route.name === 'account' && route.tab !== 'favorites',
+      icon: User,
+      active: route.name === 'account' && route.tab !== 'orders' && route.tab !== 'favorites',
       onClick: () => {
         if (user) {
-          navigate({ name: 'account', tab: 'orders' });
+          navigate({ name: 'account', tab: 'profile' });
         } else {
           setAuthModalOpen(true);
         }
@@ -78,52 +67,120 @@ export function MobileBottomNav() {
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 inset-x-0 z-40">
-      <div 
-        className="glass border-t shadow-[0_-8px_30px_rgba(0,0,0,0.08)] px-2 pb-[env(safe-area-inset-bottom)]"
-        style={{ 
-          backgroundColor: `${themeColors.bottomNavBg}F0`,
-          borderColor: 'rgba(255,255,255,0.2)' 
-        }}
-      >
-        <div className="flex items-center justify-between gap-1 max-w-lg mx-auto relative pt-1">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              onClick={item.onClick}
-              className={`relative flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-2xl flex-1 min-w-0 transition-all duration-300 active:scale-90 ${
-                item.active ? 'text-white scale-105' : 'hover:bg-slate-500/5'
-              }`}
-              style={item.active ? { backgroundColor: themeColors.primaryColor } : { color: themeColors.bottomNavText }}
+    <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none">
+      {/* Floating Action Buttons (FABs) matching Flutter APK */}
+      <div className="flex flex-col items-end gap-2.5 px-4 pb-3 pointer-events-auto">
+        {/* Cart FAB if items in cart */}
+        {cartCount > 0 && (
+          <button
+            onClick={() => openCart('cart')}
+            className="relative w-12 h-12 rounded-full text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)] flex items-center justify-center transition-all duration-300 active:scale-90 hover:scale-105"
+            style={{ backgroundColor: themeColors.accentColor || '#f59e0b' }}
+            title={t('سلة المشتريات')}
+            aria-label={t('سلة المشتريات')}
+          >
+            <ShoppingCart className="w-5 h-5" />
+            <span
+              className="absolute -top-1.5 -start-1.5 min-w-5 h-5 px-1 rounded-full text-[10px] font-black text-white flex items-center justify-center shadow-md animate-bounce-in"
+              style={{ backgroundColor: '#ef4444' }}
             >
-              {item.active && (
-                 <div className="absolute inset-0 rounded-2xl opacity-20 blur-sm" style={{ backgroundColor: themeColors.primaryColor }} />
-              )}
-              <div className={`transition-transform duration-300 ${item.active ? '-translate-y-0.5' : ''}`}>
-                {item.icon}
-              </div>
-              <span className={`text-[10px] font-extrabold transition-all duration-300 ${item.active ? 'opacity-100' : 'opacity-80'}`}>
-                {item.label}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {whatsappDigits && (
-          <div className="absolute -top-14 end-4">
-            <a
-              href={buildWhatsAppLink(whatsappDigits, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-12 h-12 rounded-full text-white shadow-[0_8px_20px_rgba(37,211,102,0.4)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all animate-float"
-              style={{ backgroundColor: themeColors.whatsappBtnBg }}
-              title={t('تواصل معنا واتساب')}
-              aria-label={t('تواصل معنا واتساب')}
-            >
-              <MessageCircle className="w-6 h-6" />
-            </a>
-          </div>
+              {cartCount > 99 ? '99+' : cartCount}
+            </span>
+          </button>
         )}
+
+        {/* Prescription Upload FAB (Camera) */}
+        <button
+          onClick={() => openCart('rx')}
+          className="w-13 h-13 p-3.5 rounded-full text-white shadow-[0_10px_28px_rgba(16,185,129,0.35)] flex items-center justify-center transition-all duration-300 active:scale-90 hover:scale-105 group"
+          style={{ backgroundColor: themeColors.primaryColor || '#10b981' }}
+          title={t('رفع روشتة')}
+          aria-label={t('رفع روشتة')}
+        >
+          <Camera className="w-6 h-6 transition-transform group-hover:rotate-12" />
+        </button>
+
+        {/* WhatsApp Button */}
+        {whatsappDigits && (
+          <a
+            href={buildWhatsAppLink(whatsappDigits, t('مرحباً، أحتاج مساعدة من صيدليتي'))}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-11 h-11 rounded-full text-white shadow-[0_8px_20px_rgba(37,211,102,0.35)] flex items-center justify-center hover:scale-105 active:scale-90 transition-all"
+            style={{ backgroundColor: themeColors.whatsappBtnBg || '#25D366' }}
+            title={t('تواصل معنا واتساب')}
+            aria-label={t('تواصل معنا واتساب')}
+          >
+            <MessageCircle className="w-5 h-5" />
+          </a>
+        )}
+      </div>
+
+      {/* Floating Frosted Navigation Bar */}
+      <div className="px-3.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pointer-events-auto">
+        <div
+          className="max-w-md mx-auto rounded-[28px] p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.14)] backdrop-blur-2xl border transition-all duration-300"
+          style={{
+            backgroundColor: `${themeColors.bottomNavBg || '#ffffff'}f2`,
+            borderColor: 'rgba(255,255,255,0.4)',
+          }}
+        >
+          <div className="flex items-center justify-between gap-1">
+            {items.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={item.onClick}
+                  className={`relative flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl flex-1 min-w-0 transition-all duration-300 active:scale-90 ${
+                    item.active ? 'scale-105' : 'hover:bg-slate-500/5'
+                  }`}
+                  style={{
+                    color: item.active
+                      ? themeColors.primaryColor || '#10b981'
+                      : themeColors.bottomNavText || '#64748b',
+                  }}
+                >
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
+                      item.active ? 'shadow-sm' : ''
+                    }`}
+                    style={
+                      item.active
+                        ? {
+                            backgroundColor: `${themeColors.primaryColor || '#10b981'}18`,
+                          }
+                        : {}
+                    }
+                  >
+                    <IconComponent
+                      className={`w-5 h-5 transition-transform duration-300 ${
+                        item.active ? 'scale-110' : ''
+                      }`}
+                      strokeWidth={item.active ? 2.5 : 2}
+                    />
+                  </div>
+
+                  <span
+                    className={`text-[10px] font-bold mt-0.5 tracking-tight transition-all duration-300 ${
+                      item.active ? 'font-black opacity-100' : 'opacity-75'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+
+                  {/* Indicator Line underneath */}
+                  <div
+                    className={`h-1 rounded-full transition-all duration-300 mt-0.5 ${
+                      item.active ? 'w-4 opacity-100' : 'w-0 opacity-0'
+                    }`}
+                    style={{ backgroundColor: themeColors.primaryColor || '#10b981' }}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

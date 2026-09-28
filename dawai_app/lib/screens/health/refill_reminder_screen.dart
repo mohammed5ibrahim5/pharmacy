@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/theme.dart';
 
 class RefillReminderScreen extends StatefulWidget {
@@ -12,11 +14,49 @@ class RefillReminderScreen extends StatefulWidget {
 class _RefillReminderScreenState extends State<RefillReminderScreen> {
   bool _enabled = true;
   int _daysBefore = 3;
-  final List<Map<String, dynamic>> _medications = [
+  List<Map<String, dynamic>> _medications = [
     {'name': 'ميتفورمين', 'dose': '500mg', 'frequency': 'مرتين يومياً', 'enabled': true},
     {'name': 'اميلو', 'dose': '10mg', 'frequency': 'مرة يومياً', 'enabled': true},
     {'name': 'فوليك أسيد', 'dose': '5mg', 'frequency': 'مرة يومياً', 'enabled': false},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedReminders();
+  }
+
+  Future<void> _loadSavedReminders() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedEnabled = prefs.getBool('refill_enabled');
+      final savedDays = prefs.getInt('refill_days_before');
+      final savedListJson = prefs.getString('refill_medications');
+
+      if (!mounted) return;
+      setState(() {
+        if (savedEnabled != null) _enabled = savedEnabled;
+        if (savedDays != null) _daysBefore = savedDays;
+        if (savedListJson != null) {
+          final decoded = json.decode(savedListJson) as List;
+          _medications = decoded.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      });
+    } catch (e) {
+      debugPrint('Error loading saved refill reminders: $e');
+    }
+  }
+
+  Future<void> _saveReminders() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('refill_enabled', _enabled);
+      await prefs.setInt('refill_days_before', _daysBefore);
+      await prefs.setString('refill_medications', json.encode(_medications));
+    } catch (e) {
+      debugPrint('Error saving refill reminders: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,11 +108,6 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: _cardDecoration(),
-              // ListTile paints its background and ripple on the nearest
-              // Material ancestor, so leaving it directly under this coloured
-              // DecoratedBox puts the splash *behind* the card and it never
-              // shows. A transparent Material here stops the colour from
-              // swallowing the ink without changing how the card looks.
               child: Material(
                 type: MaterialType.transparency,
                 child: Column(
@@ -81,7 +116,10 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                       title: Text('تفعيل التذكير', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
                       subtitle: Text('إشعارات قبل انتهاء الدواء', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
                       value: _enabled,
-                      onChanged: (v) => setState(() => _enabled = v),
+                      onChanged: (v) {
+                        setState(() => _enabled = v);
+                        _saveReminders();
+                      },
                       activeThumbColor: AppColors.primary,
                       contentPadding: EdgeInsets.zero,
                     ),
@@ -98,13 +136,19 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                             IconButton(
                               icon: const Icon(Icons.remove, size: 18),
                               color: AppColors.primary,
-                              onPressed: _daysBefore > 1 ? () => setState(() => _daysBefore--) : null,
+                              onPressed: _daysBefore > 1 ? () {
+                                setState(() => _daysBefore--);
+                                _saveReminders();
+                              } : null,
                             ),
                             Text('$_daysBefore', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 16)),
                             IconButton(
                               icon: const Icon(Icons.add, size: 18),
                               color: AppColors.primary,
-                              onPressed: _daysBefore < 14 ? () => setState(() => _daysBefore++) : null,
+                              onPressed: _daysBefore < 14 ? () {
+                                setState(() => _daysBefore++);
+                                _saveReminders();
+                              } : null,
                             ),
                           ],
                         ),
@@ -143,9 +187,19 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                         ],
                       ),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.error),
+                      onPressed: () {
+                        setState(() => _medications.removeAt(i));
+                        _saveReminders();
+                      },
+                    ),
                     Switch(
-                      value: m['enabled'],
-                      onChanged: (v) => setState(() => _medications[i]['enabled'] = v),
+                      value: m['enabled'] ?? true,
+                      onChanged: (v) {
+                        setState(() => _medications[i]['enabled'] = v);
+                        _saveReminders();
+                      },
                       activeThumbColor: AppColors.primary,
                     ),
                   ],
@@ -213,12 +267,13 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
               if (nameCtrl.text.isNotEmpty) {
                 setState(() {
                   _medications.add({
-                    'name': nameCtrl.text,
-                    'dose': doseCtrl.text.isNotEmpty ? doseCtrl.text : 'غير محدد',
+                    'name': nameCtrl.text.trim(),
+                    'dose': doseCtrl.text.isNotEmpty ? doseCtrl.text.trim() : 'غير محدد',
                     'frequency': 'حسب الحاجة',
                     'enabled': true,
                   });
                 });
+                _saveReminders();
                 Navigator.pop(ctx);
               }
             },

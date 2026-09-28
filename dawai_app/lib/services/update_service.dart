@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../config/theme.dart';
 
 class UpdateService {
   static const String _versionUrl =
@@ -58,27 +60,77 @@ class UpdateService {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('تحديث جديد متاح'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primarySurfaceOf(context),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.system_update_rounded, color: AppColors.primary, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'تحديث جديد متاح',
+              style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, fontSize: 18),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('النسخة الجديدة: $version'),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primarySurfaceOf(context),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'الإصدار الجديد: $version',
+                style: GoogleFonts.tajawal(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                  fontSize: 13,
+                ),
+              ),
+            ),
             if (releaseNotes.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Text('التحديثات:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Text(
+                'ما الجديد:',
+                style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
               const SizedBox(height: 4),
-              Text(releaseNotes),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceOf(context),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderOf(context)),
+                ),
+                child: Text(
+                  releaseNotes,
+                  style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textMutedOf(context)),
+                ),
+              ),
             ],
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('لاحقاً'),
+            child: Text('لاحقاً', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
           ),
-          FilledButton(
+          FilledButton.icon(
+            icon: const Icon(Icons.download_rounded, size: 18),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
             onPressed: () async {
               Navigator.of(context).pop();
               final uri = Uri.parse(downloadUrl);
@@ -86,7 +138,7 @@ class UpdateService {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
               }
             },
-            child: const Text('تحديث'),
+            label: Text('تحديث الآن', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

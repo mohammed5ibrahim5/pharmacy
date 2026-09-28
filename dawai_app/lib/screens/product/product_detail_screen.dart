@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -90,7 +91,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
                 child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: isDark ? AppColors.darkText : AppColors.textOf(context)),
               ),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => context.canPop() ? context.pop() : context.go('/'),
             ),
             actions: [
               IconButton(

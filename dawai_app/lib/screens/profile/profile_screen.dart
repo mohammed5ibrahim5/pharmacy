@@ -281,7 +281,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildSectionTitle(String title, ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: 12, end: 8),
+      padding: const EdgeInsetsDirectional.only(bottom: 12, start: 8),
       child: Text(
         title,
         style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondaryOf(context)),

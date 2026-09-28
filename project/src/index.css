@@ -17,19 +17,21 @@
   html, body {
     overflow-x: clip;
     max-width: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
   @supports not (overflow: clip) {
-    html, body { overflow-x: hidden; }
+    html, body { overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
   }
   body {
-    font-family: 'Cairo', 'Tajawal', system-ui, -apple-system, sans-serif;
+    font-family: 'Tajawal', 'Cairo', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: #f8fafc;
     color: #0f172a;
+    -webkit-touch-callout: none;
   }
-  h1, h2, h3, h4 {
-    font-family: 'Cairo', 'Tajawal', system-ui, sans-serif;
+  h1, h2, h3, h4, button, input, select, textarea {
+    font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
     letter-spacing: -0.01em;
   }
   ::selection {
