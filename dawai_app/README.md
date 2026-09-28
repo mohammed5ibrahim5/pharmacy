@@ -78,10 +78,12 @@ backend). This test nulls that override for the length of
 outside the window is mocked for good. `HttpOverrides.runZoned` does not work
 for this: its `createHttpClient` callback re-enters itself.
 
-`test/widget_test.dart` is the stock Flutter counter demo: it pumps a
-self-contained `_TestApp` that shares no code with this app, so its
-"App renders without crashing" says nothing about the real screens. It is kept
-only for the `_FakeAppState` list logic it exercises.
+The `widget_test.dart` that `flutter create` ships was deleted. It pumped a
+self-contained `_TestApp` counter sharing no code with this app, so its
+"App renders without crashing" said nothing about the real screens — and its
+four tests only exercised `List.add`, `List.clear` and `notifyListeners`. A
+green run of it was worse than no run, because it looked like coverage. The
+count it printed in CI was a fiction, so it was removed instead of kept.
 
 ## Paging product lists
 

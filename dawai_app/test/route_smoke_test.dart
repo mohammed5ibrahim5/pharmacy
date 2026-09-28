@@ -21,9 +21,12 @@ void tearDownAll() {
 
 /// Walks every route in [appRouter] and asserts the tree builds cleanly.
 ///
-/// The old `widget_test.dart` pumped a self-contained `_TestApp` counter
-/// widget that shares no code with the real application, so "App renders
-/// without crashing" kept passing while real screens were broken.
+/// This file replaces the stock `widget_test.dart` that `flutter create` ships,
+/// which pumped a self-contained `_TestApp` counter sharing no code with the
+/// real application: its "App renders without crashing" kept passing while real
+/// screens were broken. It was deleted rather than kept — four tests of
+/// `List.add`, `List.clear` and `notifyListeners` were costing a misleading
+/// sense of coverage.
 ///
 /// There is no backend (or device) here: the test binding answers HTTP with
 /// 400, so screens are expected to fall back to their error/empty states.
