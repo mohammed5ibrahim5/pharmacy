@@ -158,7 +158,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
           ),
           const SizedBox(height: 14),
           SizedBox(
-            height: 130,
+            height: 140,
             child: Stack(
               children: [
                 ListView.separated(
@@ -184,22 +184,48 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                           children: [
                             Positioned(top: -15, right: -15, child: Container(width: 50, height: 50, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), shape: BoxShape.circle))),
                             Padding(
-                              padding: const EdgeInsets.all(14),
+                              padding: const EdgeInsets.all(12),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Container(
-                                    width: 46, height: 46,
-                                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white.withValues(alpha: 0.3))),
-                                    child: Center(child: Text(cat.icon ?? '💊', style: const TextStyle(fontSize: 24))),
+                                    width: 48, height: 48,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.25),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
+                                    ),
+                                    child: Center(child: Text(cat.displayIcon, style: const TextStyle(fontSize: 24))),
                                   ),
                                   const SizedBox(height: 8),
-                                  Text(cat.name, style: GoogleFonts.tajawal(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
-                                  const SizedBox(height: 2),
+                                  Text(
+                                    cat.displayName,
+                                    style: GoogleFonts.tajawal(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      height: 1.2,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 4),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-                                    child: Text('$count منتج', style: GoogleFonts.tajawal(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600)),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.25),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+                                    ),
+                                    child: Text(
+                                      '$count منتج',
+                                      style: GoogleFonts.tajawal(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),

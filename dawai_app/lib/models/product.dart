@@ -143,6 +143,93 @@ class CategoryRef {
     this.icon,
   });
 
+  String get displayName {
+    final s = (slug ?? '').toLowerCase();
+    if (s == 'painkillers' || name.contains('مسكن') || name.contains('مسكنا')) {
+      return 'مسكنات الألم';
+    }
+    if (s == 'antibiotics' || name.contains('مضاد') || name == 'مضادات') {
+      return 'مضادات حيوية';
+    }
+    if (s == 'supplements' || name.contains('مكمل')) {
+      return 'مكملات غذائية';
+    }
+    if (s == 'cold-flu' || name.contains('برد') || name.contains('إنفلونزا')) {
+      return 'أدوية البرد والإنفلونزا';
+    }
+    if (s == 'vitamins' || name.contains('فيتامين')) {
+      return 'فيتامينات ومكملات';
+    }
+    if (s == 'skin-care' || s == 'skincare' || name.contains('بشرة') || name.contains('العناية')) {
+      return 'العناية بالبشرة';
+    }
+    if (s == 'baby-care' || name.contains('أطفال') || name.contains('اطفال') || name.contains('رضيع')) {
+      return 'مستلزمات الأطفال';
+    }
+    if (s == 'digestive' || s == 'digestive-health' || name.contains('هضمي') || name.contains('معدة')) {
+      return 'أدوية الجهاز الهضمي';
+    }
+    if (s == 'orthopedic' || s.contains('===') || name.contains('عظام') || name.contains('مفصل')) {
+      return 'العظام والمفاصل';
+    }
+    if (s == 'mental-health' || name.contains('نفسية') || name.contains('نفسي')) {
+      return 'الصحة النفسية';
+    }
+    if (s == 'ophthalmology' || name.contains('عين') || name.contains('عيون')) {
+      return 'طب العيون';
+    }
+    if (s == 'general' || name.contains('عام')) {
+      return 'طب عام';
+    }
+    // Clean up common Arabic typos and cutoffs
+    var cleanName = name;
+    if (cleanName.contains('مسكنا')) {
+      cleanName = cleanName.replaceAll('مسكنا', 'مسكنات');
+    }
+    if (cleanName.contains('الالم')) {
+      cleanName = cleanName.replaceAll('الالم', 'الألم');
+    }
+    if (cleanName.contains('الالم')) {
+      cleanName = cleanName.replaceAll('الالم', 'الألم');
+    }
+    return cleanName.isNotEmpty ? cleanName : 'قسم عام';
+  }
+
+  String get displayIcon {
+    final raw = (icon ?? '').trim().toLowerCase();
+    const iconMap = <String, String>{
+      'pill': '💊',
+      'shield': '🛡️',
+      'sparkles': '✨',
+      'stethoscope': '🩺',
+      'heart': '❤️',
+      'droplet': '💧',
+      'baby': '🍼',
+      'activity': '📊',
+      'brain': '🧠',
+      'bone': '🦴',
+      'eye': '👁️',
+      'thermometer': '🌡️',
+      'heartpulse': '💓',
+      'bandage': '🩹',
+    };
+    if (iconMap.containsKey(raw)) return iconMap[raw]!;
+    final s = (slug ?? '').toLowerCase();
+    if (s == 'painkillers') return '💊';
+    if (s == 'antibiotics') return '🛡️';
+    if (s == 'supplements') return '✨';
+    if (s == 'cold-flu') return '🩺';
+    if (s == 'vitamins') return '💓';
+    if (s == 'skin-care' || s == 'skincare') return '💧';
+    if (s == 'baby-care') return '🍼';
+    if (s == 'digestive') return '📊';
+    if (s == 'orthopedic') return '🦴';
+    if (s == 'mental-health') return '🧠';
+    if (s == 'ophthalmology') return '👁️';
+    if (raw.isNotEmpty && raw.runes.length <= 2 && raw.codeUnitAt(0) > 127) return icon!;
+    return '💊';
+  }
+
   factory CategoryRef.fromJson(Map<String, dynamic> json) {
     return CategoryRef(
       id: json['id'] ?? '',
