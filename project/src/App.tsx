@@ -22,16 +22,17 @@ import { CompareBar } from '@/components/CompareBar';
 import { PriceCompareModal } from '@/components/PriceCompareModal';
 import { PharmacyCompareModal } from '@/components/PharmacyCompareModal';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { HomePage } from '@/pages/HomePage';
-import { SearchPage } from '@/pages/SearchPage';
-import { PharmacyDetailPage } from '@/pages/PharmacyDetailPage';
-import { CategoryPage } from '@/pages/CategoryPage';
-import { AllCategoriesPage } from '@/pages/AllCategoriesPage';
-import { AccountPage } from '@/pages/AccountPage';
-import { TrackOrderPage } from '@/pages/TrackOrderPage';
-import { HealthPage } from '@/pages/HealthPage';
-import { HealthArticlePage } from '@/pages/HealthArticlePage';
 import { Loader2, ShieldAlert } from 'lucide-react';
+
+const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m.HomePage })));
+const SearchPage = lazy(() => import('@/pages/SearchPage').then((m) => ({ default: m.SearchPage })));
+const PharmacyDetailPage = lazy(() => import('@/pages/PharmacyDetailPage').then((m) => ({ default: m.PharmacyDetailPage })));
+const CategoryPage = lazy(() => import('@/pages/CategoryPage').then((m) => ({ default: m.CategoryPage })));
+const AllCategoriesPage = lazy(() => import('@/pages/AllCategoriesPage').then((m) => ({ default: m.AllCategoriesPage })));
+const AccountPage = lazy(() => import('@/pages/AccountPage').then((m) => ({ default: m.AccountPage })));
+const TrackOrderPage = lazy(() => import('@/pages/TrackOrderPage').then((m) => ({ default: m.TrackOrderPage })));
+const HealthPage = lazy(() => import('@/pages/HealthPage').then((m) => ({ default: m.HealthPage })));
+const HealthArticlePage = lazy(() => import('@/pages/HealthArticlePage').then((m) => ({ default: m.HealthArticlePage })));
 
 const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })));
 const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage').then((m) => ({ default: m.AdminLoginPage })));
@@ -131,15 +132,23 @@ function SiteContent() {
       {route.name !== 'account' && route.name !== 'category' && route.name !== 'categories' && <Header />}
       <main className="flex-1 pb-20 lg:pb-0">
         <ErrorBoundary>
-          {route.name === 'home' && <HomePage />}
-          {route.name === 'search' && <SearchPage key={refreshKey} query={route.query} />}
-          {route.name === 'pharmacy' && <PharmacyDetailPage id={route.id} />}
-          {route.name === 'category' && <CategoryPage slug={route.slug} />}
-          {route.name === 'categories' && <AllCategoriesPage />}
-          {route.name === 'account' && <AccountPage tab={route.tab} />}
-          {route.name === 'track' && <TrackOrderPage />}
-          {route.name === 'health' && <HealthPage />}
-          {route.name === 'healthArticle' && <HealthArticlePage slug={route.slug} />}
+          <Suspense
+            fallback={
+              <div className="min-h-[50vh] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              </div>
+            }
+          >
+            {route.name === 'home' && <HomePage />}
+            {route.name === 'search' && <SearchPage key={refreshKey} query={route.query} />}
+            {route.name === 'pharmacy' && <PharmacyDetailPage id={route.id} />}
+            {route.name === 'category' && <CategoryPage slug={route.slug} />}
+            {route.name === 'categories' && <AllCategoriesPage />}
+            {route.name === 'account' && <AccountPage tab={route.tab} />}
+            {route.name === 'track' && <TrackOrderPage />}
+            {route.name === 'health' && <HealthPage />}
+            {route.name === 'healthArticle' && <HealthArticlePage slug={route.slug} />}
+          </Suspense>
         </ErrorBoundary>
       </main>
       <Footer />

@@ -196,7 +196,18 @@ verify propagation. It refuses to run without a valid release keystore.
 .\release.ps1             # interactive release
 ```
 
-The app checks `version.json` on launch and prompts the user to update.
+The app checks `version.json` on launch and prompts the user to update. On
+Android, **Update now** downloads the APK through Android's Download Manager
+and shows a system notification when it is ready; tapping that notification
+opens Android's package installer. The first install may ask the user to allow
+installs from Dawai in Android settings. They can then return to the update
+prompt and tap **Update now** again.
+
+Every update APK must use the same `applicationId` and release signing
+keystore as the installed APK, and its Android version code must be higher.
+Otherwise Android will refuse to install it as an update. Updates distributed
+outside Google Play always require the user's confirmation in Android's
+installer; apps cannot silently replace themselves.
 
 ## Fonts
 

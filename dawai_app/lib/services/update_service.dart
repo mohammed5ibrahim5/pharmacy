@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -7,6 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config/theme.dart';
 
 class UpdateService {
+  static const MethodChannel _updateChannel =
+      MethodChannel('com.dawai.dawai_app/updates');
   static const String _versionUrl =
       'https://raw.githubusercontent.com/mohammed5ibrahim5/pharmacy/master/version.json';
 
@@ -24,7 +28,8 @@ class UpdateService {
       final downloadUrl = data['download_url'] as String;
       final releaseNotes = data['release_notes'] as String? ?? '';
 
-      if (_isNewerVersion(latestVersion, currentVersion)) {
+      if (_isTrustedDownloadUrl(downloadUrl) &&
+          isNewerVersion(latestVersion, currentVersion)) {
         if (!context.mounted) return;
         _showUpdateDialog(context, latestVersion, downloadUrl, releaseNotes);
       }
@@ -33,21 +38,39 @@ class UpdateService {
     }
   }
 
-  static bool _isNewerVersion(String latest, String current) {
-    try {
-      final latestParts = latest.split('.').map((p) => int.tryParse(p) ?? 0).toList();
-      final currentParts = current.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+  static bool _isTrustedDownloadUrl(String value) {
+    final uri = Uri.tryParse(value);
+    final segments = uri?.pathSegments ?? const <String>[];
+    return uri != null &&
+        uri.scheme == 'https' &&
+        uri.host == 'github.com' &&
+        segments.length >= 5 &&
+        segments[0] == 'mohammed5ibrahim5' &&
+        segments[1] == 'pharmacy' &&
+        segments[2] == 'releases' &&
+        segments[3] == 'download';
+  }
 
-      for (var i = 0; i < latestParts.length; i++) {
-        if (i >= currentParts.length) return true;
-        if (latestParts[i] > currentParts[i]) return true;
-        if (latestParts[i] < currentParts[i]) return false;
-      }
-      return false;
-    } catch (e) {
-      debugPrint('Version parse error: $e');
-      return false;
+  static bool isNewerVersion(String latest, String current) {
+    final latestParts = _parseVersion(latest);
+    final currentParts = _parseVersion(current);
+    if (latestParts == null || currentParts == null) return false;
+
+    final count = latestParts.length > currentParts.length
+        ? latestParts.length
+        : currentParts.length;
+    for (var index = 0; index < count; index++) {
+      final latestPart = index < latestParts.length ? latestParts[index] : 0;
+      final currentPart = index < currentParts.length ? currentParts[index] : 0;
+      if (latestPart != currentPart) return latestPart > currentPart;
     }
+    return false;
+  }
+
+  static List<int>? _parseVersion(String version) {
+    final value = version.trim().replaceFirst(RegExp(r'^[vV]'), '');
+    if (!RegExp(r'^\d+(?:\.\d+)*$').hasMatch(value)) return null;
+    return value.split('.').map(int.parse).toList();
   }
 
   static void _showUpdateDialog(
@@ -132,10 +155,56 @@ class UpdateService {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             onPressed: () async {
-              Navigator.of(context).pop();
-              final uri = Uri.parse(downloadUrl);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              if (Platform.isAndroid) {
+                try {
+                  await _updateChannel.invokeMethod<void>(
+                    'downloadAndInstallApk',
+                    {'url': downloadUrl},
+                  );
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'بدأ تنزيل التحديث. عند اكتماله اضغط إشعار التنزيل لتثبيته.',
+                        style: GoogleFonts.tajawal(),
+                      ),
+                    ),
+                  );
+                } on PlatformException catch (error) {
+                  if (error.code != 'install_permission_required') {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            error.message ?? 'تعذر بدء تنزيل التحديث.',
+                            style: GoogleFonts.tajawal(),
+                          ),
+                        ),
+                      );
+                    }
+                    return;
+                  }
+
+                  await _updateChannel.invokeMethod<void>(
+                    'requestInstallPermission',
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'فعّل السماح بتثبيت التطبيقات من هذا المصدر، ثم اضغط «تحديث الآن» مرة أخرى.',
+                          style: GoogleFonts.tajawal(),
+                        ),
+                      ),
+                    );
+                  }
+                }
+              } else {
+                final uri = Uri.parse(downloadUrl);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
               }
             },
             label: Text('تحديث الآن', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
