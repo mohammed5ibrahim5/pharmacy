@@ -553,7 +553,7 @@ Write-Host ("  APK ready: {0}  ({1:N1} MB)" -f $apkPath, ($apkSize / 1MB))
 
 Write-Step '[3/6] Committing and pushing the version bump'
 Invoke-Git -GitArgs @('add', '--', 'dawai_app/pubspec.yaml') | Out-Null
-Invoke-Git -GitArgs @('commit', '-m', ('chore: bump version to {0}' -f $newVer), '--', 'dawai_app/pubspec.yaml')
+Invoke-Git -GitArgs @('commit', '-m', ('chore: bump version to {0}' -f $newVer), '-m', 'Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>', '--', 'dawai_app/pubspec.yaml')
 Invoke-Git -GitArgs @('push', 'origin', 'master')
 $RollbackPubspec = $false
 
@@ -613,7 +613,7 @@ if ($vjClean) { $RollbackVersionJson = $true }
 Write-Host ("  wrote version.json: latest_version={0}" -f $newBase)
 
 Invoke-Git -GitArgs @('add', '--', 'version.json') | Out-Null
-Invoke-Git -GitArgs @('commit', '-m', ('chore: update version.json for {0}' -f $tagName), '--', 'version.json')
+Invoke-Git -GitArgs @('commit', '-m', ('chore: update version.json for {0}' -f $tagName), '-m', 'Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>', '--', 'version.json')
 Invoke-Git -GitArgs @('push', 'origin', 'master')
 $RollbackVersionJson = $false
 
