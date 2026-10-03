@@ -37,7 +37,7 @@ import { useOrder } from '@/context/OrderContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { supabase } from '@/lib/supabase';
 import { trackSearch } from '@/lib/searchHistory';
-import { smartSearch } from '@/lib/search';
+import { buildProductSearchOr, smartSearch } from '@/lib/search';
 import { buildWhatsAppLink } from '@/lib/whatsapp';
 import { categoryColor, categoryIcon, mergeCategories } from '@/lib/categoryStyles';
 import type { Product, Category } from '@/types';
@@ -242,13 +242,18 @@ export function Header() {
       const fetchSuggestions = async () => {
         try {
           const term = searchQuery.trim();
-          const pattern = `%${term}%`;
+          const searchFilter = buildProductSearchOr(term);
+          if (!searchFilter) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+          }
           const { data } = await supabase
             .from('products')
             .select('*, pharmacy:pharmacies(*)')
-            .or(`name.ilike.${pattern},name_en.ilike.${pattern},active_ingredient.ilike.${pattern},description.ilike.${pattern}`)
+            .or(searchFilter)
             .eq('is_available', true)
-            .limit(20);
+            .limit(100);
           if (!data) return;
           // Smart ranking: brand name, scientific (active ingredient), typo tolerance
           const ranked = smartSearch(term, { products: data as Product[], onlyAvailable: true })

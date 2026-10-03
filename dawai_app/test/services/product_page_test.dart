@@ -78,25 +78,29 @@ void main() {
 
   setUpAll(() async {
     _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    unawaited(_server.forEach((req) async {
-      _lastUri = req.uri;
-      final captured = <String, String>{};
-      req.headers.forEach((name, values) {
-        captured[name.toLowerCase()] = values.join(',');
-      });
-      _lastHeaders = captured;
-      final r = _reply;
-      req.response.statusCode = r.status;
-      r.headers.forEach(req.response.headers.set);
-      req.response.write(r.body);
-      await req.response.close();
-    }));
+    unawaited(
+      _server.forEach((req) async {
+        _lastUri = req.uri;
+        final captured = <String, String>{};
+        req.headers.forEach((name, values) {
+          captured[name.toLowerCase()] = values.join(',');
+        });
+        _lastHeaders = captured;
+        final r = _reply;
+        req.response.statusCode = r.status;
+        r.headers.forEach(req.response.headers.set);
+        req.response.write(r.body);
+        await req.response.close();
+      }),
+    );
 
     SharedPreferences.setMockInitialValues({});
-    await _withRealSocket(() => Supabase.initialize(
-          url: 'http://127.0.0.1:${_server.port}',
-          publishableKey: 'test-anon-key',
-        ));
+    await _withRealSocket(
+      () => Supabase.initialize(
+        url: 'http://127.0.0.1:${_server.port}',
+        publishableKey: 'test-anon-key',
+      ),
+    );
     api = ApiService();
   });
 
@@ -107,24 +111,28 @@ void main() {
     _lastHeaders = null;
   });
 
-  test('asks PostgREST for the total, the offset window and a stable sort',
-      () async {
-    _replyWith(200, '[$_row]', headers: {'content-range': '0-0/1'});
+  test(
+    'asks PostgREST for the total, the offset window and a stable sort',
+    () async {
+      _replyWith(200, '[$_row]', headers: {'content-range': '0-0/1'});
 
-    await api.getProductPage(categoryId: 'c1');
+      await api.getProductPage(categoryId: 'c1');
 
-    final uri = _lastUri!;
-    expect(uri.path, '/rest/v1/products');
-    expect(uri.queryParameters['is_available'], 'eq.true');
-    expect(uri.queryParameters['category_id'], 'eq.c1');
-    // Two order params, comma-joined. The id tie-break is what stops a row
-    // from falling between two pages or appearing twice.
-    expect(uri.queryParameters['order'],
-        'name.desc.nullslast,id.desc.nullslast');
-    expect(uri.queryParameters['offset'], '0');
-    expect(uri.queryParameters['limit'], '24');
-    expect(_lastHeaders!['prefer'], contains('count=exact'));
-  });
+      final uri = _lastUri!;
+      expect(uri.path, '/rest/v1/products');
+      expect(uri.queryParameters['is_available'], 'eq.true');
+      expect(uri.queryParameters['category_id'], 'eq.c1');
+      // Two order params, comma-joined. The id tie-break is what stops a row
+      // from falling between two pages or appearing twice.
+      expect(
+        uri.queryParameters['order'],
+        'name.desc.nullslast,id.desc.nullslast',
+      );
+      expect(uri.queryParameters['offset'], '0');
+      expect(uri.queryParameters['limit'], '24');
+      expect(_lastHeaders!['prefer'], contains('count=exact'));
+    },
+  );
 
   test('carries the window through to page 2', () async {
     _replyWith(206, '[$_row]', headers: {'content-range': '24-24/30'});
@@ -134,6 +142,32 @@ void main() {
     expect(_lastUri!.queryParameters['offset'], '24');
     expect(_lastUri!.queryParameters['limit'], '1');
     expect(page.total, 30);
+  });
+
+  test(
+    'search checks product identifiers, manufacturer, and categories',
+    () async {
+      _replyWith(200, '[$_row]', headers: {'content-range': '0-0/1'});
+
+      await api.getProductPage(
+        searchTerms: ['paracetamol', '123456789'],
+        fuzzySearchTerms: ['panad_l'],
+        categoryIds: ['pain-category'],
+      );
+
+      final filters = _lastUri!.queryParameters['or']!;
+      expect(filters, contains('name.ilike.%paracetamol%'));
+      expect(filters, contains('active_ingredient.ilike.%paracetamol%'));
+      expect(filters, contains('manufacturer.ilike.%paracetamol%'));
+      expect(filters, contains('barcode.ilike.%123456789%'));
+      expect(filters, contains('name.ilike.%panad_l%'));
+      expect(filters, isNot(contains('manufacturer.ilike.%panad_l%')));
+      expect(filters, contains('category_id.eq.pain-category'));
+    },
+  );
+
+  test('an empty explicit search cannot return the entire catalogue', () async {
+    await expectLater(api.getProductPage(searchTerms: []), throwsArgumentError);
   });
 
   test('a partial page (206) is read, not mistaken for a failure', () async {
@@ -197,9 +231,6 @@ void main() {
       }),
     );
 
-    await expectLater(
-      api.getProductPage(),
-      throwsA(isA<PostgrestException>()),
-    );
+    await expectLater(api.getProductPage(), throwsA(isA<PostgrestException>()));
   });
 }

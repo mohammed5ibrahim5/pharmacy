@@ -105,6 +105,7 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
                             {product.active_ingredient && <p className="text-xs text-gray-400 truncate">{product.active_ingredient}</p>}
                             <div className="flex items-center gap-1.5 flex-wrap">
                               {product.requires_prescription && <span className="text-xs text-amber-600">يحتاج وصفة</span>}
+                              {product.is_controlled && <span className="text-xs font-bold text-rose-700">مراقب — حظر البيع الإلكتروني</span>}
                               {product.is_medical === false && <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">بدون وظيفة طبية</span>}
                             </div>
                           </div>
@@ -130,7 +131,7 @@ export function ProductsTab({ pharmacyId }: { pharmacyId?: string }) {
       )}
 
       {showForm && <ProductForm product={editing} pharmacies={pharmacies} categories={categories} lockedPharmacy={pharmacyId ? { id: pharmacyId, name: '' } : undefined} onClose={() => { setShowForm(false); setEditing(null); }} onSaved={() => { fetchProducts(); setShowForm(false); setEditing(null); toast('تم الحفظ بنجاح'); }} />}
-      {showImport && <InventoryImportModal lockedPharmacyId={pharmacyId} onClose={() => setShowImport(false)} onSaved={() => { fetchProducts(); setShowImport(false); }} />}
+      {showImport && <InventoryImportModal lockedPharmacyId={pharmacyId} onClose={() => setShowImport(false)} onSaved={fetchProducts} />}
       {batchProduct && <InventoryBatchModal productId={batchProduct.id} productName={batchProduct.name} onClose={() => setBatchProduct(null)} onSaved={() => { fetchProducts(); }} />}
       <ConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={() => { if (deleteTarget) handleDelete(deleteTarget); setDeleteTarget(null); }} title="حذف المنتج" message="هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء." danger confirmLabel="حذف" />
     </div>
@@ -145,6 +146,7 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
     price: product?.price?.toString() || '', unit: product?.unit || 'قطعة', image_url: product?.image_url || '',
     pharmacy_id: lockedPharmacy?.id || product?.pharmacy_id || pharmacies[0]?.id || '', category_id: product?.category_id || '',
     for_all_pharmacies: product?.for_all_pharmacies ?? false,
+    is_controlled: product?.is_controlled ?? false,
     is_available: product?.is_available ?? true, requires_prescription: product?.requires_prescription ?? false,
     is_medical: product?.is_medical ?? true,
     active_ingredient: product?.active_ingredient || '', manufacturer: product?.manufacturer || '',
@@ -156,15 +158,20 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
+    if (!form.name.trim() || !form.name_en.trim()) {
+      toast('أدخل اسم المنتج بالعربية والإنجليزية ليظهر في البحث باللغتين.', 'error');
+      return;
+    }
     setSaving(true);
     const ownerPharmacyId = lockedPharmacy?.id || (form.for_all_pharmacies && !form.pharmacy_id ? pharmacies[0]?.id || '' : form.pharmacy_id);
     const payload = {
-      name: form.name, name_en: form.name_en, description: form.description,
+      name: form.name.trim(), name_en: form.name_en.trim(), description: form.description,
       price: parseFloat(form.price) || 0, unit: form.unit, image_url: form.image_url,
       pharmacy_id: ownerPharmacyId, category_id: form.category_id || null,
       for_all_pharmacies: form.for_all_pharmacies,
       is_available: form.is_available, requires_prescription: form.requires_prescription,
       is_medical: form.is_medical,
+      ...(!lockedPharmacy ? { is_controlled: form.is_controlled } : {}),
       active_ingredient: form.active_ingredient || null, manufacturer: form.manufacturer || null,
       form: form.form_type || null, dosage: form.dosage || null,
       how_to_use: form.how_to_use || null, contraindications: form.contraindications || null,
@@ -198,8 +205,8 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
     <Modal onClose={onClose} title={product ? 'تعديل منتج' : 'إضافة منتج جديد'} wide>
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="اسم المنتج *"><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} placeholder="اسم المنتج بالعربية" /></Field>
-          <Field label="الاسم بالإنجليزية"><input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Product name" /></Field>
+          <Field label="اسم المنتج بالعربية *"><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} placeholder="مثال: بنادول إكسترا" /></Field>
+          <Field label="اسم المنتج بالإنجليزية *"><input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} className={inputClass} dir="ltr" placeholder="Example: Panadol Extra" /></Field>
         </div>
         <Field label="الوصف"><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={inputClass} rows={2} /></Field>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -276,6 +283,12 @@ export function ProductForm({ product, pharmacies, categories, onClose, onSaved,
         <div className="flex gap-4 pt-2">
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.is_available} onChange={(e) => setForm({ ...form, is_available: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm text-gray-700">متوفر</span></label>
           <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.requires_prescription} onChange={(e) => setForm({ ...form, requires_prescription: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm text-gray-700">يحتاج وصفة طبية</span></label>
+          {!lockedPharmacy && (
+            <label className="flex items-center gap-2 cursor-pointer text-rose-700">
+              <input type="checkbox" checked={form.is_controlled} onChange={(e) => setForm({ ...form, is_controlled: e.target.checked })} className="w-4 h-4 rounded" />
+              <span className="text-sm font-bold">دواء مراقب — ممنوع البيع أو الحجز عبر الإنترنت</span>
+            </label>
+          )}
         </div>
         <Field label="نوع المنتج">
           <select value={form.is_medical ? 'medical' : 'non_medical'} onChange={(e) => setForm({ ...form, is_medical: e.target.value === 'medical' })} className={inputClass}>

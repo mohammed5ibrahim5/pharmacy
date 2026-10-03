@@ -40,8 +40,9 @@ export function SubstitutesModal({ product, onClose }: Props) {
   }, [product]);
 
   useEffect(() => {
-    if (!product) {
+    if (!product || product.is_controlled || !product.active_ingredient) {
       setSubstitutes([]);
+      setLoading(false);
       return;
     }
     let alive = true;
@@ -55,9 +56,9 @@ export function SubstitutesModal({ product, onClose }: Props) {
           .neq('id', product.id)
           .eq('is_available', true);
 
-        if (product.category_id) {
-          query = query.eq('category_id', product.category_id);
-        }
+        query = query
+          .eq('active_ingredient', product.active_ingredient)
+          .eq('is_controlled', false);
 
         const { data, error } = await query.limit(12);
         if (alive && !error && data) {
@@ -123,7 +124,7 @@ export function SubstitutesModal({ product, onClose }: Props) {
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               </h3>
               <p className="text-[11px] font-bold text-slate-400 truncate max-w-xs">
-                {t('بدائل لنفس المادة والتأثير لـ:')} <strong className="text-slate-700">{currentName}</strong>
+                {t('منتجات لها المادة الفعالة نفسها لـ:')} <strong className="text-slate-700">{currentName}</strong>
               </p>
             </div>
           </div>
@@ -143,6 +144,10 @@ export function SubstitutesModal({ product, onClose }: Props) {
             <span className="font-bold text-teal-900 truncate">{currentName}</span>
           </div>
           <span className="font-black text-teal-700 whitespace-nowrap">{currentPrice.toFixed(2)} {t('ج.م')}</span>
+        </div>
+        <div className="mx-5 mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold leading-relaxed text-amber-900">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>{t('لا تستبدل دواءً من تلقاء نفسك. استشر الصيدلي أو الطبيب قبل الاستبدال، حتى عند تشابه المادة الفعالة.')}</p>
         </div>
 
         {/* Content list */}

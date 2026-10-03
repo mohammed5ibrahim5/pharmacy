@@ -11,14 +11,116 @@ export interface SmartSearchResult {
  *  normalizes alef/hamza/tah marbutah/alef maqsura, lowercases, trims. */
 export function normalizeSearchText(s: string): string {
   return (s || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[\u064B-\u0652]/g, '')
-    .replace(/[أإآ]/g, 'ا')
+    .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u0640]/g, '')
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+    .replace(/[أإآٱ]/g, 'ا')
     .replace(/ة/g, 'ه')
     .replace(/ى/g, 'ي')
+    .replace(/ی/g, 'ي')
+    .replace(/ک/g, 'ك')
     .replace(/[^a-z0-9\s\u0600-\u06FF]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+const SEARCH_FIELDS = [
+  'name',
+  'name_en',
+  'active_ingredient',
+  'manufacturer',
+  'barcode',
+  'description',
+  'dosage',
+  'form',
+  'unit',
+] as const;
+
+const SEARCH_STOP_WORDS = new Set([
+  'عايز', 'عاوزه', 'اريد', 'ابحث', 'عن', 'في', 'من', 'الى', 'لي', 'لل',
+  'ال', 'دواء', 'ادويه', 'the', 'for', 'a', 'an', 'i', 'need', 'want',
+  'medicine', 'drug',
+]);
+
+function queryTokens(query: string): string[] {
+  const tokens = normalizeSearchText(query).split(' ');
+  const prefixes = ['وال', 'بال', 'كال', 'لل', 'ال', 'و', 'ف', 'ب', 'ل', 'ك'];
+  return [...new Set(tokens.map((token) => {
+    const prefix = prefixes.find(
+      (candidate) => token.startsWith(candidate) && token.length - candidate.length >= 3
+    );
+    return prefix ? token.slice(prefix.length) : token;
+  }).filter((token) => token.length >= 2 && !SEARCH_STOP_WORDS.has(token)))];
+}
+
+/**
+ * Builds a safe PostgREST OR filter that fetches exact, token, and one-typo
+ * candidates before the local relevance ranking runs.
+ */
+export function buildProductSearchOr(query: string): string {
+  const normalized = normalizeSearchText(query);
+  const tokens = queryTokens(query).slice(0, 6);
+  const filters = new Set<string>();
+  const add = (column: string, term: string) => {
+    const safeTerm = term.replace(/[^a-z0-9\u0600-\u06FF_]/gi, '');
+    if (safeTerm.length >= 2) filters.add(`${column}.ilike.%${safeTerm}%`);
+  };
+
+  if (normalized.length >= 2) {
+    for (const field of SEARCH_FIELDS) add(field, normalized);
+  }
+
+  const originalTokens = query
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f\u0610-\u061A\u064B-\u065F\u0670\u0640]/g, '')
+    .toLowerCase()
+    .split(/[^a-z0-9\u0600-\u06FF]+/)
+    .filter(
+      (token) =>
+        token.length >= 2 &&
+        !SEARCH_STOP_WORDS.has(normalizeSearchText(token))
+    )
+    .slice(0, 6);
+  for (const token of [...new Set([...tokens, ...originalTokens])]) {
+    const variants = new Set([token, normalizeSearchText(token)]);
+    for (const prefix of ['وال', 'بال', 'كال', 'لل', 'ال', 'و', 'ف', 'ب', 'ل', 'ك']) {
+      if (token.startsWith(prefix) && token.length - prefix.length >= 3) {
+        variants.add(token.slice(prefix.length));
+      }
+    }
+    for (const variant of variants) {
+      for (const field of SEARCH_FIELDS) add(field, variant);
+    }
+  }
+
+  const fuzzyTokens = tokens
+    .filter((token) => token.length >= 5 && !/^\d+$/.test(token))
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 2);
+  for (const token of fuzzyTokens) {
+    const variants = new Set<string>();
+    for (let index = 0; index < token.length; index++) {
+      variants.add(token.slice(0, index) + token.slice(index + 1));
+      variants.add(`${token.slice(0, index)}_${token.slice(index + 1)}`);
+      if (index + 1 < token.length) {
+        variants.add(
+          token.slice(0, index) +
+          token[index + 1] +
+          token[index] +
+          token.slice(index + 2)
+        );
+      }
+    }
+    for (const variant of [...variants].slice(0, 24)) {
+      add('name', variant);
+      add('name_en', variant);
+    }
+  }
+
+  return [...filters].join(',');
 }
 
 /** Small Levenshtein-distance implementation used for typo correction. */
@@ -64,28 +166,28 @@ export interface NearPharmacyResult {
   price: number;
 }
 
-function distanceScore(query: string, field: string): number {
-  if (!field) return 0;
-  const nq = normalizeSearchText(query);
-  const nf = normalizeSearchText(field);
-  if (!nf) return 0;
-  if (nf === nq) return 100;
-  if (nf.startsWith(nq)) return 80;
-  if (nf.includes(nq)) return 70;
-  // typo tolerance: short queries allow dist 1, longer allow dist 2
-  const maxDist = nq.length <= 4 ? 1 : 2;
-  const dist = levenshtein(nq, nf.slice(0, nq.length + 2));
-  if (dist <= maxDist) return 55;
-  return 0;
-}
+function tokenScore(queryToken: string, field: string): number {
+  const normalizedField = normalizeSearchText(field);
+  if (!normalizedField) return 0;
+  if (normalizedField === queryToken) return 100;
+  if (normalizedField.startsWith(queryToken)) return 88;
+  if (normalizedField.includes(queryToken)) return 80;
 
-function ingredientScore(query: string, p: Product): number {
-  const nq = normalizeSearchText(query);
-  const ing = normalizeSearchText(p.active_ingredient || '');
-  if (!ing) return 0;
-  if (ing === nq) return 85;
-  if (ing.includes(nq) || nq.includes(ing)) return 75;
-  return 0;
+  const words = normalizedField.split(' ');
+  let best = 0;
+  for (const word of words) {
+    if (word === queryToken) best = Math.max(best, 96);
+    else if (word.startsWith(queryToken)) best = Math.max(best, 86);
+    else if (word.includes(queryToken)) best = Math.max(best, 76);
+    else {
+      const maxDistance = queryToken.length < 5 ? 1 : 2;
+      const distance = levenshtein(queryToken, word);
+      if (distance <= maxDistance) {
+        best = Math.max(best, 64 - distance * 4);
+      }
+    }
+  }
+  return best;
 }
 
 export function smartSearch(
@@ -94,6 +196,7 @@ export function smartSearch(
 ): SmartSearchResult[] {
   const q = (query || '').trim();
   const normalized = normalizeSearchText(q);
+  const tokens = queryTokens(q);
   const products = options.products ?? [];
   const onlyAvailable = options.onlyAvailable ?? true;
 
@@ -104,31 +207,59 @@ export function smartSearch(
   for (const product of products) {
     if (onlyAvailable && !product.is_available) continue;
 
-    let best: Omit<SmartSearchResult, 'product'> | null = null;
-
-    const nameScore = distanceScore(q, product.name);
-    const nameEnScore = distanceScore(q, product.name_en || '');
-    const ingScore = ingredientScore(q, product);
-    const descScore = distanceScore(q, product.description || '') * 0.6;
-    const manuScore = distanceScore(q, product.manufacturer || '') * 0.5;
-    const barcodeScore = product.barcode === q ? 100 : distanceScore(q, product.barcode || '') * 0.5;
-
-    const candidates: Array<{ score: number; matchType: SmartSearchResult['matchType'] }> = [
-      { score: nameScore, matchType: 'exact' },
-      { score: nameEnScore, matchType: 'exact' },
-      { score: ingScore, matchType: 'ingredient' },
-      { score: descScore, matchType: 'exact' },
-      { score: manuScore, matchType: 'exact' },
-      { score: barcodeScore, matchType: 'exact' },
+    const fields: Array<{ value: string; type: SmartSearchResult['matchType'] }> = [
+      { value: product.name, type: 'exact' },
+      { value: product.name_en || '', type: 'exact' },
+      { value: product.active_ingredient || '', type: 'ingredient' },
+      { value: product.manufacturer || '', type: 'exact' },
+      { value: product.barcode || '', type: 'exact' },
+      { value: product.description || '', type: 'exact' },
+      { value: product.dosage || '', type: 'exact' },
+      { value: product.form || '', type: 'exact' },
+      { value: product.unit || '', type: 'exact' },
+      { value: product.category?.name || '', type: 'exact' },
+      { value: product.category?.name_en || '', type: 'exact' },
     ];
-
-    best = candidates.reduce<Omit<SmartSearchResult, 'product'> | null>(
-      (acc, c) => (!acc || c.score > acc.score ? c : acc),
-      null
+    const barcodeExact = normalizeSearchText(product.barcode || '') === normalized;
+    const fullNameMatch = fields
+      .filter((field) => field.type === 'exact' || field.type === 'ingredient')
+      .some(({ value }) => normalizeSearchText(value) === normalized);
+    const matchedScores = tokens.map((token) =>
+      fields.reduce<{ score: number; type: SmartSearchResult['matchType'] }>(
+        (best, field) => {
+          const score = tokenScore(token, field.value);
+          return score > best.score ? { score, type: field.type } : best;
+        },
+        { score: 0, type: 'exact' }
+      )
     );
+    const matchedCount = matchedScores.filter((match) => match.score > 0).length;
+    const coverage = tokens.length === 0 ? 0 : matchedCount / tokens.length;
+    const score = barcodeExact
+      ? 100
+      : fullNameMatch
+        ? 100
+        : matchedScores.reduce((total, match) => total + match.score, 0) / Math.max(tokens.length, 1);
 
-    if (best && best.score >= 55 && best.score > 0) {
-      results.push({ product: product as SmartSearchResult['product'], ...best });
+    if (
+      score >= 55 &&
+      matchedCount > 0 &&
+      (barcodeExact || fullNameMatch || coverage >= 0.5)
+    ) {
+      const strongest = matchedScores.reduce(
+        (best, match) => match.score > best.score ? match : best,
+        { score: 0, type: 'exact' as SmartSearchResult['matchType'] }
+      );
+      const typoMatch = strongest.score > 0 && strongest.score < 76;
+      results.push({
+        product: product as SmartSearchResult['product'],
+        score: Math.round(score),
+        matchType: strongest.type === 'ingredient'
+          ? 'ingredient'
+          : typoMatch
+            ? 'fuzzy'
+            : 'exact',
+      });
     }
   }
 

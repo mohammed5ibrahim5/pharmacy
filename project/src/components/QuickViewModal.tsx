@@ -27,6 +27,7 @@ import { SubstitutesModal } from '@/components/SubstitutesModal';
 import { SubscribeModal } from '@/components/SubscribeModal';
 import { DoseGuideSection } from '@/components/DoseGuideSection';
 import { DoseCalculatorModal } from '@/components/DoseCalculatorModal';
+import { InventoryFreshness } from '@/components/InventoryFreshness';
 
 interface Props {
   product: Product | null;
@@ -150,6 +151,11 @@ export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
                     {t('نفدت الكمية')}
                   </span>
                 )}
+                {product.is_controlled && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-extrabold text-rose-800">
+                    {t('مراقب — غير متاح للبيع عبر الإنترنت')}
+                  </span>
+                )}
                 {typeof product.stock_quantity === 'number' && product.stock_quantity > 0 && product.stock_quantity <= 5 && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 animate-pulse">
                     <Flame className="w-3 h-3" />
@@ -166,6 +172,9 @@ export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
                   </span>
                 )}
               </div>
+              <div className="mt-2">
+                <InventoryFreshness updatedAt={product.updated_at} />
+              </div>
               <p className="mt-1.5 text-xs font-bold text-gray-500 flex items-center gap-1.5">
                 {product.for_all_pharmacies ? (
                   <>
@@ -181,6 +190,13 @@ export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
               </p>
             </div>
 
+            {product.is_controlled && (
+              <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold leading-relaxed text-rose-900">
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>{t('دواء مراقب: متاح للمعلومات فقط ولا يمكن إضافته إلى السلة أو طلبه عبر الإنترنت.')}</p>
+              </div>
+            )}
+
             {/* Price + CTA */}
             <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4 flex items-center justify-between gap-3">
               <div>
@@ -194,7 +210,7 @@ export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
                   <span className="text-sm font-bold text-gray-500">EGP</span>
                 </div>
               </div>
-              <button
+              {!product.is_controlled && <button
                 type="button"
                 onClick={handleAdd}
                 disabled={!product.is_available}
@@ -210,10 +226,10 @@ export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
               >
                 {inCart ? <CheckCircle2 className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
                 {inCart ? t('تمت الإضافة ✓') : t('أضف إلى السلة')}
-              </button>
+              </button>}
             </div>
 
-            {subscriptionConfig.enabled && product.is_available && !product.requires_prescription && (
+            {subscriptionConfig.enabled && product.is_available && !product.requires_prescription && !product.is_controlled && (
               <button
                 type="button"
                 onClick={() => setSubscribeOpen(true)}
@@ -226,15 +242,15 @@ export function QuickViewModal({ product, pharmacyName, onClose }: Props) {
             )}
 
             {/* Substitutes Button */}
-            <button
+            {!product.is_controlled && <button
               type="button"
               onClick={() => setSubsOpen(true)}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-teal-200 bg-teal-50/70 hover:bg-teal-100/70 text-teal-800 text-xs font-black transition-all active:scale-98 shadow-xs"
             >
               <ArrowLeftRight className="w-4 h-4 text-teal-600" />
-              <span>{t('عرض البدائل والمثائل المتاحة بنفس المادة')}</span>
+              <span>{t('عرض منتجات تشترك في المادة الفعالة')}</span>
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            </button>
+            </button>}
 
             {/* Facts grid */}
             <div className="grid sm:grid-cols-2 gap-2">

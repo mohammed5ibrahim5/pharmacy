@@ -11,6 +11,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { QuickViewModal } from '@/components/QuickViewModal';
 import { SubscribeModal } from '@/components/SubscribeModal';
 import { SubstitutesModal } from '@/components/SubstitutesModal';
+import { InventoryFreshness } from '@/components/InventoryFreshness';
 import { categoryColor, categoryIcon } from '@/lib/categoryStyles';
 
 interface Props {
@@ -38,7 +39,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
   const [subscribeOpen, setSubscribeOpen] = useState(false);
   const [substitutesOpen, setSubstitutesOpen] = useState(false);
 
-  const canSubscribe = subscriptionConfig.enabled && product.is_available && !product.requires_prescription;
+  const canSubscribe = subscriptionConfig.enabled && product.is_available && !product.requires_prescription && !product.is_controlled;
   
   const addTimer = useRef<number | null>(null);
   const heartTimer = useRef<number | null>(null);
@@ -53,6 +54,8 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
   const handleClick = () => {
     if (onClick) {
       onClick();
+    } else if (product.is_controlled) {
+      setQuickViewOpen(true);
     } else {
       openOrder(product, pharmacyName);
     }
@@ -90,6 +93,12 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
           {/* Shimmer Effect */}
           {product.image_url && !imgLoaded && (
             <div className="absolute inset-0 skeleton z-0" />
+          )}
+
+          {product.is_controlled && (
+            <span className="absolute top-2 end-2 z-20 inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-[10px] font-extrabold text-rose-800">
+              {t('مراقب — غير متاح للبيع عبر الإنترنت')}
+            </span>
           )}
 
           {product.image_url ? (
@@ -247,7 +256,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
           )}
 
           {/* Quick Add / Quantity Stepper */}
-          {cartEntry ? (
+          {cartEntry && !product.is_controlled ? (
               <div
                 className="absolute bottom-2.5 start-2.5 flex items-center gap-0.5 rounded-xl bg-white shadow-lg border p-0.5 animate-fade-in z-30"
                 style={{ borderColor: `${themeColors.priceColor}35` }}
@@ -276,7 +285,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
                   <Plus className="w-3.5 h-3.5" strokeWidth={3} />
                 </button>
               </div>
-            ) : product.is_available ? (
+            ) : product.is_available && !product.is_controlled ? (
               <div className="absolute bottom-2.5 start-2.5 z-30">
                 {justAdded && (
                   <span
@@ -342,7 +351,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
               );
             })()}
 
-            {product.is_available && (
+            {product.is_available && !product.is_controlled && (
               <span
                 className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full"
                 style={{
@@ -409,6 +418,7 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
               <span className="text-xs font-bold" style={{ color: themeColors.cardMutedText }}>EGP</span>
             </div>
           </div>
+          <InventoryFreshness updatedAt={product.updated_at} compact />
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg"
               style={{ color: themeColors.cardMutedText, backgroundColor: `${themeColors.cardMutedText}15` }}>
@@ -443,10 +453,10 @@ export function ProductCard({ product, pharmacyName, onClick, popular = false, s
             }}
             className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-black border shadow-2xs transition-all hover:brightness-95 active:scale-[0.98]"
             style={{ color: themeColors.priceColor, borderColor: `${themeColors.priceColor}30`, backgroundColor: `${themeColors.priceColor}0a` }}
-            title={t('عرض البدائل الآمنة المتوفرة')}
+            title={t('عرض منتجات تشترك في المادة الفعالة')}
           >
             <ArrowLeftRight className="w-3.5 h-3.5" />
-            {t('البدائل الآمنة المتوفرة')}
+            {t('منتجات لها المادة الفعالة نفسها')}
           </button>
         )}
       </div>

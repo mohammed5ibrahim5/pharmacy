@@ -79,6 +79,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const notify = (message: string) => setNotice(message);
 
   const addToCart = (product: Product, pharmacyName?: string, quantity = 1): boolean => {
+    if (product.is_controlled) {
+      notify('هذا الدواء مراقب ولا يمكن إضافته إلى سلة الطلبات عبر الإنترنت.');
+      return false;
+    }
     const catalogMode = !storeConfig.purchasesEnabled;
     if (catalogMode && !storeConfig.catalogMultiPharmacy && !product.for_all_pharmacies) {
       const cartPharmacyIds = new Set(

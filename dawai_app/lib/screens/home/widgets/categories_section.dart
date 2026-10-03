@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../config/theme.dart';
 import '../../../models/category.dart';
 import '../../../shared/widgets/loading_widget.dart';
@@ -111,7 +112,8 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                 padding: EdgeInsets.symmetric(horizontal: widget.padding),
                 itemCount: 6,
                 separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemBuilder: (context, i) => ShimmerBox(width: 80, height: 80, borderRadius: 16),
+                itemBuilder: (context, i) =>
+                    ShimmerBox(width: 80, height: 80, borderRadius: 16),
               ),
             ),
           ],
@@ -133,24 +135,63 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), borderRadius: BorderRadius.circular(8)),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.shopping_bag_outlined, size: 14, color: AppColors.primary),
-                        const SizedBox(width: 4),
-                        Text('تصفح الأقسام', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                      ]),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySurfaceOf(context),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.shopping_bag_outlined,
+                            size: 14,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'تصفح الأقسام',
+                            style: GoogleFonts.tajawal(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    Text('تسوق حسب الفئة', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
+                    Text(
+                      'تسوق حسب الفئة',
+                      style: GoogleFonts.tajawal(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ],
                 ),
                 GestureDetector(
                   onTap: () => context.push('/search'),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
-                    child: Text('عرض الكل', style: GoogleFonts.tajawal(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'عرض الكل',
+                      style: GoogleFonts.tajawal(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -170,32 +211,69 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                   itemBuilder: (context, index) {
                     final cat = widget.categories[index];
                     final gradient = AppColors.getCategoryGradient(cat.slug);
+                    final readableGradient = gradient
+                        .map((color) => Color.lerp(color, Colors.black, 0.4)!)
+                        .toList();
                     final count = widget.productCounts[cat.id] ?? 0;
                     return GestureDetector(
                       onTap: () => context.push('/category/${cat.slug}'),
                       child: Container(
                         width: 130,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: gradient),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: readableGradient,
+                          ),
                           borderRadius: BorderRadius.circular(20),
-                          boxShadow: [BoxShadow(color: gradient[0].withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 6))],
+                          boxShadow: [
+                            BoxShadow(
+                              color: gradient[0].withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Stack(
                           children: [
-                            Positioned(top: -15, right: -15, child: Container(width: 50, height: 50, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12), shape: BoxShape.circle))),
+                            Positioned(
+                              top: -15,
+                              right: -15,
+                              child: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
                             Padding(
                               padding: const EdgeInsets.all(12),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Container(
-                                    width: 48, height: 48,
+                                    width: 48,
+                                    height: 48,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.25),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.25,
+                                      ),
                                       borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.4,
+                                        ),
+                                        width: 1.5,
+                                      ),
                                     ),
-                                    child: Center(child: Text(cat.displayIcon, style: const TextStyle(fontSize: 24))),
+                                    child: Center(
+                                      child: Text(
+                                        cat.displayIcon,
+                                        style: const TextStyle(fontSize: 24),
+                                      ),
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
@@ -212,17 +290,27 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                                   ),
                                   const SizedBox(height: 4),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.25),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.18,
+                                      ),
                                       borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.24,
+                                        ),
+                                        width: 1,
+                                      ),
                                     ),
                                     child: Text(
                                       '$count منتج',
                                       style: GoogleFonts.tajawal(
                                         color: Colors.white,
-                                        fontSize: 9,
+                                        fontSize: 10,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -238,23 +326,65 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                 ),
                 if (_canScrollBack)
                   PositionedDirectional(
-                    start: 4, top: 0, bottom: 0,
+                    start: 4,
+                    top: 0,
+                    bottom: 0,
                     child: Center(
                       child: GestureDetector(
-                        onTap: () => widget.scrollCtrl.animateTo(widget.scrollCtrl.offset - 140, duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
-                        child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.surfaceOf(context), shape: BoxShape.circle, boxShadow: AppShadow.sm, border: Border.all(color: AppColors.borderOf(context))),
-                          child: Icon(isRtl ? Icons.chevron_right : Icons.chevron_left, size: 20, color: AppColors.textOf(context))),
+                        onTap: () => widget.scrollCtrl.animateTo(
+                          widget.scrollCtrl.offset - 140,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        ),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceOf(context),
+                            shape: BoxShape.circle,
+                            boxShadow: AppShadow.sm,
+                            border: Border.all(
+                              color: AppColors.borderOf(context),
+                            ),
+                          ),
+                          child: Icon(
+                            isRtl ? Icons.chevron_right : Icons.chevron_left,
+                            size: 20,
+                            color: AppColors.textOf(context),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 if (_canScrollForward)
                   PositionedDirectional(
-                    end: 4, top: 0, bottom: 0,
+                    end: 4,
+                    top: 0,
+                    bottom: 0,
                     child: Center(
                       child: GestureDetector(
-                        onTap: () => widget.scrollCtrl.animateTo(widget.scrollCtrl.offset + 140, duration: const Duration(milliseconds: 300), curve: Curves.easeOut),
-                        child: Container(width: 32, height: 32, decoration: BoxDecoration(color: AppColors.surfaceOf(context), shape: BoxShape.circle, boxShadow: AppShadow.sm, border: Border.all(color: AppColors.borderOf(context))),
-                          child: Icon(isRtl ? Icons.chevron_left : Icons.chevron_right, size: 20, color: AppColors.textOf(context))),
+                        onTap: () => widget.scrollCtrl.animateTo(
+                          widget.scrollCtrl.offset + 140,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        ),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceOf(context),
+                            shape: BoxShape.circle,
+                            boxShadow: AppShadow.sm,
+                            border: Border.all(
+                              color: AppColors.borderOf(context),
+                            ),
+                          ),
+                          child: Icon(
+                            isRtl ? Icons.chevron_left : Icons.chevron_right,
+                            size: 20,
+                            color: AppColors.textOf(context),
+                          ),
+                        ),
                       ),
                     ),
                   ),

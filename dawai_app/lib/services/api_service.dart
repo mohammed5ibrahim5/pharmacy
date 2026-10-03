@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../models/pharmacy.dart';
 import '../models/product.dart';
 import '../models/category.dart';
@@ -38,11 +39,13 @@ class ApiService {
     required String fullName,
     String? phone,
   }) async {
-    return _client.auth.signUp(
-      email: email,
-      password: password,
-      data: {'full_name': fullName, 'phone': phone},
-    ).timeout(netTimeout);
+    return _client.auth
+        .signUp(
+          email: email,
+          password: password,
+          data: {'full_name': fullName, 'phone': phone},
+        )
+        .timeout(netTimeout);
   }
 
   Future<AuthResponse> signIn({
@@ -89,16 +92,18 @@ class ApiService {
   /// meaning search (and every product filter) had silently never worked.
   /// The static type below turns that mistake into a compile error.
   Future<List<Pharmacy>> getPharmacies({String? search}) async {
-    PostgrestFilterBuilder<PostgrestList> query =
-        _client.from('pharmacies').select('*');
+    PostgrestFilterBuilder<PostgrestList> query = _client
+        .from('pharmacies')
+        .select('*');
 
     if (search != null && search.isNotEmpty) {
       final q = search.toLowerCase();
       query = query.or('name.ilike.%$q%,area.ilike.%$q%,address.ilike.%$q%');
     }
 
-    final data =
-        await query.order('rating', ascending: false).timeout(netTimeout);
+    final data = await query
+        .order('rating', ascending: false)
+        .timeout(netTimeout);
     return data.map((e) => Pharmacy.fromJson(e)).toList();
   }
 
@@ -114,7 +119,8 @@ class ApiService {
   }
 
   // ──── Products ────
-  static const _productSelect = '*, pharmacy:pharmacies(id,name,logo_url,delivery_fee,delivery_available), category:categories(id,name,slug,icon)';
+  static const _productSelect =
+      '*, pharmacy:pharmacies(id,name,logo_url,delivery_fee,delivery_available), category:categories(id,name,slug,icon)';
 
   /// Rows per page of the product listings. The screens that page render a
   /// two-column grid, so a page is about a dozen rows — comfortably deeper
@@ -129,7 +135,10 @@ class ApiService {
   PostgrestFilterBuilder<PostgrestList> _productQuery({
     String? pharmacyId,
     String? categoryId,
+    List<String>? categoryIds,
     String? search,
+    List<String>? searchTerms,
+    List<String>? fuzzySearchTerms,
     bool otcOnly = false,
   }) {
     PostgrestFilterBuilder<PostgrestList> query = _client
@@ -140,9 +149,50 @@ class ApiService {
     if (pharmacyId != null) query = query.eq('pharmacy_id', pharmacyId);
     if (categoryId != null) query = query.eq('category_id', categoryId);
     if (otcOnly) query = query.eq('requires_prescription', false);
-    if (search != null && search.isNotEmpty) {
-      final q = search.toLowerCase();
-      query = query.or('name.ilike.%$q%,name_en.ilike.%$q%,active_ingredient.ilike.%$q%');
+    final terms =
+        (searchTerms ??
+                (search == null || search.trim().isEmpty
+                    ? const []
+                    : [search.trim()]))
+            .map(
+              (term) =>
+                  term.replaceAll(RegExp(r'[^a-zA-Z0-9\u0600-\u06FF_\s]'), ''),
+            )
+            .where((term) => term.trim().isNotEmpty)
+            .toList();
+    final fuzzyTerms = (fuzzySearchTerms ?? const <String>[])
+        .map(
+          (term) =>
+              term.replaceAll(RegExp(r'[^a-zA-Z0-9\u0600-\u06FF_\s]'), ''),
+        )
+        .where((term) => term.trim().isNotEmpty);
+    if ((search != null || searchTerms != null) &&
+        terms.isEmpty &&
+        !fuzzyTerms.isNotEmpty &&
+        (categoryIds == null || categoryIds.isEmpty)) {
+      throw ArgumentError.value(
+        searchTerms ?? search,
+        'search',
+        'At least one searchable term or category is required.',
+      );
+    }
+    final searchFilters = <String>[
+      for (final term in terms.where((term) => term.isNotEmpty))
+        for (final column in const [
+          'name',
+          'name_en',
+          'active_ingredient',
+          'manufacturer',
+          'barcode',
+          'description',
+        ])
+          '$column.ilike.%$term%',
+      for (final term in fuzzyTerms)
+        for (final column in const ['name', 'name_en']) '$column.ilike.%$term%',
+      for (final id in categoryIds ?? const <String>[]) 'category_id.eq.$id',
+    ];
+    if (searchFilters.isNotEmpty) {
+      query = query.or(searchFilters.join(','));
     }
     return query;
   }
@@ -158,10 +208,7 @@ class ApiService {
     required int limit,
     required int offset,
   }) {
-    return query
-        .order('name')
-        .order('id')
-        .range(offset, offset + limit - 1);
+    return query.order('name').order('id').range(offset, offset + limit - 1);
   }
 
   /// One page of products and the total number matching the same filters.
@@ -182,7 +229,10 @@ class ApiService {
   Future<ProductPage> getProductPage({
     String? pharmacyId,
     String? categoryId,
+    List<String>? categoryIds,
     String? search,
+    List<String>? searchTerms,
+    List<String>? fuzzySearchTerms,
     bool otcOnly = false,
     int limit = productPageSize,
     int offset = 0,
@@ -192,7 +242,10 @@ class ApiService {
         _productQuery(
           pharmacyId: pharmacyId,
           categoryId: categoryId,
+          categoryIds: categoryIds,
           search: search,
+          searchTerms: searchTerms,
+          fuzzySearchTerms: fuzzySearchTerms,
           otcOnly: otcOnly,
         ),
         limit: limit,
@@ -222,7 +275,10 @@ class ApiService {
   Future<List<Product>> getProducts({
     String? pharmacyId,
     String? categoryId,
+    List<String>? categoryIds,
     String? search,
+    List<String>? searchTerms,
+    List<String>? fuzzySearchTerms,
     bool otcOnly = false,
     int limit = 200,
     int offset = 0,
@@ -231,7 +287,10 @@ class ApiService {
       _productQuery(
         pharmacyId: pharmacyId,
         categoryId: categoryId,
+        categoryIds: categoryIds,
         search: search,
+        searchTerms: searchTerms,
+        fuzzySearchTerms: fuzzySearchTerms,
         otcOnly: otcOnly,
       ),
       limit: limit,
@@ -294,7 +353,9 @@ class ApiService {
 
     final data = await _client
         .from('order_groups')
-        .select('*, orders(*, product:products(id,name,image_url,unit), pharmacy:pharmacies(id,name,logo_url))')
+        .select(
+          '*, orders(*, product:products(id,name,image_url,unit), pharmacy:pharmacies(id,name,logo_url))',
+        )
         .eq('customer_id', customerRes['id'])
         .order('created_at', ascending: false)
         .limit(50)
@@ -322,7 +383,9 @@ class ApiService {
 
     final data = await _client
         .from('order_groups')
-        .select('*, orders(*, product:products(id,name,image_url,unit), pharmacy:pharmacies(id,name,logo_url))')
+        .select(
+          '*, orders(*, product:products(id,name,image_url,unit), pharmacy:pharmacies(id,name,logo_url))',
+        )
         .eq('id', id)
         .eq('customer_id', customerRes['id'])
         .maybeSingle()
@@ -350,18 +413,23 @@ class ApiService {
     String? rxId,
     List<String>? rxProductIds,
   }) async {
-    final response = await _client.rpc('place_order', params: {
-      'p_items': items,
-      'p_address': address,
-      'p_note': note,
-      'p_family_member_id': familyMemberId,
-      'p_payment_method': paymentMethod,
-      'p_payment_number': paymentNumber,
-      'p_payment_screenshot_url': paymentScreenshotUrl,
-      'p_redeem_chunks': redeemChunks,
-      'p_rx_id': rxId,
-      'p_rx_product_ids': rxProductIds,
-    }).timeout(netTimeout);
+    final response = await _client
+        .rpc(
+          'place_order',
+          params: {
+            'p_items': items,
+            'p_address': address,
+            'p_note': note,
+            'p_family_member_id': familyMemberId,
+            'p_payment_method': paymentMethod,
+            'p_payment_number': paymentNumber,
+            'p_payment_screenshot_url': paymentScreenshotUrl,
+            'p_redeem_chunks': redeemChunks,
+            'p_rx_id': rxId,
+            'p_rx_product_ids': rxProductIds,
+          },
+        )
+        .timeout(netTimeout);
     return response as Map<String, dynamic>;
   }
 
@@ -376,9 +444,7 @@ class ApiService {
         .limit(50)
         .timeout(netTimeout);
 
-    return (data as List)
-        .map((e) => Review.fromJson(e))
-        .toList();
+    return (data as List).map((e) => Review.fromJson(e)).toList();
   }
 
   // ──── Customer Profile ────

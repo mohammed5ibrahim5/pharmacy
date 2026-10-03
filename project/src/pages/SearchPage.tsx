@@ -12,7 +12,7 @@ import { PharmacyCard } from '@/components/PharmacyCard';
 import { OtcFilterToggle } from '@/components/OtcFilterToggle';
 import { getPharmacyWithDistance, sortPharmaciesByDistance } from '@/lib/distance';
 import { trackSearch } from '@/lib/searchHistory';
-import { smartSearch, findCheaperAlternatives } from '@/lib/search';
+import { buildProductSearchOr, smartSearch, findCheaperAlternatives } from '@/lib/search';
 import type { Product, Pharmacy } from '@/types';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -44,15 +44,23 @@ export function SearchPage({ query }: Props) {
     const search = async () => {
       setLoading(true);
       setError(false);
+      if (debouncedQuery.trim().length < 2) {
+        setProducts([]);
+        setPharmacies([]);
+        setLoading(false);
+        return;
+      }
       try {
         const searchTerm = `%${debouncedQuery}%`;
+        const productFilter = buildProductSearchOr(debouncedQuery);
         const [prodRes, pharmRes] = await Promise.all([
           supabase
             .from('products')
             .select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)')
-            .or(`name.ilike.${searchTerm},name_en.ilike.${searchTerm},active_ingredient.ilike.${searchTerm},description.ilike.${searchTerm}`)
+            .or(productFilter)
             .eq('is_available', true)
-            .order('name'),
+            .order('name')
+            .limit(500),
           supabase
             .from('pharmacies')
             .select('*')
@@ -60,6 +68,8 @@ export function SearchPage({ query }: Props) {
             .eq('is_active', true),
         ]);
         if (cancelled) return;
+        if (prodRes.error) throw prodRes.error;
+        if (pharmRes.error) throw pharmRes.error;
         setProducts(prodRes.data || []);
         setPharmacies(pharmRes.data || []);
       } catch {

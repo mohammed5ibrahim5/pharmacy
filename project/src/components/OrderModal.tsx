@@ -617,6 +617,12 @@ export function OrderModal() {
     setLoading(true);
     setError(null);
 
+    if (cart.some((entry) => entry.product.is_controlled)) {
+      setError(t('تحتوي السلة على دواء مراقب لا يمكن طلبه أو حجزه عبر الإنترنت.'));
+      setLoading(false);
+      return;
+    }
+
     const isGuestFlow = !user;
     if (isGuestFlow) {
       const gName = guestName.trim();

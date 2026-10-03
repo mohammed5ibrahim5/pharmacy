@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -121,47 +121,65 @@ class AppColors {
 
   // ─── CATEGORY PALETTE ────────────────────────────────────────────────────
   static const Map<String, Color> categoryColors = {
+    'painkillers': Color(0xFF0D9488),
+    'antibiotics': Color(0xFF2563EB),
+    'supplements': Color(0xFFD97706),
+    'cold-flu': Color(0xFFDC2626),
+    'vitamins': Color(0xFF7C3AED),
+    'skin-care': Color(0xFFDB2777),
+    'skincare': Color(0xFFDB2777),
+    'baby-care': Color(0xFFE11D48),
+    'digestive': Color(0xFF16A34A),
+    'digestive-health': Color(0xFF16A34A),
+    'mental-health': Color(0xFF8B5CF6),
+    'orthopedic': Color(0xFF64748B),
+    'ophthalmology': Color(0xFF06B6D4),
+    'general': Color(0xFF10B981),
     'medicines': Color(0xFF0D9488),
     'cosmetics': Color(0xFFEC4899),
-    'baby-care': Color(0xFFF59E0B),
-    'supplements': Color(0xFF10B981),
     'personal-care': Color(0xFF8B5CF6),
     'wellness': Color(0xFF06B6D4),
     'medical-devices': Color(0xFF3B82F6),
     'herbal': Color(0xFF22C55E),
-    'vitamins': Color(0xFFF97316),
-    'skincare': Color(0xFFD946EF),
     'haircare': Color(0xFFA855F7),
     'oral-care': Color(0xFF14B8A6),
     'sexual-health': Color(0xFFE11D48),
     'weight-management': Color(0xFFEF4444),
-    'digestive-health': Color(0xFF84CC16),
     'first-aid': Color(0xFFDC2626),
     'home-essentials': Color(0xFF64748B),
   };
 
   static const Map<String, List<Color>> categoryGradients = {
+    'painkillers': [Color(0xFF0D9488), Color(0xFF059669)],
+    'antibiotics': [Color(0xFF3B82F6), Color(0xFF6366F1)],
+    'supplements': [Color(0xFFF59E0B), Color(0xFFF97316)],
+    'cold-flu': [Color(0xFFEF4444), Color(0xFFF43F5E)],
+    'vitamins': [Color(0xFFA855F7), Color(0xFF7C3AED)],
+    'skin-care': [Color(0xFFEC4899), Color(0xFFD946EF)],
+    'skincare': [Color(0xFFEC4899), Color(0xFFD946EF)],
+    'baby-care': [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
+    'digestive': [Color(0xFF22C55E), Color(0xFF14B8A6)],
+    'digestive-health': [Color(0xFF22C55E), Color(0xFF14B8A6)],
+    'mental-health': [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+    'orthopedic': [Color(0xFF64748B), Color(0xFF475569)],
+    'ophthalmology': [Color(0xFF06B6D4), Color(0xFF0EA5E9)],
+    'general': [Color(0xFF10B981), Color(0xFF0D9488)],
     'medicines': [Color(0xFF0D9488), Color(0xFF14B8A6)],
     'cosmetics': [Color(0xFFEC4899), Color(0xFFF472B6)],
-    'baby-care': [Color(0xFFF59E0B), Color(0xFFFBBF24)],
-    'supplements': [Color(0xFF10B981), Color(0xFF34D399)],
     'personal-care': [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
     'wellness': [Color(0xFF06B6D4), Color(0xFF22D3EE)],
     'medical-devices': [Color(0xFF3B82F6), Color(0xFF60A5FA)],
     'herbal': [Color(0xFF22C55E), Color(0xFF4ADE80)],
-    'vitamins': [Color(0xFFF97316), Color(0xFFFB923C)],
-    'skincare': [Color(0xFFD946EF), Color(0xFFE879F9)],
     'haircare': [Color(0xFFA855F7), Color(0xFFC084FC)],
     'oral-care': [Color(0xFF14B8A6), Color(0xFF2DD4BF)],
     'sexual-health': [Color(0xFFE11D48), Color(0xFFF43F5E)],
     'weight-management': [Color(0xFFEF4444), Color(0xFFF87171)],
-    'digestive-health': [Color(0xFF84CC16), Color(0xFFA3E635)],
     'first-aid': [Color(0xFFDC2626), Color(0xFFEF4444)],
     'home-essentials': [Color(0xFF64748B), Color(0xFF94A3B8)],
   };
 
-  static Color getCategoryColor(String slug) => categoryColors[slug] ?? primary;
-  static List<Color> getCategoryGradient(String slug) => categoryGradients[slug] ?? [primary, primaryDark];
+  static Color getCategoryColor(String slug) => categoryColors[slug.toLowerCase()] ?? primary;
+  static List<Color> getCategoryGradient(String slug) => categoryGradients[slug.toLowerCase()] ?? [primary, primaryDark];
 
   // ─── GRADIENTS ───────────────────────────────────────────────────────────
   static const LinearGradient primaryGradient = LinearGradient(

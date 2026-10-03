@@ -5,6 +5,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../services/update_service.dart';
@@ -122,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _pharmacies = results[0] as List<Pharmacy>;
           _products = results[1] as List<Product>;
-          _categories = results[2] as List<Category>;
+          _categories = Category.mergeAndSort(results[2] as List<Category>);
           _categoryCounts = results[3] as Map<String, int>;
           _loading = false;
         });
@@ -132,7 +133,8 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _loading = false;
           _hasError = true;
-          _errorMsg = 'فشل تحميل البيانات. تأكد من اتصال الإنترنت وحاول مرة أخرى.';
+          _errorMsg =
+              'فشل تحميل البيانات. تأكد من اتصال الإنترنت وحاول مرة أخرى.';
         });
       }
     }
@@ -160,8 +162,10 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _listening = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تعذّر الوصول إلى الميكروفون. تحقّق من إذن الميكروفون.',
-                style: GoogleFonts.tajawal()),
+            content: Text(
+              'تعذّر الوصول إلى الميكروفون. تحقّق من إذن الميكروفون.',
+              style: GoogleFonts.tajawal(),
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -188,7 +192,10 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _listening = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تعذّر إجراء البحث الصوتي.', style: GoogleFonts.tajawal()),
+            content: Text(
+              'تعذّر إجراء البحث الصوتي.',
+              style: GoogleFonts.tajawal(),
+            ),
             backgroundColor: AppColors.error,
           ),
         );
@@ -198,18 +205,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _searchByImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
+    final picked = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 70,
+    );
     if (picked != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(children: [
-            const Icon(Icons.center_focus_strong, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Text('جاري فحص صورة الدواء واستخراج التفاصيل...', style: GoogleFonts.tajawal()),
-          ]),
+          content: Row(
+            children: [
+              const Icon(
+                Icons.center_focus_strong,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'جاري فحص صورة الدواء واستخراج التفاصيل...',
+                style: GoogleFonts.tajawal(),
+              ),
+            ],
+          ),
           backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -231,10 +252,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppColors.errorSurfaceOf(context),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.emergency, color: AppColors.error, size: 24),
+              child: const Icon(
+                Icons.emergency,
+                color: AppColors.error,
+                size: 24,
+              ),
             ),
             const SizedBox(width: 10),
-            Text('طوارئ الصيدليات 24/7', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(
+              'طوارئ الصيدليات 24/7',
+              style: GoogleFonts.tajawal(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
           ],
         ),
         content: Text(
@@ -244,7 +275,10 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
-            child: Text('إلغاء', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
+            child: Text(
+              'إلغاء',
+              style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)),
+            ),
           ),
           ElevatedButton.icon(
             onPressed: () async {
@@ -259,7 +293,10 @@ class _HomeScreenState extends State<HomeScreen> {
               if (mounted) context.push('/pharmacy-finder');
             },
             icon: const Icon(Icons.phone_in_talk, size: 18),
-            label: Text('اتصال عاجل', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+            label: Text(
+              'اتصال عاجل',
+              style: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
@@ -287,60 +324,55 @@ class _HomeScreenState extends State<HomeScreen> {
                 controller: _scrollCtrl,
                 physics: const BouncingScrollPhysics(),
                 slivers: [
-            SliverToBoxAdapter(
-              child: HeroHeader(
-                onSearch: _search,
-                onVoiceSearch: _startVoiceSearch,
-                onImageSearch: _searchByImage,
-                showAnnouncement: _showAnnouncement,
-                onDismissAnnouncement: () => setState(() => _showAnnouncement = false),
-                searchController: _searchCtrl,
-                isListening: _listening,
-                onEmergencySos: _triggerEmergencySos,
+                  SliverToBoxAdapter(
+                    child: HeroHeader(
+                      onSearch: _search,
+                      onVoiceSearch: _startVoiceSearch,
+                      onImageSearch: _searchByImage,
+                      showAnnouncement: _showAnnouncement,
+                      onDismissAnnouncement: () =>
+                          setState(() => _showAnnouncement = false),
+                      searchController: _searchCtrl,
+                      isListening: _listening,
+                      onEmergencySos: _triggerEmergencySos,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: CategoriesSection(
+                      categories: _categories,
+                      productCounts: _categoryCounts,
+                      isLoading: _loading,
+                      scrollCtrl: _catScrollCtrl,
+                      isWide: isWide,
+                      padding: padding,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: ProductsSection(
+                      products: _products,
+                      isLoading: _loading,
+                      isWide: isWide,
+                      padding: padding,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: PharmaciesSection(
+                      pharmacies: _pharmacies,
+                      isLoading: _loading,
+                      isWide: isWide,
+                      padding: padding,
+                    ),
+                  ),
+                  SliverToBoxAdapter(child: _buildHowItWorksSection(padding)),
+                  SliverToBoxAdapter(
+                    child: HealthTipsSection(padding: padding),
+                  ),
+                  SliverToBoxAdapter(child: _buildTestimonialsSection(padding)),
+                  SliverToBoxAdapter(child: EmergencyBanner(padding: padding)),
+                  SliverToBoxAdapter(child: _buildTrustFeatures(padding)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                ],
               ),
-            ),
-            SliverToBoxAdapter(
-              child: CategoriesSection(
-                categories: _categories,
-                productCounts: _categoryCounts,
-                isLoading: _loading,
-                scrollCtrl: _catScrollCtrl,
-                isWide: isWide,
-                padding: padding,
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: PharmaciesSection(
-                pharmacies: _pharmacies,
-                isLoading: _loading,
-                isWide: isWide,
-                padding: padding,
-              ),
-            ),
-            SliverToBoxAdapter(child: _buildHowItWorksSection(padding)),
-            SliverToBoxAdapter(
-              child: ProductsSection(
-                products: _products,
-                isLoading: _loading,
-                isWide: isWide,
-                padding: padding,
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: HealthTipsSection(
-                padding: padding,
-              ),
-            ),
-            SliverToBoxAdapter(child: _buildTestimonialsSection(padding)),
-            SliverToBoxAdapter(
-              child: EmergencyBanner(
-                padding: padding,
-              ),
-            ),
-            SliverToBoxAdapter(child: _buildTrustFeatures(padding)),
-            const SliverToBoxAdapter(child: SizedBox(height: 100)),
-              ],
-            ),
       ),
     );
   }
@@ -358,24 +390,37 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppColors.errorSurfaceOf(context),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.wifi_off_rounded, color: AppColors.error, size: 48),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                color: AppColors.error,
+                size: 48,
+              ),
             ),
             const SizedBox(height: 20),
             Text(
               'عذراً، حدث خطأ',
-              style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800),
+              style: GoogleFonts.tajawal(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               _errorMsg,
-              style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textSecondaryOf(context)),
+              style: GoogleFonts.tajawal(
+                fontSize: 14,
+                color: AppColors.textSecondaryOf(context),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _loadData,
               icon: const Icon(Icons.refresh, size: 20),
-              label: Text('إعادة المحاولة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+              label: Text(
+                'إعادة المحاولة',
+                style: GoogleFonts.tajawal(fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ),
@@ -385,10 +430,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHowItWorksSection(double padding) {
     final steps = [
-      {'icon': Icons.search_rounded, 'title': 'ابحث', 'desc': 'عن الدواء', 'color': AppColors.primary},
-      {'icon': Icons.compare_arrows_rounded, 'title': 'قارن', 'desc': 'الأسعار', 'color': AppColors.accent},
-      {'icon': Icons.shopping_cart_rounded, 'title': 'اطلب', 'desc': 'بضغطة زر', 'color': AppColors.secondary},
-      {'icon': Icons.delivery_dining_rounded, 'title': 'استلم', 'desc': 'في بابك', 'color': AppColors.success},
+      {
+        'icon': Icons.search_rounded,
+        'title': 'ابحث',
+        'desc': 'عن الدواء',
+        'color': AppColors.primary,
+      },
+      {
+        'icon': Icons.compare_arrows_rounded,
+        'title': 'قارن',
+        'desc': 'الأسعار',
+        'color': AppColors.accent,
+      },
+      {
+        'icon': Icons.shopping_cart_rounded,
+        'title': 'اطلب',
+        'desc': 'بضغطة زر',
+        'color': AppColors.secondary,
+      },
+      {
+        'icon': Icons.delivery_dining_rounded,
+        'title': 'استلم',
+        'desc': 'في بابك',
+        'color': AppColors.success,
+      },
     ];
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSmall = MediaQuery.of(context).size.width < 380;
@@ -400,12 +465,21 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderOf(context)),
+          border: Border.all(
+            color: isDark ? AppColors.darkBorder : AppColors.borderOf(context),
+          ),
           boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
         ),
         child: Column(
           children: [
-            Text('كيف يعمل التطبيق؟', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
+            Text(
+              'كيف يعمل التطبيق؟',
+              style: GoogleFonts.tajawal(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.darkText : AppColors.textOf(context),
+              ),
+            ),
             const SizedBox(height: 14),
             ...steps.asMap().entries.map((entry) {
               final s = entry.value;
@@ -414,20 +488,58 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Row(
                     children: [
-                      Container(width: 40, height: 40, decoration: BoxDecoration(color: (s['color'] as Color).withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(s['icon'] as IconData, color: s['color'] as Color, size: 20)),
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: (s['color'] as Color).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          s['icon'] as IconData,
+                          color: s['color'] as Color,
+                          size: 20,
+                        ),
+                      ),
                       const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(s['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
-                          Text(s['desc'] as String, style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMutedOf(context))),
+                          Text(
+                            s['title'] as String,
+                            style: GoogleFonts.tajawal(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppColors.darkText
+                                  : AppColors.textOf(context),
+                            ),
+                          ),
+                          Text(
+                            s['desc'] as String,
+                            style: GoogleFonts.tajawal(
+                              fontSize: 11,
+                              color: AppColors.textMutedOf(context),
+                            ),
+                          ),
                         ],
                       ),
                     ],
                   ),
                   if (!isLast) ...[
                     const SizedBox(height: 10),
-                    Container(height: 1, margin: const EdgeInsetsDirectional.only(end: 52), decoration: BoxDecoration(gradient: LinearGradient(colors: [AppColors.primary.withValues(alpha: 0.2), AppColors.accent.withValues(alpha: 0.2)]))),
+                    Container(
+                      height: 1,
+                      margin: const EdgeInsetsDirectional.only(end: 52),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary.withValues(alpha: 0.2),
+                            AppColors.accent.withValues(alpha: 0.2),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 10),
                   ],
                 ],
@@ -444,29 +556,86 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderOf(context)),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.borderOf(context),
+        ),
         boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
       ),
       child: Column(
         children: [
-          Text('كيف يعمل التطبيق؟', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
+          Text(
+            'كيف يعمل التطبيق؟',
+            style: GoogleFonts.tajawal(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: isDark ? AppColors.darkText : AppColors.textOf(context),
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('أربع خطوات بسيطة', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
+          Text(
+            'أربع خطوات بسيطة',
+            style: GoogleFonts.tajawal(
+              fontSize: 12,
+              color: AppColors.textMutedOf(context),
+            ),
+          ),
           const SizedBox(height: 20),
           Row(
             children: List.generate(steps.length * 2 - 1, (index) {
               if (index.isOdd) {
-                return Expanded(child: Container(height: 2, margin: const EdgeInsets.symmetric(horizontal: 2), decoration: BoxDecoration(gradient: LinearGradient(colors: [AppColors.primary.withValues(alpha: 0.2), AppColors.accent.withValues(alpha: 0.2)]))));
+                return Expanded(
+                  child: Container(
+                    height: 2,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.2),
+                          AppColors.accent.withValues(alpha: 0.2),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
               }
               final i = index ~/ 2;
               final s = steps[i];
               return Expanded(
-                child: Column(children: [
-                  Container(width: 50, height: 50, decoration: BoxDecoration(color: (s['color'] as Color).withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(s['icon'] as IconData, color: s['color'] as Color, size: 24)),
-                  const SizedBox(height: 8),
-                  Text(s['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
-                  Text(s['desc'] as String, style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMutedOf(context))),
-                ]),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: (s['color'] as Color).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        s['icon'] as IconData,
+                        color: s['color'] as Color,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      s['title'] as String,
+                      style: GoogleFonts.tajawal(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: isDark
+                            ? AppColors.darkText
+                            : AppColors.textOf(context),
+                      ),
+                    ),
+                    Text(
+                      s['desc'] as String,
+                      style: GoogleFonts.tajawal(
+                        fontSize: 11,
+                        color: AppColors.textMutedOf(context),
+                      ),
+                    ),
+                  ],
+                ),
               );
             }),
           ),
@@ -478,18 +647,46 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTestimonialsSection(double padding) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final reviews = [
-      {'name': 'أحمد محمد', 'rating': 5.0, 'text': 'توصيل سريع جداً وأسعار معقولة. صار صيدليتي المفضلة!', 'avatar': 'أ'},
-      {'name': 'سارة العلي', 'rating': 4.5, 'text': 'البحث بالصوت ممتاز وسهل الاستخدام. أنصح بالتطبيق.', 'avatar': 'س'},
-      {'name': 'خالد الحربي', 'rating': 5.0, 'text': 'قارنت الأسعار ولقيت أرخص صيدلية في منطقتي. شكراً دوا!', 'avatar': 'خ'},
+      {
+        'name': 'أحمد محمد',
+        'rating': 5.0,
+        'text': 'توصيل سريع جداً وأسعار معقولة. صار صيدليتي المفضلة!',
+        'avatar': 'أ',
+      },
+      {
+        'name': 'سارة العلي',
+        'rating': 4.5,
+        'text': 'البحث بالصوت ممتاز وسهل الاستخدام. أنصح بالتطبيق.',
+        'avatar': 'س',
+      },
+      {
+        'name': 'خالد الحربي',
+        'rating': 5.0,
+        'text': 'قارنت الأسعار ولقيت أرخص صيدلية في منطقتي. شكراً دوا!',
+        'avatar': 'خ',
+      },
     ];
     return Padding(
       padding: EdgeInsets.fromLTRB(padding, 24, padding, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ماذا يقول مستخدمونا', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
+          Text(
+            'ماذا يقول مستخدمونا',
+            style: GoogleFonts.tajawal(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: isDark ? AppColors.darkText : AppColors.textOf(context),
+            ),
+          ),
           const SizedBox(height: 4),
-          Text('آراء حقيقية من عملاء دوا', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textMutedOf(context))),
+          Text(
+            'آراء حقيقية من عملاء دوا',
+            style: GoogleFonts.tajawal(
+              fontSize: 13,
+              color: AppColors.textMutedOf(context),
+            ),
+          ),
           const SizedBox(height: 14),
           SizedBox(
             height: 120,
@@ -505,7 +702,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderOf(context)),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.darkBorder
+                          : AppColors.borderOf(context),
+                    ),
                     boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
                   ),
                   child: Column(
@@ -515,23 +716,61 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           CircleAvatar(
                             radius: 20,
-                            backgroundColor: AppColors.primarySurfaceOf(context),
-                            child: Text(r['avatar'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.primary)),
+                            backgroundColor: AppColors.primarySurfaceOf(
+                              context,
+                            ),
+                            child: Text(
+                              r['avatar'] as String,
+                              style: GoogleFonts.tajawal(
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 10),
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(r['name'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 13)),
-                            Row(children: [
-                              Icon(Icons.star_rounded, color: AppColors.warning, size: 16),
-                              const SizedBox(width: 2),
-                              Text('${r['rating']}', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600)),
-                            ]),
-                          ])),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  r['name'] as String,
+                                  style: GoogleFonts.tajawal(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.star_rounded,
+                                      color: AppColors.warning,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      '${r['rating']}',
+                                      style: GoogleFonts.tajawal(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 10),
                       Expanded(
-                        child: Text(r['text'] as String, style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textSecondaryOf(context), height: 1.5)),
+                        child: Text(
+                          r['text'] as String,
+                          style: GoogleFonts.tajawal(
+                            fontSize: 12,
+                            color: AppColors.textSecondaryOf(context),
+                            height: 1.5,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -547,17 +786,44 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTrustFeatures(double padding) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = [
-      {'icon': Icons.verified_user_rounded, 'title': 'صيدليات مرخصة', 'desc': '100% معتمدة', 'color': AppColors.primary},
-      {'icon': Icons.attach_money_rounded, 'title': 'أسعار منافسة', 'desc': 'قارن واختار', 'color': AppColors.accent},
-      {'icon': Icons.delivery_dining_outlined, 'title': 'توصيل سريع', 'desc': 'لحد بابك', 'color': AppColors.secondary},
-      {'icon': Icons.support_agent_outlined, 'title': 'دعم 24/7', 'desc': 'وتساب وخط ساخن', 'color': AppColors.success},
+      {
+        'icon': Icons.verified_user_rounded,
+        'title': 'صيدليات مرخصة',
+        'desc': '100% معتمدة',
+        'color': AppColors.primary,
+      },
+      {
+        'icon': Icons.attach_money_rounded,
+        'title': 'أسعار منافسة',
+        'desc': 'قارن واختار',
+        'color': AppColors.accent,
+      },
+      {
+        'icon': Icons.delivery_dining_outlined,
+        'title': 'توصيل سريع',
+        'desc': 'لحد بابك',
+        'color': AppColors.secondary,
+      },
+      {
+        'icon': Icons.support_agent_outlined,
+        'title': 'دعم 24/7',
+        'desc': 'وتساب وخط ساخن',
+        'color': AppColors.success,
+      },
     ];
     return Padding(
       padding: EdgeInsets.fromLTRB(padding, 24, padding, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('لماذا دوا؟', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
+          Text(
+            'لماذا دوا؟',
+            style: GoogleFonts.tajawal(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: isDark ? AppColors.darkText : AppColors.textOf(context),
+            ),
+          ),
           const SizedBox(height: 12),
           GridView.count(
             crossAxisCount: 2,
@@ -566,23 +832,68 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
             childAspectRatio: 2.4,
-            children: items.map((item) => Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.borderOf(context)),
-                boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
-              ),
-              child: Row(children: [
-                Container(width: 40, height: 40, decoration: BoxDecoration(color: (item['color'] as Color).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)), child: Icon(item['icon'] as IconData, color: item['color'] as Color, size: 22)),
-                const SizedBox(width: 10),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text(item['title'] as String, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 12, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
-                  Text(item['desc'] as String, style: GoogleFonts.tajawal(fontSize: 10, color: AppColors.textMutedOf(context))),
-                ])),
-              ]),
-            )).toList(),
+            children: items
+                .map(
+                  (item) => Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.darkBorder
+                            : AppColors.borderOf(context),
+                      ),
+                      boxShadow: isDark ? AppShadow.darkSm : AppShadow.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: (item['color'] as Color).withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            item['icon'] as IconData,
+                            color: item['color'] as Color,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                item['title'] as String,
+                                style: GoogleFonts.tajawal(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? AppColors.darkText
+                                      : AppColors.textOf(context),
+                                ),
+                              ),
+                              Text(
+                                item['desc'] as String,
+                                style: GoogleFonts.tajawal(
+                                  fontSize: 10,
+                                  color: AppColors.textMutedOf(context),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),

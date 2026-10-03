@@ -64,6 +64,7 @@ export interface Product {
   reserved_quantity?: number;
   barcode: string | null;
   is_medical?: boolean;
+  is_controlled?: boolean;
   for_all_pharmacies?: boolean;
   created_at: string;
   updated_at: string;

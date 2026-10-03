@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useCompare } from '@/context/CompareContext';
 import { formatDistance, getPharmacyWithDistance } from '@/lib/distance';
+import { InventoryFreshness } from '@/components/InventoryFreshness';
 import type { Product } from '@/types';
 
 interface Props {
@@ -52,6 +53,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
               .select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)')
               .ilike('name', `%${product.name}%`)
               .eq('is_available', true)
+              .eq('is_controlled', false)
               .limit(30),
         // Alternatives with same active ingredient
         product.active_ingredient
@@ -60,6 +62,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
               .select('*, pharmacy:pharmacies(*), category:categories(*), discounts(*)')
               .ilike('active_ingredient', `%${product.active_ingredient}%`)
               .eq('is_available', true)
+              .eq('is_controlled', false)
               .limit(30)
           : Promise.resolve({ data: [] }),
       ]);
@@ -68,12 +71,14 @@ export function PriceCompareModal({ product, onClose }: Props) {
       setSameName(
         same
           .filter((p) => p.id !== product.id)
+          .filter((p) => !p.is_controlled)
           .filter((p) => !p.for_all_pharmacies && p.pharmacy_id)
       );
       setAlternatives(
         alts.filter(
           (p) =>
             p.id !== product.id &&
+            !p.is_controlled &&
             p.active_ingredient === product.active_ingredient &&
             !p.for_all_pharmacies &&
             p.pharmacy_id
@@ -122,6 +127,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
   const cheapestAlt = [...visibleAlts].sort((a, b) => finalPrice(a) - finalPrice(b))[0];
 
   const handleAddToCart = (p: Product) => {
+    if (p.is_controlled) return;
     const phName = lang === 'en' ? (p.pharmacy?.name_en || p.pharmacy?.name || '') : p.pharmacy?.name || '';
     const ok = addToCart(p, phName);
     if (!ok) return;
@@ -175,6 +181,7 @@ export function PriceCompareModal({ product, onClose }: Props) {
               {p.category?.name}
             </p>
           )}
+          <InventoryFreshness updatedAt={p.updated_at} compact />
           <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mt-0.5 truncate">
             <Store className="w-3 h-3 shrink-0" style={{ color: themeColors.priceColor }} />
             <span className="truncate">
@@ -225,14 +232,16 @@ export function PriceCompareModal({ product, onClose }: Props) {
         </div>
 
         <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <button
-            onClick={() => handleAddToCart(p)}
-            className="px-3 py-1.5 rounded-xl text-white text-[11px] font-extrabold hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-1.5"
-            style={{ backgroundColor: themeColors.priceColor }}
-          >
-            <ShoppingCart className="w-3.5 h-3.5" />
-            {t('أضف للسلة')}
-          </button>
+          {!p.is_controlled && (
+            <button
+              onClick={() => handleAddToCart(p)}
+              className="px-3 py-1.5 rounded-xl text-white text-[11px] font-extrabold hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-1.5"
+              style={{ backgroundColor: themeColors.priceColor }}
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
+              {t('أضف للسلة')}
+            </button>
+          )}
         </div>
       </div>
     );

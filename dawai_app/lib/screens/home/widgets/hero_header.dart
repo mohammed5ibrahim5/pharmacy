@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../../config/theme.dart';
 
 class _DotPatternPainter extends CustomPainter {
@@ -45,6 +46,7 @@ class HeroHeader extends StatelessWidget {
     final w = MediaQuery.of(context).size.width;
     final isWide = w > 600;
     final padding = isWide ? 40.0 : 16.0;
+    final topPadding = MediaQuery.paddingOf(context).top + 12;
 
     return Column(
       children: [
@@ -56,12 +58,20 @@ class HeroHeader extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.local_offer_rounded, color: Colors.white, size: 16),
+                const Icon(
+                  Icons.local_offer_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     'خصم 15% على أول طلب — استخدم كود: DAWAI15',
-                    style: GoogleFonts.tajawal(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.tajawal(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -118,7 +128,7 @@ class HeroHeader extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(padding, 48, padding, 24),
+                padding: EdgeInsets.fromLTRB(padding, topPadding, padding, 24),
                 child: Column(
                   children: [
                     Row(
@@ -132,10 +142,16 @@ class HeroHeader extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.3),
+                                ),
                               ),
                               child: const Center(
-                                child: Icon(Icons.local_pharmacy_rounded, color: Colors.white, size: 24),
+                                child: Icon(
+                                  Icons.local_pharmacy_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -165,7 +181,10 @@ class HeroHeader extends StatelessWidget {
                         GestureDetector(
                           onTap: onEmergencySos,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.error,
                               borderRadius: BorderRadius.circular(12),
@@ -174,15 +193,19 @@ class HeroHeader extends StatelessWidget {
                                   color: AppColors.error.withValues(alpha: 0.4),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
-                                )
+                                ),
                               ],
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.emergency_rounded, color: Colors.white, size: 16),
+                                const Icon(
+                                  Icons.emergency_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'طوارئ',
+                                  'صيدلية طوارئ',
                                   style: GoogleFonts.tajawal(
                                     color: Colors.white,
                                     fontSize: 11,
@@ -227,7 +250,11 @@ class HeroHeader extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 6)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
       child: Row(
@@ -245,16 +272,26 @@ class HeroHeader extends StatelessWidget {
               controller: searchController,
               onSubmitted: onSearch,
               textAlign: TextAlign.start,
-              style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textOf(context)),
+              style: GoogleFonts.tajawal(
+                fontSize: 14,
+                color: AppColors.textOf(context),
+              ),
               decoration: InputDecoration(
-                hintText: 'ابحث باسم الدواء، الصيدلية أو المادة الفعالة...',
-                hintStyle: GoogleFonts.tajawal(color: AppColors.textMutedOf(context), fontSize: 13),
+                hintText: 'ابحث عن دواء أو صيدلية',
+                hintStyle: GoogleFonts.tajawal(
+                  color: AppColors.textMutedOf(context),
+                  fontSize: 12,
+                ),
                 border: InputBorder.none,
                 filled: false,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
                 prefixIcon: searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: Icon(Icons.clear, size: 18, color: AppColors.textMutedOf(context)),
+                        icon: Icon(
+                          Icons.clear,
+                          size: 18,
+                          color: AppColors.textMutedOf(context),
+                        ),
                         onPressed: () {
                           searchController.clear();
                         },
@@ -264,7 +301,10 @@ class HeroHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.camera_alt_outlined, color: AppColors.secondary),
+            icon: const Icon(
+              Icons.camera_alt_outlined,
+              color: AppColors.secondary,
+            ),
             onPressed: onImageSearch,
           ),
           const SizedBox(width: 4),
@@ -277,7 +317,11 @@ class HeroHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: IconButton(
-              icon: const Icon(Icons.search_rounded, color: Colors.white, size: 22),
+              icon: const Icon(
+                Icons.search_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
               onPressed: () => onSearch(searchController.text),
             ),
           ),
@@ -287,34 +331,55 @@ class HeroHeader extends StatelessWidget {
   }
 
   Widget _buildTrendingTags() {
-    final tags = ['بنادول اكسترا', 'كونجستال', 'أوميجا 3', 'فيتامين سي', 'سيتامول'];
+    final tags = [
+      'بنادول اكسترا',
+      'كونجستال',
+      'أوميجا 3',
+      'فيتامين سي',
+      'سيتامول',
+    ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          Icon(Icons.trending_up, size: 14, color: Colors.white.withValues(alpha: 0.7)),
+          Icon(
+            Icons.trending_up,
+            size: 14,
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
           const SizedBox(width: 6),
-          ...tags.map((t) => Padding(
-            padding: const EdgeInsetsDirectional.only(start: 6),
-            child: GestureDetector(
-              onTap: () {
-                searchController.text = t;
-                onSearch(t);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                ),
-                child: Text(
-                  t,
-                  style: GoogleFonts.tajawal(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+          ...tags.map(
+            (t) => Padding(
+              padding: const EdgeInsetsDirectional.only(start: 6),
+              child: GestureDetector(
+                onTap: () {
+                  searchController.text = t;
+                  onSearch(t);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Text(
+                    t,
+                    style: GoogleFonts.tajawal(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ),
-          )),
+          ),
         ],
       ),
     );

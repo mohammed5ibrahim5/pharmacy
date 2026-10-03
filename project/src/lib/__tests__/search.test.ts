@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   normalizeSearchText,
+  buildProductSearchOr,
   levenshtein,
   smartSearch,
   findCheaperAlternatives,
@@ -56,6 +57,11 @@ describe('normalizeSearchText', () => {
     expect(normalizeSearchText('علبه')).toBe('علبه');
   });
 
+  it('normalizes Arabic and Persian digits, kashida, and Persian letters', () => {
+    expect(normalizeSearchText('٥٠٠ كِتاب')).toBe('500 كتاب');
+    expect(normalizeSearchText('کاتب ی')).toBe('كاتب ي');
+  });
+
   it('removes non-alphanumeric non-Arabic characters', () => {
     expect(normalizeSearchText('hello! @world#')).toBe('hello world');
   });
@@ -67,6 +73,16 @@ describe('normalizeSearchText', () => {
   it('returns empty string for null/undefined input', () => {
     expect(normalizeSearchText('')).toBe('');
     expect(normalizeSearchText(null as unknown as string)).toBe('');
+  });
+
+  it('builds safe bilingual search filters including medicine fields and typo matches', () => {
+    const filters = buildProductSearchOr('Panadoll ٥٠٠%');
+    expect(filters).toContain('name.ilike.%panadol%');
+    expect(filters).toContain('name_en.ilike.%panadol%');
+    expect(filters).toContain('active_ingredient.ilike.%500%');
+    expect(filters).toContain('manufacturer.ilike.%500%');
+    expect(filters).not.toContain('%25%');
+    expect(filters).not.toContain('category.');
   });
 });
 
@@ -123,6 +139,30 @@ describe('smartSearch', () => {
     const results = smartSearch('Ibuprofen', { products });
     expect(results.length).toBeGreaterThanOrEqual(1);
     expect(results.some((r) => r.product.id === '2')).toBe(true);
+  });
+
+  it('matches a bilingual Arabic/English product name from either language', () => {
+    const bilingual = makeProduct({
+      id: 'bilingual',
+      name: 'بنادول اكسترا',
+      name_en: 'Panadol Extra',
+      active_ingredient: 'باراسيتامول',
+      dosage: '500 mg',
+    });
+    expect(smartSearch('panadol', { products: [bilingual] })[0]?.product.id).toBe('bilingual');
+    expect(smartSearch('بنادول', { products: [bilingual] })[0]?.product.id).toBe('bilingual');
+  });
+
+  it('handles spelling errors, Arabic diacritics, and mixed medicine-name plus dosage queries', () => {
+    const product = makeProduct({
+      id: 'panadol',
+      name: 'بنادول إكسترا',
+      name_en: 'Panadol Extra',
+      active_ingredient: 'باراسيتامول',
+      dosage: '500 mg',
+    });
+    expect(smartSearch('panadoll', { products: [product] })[0]?.product.id).toBe('panadol');
+    expect(smartSearch('بَنَادُول اكسترا ٥٠٠', { products: [product] })[0]?.product.id).toBe('panadol');
   });
 
   it('skips unavailable products by default', () => {
