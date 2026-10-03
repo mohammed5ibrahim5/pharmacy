@@ -1,5 +1,5 @@
 {
-  "latest_version": "1.1.1",
-  "download_url": "https://github.com/mohammed5ibrahim5/pharmacy/releases/download/v1.1.1/dawai-app.apk",
-  "release_notes": "تحديث شامل:\n- تصميم جديد لصفحة الرئيسية والسل والصيدليات\n- تحسين البحث مع تصفية فورية\n- إصلاح أخطاء البناء والأداء\n- تحسين تجربة المستخدم في كل الشاشات\n- إشعارات تلقائية للطلبات"
+  "latest_version": "1.1.2",
+  "download_url": "https://github.com/mohammed5ibrahim5/pharmacy/releases/download/v1.1.2/dawai-app.apk",
+  "release_notes": "إضافة تنزيل وتثبيت تحديث APK من داخل التطبيق. تحسين تقسيم حزم الويب وتحميل الصفحات عند الحاجة."
 }
