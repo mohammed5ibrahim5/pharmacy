@@ -5,9 +5,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../config/theme.dart';
 import '../../core/utils/api_error.dart';
+import '../../core/utils/smart_product_search.dart';
 import '../../providers/app_state.dart';
 import '../../services/api_service.dart';
 import '../../models/customer.dart';
+import '../../providers/language_provider.dart';
+import '../../services/cart_revalidation.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -18,8 +21,30 @@ class CartScreen extends StatefulWidget {
 class _CartScreenState extends State<CartScreen> {
   final _addressCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
-  String _paymentMethod = 'cash';
+  String _paymentMethod = 'cash_on_delivery';
   bool _ordering = false;
+  CheckoutConfig? _checkoutConfig;
+  bool _checkoutConfigFailed = false;
+  List<ApprovedPrescription> _approvedPrescriptions = [];
+  String? _selectedPrescriptionId;
+  bool _loadingPrescriptions = false;
+  bool _prescriptionsFailed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCheckoutConfig();
+    _loadApprovedPrescriptions();
+  }
+
+  Future<void> _loadCheckoutConfig() async {
+    try {
+      final config = await ApiService().getCheckoutConfig();
+      if (mounted) setState(() => _checkoutConfig = config);
+    } catch (_) {
+      if (mounted) setState(() => _checkoutConfigFailed = true);
+    }
+  }
 
   @override
   void dispose() {
@@ -28,39 +53,138 @@ class _CartScreenState extends State<CartScreen> {
     super.dispose();
   }
 
+  Future<void> _loadApprovedPrescriptions() async {
+    if (ApiService().currentUser == null) return;
+    setState(() {
+      _loadingPrescriptions = true;
+      _prescriptionsFailed = false;
+    });
+    try {
+      final prescriptions = await ApiService().getApprovedPrescriptions();
+      if (!mounted) return;
+      setState(() {
+        _approvedPrescriptions = prescriptions;
+        if (!_approvedPrescriptions.any(
+          (prescription) => prescription.id == _selectedPrescriptionId,
+        )) {
+          _selectedPrescriptionId = null;
+        }
+        _loadingPrescriptions = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loadingPrescriptions = false;
+          _prescriptionsFailed = true;
+        });
+      }
+    }
+  }
+
   Future<void> _placeOrder(AppState state) async {
     if (state.cart.isEmpty) return;
+    final lang = context.read<LanguageProvider>();
     if (!state.isLoggedIn) {
       context.push('/login');
       return;
     }
+    if (_checkoutConfig == null || !_checkoutConfig!.showCashOnDelivery) return;
     if (_addressCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('الرجاء إدخال عنوان التوصيل', style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
+        SnackBar(
+          content: Text(
+            lang.t('cart_address_required'),
+            style: GoogleFonts.tajawal(),
+          ),
+          backgroundColor: AppColors.error,
+        ),
       );
       return;
     }
 
     setState(() => _ordering = true);
     try {
+      final productIds = state.cart.map((item) => item.productId).toSet();
+      final latestProducts = await ApiService().getProductsByIds(
+        productIds.toList(),
+      );
+      if (!mounted) return;
+      final validation = revalidateCart(state.cart, latestProducts);
+      final priceChanges = state.refreshCartProducts(latestProducts);
+      if (!mounted) return;
+      if (priceChanges.isNotEmpty) {
+        await _showPriceChanges(priceChanges, lang);
+        if (!mounted) return;
+      }
+      if (validation.missingProducts.isNotEmpty) {
+        _showCheckoutIssue(
+          lang.t('cart_products_unavailable').replaceFirst(
+            '{products}',
+            validation.missingProducts.join(lang.isArabic ? '، ' : ', '),
+          ),
+        );
+        return;
+      }
+      if (validation.stockIssues.isNotEmpty) {
+        _showCheckoutIssue(
+          lang.t('cart_stock_changed').replaceFirst(
+            '{products}',
+            validation.stockIssues
+                .map((issue) => '${issue.productName} (${issue.available})')
+                .join(lang.isArabic ? '، ' : ', '),
+          ),
+        );
+        return;
+      }
+
+      if (priceChanges.isNotEmpty) return;
+
+      if (state.cart.any((item) => item.requiresPrescription)) {
+        await _loadApprovedPrescriptions();
+        if (!mounted) return;
+        if (_prescriptionsFailed) return;
+        final matchingPrescriptions = _matchingPrescriptions(state);
+        if (matchingPrescriptions.isEmpty) {
+          final message = _approvedPrescriptions.isEmpty
+              ? lang.t('cart_no_approved_rx')
+              : lang.t('cart_no_matching_rx');
+          _showCheckoutIssue(message);
+          return;
+        }
+        if (!matchingPrescriptions.any(
+          (prescription) => prescription.id == _selectedPrescriptionId,
+        )) {
+          setState(() => _selectedPrescriptionId = null);
+          _showCheckoutIssue(lang.t('cart_select_matching_rx'));
+          return;
+        }
+      }
+
       final items = state.cart.map((c) => {
         'product_id': c.productId,
         'pharmacy_id': c.pharmacyId,
         'quantity': c.quantity,
       }).toList();
+      final prescriptionProductIds = state.cart
+          .where((item) => item.requiresPrescription)
+          .map((item) => item.productId)
+          .toList();
 
       await ApiService().placeOrder(
         items: items,
         address: _addressCtrl.text.trim(),
         note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
         paymentMethod: _paymentMethod,
+        rxId: prescriptionProductIds.isEmpty ? null : _selectedPrescriptionId,
+        rxProductIds:
+            prescriptionProductIds.isEmpty ? null : prescriptionProductIds,
       );
 
       state.clearCart();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تم تأكيد الطلب بنجاح!', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+            content: Text(lang.t('cart_order_success'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
             backgroundColor: AppColors.success,
           ),
         );
@@ -69,12 +193,62 @@ class _CartScreenState extends State<CartScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyError(e, fallback: 'تعذّر إتمام الطلب. حاول مرة أخرى.'), style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text(
+              friendlyError(e, fallback: lang.t('cart_order_failed')),
+              style: GoogleFonts.tajawal(),
+            ),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
       if (mounted) setState(() => _ordering = false);
     }
+  }
+
+  void _showCheckoutIssue(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: GoogleFonts.tajawal()),
+        backgroundColor: AppColors.warning,
+      ),
+    );
+  }
+
+  Future<void> _showPriceChanges(
+    List<CartPriceChange> changes,
+    LanguageProvider lang,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(lang.t('cart_prices_changed')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(lang.t('cart_prices_changed_hint')),
+            const SizedBox(height: 12),
+            ...changes.map(
+              (change) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  '${change.productName}: ${change.oldPrice.toStringAsFixed(2)} → ${change.newPrice.toStringAsFixed(2)} ${lang.t('currency')}',
+                  style: GoogleFonts.tajawal(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(lang.t('cart_review_updated_total')),
+          ),
+        ],
+      ),
+    );
   }
 
   Map<String, List<CartItem>> _groupByPharmacy(List<CartItem> items) {
@@ -94,20 +268,28 @@ class _CartScreenState extends State<CartScreen> {
       // the root navigator with no bottom bar and no automatic back affordance.
       return Scaffold(
         backgroundColor: AppColors.backgroundOf(context),
-        appBar: AppBar(title: Text('سلة المشتريات', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold))),
+        appBar: AppBar(title: Text(context.watch<LanguageProvider>().t('cart_title'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold))),
         body: _buildEmptyState(),
       );
     }
 
     final grouped = _groupByPharmacy(state.cart);
     final subtotal = state.cartTotal;
-    final deliveryFee = _calculateDeliveryFee(state);
-    final total = subtotal + deliveryFee;
+    final config = _checkoutConfig;
+    final deliveryFee = config == null
+        ? 0.0
+        : _calculateDeliveryFee(state, config, subtotal);
+    final total = subtotal +
+        deliveryFee +
+        (config?.showCashOnDelivery == true
+            ? config!.cashOnDeliveryFee
+            : 0);
+    final lang = context.watch<LanguageProvider>();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        title: Text('سلة المشتريات', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        title: Text(lang.t('cart_title'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -118,7 +300,7 @@ class _CartScreenState extends State<CartScreen> {
                   color: AppColors.primarySurfaceOf(context),
                   borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
-                child: Text('${state.cartCount} منتج', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 13)),
+                child:                 Text('${state.cartCount} ${lang.t('cart_products')}', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 13)),
               ),
             ),
           ),
@@ -135,19 +317,34 @@ class _CartScreenState extends State<CartScreen> {
                   return _buildPharmacyGroup(pharmacyName, entry.value, state);
                 }),
                 const SizedBox(height: 16),
-                _buildSectionTitle('عنوان التوصيل'),
+                _buildSectionTitle(lang.t('cart_delivery_address')),
                 const SizedBox(height: 10),
                 _buildAddressField(),
                 const SizedBox(height: 16),
-                _buildSectionTitle('ملاحظات'),
+                _buildSectionTitle(lang.t('cart_notes')),
                 const SizedBox(height: 10),
                 _buildNotesField(),
                 const SizedBox(height: 16),
-                _buildSectionTitle('طريقة الدفع'),
+                if (state.cart.any((item) => item.requiresPrescription)) ...[
+                  _buildPrescriptionSelection(state),
+                  const SizedBox(height: 16),
+                ],
+                _buildSectionTitle(lang.t('cart_payment_method')),
                 const SizedBox(height: 10),
-                _buildPaymentOptions(),
+                _buildPaymentOptions(config),
                 const SizedBox(height: 16),
                 _buildSummaryCard(subtotal, deliveryFee, total),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    lang.t('cart_estimate_disclaimer'),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.tajawal(
+                      fontSize: 12,
+                      color: AppColors.textMutedOf(context),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 100),
               ],
             ),
@@ -240,6 +437,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildCartItem(CartItem item, AppState state) {
+    final lang = context.watch<LanguageProvider>();
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
       child: Row(
@@ -272,11 +470,11 @@ class _CartScreenState extends State<CartScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text('${item.price.toStringAsFixed(0)} ج.م', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                    Text('${item.price.toStringAsFixed(0)} ${lang.t('currency')}', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primary)),
                     const SizedBox(width: 6),
                     Text('× ${item.quantity}', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
                     const SizedBox(width: 6),
-                    Text('= ${(item.price * item.quantity).toStringAsFixed(0)} ج.م', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textOf(context))),
+                    Text('= ${(item.price * item.quantity).toStringAsFixed(0)} ${lang.t('currency')}', style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textOf(context))),
                   ],
                 ),
                 if (item.requiresPrescription) ...[
@@ -392,15 +590,135 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildPaymentOptions() {
+  Widget _buildPaymentOptions(CheckoutConfig? config) {
+    final lang = context.watch<LanguageProvider>();
+    if (config == null && _checkoutConfigFailed) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            lang.t('cart_payment_config_error'),
+            style: GoogleFonts.tajawal(color: AppColors.error),
+          ),
+          TextButton(
+            onPressed: _loadCheckoutConfig,
+            child: Text(lang.t('cart_refresh_rx')),
+          ),
+        ],
+      );
+    }
+    if (config == null) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+    if (!config.showCashOnDelivery) {
+      return Text(
+        lang.t('cart_no_payment_methods'),
+        style: GoogleFonts.tajawal(color: AppColors.error),
+      );
+    }
     return Row(
       children: [
-        Expanded(child: _paymentTile('كاش', Icons.money_rounded, 'cash')),
-        const SizedBox(width: 12),
-        Expanded(child: _paymentTile('محفظة', Icons.account_balance_wallet_rounded, 'wallet')),
-        const SizedBox(width: 12),
-        Expanded(child: _paymentTile('بطاقة', Icons.credit_card_rounded, 'card')),
+        Expanded(
+          child: _paymentTile(
+            lang.t('cart_cash_on_delivery'),
+            Icons.money_rounded,
+            'cash_on_delivery',
+          ),
+        ),
       ],
+    );
+  }
+
+  List<ApprovedPrescription> _matchingPrescriptions(AppState state) {
+    final productNames = state.cart
+        .where((item) => item.requiresPrescription)
+        .map((item) => _normalizeMedicineName(item.productName))
+        .where((name) => name.isNotEmpty)
+        .toList();
+    return _approvedPrescriptions.where((prescription) {
+      final prescribedName = _normalizeMedicineName(
+        prescription.drugName ?? '',
+      );
+      if (prescribedName.isEmpty || productNames.isEmpty) return false;
+      return productNames.every(
+        (productName) =>
+            prescribedName == productName ||
+            prescribedName.contains(productName) ||
+            productName.contains(prescribedName),
+      );
+    }).toList();
+  }
+
+  String _normalizeMedicineName(String name) =>
+      normalizeSearchText(name).replaceAll(' ', '');
+
+  Widget _buildPrescriptionSelection(AppState state) {
+    final lang = context.watch<LanguageProvider>();
+    if (_loadingPrescriptions) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_prescriptionsFailed) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            lang.t('cart_load_rx_error'),
+            style: GoogleFonts.tajawal(color: AppColors.error),
+          ),
+          TextButton(
+            onPressed: _loadApprovedPrescriptions,
+            child: Text(lang.t('cart_refresh_rx')),
+          ),
+        ],
+      );
+    }
+    final matchingPrescriptions = _matchingPrescriptions(state);
+    if (matchingPrescriptions.isEmpty) {
+      final hasApprovedPrescriptions = _approvedPrescriptions.isNotEmpty;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            lang.t(
+              hasApprovedPrescriptions
+                  ? 'cart_no_matching_rx'
+                  : 'cart_no_approved_rx',
+            ),
+            style: GoogleFonts.tajawal(color: AppColors.warning),
+          ),
+          if (!hasApprovedPrescriptions)
+            TextButton.icon(
+              onPressed: () async {
+                await context.push('/prescription-upload');
+                await _loadApprovedPrescriptions();
+              },
+              icon: const Icon(Icons.upload_file),
+              label: Text(lang.t('prescription_submit')),
+            ),
+        ],
+      );
+    }
+    return DropdownButtonFormField<String>(
+      initialValue: _selectedPrescriptionId,
+      decoration: InputDecoration(
+        labelText: lang.t('cart_select_matching_rx'),
+        border: const OutlineInputBorder(),
+      ),
+      items: matchingPrescriptions
+          .map(
+            (prescription) => DropdownMenuItem(
+              value: prescription.id,
+              child: Text(prescription.label),
+            ),
+          )
+          .toList(),
+      onChanged: (value) =>
+          setState(() => _selectedPrescriptionId = value),
     );
   }
 
@@ -429,17 +747,33 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  double _calculateDeliveryFee(AppState state) {
-    final uniquePharmacies = <String, double>{};
-    for (final item in state.cart) {
-      if (item.deliveryFee != null && item.deliveryFee! > 0 && !uniquePharmacies.containsKey(item.pharmacyId)) {
-        uniquePharmacies[item.pharmacyId] = item.deliveryFee!;
-      }
+  double _calculateDeliveryFee(
+    AppState state,
+    CheckoutConfig config,
+    double subtotal,
+  ) {
+    if (config.freeDeliveryThreshold > 0 &&
+        subtotal >= config.freeDeliveryThreshold) {
+      return 0;
     }
-    return uniquePharmacies.values.isEmpty ? 0 : uniquePharmacies.values.reduce((a, b) => a + b);
+    return state.cart
+        .where((item) =>
+            !item.forAllPharmacies &&
+            item.pharmacyId.isNotEmpty &&
+            item.deliveryAvailable != false)
+        .fold<double>(
+          0,
+          (sum, item) =>
+              sum +
+              (item.deliveryFee != null && item.deliveryFee! > 0
+                  ? item.deliveryFee!
+                  : config.deliveryFee),
+        );
   }
 
   Widget _buildSummaryCard(double subtotal, double deliveryFee, double total) {
+    final lang = context.watch<LanguageProvider>();
+    final currency = lang.t('currency');
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -450,9 +784,18 @@ class _CartScreenState extends State<CartScreen> {
       ),
       child: Column(
         children: [
-          _summaryRow('المجموع الفرعي', '${subtotal.toStringAsFixed(0)} ج.م'),
+          _summaryRow(lang.t('cart_subtotal'), '${subtotal.toStringAsFixed(0)} $currency'),
           const SizedBox(height: 10),
-          _summaryRow('رسوم التوصيل', deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} ج.م' : 'مجاني'),
+          _summaryRow(lang.t('cart_delivery_fee'), _checkoutConfig == null ? '—' : deliveryFee > 0 ? '${deliveryFee.toStringAsFixed(0)} $currency' : lang.t('cart_free')),
+          const SizedBox(height: 10),
+          _summaryRow(
+            lang.t('cart_cash_fee'),
+            _checkoutConfig == null
+                ? '—'
+                : _checkoutConfig!.showCashOnDelivery
+                    ? '${_checkoutConfig!.cashOnDeliveryFee.toStringAsFixed(0)} $currency'
+                    : '—',
+          ),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(height: 1),
@@ -460,8 +803,8 @@ class _CartScreenState extends State<CartScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('الإجمالي', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textOf(context))),
-              Text('${total.toStringAsFixed(0)} ج.م', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary)),
+              Text(lang.t('cart_estimated_total'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textOf(context))),
+              Text(_checkoutConfig == null ? '—' : '${total.toStringAsFixed(0)} $currency', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary)),
             ],
           ),
         ],
@@ -480,6 +823,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildBottomBar(double total, AppState state) {
+    final lang = context.watch<LanguageProvider>();
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       decoration: BoxDecoration(
@@ -497,8 +841,8 @@ class _CartScreenState extends State<CartScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('الإجمالي', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
-                Text('${total.toStringAsFixed(0)} ج.م', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                Text(lang.t('cart_total'), style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
+                Text(_checkoutConfig == null ? '—' : '${total.toStringAsFixed(0)} ${lang.t('currency')}', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary)),
               ],
             ),
             const SizedBox(width: 16),
@@ -506,7 +850,11 @@ class _CartScreenState extends State<CartScreen> {
               child: SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _ordering ? null : () => _placeOrder(state),
+                  onPressed: _ordering ||
+                          _checkoutConfig == null ||
+                          !_checkoutConfig!.showCashOnDelivery
+                      ? null
+                      : () => _placeOrder(state),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -521,7 +869,7 @@ class _CartScreenState extends State<CartScreen> {
                           children: [
                             const Icon(Icons.check_rounded, size: 20),
                             const SizedBox(width: 8),
-                            Text('إتمام الطلب', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700)),
+                            Text(context.watch<LanguageProvider>().t('cart_place_order'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700)),
                           ],
                         ),
                 ),

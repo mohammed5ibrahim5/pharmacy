@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../providers/language_provider.dart';
 
 class RefillReminderScreen extends StatefulWidget {
   const RefillReminderScreen({super.key});
@@ -12,13 +14,7 @@ class RefillReminderScreen extends StatefulWidget {
 }
 
 class _RefillReminderScreenState extends State<RefillReminderScreen> {
-  bool _enabled = true;
-  int _daysBefore = 3;
-  List<Map<String, dynamic>> _medications = [
-    {'name': 'ميتفورمين', 'dose': '500mg', 'frequency': 'مرتين يومياً', 'enabled': true},
-    {'name': 'اميلو', 'dose': '10mg', 'frequency': 'مرة يومياً', 'enabled': true},
-    {'name': 'فوليك أسيد', 'dose': '5mg', 'frequency': 'مرة يومياً', 'enabled': false},
-  ];
+  List<Map<String, dynamic>> _medications = [];
 
   @override
   void initState() {
@@ -29,14 +25,10 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
   Future<void> _loadSavedReminders() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedEnabled = prefs.getBool('refill_enabled');
-      final savedDays = prefs.getInt('refill_days_before');
       final savedListJson = prefs.getString('refill_medications');
 
       if (!mounted) return;
       setState(() {
-        if (savedEnabled != null) _enabled = savedEnabled;
-        if (savedDays != null) _daysBefore = savedDays;
         if (savedListJson != null) {
           final decoded = json.decode(savedListJson) as List;
           _medications = decoded.map((e) => Map<String, dynamic>.from(e as Map)).toList();
@@ -50,8 +42,6 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
   Future<void> _saveReminders() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('refill_enabled', _enabled);
-      await prefs.setInt('refill_days_before', _daysBefore);
       await prefs.setString('refill_medications', json.encode(_medications));
     } catch (e) {
       debugPrint('Error saving refill reminders: $e');
@@ -60,10 +50,11 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        title: Text('تذكير إعادة الطلب', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        title: Text(lang.t('reminder_title'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -92,8 +83,8 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('تذكير تلقائي', style: GoogleFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
-                        Text('سيتم إشعارك عند اقتراب موعد إعادة الطلب', style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 12)),
+                        Text(lang.t('reminder_list_title'), style: GoogleFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+                        Text(lang.t('reminder_local_only'), style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 12)),
                       ],
                     ),
                   ),
@@ -102,60 +93,28 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Settings
-            _buildSectionTitle('الإعدادات'),
-            const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
-              child: Material(
-                type: MaterialType.transparency,
-                child: Column(
-                  children: [
-                    SwitchListTile(
-                      title: Text('تفعيل التذكير', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                      subtitle: Text('إشعارات قبل انتهاء الدواء', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
-                      value: _enabled,
-                      onChanged: (v) {
-                        setState(() => _enabled = v);
-                        _saveReminders();
-                      },
-                      activeThumbColor: AppColors.primary,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    const Divider(),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text('مدة التذكير', style: GoogleFonts.tajawal(fontWeight: FontWeight.w600)),
-                      subtitle: Text('تذكير قبل $_daysBefore أيام من انتهاء الجرعة', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
-                      trailing: Container(
-                        decoration: BoxDecoration(color: AppColors.primarySurfaceOf(context), borderRadius: BorderRadius.circular(10)),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove, size: 18),
-                              color: AppColors.primary,
-                              onPressed: _daysBefore > 1 ? () {
-                                setState(() => _daysBefore--);
-                                _saveReminders();
-                              } : null,
-                            ),
-                            Text('$_daysBefore', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 16)),
-                            IconButton(
-                              icon: const Icon(Icons.add, size: 18),
-                              color: AppColors.primary,
-                              onPressed: _daysBefore < 14 ? () {
-                                setState(() => _daysBefore++);
-                                _saveReminders();
-                              } : null,
-                            ),
-                          ],
-                        ),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.warningSurfaceOf(context),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, color: AppColors.warning),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      lang.t('reminder_local_only'),
+                      style: GoogleFonts.tajawal(
+                        fontSize: 13,
+                        height: 1.5,
+                        color: AppColors.textOf(context),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
@@ -163,6 +122,19 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
             // Medications
             _buildSectionTitle('أدويتي'),
             const SizedBox(height: 12),
+            if (_medications.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: Center(
+                  child: Text(
+                    lang.t('reminder_empty_subtitle'),
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.tajawal(
+                      color: AppColors.textMutedOf(context),
+                    ),
+                  ),
+                ),
+              ),
             ..._medications.asMap().entries.map((entry) {
               final i = entry.key;
               final m = entry.value;
@@ -193,14 +165,6 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                         setState(() => _medications.removeAt(i));
                         _saveReminders();
                       },
-                    ),
-                    Switch(
-                      value: m['enabled'] ?? true,
-                      onChanged: (v) {
-                        setState(() => _medications[i]['enabled'] = v);
-                        _saveReminders();
-                      },
-                      activeThumbColor: AppColors.primary,
                     ),
                   ],
                 ),

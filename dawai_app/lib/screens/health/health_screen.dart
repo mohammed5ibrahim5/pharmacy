@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../providers/language_provider.dart';
 import '../../widgets/dose_calculator_modal.dart';
 
 class HealthScreen extends StatefulWidget {
@@ -12,14 +14,10 @@ class HealthScreen extends StatefulWidget {
 }
 
 class _HealthScreenState extends State<HealthScreen> {
-  final int _dosesTaken = 3;
-  final int _dosesTotal = 4;
-
-  double get _doseProgress => _dosesTotal > 0 ? _dosesTaken / _dosesTotal : 0.0;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final lang = context.watch<LanguageProvider>();
     
     return Scaffold(
       body: CustomScrollView(
@@ -54,7 +52,7 @@ class _HealthScreenState extends State<HealthScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'صحتي ومواعيدي',
+                                  lang.t('health_title'),
                                   style: GoogleFonts.tajawal(
                                     fontSize: 24,
                                     fontWeight: FontWeight.w800,
@@ -62,7 +60,7 @@ class _HealthScreenState extends State<HealthScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'تتبع جرعاتك اليومية ودليلك الشامل',
+                                  lang.t('health_subtitle'),
                                   style: GoogleFonts.tajawal(
                                     fontSize: 13,
                                     color: Colors.white.withValues(alpha: 0.9),
@@ -79,7 +77,7 @@ class _HealthScreenState extends State<HealthScreen> {
                       ],
                     ),
                     const SizedBox(height: 28),
-                    // Daily Progress Glass Card
+                    // Do not display fabricated adherence data.
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.25),
@@ -88,29 +86,18 @@ class _HealthScreenState extends State<HealthScreen> {
                       padding: const EdgeInsets.all(20),
                       child: Row(
                         children: [
-                          // Progress ring
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              SizedBox(
-                                width: 70,
-                                height: 70,
-                                child: CircularProgressIndicator(
-                                  value: _doseProgress,
-                                  strokeWidth: 8,
-                                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              ),
-                              Text(
-                                '${(_doseProgress * 100).toInt()}%',
-                                style: GoogleFonts.tajawal(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
+                          Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.medication_outlined,
+                              color: Colors.white,
+                              size: 36,
+                            ),
                           ),
                           const SizedBox(width: 20),
                           Expanded(
@@ -118,12 +105,12 @@ class _HealthScreenState extends State<HealthScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'جرعات اليوم',
+                                  lang.t('health_no_dose_data'),
                                   style: GoogleFonts.tajawal(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'تم أخذ $_dosesTaken من أصل $_dosesTotal جرعات اليوم',
+                                  lang.t('health_dose_tracking_unavailable'),
                                   style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 13),
                                 ),
                                 const SizedBox(height: 12),
@@ -136,7 +123,7 @@ class _HealthScreenState extends State<HealthScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      '+ إضافة تذكير دواء',
+                                      lang.t('health_add_reminder'),
                                       style: GoogleFonts.tajawal(
                                         color: Colors.white,
                                         fontSize: 12,

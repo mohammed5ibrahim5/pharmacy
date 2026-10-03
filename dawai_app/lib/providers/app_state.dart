@@ -3,6 +3,7 @@ import '../models/customer.dart';
 import '../models/product.dart';
 import '../services/api_service.dart';
 import '../services/cart_service.dart';
+import '../services/cart_revalidation.dart';
 import '../services/favorites_service.dart';
 
 class AppState extends ChangeNotifier {
@@ -108,10 +109,28 @@ class AppState extends ChangeNotifier {
         pharmacyName: pharmacyName ?? product.pharmacy?.name,
         requiresPrescription: product.requiresPrescription,
         deliveryFee: product.pharmacy?.deliveryFee,
+        deliveryAvailable: product.pharmacy?.deliveryAvailable,
+        forAllPharmacies: product.forAllPharmacies,
+        isAvailable: product.isAvailable,
+        stockQuantity: product.stockQuantity,
       ));
     }
     _persistCart();
     notifyListeners();
+  }
+
+  List<CartPriceChange> refreshCartProducts(List<Product> products) {
+    final productsById = {for (final product in products) product.id: product};
+    final priceChanges = <CartPriceChange>[];
+    for (final item in _cart) {
+      final product = productsById[item.productId];
+      if (product == null) continue;
+      final change = refreshCartItem(item, product);
+      if (change != null) priceChanges.add(change);
+    }
+    _persistCart();
+    notifyListeners();
+    return priceChanges;
   }
 
   void removeFromCart(String key) {

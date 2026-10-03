@@ -69,14 +69,18 @@ class CartItem {
   final String key;
   final String productId;
   final String pharmacyId;
-  final String productName;
-  final String? imageUrl;
-  final double price;
+  String productName;
+  String? imageUrl;
+  double price;
   final String unit;
   int quantity;
   final String? pharmacyName;
-  final bool requiresPrescription;
-  final double? deliveryFee;
+  bool requiresPrescription;
+  double? deliveryFee;
+  bool? deliveryAvailable;
+  bool forAllPharmacies;
+  bool isAvailable;
+  int stockQuantity;
 
   CartItem({
     required this.key,
@@ -90,9 +94,25 @@ class CartItem {
     this.pharmacyName,
     this.requiresPrescription = false,
     this.deliveryFee,
+    this.deliveryAvailable,
+    this.forAllPharmacies = false,
+    this.isAvailable = true,
+    this.stockQuantity = 0,
   });
 
   double get totalPrice => price * quantity;
+}
+
+class CartPriceChange {
+  const CartPriceChange({
+    required this.productName,
+    required this.oldPrice,
+    required this.newPrice,
+  });
+
+  final String productName;
+  final double oldPrice;
+  final double newPrice;
 }
 
 class SiteSettings {

@@ -21,6 +21,7 @@ class Product {
   final String? barcode;
   final bool forAllPharmacies;
   final DateTime createdAt;
+  final DateTime? updatedAt;
   final PharmacyRef? pharmacy;
   final CategoryRef? category;
 
@@ -47,6 +48,7 @@ class Product {
     this.barcode,
     this.forAllPharmacies = false,
     required this.createdAt,
+    this.updatedAt,
     this.pharmacy,
     this.category,
   });
@@ -75,6 +77,7 @@ class Product {
       barcode: json['barcode'],
       forAllPharmacies: json['for_all_pharmacies'] ?? false,
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] ?? ''),
       pharmacy: json['pharmacy'] != null ? PharmacyRef.fromJson(json['pharmacy']) : null,
       category: json['category'] != null ? CategoryRef.fromJson(json['category']) : null,
     );

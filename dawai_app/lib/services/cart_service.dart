@@ -24,6 +24,10 @@ class CartService {
         pharmacyName: e['pharmacyName'],
         requiresPrescription: e['requiresPrescription'] ?? false,
         deliveryFee: e['deliveryFee']?.toDouble(),
+        deliveryAvailable: e['deliveryAvailable'],
+        forAllPharmacies: e['forAllPharmacies'] ?? false,
+        isAvailable: e['isAvailable'] ?? true,
+        stockQuantity: e['stockQuantity'] ?? 0,
       )).toList();
     } catch (_) {
       return [];
@@ -43,6 +47,10 @@ class CartService {
       'pharmacyName': e.pharmacyName,
       'requiresPrescription': e.requiresPrescription,
       'deliveryFee': e.deliveryFee,
+      'deliveryAvailable': e.deliveryAvailable,
+      'forAllPharmacies': e.forAllPharmacies,
+      'isAvailable': e.isAvailable,
+      'stockQuantity': e.stockQuantity,
     }).toList();
     final prefs = await _prefs;
     await prefs.setString(_key, jsonEncode(list));

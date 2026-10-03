@@ -1,4 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import '../models/pharmacy.dart';
 import '../models/product.dart';
@@ -338,6 +340,16 @@ class ApiService {
     return Product.fromJson(data);
   }
 
+  Future<List<Product>> getProductsByIds(List<String> ids) async {
+    if (ids.isEmpty) return const [];
+    final rows = await _client
+        .from('products')
+        .select(_productSelect)
+        .inFilter('id', ids)
+        .timeout(netTimeout);
+    return (rows as List).map((row) => Product.fromJson(row)).toList();
+  }
+
   // ──── Orders ────
   Future<List<OrderGroup>> getMyOrders() async {
     if (currentUser == null) return [];
@@ -497,4 +509,153 @@ class ApiService {
   Future<void> resetPassword(String email) async {
     await _client.auth.resetPasswordForEmail(email).timeout(netTimeout);
   }
+
+  Future<CheckoutConfig> getCheckoutConfig() async {
+    final row = await _client
+        .from('site_settings')
+        .select('features_json')
+        .limit(1)
+        .maybeSingle()
+        .timeout(netTimeout);
+    final features = row?['features_json'];
+    final decodedFeatures = features is String && features.trim().isNotEmpty
+        ? jsonDecode(features)
+        : features;
+    final payment =
+        decodedFeatures is Map ? decodedFeatures['paymentConfig'] : null;
+    if (payment is! Map) return const CheckoutConfig();
+    return CheckoutConfig(
+      showCashOnDelivery: payment['showCashOnDelivery'] is bool
+          ? payment['showCashOnDelivery'] as bool
+          : true,
+      deliveryFee: _parseConfigNumber(payment['deliveryFee'], 25),
+      freeDeliveryThreshold:
+          _parseConfigNumber(payment['freeDeliveryThreshold'], 300),
+      cashOnDeliveryFee:
+          _parseConfigNumber(payment['cashOnDeliveryFee'], 10),
+    );
+  }
+
+  Future<List<ApprovedPrescription>> getApprovedPrescriptions() async {
+    final user = currentUser;
+    if (user == null) return const [];
+
+    final rows = await _client
+        .from('prescriptions')
+        .select('id, reference_code, created_at, ocr_data, order_group_id')
+        .eq('customer_id', user.id)
+        .eq('pipeline_status', 'approved')
+        .order('created_at', ascending: false)
+        .limit(20)
+        .timeout(netTimeout);
+
+    return (rows as List)
+        .where((row) => row['order_group_id'] == null)
+        .map((row) => ApprovedPrescription.fromJson(row))
+        .toList();
+  }
+
+  Future<void> submitPrescription({
+    required Uint8List imageBytes,
+    required String extension,
+    required String contentType,
+    required String patientName,
+    required String phone,
+    String? notes,
+  }) async {
+    final user = currentUser;
+    if (user == null) {
+      throw StateError('يجب تسجيل الدخول أولاً لرفع الوصفة.');
+    }
+    if (imageBytes.isEmpty) {
+      throw ArgumentError('صورة الوصفة فارغة.');
+    }
+    if (imageBytes.length > 10 * 1024 * 1024) {
+      throw ArgumentError('حجم صورة الوصفة يتجاوز الحد المسموح.');
+    }
+    const supportedImages = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'webp': 'image/webp',
+    };
+    if (supportedImages[extension] != contentType) {
+      throw ArgumentError('صيغة صورة الوصفة غير مدعومة.');
+    }
+
+    final path =
+        '${user.id}/rx_${DateTime.now().microsecondsSinceEpoch}.$extension';
+    await _client.storage.from('prescriptions').uploadBinary(
+          path,
+          imageBytes,
+          fileOptions: FileOptions(contentType: contentType, upsert: false),
+        ).timeout(netTimeout);
+    final imageUrl = _client.storage.from('prescriptions').getPublicUrl(path);
+
+    try {
+      await _client.from('prescriptions').insert({
+        'customer_id': user.id,
+        'image_url': imageUrl,
+        'phone': phone.trim(),
+        'patient_name': patientName.trim(),
+        'notes': notes?.trim().isEmpty ?? true ? null : notes!.trim(),
+        'ocr_status': 'pending',
+        'pipeline_status': 'needs_review',
+      }).timeout(netTimeout);
+    } on PostgrestException catch (error, stackTrace) {
+      await _client.storage.from('prescriptions').remove([path]);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+}
+
+class CheckoutConfig {
+  const CheckoutConfig({
+    this.showCashOnDelivery = true,
+    this.deliveryFee = 25,
+    this.freeDeliveryThreshold = 300,
+    this.cashOnDeliveryFee = 10,
+  });
+
+  final bool showCashOnDelivery;
+  final double deliveryFee;
+  final double freeDeliveryThreshold;
+  final double cashOnDeliveryFee;
+}
+
+class ApprovedPrescription {
+  const ApprovedPrescription({
+    required this.id,
+    required this.label,
+    required this.drugName,
+  });
+
+  final String id;
+  final String label;
+  final String? drugName;
+
+  factory ApprovedPrescription.fromJson(Map<String, dynamic> json) {
+    final id = json['id'] as String;
+    final reference = json['reference_code'] as String?;
+    final ocrData = json['ocr_data'];
+    final rawDrugName = ocrData is Map ? ocrData['drug_name'] : null;
+    final drugName = rawDrugName is String ? rawDrugName : null;
+    final labelParts = [
+      if (reference?.trim().isNotEmpty == true) reference!.trim(),
+      if (drugName?.trim().isNotEmpty == true) drugName!.trim(),
+    ];
+    return ApprovedPrescription(
+      id: id,
+      label: labelParts.isEmpty
+          ? id.substring(0, id.length < 8 ? id.length : 8)
+          : labelParts.join(' · '),
+      drugName: drugName,
+    );
+  }
+}
+
+double _parseConfigNumber(dynamic value, double fallback) {
+  if (value is num && value.isFinite) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? fallback;
+  return fallback;
 }

@@ -27,6 +27,7 @@ void main() {
         'barcode': '123456789',
         'for_all_pharmacies': true,
         'created_at': '2025-01-15T10:30:00.000Z',
+        'updated_at': '2025-02-16T11:45:00.000Z',
       };
 
       final product = Product.fromJson(json);
@@ -53,6 +54,7 @@ void main() {
       expect(product.barcode, '123456789');
       expect(product.forAllPharmacies, true);
       expect(product.createdAt, DateTime.utc(2025, 1, 15, 10, 30));
+      expect(product.updatedAt, DateTime.utc(2025, 2, 16, 11, 45));
     });
 
     test('fromJson uses defaults for missing fields', () {

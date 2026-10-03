@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../services/api_service.dart';
 import '../../models/product.dart';
 import '../../providers/app_state.dart';
+import '../../providers/language_provider.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String id;
@@ -73,6 +75,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
     final p = _product!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lang = context.watch<LanguageProvider>();
+    final productName = lang.isArabic || (p.nameEn?.trim().isEmpty ?? true)
+        ? p.name
+        : p.nameEn!.trim();
     final maxQty = p.stockQuantity > 0 ? p.stockQuantity : 99;
 
     return Scaffold(
@@ -138,7 +144,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(p.name, style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
+                            Text(productName, style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
                             if (p.activeIngredient != null) ...[
                               const SizedBox(height: 4),
                               Text(p.activeIngredient!, style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textMutedOf(context))),
@@ -171,22 +177,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ],
                   ),
 
+                  if (p.updatedAt != null) ...[
+                    const SizedBox(height: 12),
+                    _buildFreshnessInfo(p.updatedAt!, lang),
+                  ],
                   const SizedBox(height: 20),
-                  Text('الوصف', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
+                  Text(lang.t('product_description'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? AppColors.darkText : AppColors.textOf(context))),
                   const SizedBox(height: 8),
-                  Text(p.description ?? 'لا يوجد وصف متاح', style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textSecondaryOf(context), height: 1.6)),
+                  Text(p.description ?? lang.t('product_no_description'), style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textSecondaryOf(context), height: 1.6)),
 
                   if (p.manufacturer != null) ...[
                     const SizedBox(height: 16),
-                    _buildInfoRow(Icons.business_rounded, 'الشركة المصنعة', p.manufacturer!),
+                    _buildInfoRow(Icons.business_rounded, lang.t('product_manufacturer'), p.manufacturer!),
                   ],
                   if (p.dosage != null) ...[
                     const SizedBox(height: 12),
-                    _buildInfoRow(Icons.science_rounded, 'الجرعة', p.dosage!),
+                    _buildInfoRow(Icons.science_rounded, lang.t('product_dosage'), p.dosage!),
                   ],
                   if (p.howToUse != null) ...[
                     const SizedBox(height: 12),
-                    _buildInfoRow(Icons.info_outline_rounded, 'طريقة الاستخدام', p.howToUse!),
+                    _buildInfoRow(Icons.info_outline_rounded, lang.t('product_how_to_use'), p.howToUse!),
                   ],
 
                   const SizedBox(height: 100),
@@ -249,7 +259,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ));
                     } : null,
                     icon: const Icon(Icons.add_shopping_cart_rounded, size: 20),
-                    label: Text(p.isAvailable ? 'أضف للسلة' : 'نفدت', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700)),
+                    label: Text(p.isAvailable ? lang.t('product_add_to_cart') : lang.t('product_out_of_stock'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: p.isAvailable ? AppColors.primary : AppColors.textMutedOf(context),
                       foregroundColor: Colors.white,
@@ -261,6 +271,57 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFreshnessInfo(DateTime updatedAt, LanguageProvider lang) {
+    final isStale = DateTime.now().difference(updatedAt.toLocal()) >
+        const Duration(hours: 48);
+    final color = isStale ? AppColors.warning : AppColors.success;
+    final label = lang.t('product_last_updated').replaceFirst(
+      '{date}',
+      DateFormat('yyyy-MM-dd HH:mm').format(updatedAt.toLocal()),
+    );
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isStale
+            ? AppColors.warningSurfaceOf(context)
+            : AppColors.successSurfaceOf(context),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.update_rounded, size: 16, color: color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.tajawal(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (isStale) ...[
+            const SizedBox(height: 4),
+            Text(
+              lang.t('product_data_stale'),
+              style: GoogleFonts.tajawal(
+                fontSize: 12,
+                color: AppColors.textSecondaryOf(context),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
