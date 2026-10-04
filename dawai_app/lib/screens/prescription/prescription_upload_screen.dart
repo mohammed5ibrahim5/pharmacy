@@ -146,6 +146,7 @@ class _PrescriptionUploadScreenState extends State<PrescriptionUploadScreen> {
             friendlyError(
               error,
               fallback: lang.t('prescription_submission_error'),
+              translate: lang.t,
             ),
             style: GoogleFonts.tajawal(),
           ),

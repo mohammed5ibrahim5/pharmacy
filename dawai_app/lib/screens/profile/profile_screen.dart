@@ -42,7 +42,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyError(e, fallback: 'تعذّر تحميل الملف الشخصي.'), style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
+          SnackBar(content: Text(friendlyError(
+            e,
+            fallback: context.read<LanguageProvider>().t('profile_load_failed'),
+            translate: context.read<LanguageProvider>().t,
+          ), style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
         );
       }
     }
@@ -52,6 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final isLoggedIn = context.watch<AppState>().isLoggedIn;
     final theme = Theme.of(context);
+    final lang = context.watch<LanguageProvider>();
     
     if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (!isLoggedIn) return _buildNotLoggedIn(theme);
@@ -64,93 +69,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildSectionTitle('الحساب', theme),
+                _buildSectionTitle(lang.t('profile_account_section'), theme),
                 _buildCardGroup(
                   theme: theme,
                   children: [
                     _buildSettingsItem(
                       icon: Icons.person_outline,
-                      title: 'تعديل الملف الشخصي',
-                      subtitle: 'تحديث بياناتك الشخصية',
+                      title: lang.t('profile_edit_profile'),
+                      subtitle: lang.t('profile_edit_account_subtitle'),
                       onTap: () => _showEditDialog(),
                     ),
                     _buildSettingsItem(
                       icon: Icons.location_on_outlined,
-                      title: 'عناويني',
-                      subtitle: 'إدارة عناوين التوصيل',
-                      onTap: () => _showComingSoon('إدارة العناوين'),
+                      title: lang.t('profile_my_addresses'),
+                      subtitle: lang.t('profile_my_addresses_subtitle'),
+                      onTap: () => _showComingSoon(lang.t('profile_my_addresses')),
                     ),
                   ],
                 ),
                 
                 const SizedBox(height: 24),
-                _buildSectionTitle('الميزات', theme),
+                _buildSectionTitle(lang.t('profile_features_section'), theme),
                 _buildCardGroup(
                   theme: theme,
                   children: [
                     _buildSettingsItem(
                       icon: Icons.receipt_long_outlined,
-                      title: 'طلباتي',
-                      subtitle: 'تتبع طلباتك السابقة',
+                      title: lang.t('profile_my_orders'),
+                      subtitle: lang.t('profile_my_orders_subtitle'),
                       onTap: () => context.go('/orders'),
                     ),
                     _buildSettingsItem(
                       icon: Icons.description_outlined,
-                      title: 'روشتتي',
-                      subtitle: 'إدارة الوصفات الطبية',
+                      title: lang.t('profile_my_prescriptions'),
+                      subtitle: lang.t('profile_my_prescriptions_subtitle'),
                       onTap: () => context.push('/prescription-upload'),
                     ),
                     _buildSettingsItem(
                       icon: Icons.star_outline_rounded,
-                      title: 'نقاط الولاء',
-                      subtitle: 'مكافآتك ونقاطك',
+                      title: lang.t('profile_loyalty'),
+                      subtitle: lang.t('profile_loyalty_subtitle'),
                       onTap: () => context.push('/loyalty'),
                     ),
                   ],
                 ),
                 
                 const SizedBox(height: 24),
-                _buildSectionTitle('الإعدادات', theme),
+                _buildSectionTitle(lang.t('profile_settings_section'), theme),
                 _buildCardGroup(
                   theme: theme,
                   children: [
                     _buildSettingsItem(
                       icon: Icons.language_outlined,
-                      title: 'اللغة',
-                      subtitle: context.watch<LanguageProvider>().currentLanguageName,
+                      title: lang.t('profile_language'),
+                      subtitle: lang.currentLanguageName,
                       onTap: () => context.read<LanguageProvider>().toggleLanguage(),
                     ),
                     _buildSettingsItem(
                       icon: theme.brightness == Brightness.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                      title: 'المظهر',
-                      subtitle: theme.brightness == Brightness.dark ? 'الوضع الداكن' : 'الوضع الفاتح',
+                      title: lang.t('profile_theme'),
+                      subtitle: lang.t(theme.brightness == Brightness.dark ? 'profile_dark_mode' : 'profile_light_mode'),
                       onTap: () => context.read<ThemeProvider>().toggleTheme(),
                     ),
                     _buildSettingsItem(
                       icon: Icons.notifications_none_outlined,
-                      title: 'الإشعارات',
-                      subtitle: 'إدارة تفضيلات الإشعارات',
-                      onTap: () => _showComingSoon('إعدادات الإشعارات'),
+                      title: lang.t('profile_notifications'),
+                      subtitle: lang.t('profile_notifications_subtitle'),
+                      onTap: () => _showComingSoon(lang.t('profile_notification_settings')),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 24),
-                _buildSectionTitle('المساعدة', theme),
+                _buildSectionTitle(lang.t('profile_help_section'), theme),
                 _buildCardGroup(
                   theme: theme,
                   children: [
                     _buildSettingsItem(
                       icon: Icons.help_outline,
-                      title: 'مركز المساعدة',
-                      subtitle: 'الأسئلة الشائعة والدعم',
-                      onTap: () => _showComingSoon('مركز المساعدة'),
+                      title: lang.t('profile_help_center'),
+                      subtitle: lang.t('profile_faq_support'),
+                      onTap: () => _showComingSoon(lang.t('profile_help_center')),
                     ),
                     _buildSettingsItem(
                       icon: Icons.support_agent_outlined,
-                      title: 'اتصل بنا',
-                      subtitle: 'نحن هنا لمساعدتك',
-                      onTap: () => _showComingSoon('صفحة الاتصال'),
+                      title: lang.t('profile_contact_us'),
+                      subtitle: lang.t('profile_here_to_help'),
+                      onTap: () => _showComingSoon(lang.t('profile_contact_page')),
                     ),
                   ],
                 ),
@@ -167,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
                     ),
                     icon: const Icon(Icons.logout),
-                    label: Text('تسجيل خروج', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16)),
+                    label: Text(lang.t('profile_logout'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -181,6 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildNotLoggedIn(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -200,7 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Icon(Icons.person_outline, size: 60, color: AppColors.primary),
                   ),
                   const SizedBox(height: 24),
-                  Text('سجل دخولك لتتمكن من الوصول لملفك الشخصي وطلباتك', 
+                  Text(lang.t('profile_login_to_access'),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkText : AppColors.textOf(context)),
                   ),
@@ -209,7 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () => context.push('/login'),
-                      child: Text('تسجيل الدخول', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: Text(lang.t('profile_login_button'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -217,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: double.infinity,
                     child: OutlinedButton(
                       onPressed: () => context.push('/register'),
-                      child: Text('إنشاء حساب جديد', style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: Text(lang.t('register_create_account'), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -230,6 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildHeader(ThemeData theme) {
+    final lang = context.watch<LanguageProvider>();
     final topPadding = MediaQuery.of(context).padding.top;
     return Container(
       padding: EdgeInsets.fromLTRB(20, topPadding + 10, 20, 30),
@@ -257,19 +264,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: 100, height: 100, fit: BoxFit.cover,
                           placeholder: (ctx, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                           errorWidget: (ctx, url, error) => Text(
-                            (_profile?.fullName ?? 'م').isNotEmpty ? (_profile?.fullName ?? 'م')[0] : 'م',
+                            (_profile?.fullName ?? lang.t('profile_customer')).isNotEmpty ? (_profile?.fullName ?? lang.t('profile_customer'))[0] : lang.t('profile_customer')[0],
                             style: GoogleFonts.tajawal(fontSize: 40, color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
                           ),
                         ),
                       )
                     : Text(
-                        (_profile?.fullName ?? 'م').isNotEmpty ? (_profile?.fullName ?? 'م')[0] : 'م',
+                        (_profile?.fullName ?? lang.t('profile_customer')).isNotEmpty ? (_profile?.fullName ?? lang.t('profile_customer'))[0] : lang.t('profile_customer')[0],
                         style: GoogleFonts.tajawal(fontSize: 40, color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
                       ),
               ),
             ),
             const SizedBox(height: 16),
-            Text(_profile?.fullName ?? 'عميل', style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(_profile?.fullName ?? lang.t('profile_customer'), style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 4),
             Text(_profile?.email ?? '', style: GoogleFonts.tajawal(fontSize: 14, color: Colors.white.withValues(alpha: 0.9))),
           ],
@@ -351,12 +358,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showComingSoon(String feature) {
+    final lang = context.read<LanguageProvider>();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(children: [
           const Icon(Icons.info_outline, color: Colors.white, size: 20),
           const SizedBox(width: 8),
-          Text('$feature قريباً إن شاء الله', style: GoogleFonts.tajawal()),
+          Text(lang.t('profile_coming_soon').replaceFirst('{feature}', feature), style: GoogleFonts.tajawal()),
         ]),
         backgroundColor: AppColors.primary,
         behavior: SnackBarBehavior.floating,
@@ -367,6 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _confirmLogout() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lang = context.read<LanguageProvider>();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -382,17 +391,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: const Icon(Icons.logout, color: AppColors.error, size: 22),
             ),
             const SizedBox(width: 10),
-            Text('تسجيل خروج', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+            Text(lang.t('profile_logout'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
-          'هل أنت متأكد من تسجيل الخروج؟',
+          lang.t('profile_logout_confirm'),
           style: GoogleFonts.tajawal(fontSize: 14, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondaryOf(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('إلغاء', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
+            child: Text(lang.t('profile_cancel'), style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -407,7 +416,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
-            child: Text('تسجيل خروج', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+            child: Text(lang.t('profile_logout'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -417,25 +426,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showEditDialog() {
     final nameCtrl = TextEditingController(text: _profile?.fullName ?? '');
     final phoneCtrl = TextEditingController(text: _profile?.phone ?? '');
+    final lang = context.read<LanguageProvider>();
     bool saving = false;
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text('تعديل الحساب', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+          title: Text(lang.t('profile_edit_title'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: nameCtrl, textDirection: TextDirection.rtl, style: GoogleFonts.tajawal(), decoration: const InputDecoration(labelText: 'الاسم', prefixIcon: Icon(Icons.person_outline))),
+                TextField(controller: nameCtrl, textDirection: TextDirection.rtl, style: GoogleFonts.tajawal(), decoration: InputDecoration(labelText: lang.t('profile_name_label'), prefixIcon: const Icon(Icons.person_outline))),
                 const SizedBox(height: 16),
-                TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, textDirection: TextDirection.ltr, style: GoogleFonts.tajawal(), decoration: const InputDecoration(labelText: 'الموبايل', prefixIcon: Icon(Icons.phone_outlined))),
+                TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, textDirection: TextDirection.ltr, style: GoogleFonts.tajawal(), decoration: InputDecoration(labelText: lang.t('profile_phone_label'), prefixIcon: const Icon(Icons.phone_outlined))),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: saving ? null : () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal())),
+            TextButton(onPressed: saving ? null : () => Navigator.pop(ctx), child: Text(lang.t('profile_cancel'), style: GoogleFonts.tajawal())),
             ElevatedButton(
               onPressed: saving ? null : () async {
                 setDialogState(() => saving = true);
@@ -451,7 +461,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   setDialogState(() => saving = false);
                   ScaffoldMessenger.of(ctx).showSnackBar(
                     SnackBar(
-                      content: Text('تعذّر حفظ التعديلات. تحقّق من الاتصال وحاول مرة أخرى.',
+                      content: Text(lang.t('profile_save_failed'),
                           style: GoogleFonts.tajawal()),
                       backgroundColor: AppColors.error,
                     ),
@@ -460,7 +470,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
               child: saving
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text('حفظ', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+                  : Text(lang.t('profile_save'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

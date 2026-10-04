@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../models/pharmacy.dart';
 import '../config/theme.dart';
+import '../providers/language_provider.dart';
 import '../shared/widgets/loading_widget.dart';
 
 class PharmacyCard extends StatelessWidget {
@@ -19,6 +21,10 @@ class PharmacyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lang = context.watch<LanguageProvider>();
+    final pharmacyName = lang.isArabic || (pharmacy.nameEn?.trim().isEmpty ?? true)
+        ? pharmacy.name
+        : pharmacy.nameEn!.trim();
     return GestureDetector(
         onTap: onTap ?? () => context.push('/pharmacy/${pharmacy.id}'),
         child: Container(
@@ -66,7 +72,7 @@ class PharmacyCard extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                pharmacy.name,
+                                pharmacyName,
                                 style: GoogleFonts.tajawal(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
@@ -83,7 +89,7 @@ class PharmacyCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(AppRadius.xs),
                               ),
                               child: Text(
-                                pharmacy.isActive ? 'مفتوح' : 'مغلق',
+                                lang.t(pharmacy.isActive ? 'pharmacy_status_open' : 'pharmacy_status_closed'),
                                 style: GoogleFonts.tajawal(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -130,7 +136,7 @@ class PharmacyCard extends StatelessWidget {
                                   Icon(Icons.delivery_dining, size: 14, color: AppColors.primary),
                                   const SizedBox(width: 2),
                                   Text(
-                                    pharmacy.is24h ? '24 ساعة' : 'توصيل',
+                                    lang.t(pharmacy.is24h ? 'common_open_24_hours' : 'home_delivery'),
                                     style: GoogleFonts.tajawal(
                                       fontSize: 10,
                                       color: AppColors.primary,

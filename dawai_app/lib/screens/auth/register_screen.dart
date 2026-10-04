@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../core/utils/api_error.dart';
+import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -47,14 +49,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // leave the user "logged out" while believing their account was ready.
       final needsConfirmation = response.session == null;
       final alreadyRegistered = response.user?.identities?.isEmpty ?? false;
+      final lang = context.read<LanguageProvider>();
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
           alreadyRegistered
-              ? 'هذا البريد الإلكتروني مسجّل بالفعل.'
+              ? lang.t('register_email_exists')
               : needsConfirmation
-                  ? 'تم إرسال رابط التأكيد إلى بريدك — أكّد الحساب ثم سجّل الدخول.'
-                  : 'تم إنشاء الحساب بنجاح!',
+                  ? lang.t('register_confirmation_sent')
+                  : lang.t('register_created'),
           style: GoogleFonts.tajawal(),
         ),
         backgroundColor: alreadyRegistered ? AppColors.error : AppColors.success,
@@ -69,7 +72,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(friendlyError(e, fallback: 'تعذّر إنشاء الحساب. حاول مرة أخرى.'),
+          content: Text(friendlyError(
+            e,
+            fallback: context.read<LanguageProvider>().t('register_create_failed'),
+            translate: context.read<LanguageProvider>().t,
+          ),
               style: GoogleFonts.tajawal()),
           backgroundColor: Theme.of(context).colorScheme.error,
         ));
@@ -82,6 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final lang = context.watch<LanguageProvider>();
     
     return Scaffold(
       body: Stack(
@@ -114,9 +122,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text('إنشاء حساب جديد', style: GoogleFonts.tajawal(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                      Text(lang.t('register_create_account'), style: GoogleFonts.tajawal(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
                       const SizedBox(height: 8),
-                      Text('انضم إلى دوا وتمتع بأفضل الخدمات', style: GoogleFonts.tajawal(fontSize: 16, color: Colors.white.withValues(alpha: 0.9))),
+                      Text(lang.t('register_tagline'), style: GoogleFonts.tajawal(fontSize: 16, color: Colors.white.withValues(alpha: 0.9))),
                       const SizedBox(height: 32),
                       
                       // Floating Card
@@ -137,11 +145,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 controller: _nameCtrl,
                                 textDirection: TextDirection.rtl,
                                 style: GoogleFonts.tajawal(),
-                                decoration: const InputDecoration(
-                                  hintText: 'الاسم الكامل',
+                                decoration: InputDecoration(
+                                  hintText: lang.t('register_name_hint'),
                                   prefixIcon: Icon(Icons.person_outline),
                                 ),
-                                validator: (v) => v != null && v.trim().isNotEmpty ? null : 'الاسم مطلوب',
+                                validator: (v) => v != null && v.trim().isNotEmpty ? null : lang.t('register_name_required'),
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
@@ -149,11 +157,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 textDirection: TextDirection.ltr,
                                 keyboardType: TextInputType.emailAddress,
                                 style: GoogleFonts.tajawal(),
-                                decoration: const InputDecoration(
-                                  hintText: 'البريد الإلكتروني',
+                                decoration: InputDecoration(
+                                  hintText: lang.t('register_email_hint'),
                                   prefixIcon: Icon(Icons.email_outlined),
                                 ),
-                                validator: (v) => v != null && v.contains('@') ? null : 'بريد غير صحيح',
+                                validator: (v) => v != null && v.contains('@') ? null : lang.t('register_invalid_email'),
                               ),
                               const SizedBox(height: 16),
                               TextFormField(
@@ -161,8 +169,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 textDirection: TextDirection.ltr,
                                 keyboardType: TextInputType.phone,
                                 style: GoogleFonts.tajawal(),
-                                decoration: const InputDecoration(
-                                  hintText: 'رقم الهاتف (اختياري)',
+                                decoration: InputDecoration(
+                                  hintText: lang.t('register_phone_optional'),
                                   prefixIcon: Icon(Icons.phone_outlined),
                                 ),
                               ),
@@ -173,14 +181,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 obscureText: _obscure,
                                 style: GoogleFonts.tajawal(),
                                 decoration: InputDecoration(
-                                  hintText: 'كلمة المرور',
+                                  hintText: lang.t('register_password_hint'),
                                   prefixIcon: const Icon(Icons.lock_outline),
                                   suffixIcon: IconButton(
                                     icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                                     onPressed: () => setState(() => _obscure = !_obscure),
                                   ),
                                 ),
-                                validator: (v) => v != null && v.length >= 6 ? null : '6 أحرف على الأقل',
+                                validator: (v) => v != null && v.length >= 6 ? null : lang.t('register_short_password'),
                               ),
                               const SizedBox(height: 32),
                               Container(
@@ -197,17 +205,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                   child: _loading
                                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                                      : Text('إنشاء الحساب', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                                      : Text(lang.t('register_button'), style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                                 ),
                               ),
                               const SizedBox(height: 24),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text('لديك حساب بالفعل؟ ', style: GoogleFonts.tajawal(fontSize: 14)),
+                                  Text('${lang.t('register_has_account')} ', style: GoogleFonts.tajawal(fontSize: 14)),
                                   GestureDetector(
                                     onTap: () => context.pop(),
-                                    child: Text('سجّل دخولك', style: GoogleFonts.tajawal(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
+                                    child: Text(lang.t('register_login'), style: GoogleFonts.tajawal(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
                                   ),
                                 ],
                               ),

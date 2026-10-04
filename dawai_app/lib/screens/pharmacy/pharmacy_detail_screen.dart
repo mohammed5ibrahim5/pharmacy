@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../config/theme.dart';
 import '../../core/utils/api_error.dart';
@@ -9,6 +10,7 @@ import '../../shared/widgets/load_more_on_scroll.dart';
 import '../../services/api_service.dart';
 import '../../models/pharmacy.dart';
 import '../../models/product.dart';
+import '../../providers/language_provider.dart';
 
 class PharmacyDetailScreen extends StatefulWidget {
   final String id;
@@ -58,7 +60,11 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyError(e, fallback: 'تعذّر تحميل الصيدلية.'), style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
+          SnackBar(content: Text(friendlyError(
+            e,
+            fallback: context.read<LanguageProvider>().t('pharmacy_detail_load_failed'),
+            translate: context.read<LanguageProvider>().t,
+          ), style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
         );
       }
     }
@@ -100,6 +106,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     if (_loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -107,14 +114,14 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
     }
     if (_pharmacy == null) {
       return Scaffold(
-        appBar: AppBar(title: Text('خطأ', style: GoogleFonts.tajawal())),
+        appBar: AppBar(title: Text(lang.t('error'), style: GoogleFonts.tajawal())),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.error),
               const SizedBox(height: 16),
-              Text('صيدلية غير موجودة', style: AppTypography.h3(context)),
+              Text(lang.t('pharmacy_detail_not_found_message'), style: AppTypography.h3(context)),
             ],
           ),
         ),
@@ -140,9 +147,9 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                 labelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14),
                 unselectedLabelStyle: GoogleFonts.tajawal(fontWeight: FontWeight.w500, fontSize: 14),
                 tabs: [
-                  Tab(text: 'المنتجات ($_total)'),
-                  Tab(text: 'العنوان'),
-                  Tab(text: 'التواصل'),
+                  Tab(text: lang.t('pharmacy_products_tab').replaceFirst('{count}', '$_total')),
+                  Tab(text: lang.t('pharmacy_address_tab')),
+                  Tab(text: lang.t('pharmacy_contact_tab')),
                 ],
               ),
             ),
@@ -202,13 +209,13 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
         if (p.phone != null)
           IconButton(
             icon: const Icon(Icons.call_rounded),
-            tooltip: 'اتصال',
+            tooltip: context.watch<LanguageProvider>().t('common_call'),
             onPressed: () => _openExternal('tel:${p.phone}'),
           ),
         if (p.whatsapp != null)
           IconButton(
             icon: const Icon(Icons.chat_rounded),
-            tooltip: 'واتساب',
+            tooltip: context.watch<LanguageProvider>().t('common_whatsapp'),
             onPressed: () => _openExternal('https://wa.me/${p.whatsapp}'),
           ),
       ],
@@ -242,7 +249,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('تعذّر فتح الرابط على هذا الجهاز.', style: GoogleFonts.tajawal()),
+        content: Text(context.watch<LanguageProvider>().t('common_link_open_failed'), style: GoogleFonts.tajawal()),
         backgroundColor: AppColors.error,
       ),
     );
@@ -289,10 +296,10 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
             runSpacing: 8,
             children: [
               _buildInfoChip(Icons.star_rounded, '${p.rating}', AppColors.accent, AppColors.accentSurfaceOf(context)),
-              if (p.is24h) _buildInfoChip(Icons.access_time_rounded, '24 ساعة', AppColors.success, AppColors.successSurfaceOf(context)),
-              if (p.deliveryAvailable) _buildInfoChip(Icons.delivery_dining_rounded, 'يوصل', AppColors.info, AppColors.infoSurfaceOf(context)),
-              if (p.hasParking) _buildInfoChip(Icons.local_parking_rounded, 'موقف سيارات', AppColors.textSecondaryOf(context), AppColors.borderLight),
-              if (p.acceptInsurance) _buildInfoChip(Icons.shield_rounded, 'تأمين صحي', AppColors.textSecondaryOf(context), AppColors.borderLight),
+              if (p.is24h) _buildInfoChip(Icons.access_time_rounded, context.watch<LanguageProvider>().t('common_open_24_hours'), AppColors.success, AppColors.successSurfaceOf(context)),
+              if (p.deliveryAvailable) _buildInfoChip(Icons.delivery_dining_rounded, context.watch<LanguageProvider>().t('pharmacy_delivers'), AppColors.info, AppColors.infoSurfaceOf(context)),
+              if (p.hasParking) _buildInfoChip(Icons.local_parking_rounded, context.watch<LanguageProvider>().t('common_parking'), AppColors.textSecondaryOf(context), AppColors.borderLight),
+              if (p.acceptInsurance) _buildInfoChip(Icons.shield_rounded, context.watch<LanguageProvider>().t('pharmacy_insurance'), AppColors.textSecondaryOf(context), AppColors.borderLight),
             ],
           ),
 
@@ -321,7 +328,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('العنوان', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
+                      Text(context.watch<LanguageProvider>().t('common_address'), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
                       const SizedBox(height: 2),
                       Text(p.address, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textOf(context)), maxLines: 2, overflow: TextOverflow.ellipsis),
                     ],
@@ -357,7 +364,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('مواعيد العمل', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
+                        Text(context.watch<LanguageProvider>().t('common_working_hours'), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
                         const SizedBox(height: 2),
                         Text(p.openingHours!, style: GoogleFonts.tajawal(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textOf(context))),
                       ],
@@ -403,9 +410,9 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
               child: const Icon(Icons.medication_outlined, size: 48, color: AppColors.primary),
             ),
             const SizedBox(height: 16),
-            Text('لا توجد منتجات', style: AppTypography.h3(context)),
+            Text(context.watch<LanguageProvider>().t('pharmacy_no_products_title'), style: AppTypography.h3(context)),
             const SizedBox(height: 8),
-            Text('لم تُضف منتجات لهذه الصيدلية بعد', style: AppTypography.caption(context)),
+            Text(context.watch<LanguageProvider>().t('pharmacy_no_products_hint'), style: AppTypography.caption(context)),
           ],
         ),
       );
@@ -481,7 +488,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                     children: [
                       Text(p.price.toStringAsFixed(0), style: GoogleFonts.tajawal(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
                       const SizedBox(width: 2),
-                      Text('ج.م', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
+                      Text(context.watch<LanguageProvider>().t('currency'), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
                     ],
                   ),
                 ],
@@ -498,21 +505,21 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
       padding: const EdgeInsets.all(20),
       children: [
         if (p.description != null && p.description!.isNotEmpty) ...[
-          _buildSectionTitle('عن الصيدلية'),
+          _buildSectionTitle(context.watch<LanguageProvider>().t('common_about_pharmacy')),
           const SizedBox(height: 10),
           Text(p.description!, style: GoogleFonts.tajawal(fontSize: 14, height: 1.6, color: AppColors.textSecondaryOf(context))),
           const SizedBox(height: 24),
         ],
-        _buildSectionTitle('الخدمات'),
+        _buildSectionTitle(context.watch<LanguageProvider>().t('common_services')),
         const SizedBox(height: 12),
-        _buildServiceRow(Icons.local_pharmacy_rounded, 'صيدلية عامة', p.pharmacyType ?? 'غير محدد'),
-        if (p.deliveryAvailable) _buildServiceRow(Icons.delivery_dining_rounded, 'خدمة التوصيل', 'متاحة (${p.deliveryFee} ج.م)'),
-        if (p.hasParking) _buildServiceRow(Icons.local_parking_rounded, 'موقف سيارات', 'متاح'),
-        if (p.acceptInsurance) _buildServiceRow(Icons.shield_rounded, 'التأمين الصحي', 'مقبول'),
-        if (p.is24h) _buildServiceRow(Icons.access_time_rounded, 'مواعيد العمل', 'مفتوح 24 ساعة'),
-        if (p.openingHours != null && !p.is24h) _buildServiceRow(Icons.schedule_rounded, 'مواعيد العمل', p.openingHours!),
+        _buildServiceRow(Icons.local_pharmacy_rounded, context.watch<LanguageProvider>().t('pharmacy_type'), p.pharmacyType ?? context.watch<LanguageProvider>().t('pharmacy_not_specified')),
+        if (p.deliveryAvailable) _buildServiceRow(Icons.delivery_dining_rounded, context.watch<LanguageProvider>().t('pharmacy_delivery_service'), context.watch<LanguageProvider>().t('pharmacy_delivery_fee_available').replaceFirst('{amount}', '${p.deliveryFee}')),
+        if (p.hasParking) _buildServiceRow(Icons.local_parking_rounded, context.watch<LanguageProvider>().t('common_parking'), context.watch<LanguageProvider>().t('common_available_status')),
+        if (p.acceptInsurance) _buildServiceRow(Icons.shield_rounded, context.watch<LanguageProvider>().t('common_health_insurance'), context.watch<LanguageProvider>().t('common_accepted')),
+        if (p.is24h) _buildServiceRow(Icons.access_time_rounded, context.watch<LanguageProvider>().t('common_working_hours'), context.watch<LanguageProvider>().t('common_delivery_open_24')),
+        if (p.openingHours != null && !p.is24h) _buildServiceRow(Icons.schedule_rounded, context.watch<LanguageProvider>().t('common_working_hours'), p.openingHours!),
         const SizedBox(height: 24),
-        _buildSectionTitle('الموقع'),
+        _buildSectionTitle(context.watch<LanguageProvider>().t('common_location')),
         const SizedBox(height: 12),
         Container(
           height: 180,
@@ -540,13 +547,13 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _buildSectionTitle('تواصل معنا'),
+        _buildSectionTitle(context.watch<LanguageProvider>().t('common_contact_us')),
         const SizedBox(height: 16),
 
         if (p.phone != null)
           _buildContactCard(
             icon: Icons.call_rounded,
-            title: 'الهاتف',
+            title: context.watch<LanguageProvider>().t('pharmacy_phone'),
             subtitle: p.phone!,
             color: AppColors.success,
             onTap: () => _openExternal('tel:${p.phone}'),
@@ -556,7 +563,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
           const SizedBox(height: 12),
           _buildContactCard(
             icon: Icons.chat_rounded,
-            title: 'واتساب',
+            title: context.watch<LanguageProvider>().t('common_whatsapp'),
             subtitle: p.whatsapp!,
             color: AppColors.whatsapp,
             onTap: () => _openExternal('https://wa.me/${p.whatsapp}'),
@@ -567,7 +574,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
           const SizedBox(height: 12),
           _buildContactCard(
             icon: Icons.email_outlined,
-            title: 'البريد الإلكتروني',
+            title: context.watch<LanguageProvider>().t('pharmacy_email'),
             subtitle: p.email!,
             color: AppColors.info,
             onTap: () => _openExternal('mailto:${p.email}'),
@@ -578,7 +585,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
           const SizedBox(height: 12),
           _buildContactCard(
             icon: Icons.language_rounded,
-            title: 'الموقع الإلكتروني',
+            title: context.watch<LanguageProvider>().t('pharmacy_website'),
             subtitle: p.websiteUrl!,
             color: AppColors.secondary,
             onTap: () => _openExternal(p.websiteUrl!),
@@ -589,7 +596,7 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
 
         // Delivery Info
         if (p.deliveryAvailable) ...[
-          _buildSectionTitle('خدمة التوصيل'),
+          _buildSectionTitle(context.watch<LanguageProvider>().t('pharmacy_delivery_service')),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
@@ -606,9 +613,9 @@ class _PharmacyDetailScreenState extends State<PharmacyDetailScreen> with Single
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('التوصيل متاح', style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.info)),
+                      Text(context.watch<LanguageProvider>().t('common_delivery_available'), style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.info)),
                       const SizedBox(height: 4),
-                      Text('رسوم التوصيل: ${p.deliveryFee} ج.م', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textSecondaryOf(context))),
+                      Text(context.watch<LanguageProvider>().t('pharmacy_delivery_fee').replaceFirst('{amount}', '${p.deliveryFee}'), style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textSecondaryOf(context))),
                     ],
                   ),
                 ),

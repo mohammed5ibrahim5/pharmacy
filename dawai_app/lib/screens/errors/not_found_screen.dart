@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../providers/language_provider.dart';
 
 /// Fallback for any location that does not match a route.
 ///
@@ -14,9 +16,10 @@ class NotFoundScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text('صفحة غير موجودة', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold))),
+      appBar: AppBar(title: Text(lang.t('not_found_title'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold))),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -29,7 +32,7 @@ class NotFoundScreen extends StatelessWidget {
                 child: const Icon(Icons.explore_off_rounded, size: 48, color: AppColors.error),
               ),
               const SizedBox(height: 20),
-              Text('تعذّر العثور على الصفحة', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
+              Text(lang.t('not_found_message'), style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
               Text(
                 uri.toString(),
@@ -42,7 +45,7 @@ class NotFoundScreen extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => context.go('/'),
                 icon: const Icon(Icons.home_rounded, size: 20),
-                label: Text('العودة للرئيسية', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+                label: Text(lang.t('not_found_home'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
               ),
             ],
           ),

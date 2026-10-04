@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../config/theme.dart';
 import '../models/product.dart';
 import '../providers/app_state.dart';
+import '../providers/language_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../shared/widgets/loading_widget.dart';
 
@@ -35,7 +36,11 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
+    final lang = context.watch<LanguageProvider>();
     final isFavorite = appState.isFavorite(product.id);
+    final productName = lang.isArabic || (product.nameEn?.trim().isEmpty ?? true)
+        ? product.name
+        : product.nameEn!.trim();
     
     return GestureDetector(
         onTap: onTap ?? () => context.push('/product/${product.id}'),
@@ -92,7 +97,7 @@ class ProductCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'روشتة',
+                          lang.t('cart_prescription_badge'),
                           style: GoogleFonts.tajawal(
                             color: Colors.white,
                             fontSize: 10,
@@ -178,7 +183,7 @@ class ProductCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      product.name,
+                      productName,
                       style: GoogleFonts.tajawal(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -213,7 +218,7 @@ class ProductCard extends StatelessWidget {
                           children: [
                             if (showDiscount && originalPrice != null)
                               Text(
-                                '${originalPrice!.toStringAsFixed(2)} ج.م',
+                                '${originalPrice!.toStringAsFixed(2)} ${lang.t('currency')}',
                                 style: GoogleFonts.tajawal(
                                   fontSize: 10,
                                   color: Theme.of(context).brightness == Brightness.dark
@@ -223,7 +228,7 @@ class ProductCard extends StatelessWidget {
                                 ),
                               ),
                             Text(
-                              '${product.price.toStringAsFixed(2)} ج.م',
+                              '${product.price.toStringAsFixed(2)} ${lang.t('currency')}',
                               style: GoogleFonts.tajawal(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,

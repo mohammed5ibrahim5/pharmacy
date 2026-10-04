@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../providers/language_provider.dart';
-import '../../widgets/dose_calculator_modal.dart';
 
 class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
@@ -155,8 +154,8 @@ class _HealthScreenState extends State<HealthScreen> {
                       Expanded(
                         child: _healthActionCard(
                           icon: Icons.notifications_active_rounded,
-                          title: 'منبه الجرعات',
-                          subtitle: 'تذكير ريفيل',
+                          title: lang.t('health_refill_reminder'),
+                          subtitle: lang.t('health_refill_reminder_hint'),
                           color: AppColors.primary,
                           theme: theme,
                           onTap: () => context.push('/refill-reminder'),
@@ -166,14 +165,17 @@ class _HealthScreenState extends State<HealthScreen> {
                       Expanded(
                         child: _healthActionCard(
                           icon: Icons.warning_amber_rounded,
-                          title: 'تفاعلات الدواء',
-                          subtitle: 'فحص التداخلات',
+                          title: lang.t('health_interaction_check'),
+                          subtitle: lang.t('health_interaction_check_hint'),
                           color: AppColors.accentDark,
                           theme: theme,
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('فاحص التداخلات الدوائية نشط وتلقائي عند طلب أي دواء!', style: GoogleFonts.tajawal()),
+                                content: Text(
+                                  lang.t('health_interaction_check_unavailable'),
+                                  style: GoogleFonts.tajawal(),
+                                ),
                                 backgroundColor: AppColors.accentDark,
                               ),
                             );
@@ -185,11 +187,21 @@ class _HealthScreenState extends State<HealthScreen> {
                   const SizedBox(height: 16),
                   _healthActionCard(
                     icon: Icons.calculate_rounded,
-                    title: 'حاسبة الجرعات',
-                    subtitle: 'حسب الوزن والعمر',
+                    title: lang.t('health_dose_calculator'),
+                    subtitle: lang.t('health_dose_calculator_hint'),
                     color: AppColors.success,
                     theme: theme,
-                    onTap: () => DoseCalculatorModal.show(context),
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            lang.t('health_dose_calculator_unavailable'),
+                            style: GoogleFonts.tajawal(),
+                          ),
+                          backgroundColor: AppColors.warning,
+                        ),
+                      );
+                    },
                     fullWidth: true,
                   ),
                 ],
@@ -201,7 +213,7 @@ class _HealthScreenState extends State<HealthScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-              child: Text('مقالات صحية', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
+              child: Text(lang.t('health_articles'), style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
             ),
           ),
 
@@ -213,9 +225,9 @@ class _HealthScreenState extends State<HealthScreen> {
                 (context, index) {
                   final article = _articles[index];
                   return _ArticleCard(
-                    title: article['title']!,
-                    category: article['category']!,
-                    description: article['description']!,
+                    title: lang.t(article['title'] as String),
+                    category: lang.t(article['category'] as String),
+                    description: lang.t(article['description'] as String),
                     icon: article['icon'] as IconData,
                     gradientColors: article['gradient'] as List<Color>,
                     theme: theme,
@@ -278,23 +290,23 @@ class _HealthScreenState extends State<HealthScreen> {
 
   static final List<Map<String, dynamic>> _articles = [
     {
-      'title': 'أهمية شرب الماء اليومي',
-      'category': 'نصائح صحية',
-      'description': 'يحتاج الجسم لتر ونصف إلى لترين من الماء يومياً لضمان الترطيب المناسب وتحسين وظائف الجسم الحيوية.',
+      'title': 'health_article_water_title',
+      'category': 'health_article_health_tips',
+      'description': 'health_article_water_body',
       'icon': Icons.water_drop_outlined,
       'gradient': [const Color(0xFF06B6D4), const Color(0xFF22D3EE)],
     },
     {
-      'title': 'أدوية خفض ضغط الدم',
-      'category': 'أدوية',
-      'description': 'دليل شامل عن أنواع أدوية ضغط الدم وآلية عملها والجرعات المعتادة وطرق التخزين الصحيحة.',
+      'title': 'health_article_blood_pressure_title',
+      'category': 'health_article_medicines',
+      'description': 'health_article_blood_pressure_body',
       'icon': Icons.medication_outlined,
       'gradient': [const Color(0xFF0D9488), const Color(0xFF14B8A6)],
     },
     {
-      'title': 'إدارة مرض السكري',
-      'category': 'أمراض مزمنة',
-      'description': 'نصائح عملية للتعامل مع مرض السكري تشمل التغذية السليمة والنشاط البدني ومراقبة السكر.',
+      'title': 'health_article_diabetes_title',
+      'category': 'health_article_chronic_conditions',
+      'description': 'health_article_diabetes_body',
       'icon': Icons.bloodtype_outlined,
       'gradient': [const Color(0xFFEF4444), const Color(0xFFF87171)],
     },

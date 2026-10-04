@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
+import '../../../providers/language_provider.dart';
 
 class EmergencyBanner extends StatelessWidget {
   final double padding;
@@ -10,6 +12,7 @@ class EmergencyBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Padding(
       padding: EdgeInsets.fromLTRB(padding, 24, padding, 0),
       child: Container(
@@ -32,9 +35,9 @@ class EmergencyBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('هل تحتاج مساعدة فورية؟', style: GoogleFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+                  Text(lang.t('home_need_immediate_help'), style: GoogleFonts.tajawal(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
                   const SizedBox(height: 2),
-                  Text('اطلب من الصيدلية أقرب ليك', style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.85), fontSize: 12)),
+                  Text(lang.t('home_order_nearest_pharmacy'), style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.85), fontSize: 12)),
                 ],
               ),
             ),
@@ -43,7 +46,7 @@ class EmergencyBanner extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                child: Text('اطلب الآن', style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.error, fontSize: 13)),
+                child: Text(lang.t('home_order_now'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.error, fontSize: 13)),
               ),
             ),
           ],

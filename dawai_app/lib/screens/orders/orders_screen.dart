@@ -39,10 +39,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     final signedIn = _api.currentUser != null;
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('طلباتي', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        title: Text(lang.t('orders_title'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         elevation: 0,
       ),
       body: !signedIn
@@ -73,15 +74,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
               child: const Icon(Icons.receipt_long_rounded, size: 56, color: AppColors.primary),
             ),
             const SizedBox(height: 20),
-            Text('سجّل دخولك لعرض طلباتك', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(context.watch<LanguageProvider>().t('orders_sign_in_title'), style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            Text('تتبّع الطلبات وسجل الشراء متاح بعد تسجيل الدخول.',
+            Text(context.watch<LanguageProvider>().t('orders_sign_in_subtitle'),
                 style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)), textAlign: TextAlign.center),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => context.push('/login'),
               icon: const Icon(Icons.login_rounded, size: 20),
-              label: Text('تسجيل الدخول', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+              label: Text(context.watch<LanguageProvider>().t('profile_login_button'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -106,14 +107,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
             child: const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.error),
           ),
           const SizedBox(height: 16),
-          Text('فشل تحميل الطلبات', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
+          Text(context.watch<LanguageProvider>().t('orders_load_failed'), style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text('تحقق من الاتصال بالإنترنت', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
+          Text(context.watch<LanguageProvider>().t('category_check_connection'), style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: _load,
             icon: const Icon(Icons.refresh, size: 20),
-            label: Text('إعادة المحاولة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+            label: Text(context.watch<LanguageProvider>().t('retry'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -133,9 +134,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
               child: const Icon(Icons.receipt_long_rounded, size: 64, color: AppColors.primary),
             ),
             const SizedBox(height: 20),
-            Text('ما في طلبات بعد', style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800)),
+            Text(context.watch<LanguageProvider>().t('orders_empty_title_alt'), style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            Text('ابدأ بالتسوق واطلب أدوية بكل سهولة', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context), fontSize: 14), textAlign: TextAlign.center),
+            Text(context.watch<LanguageProvider>().t('orders_empty_subtitle_alt'), style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context), fontSize: 14), textAlign: TextAlign.center),
             const SizedBox(height: 28),
             ElevatedButton(
               onPressed: () => context.go('/'),
@@ -144,7 +145,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: Text('تصفح المنتجات', style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700)),
+              child: Text(context.watch<LanguageProvider>().t('orders_browse_products'), style: GoogleFonts.tajawal(fontSize: 15, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -196,7 +197,7 @@ class _OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('طلب #$orderRef', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textOf(context))),
+                Text(context.watch<LanguageProvider>().t('orders_order_number').replaceFirst('{number}', orderRef), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.textOf(context))),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -216,7 +217,7 @@ class _OrderCard extends StatelessWidget {
                 const SizedBox(width: 16),
                 Icon(Icons.inventory_2_outlined, size: 14, color: AppColors.textMutedOf(context)),
                 const SizedBox(width: 6),
-                Text('${order.orders.length} ${order.orders.length == 1 ? 'منتج' : 'منتجات'}', style: GoogleFonts.tajawal(color: AppColors.textSecondaryOf(context), fontSize: 13)),
+                Text('${order.orders.length} ${context.watch<LanguageProvider>().t(order.orders.length == 1 ? 'orders_product_singular' : 'orders_product_plural')}', style: GoogleFonts.tajawal(color: AppColors.textSecondaryOf(context), fontSize: 13)),
               ],
             ),
             const Padding(
@@ -226,8 +227,8 @@ class _OrderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('الإجمالي', style: GoogleFonts.tajawal(color: AppColors.textSecondaryOf(context), fontSize: 13, fontWeight: FontWeight.w600)),
-                Text('${order.totalPrice.toStringAsFixed(0)} ج.م', style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 17)),
+                Text(context.watch<LanguageProvider>().t('orders_total'), style: GoogleFonts.tajawal(color: AppColors.textSecondaryOf(context), fontSize: 13, fontWeight: FontWeight.w600)),
+                Text('${order.totalPrice.toStringAsFixed(0)} ${context.watch<LanguageProvider>().t('currency')}', style: GoogleFonts.tajawal(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 17)),
               ],
             ),
           ],

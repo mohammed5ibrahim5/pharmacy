@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
 import '../../core/utils/api_error.dart';
@@ -13,6 +14,7 @@ import '../../shared/widgets/load_more_on_scroll.dart';
 import '../../services/api_service.dart';
 import '../../models/product.dart';
 import '../../models/pharmacy.dart';
+import '../../providers/language_provider.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -41,6 +43,7 @@ class _SearchScreenState extends State<SearchScreen> {
   int _productTotal = 0;
   bool _hasMoreProducts = false;
   bool _loadingMore = false;
+  bool _loadMoreFailed = false;
 
   /// Bumped on every search. Responses that arrive for an older query are
   /// dropped instead of overwriting the newer ones, which is easy to hit with
@@ -64,19 +67,48 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onSearchChanged(String query) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
-      if (query.trim().length >= 2) _performSearch(query);
+    final normalizedQuery = query.trim();
+    ++_searchSeq;
+    setState(() {
+      _loading = normalizedQuery.length >= 2;
+      _searched = false;
+      _searchTerms = [];
+      _fuzzySearchTerms = [];
+      _categoryIds = [];
+      _symptomSearch = false;
+      _relatedSearch = false;
+      _productResults = [];
+      _productTotal = 0;
+      _hasMoreProducts = false;
+      _loadingMore = false;
+      _loadMoreFailed = false;
+      _pharmacyResults = [];
     });
+    if (normalizedQuery.length >= 2) {
+      _debounce = Timer(
+        const Duration(milliseconds: 400),
+        () => _performSearch(query),
+      );
+    }
+  }
+
+  void _submitSearch(String query) {
+    _debounce?.cancel();
+    _performSearch(query);
   }
 
   Future<void> _performSearch(String query) async {
     if (query.trim().isEmpty) return;
     final intent = analyzeSearchIntent(query.trim());
     if (intent.terms.isEmpty && intent.categorySlugs.isEmpty) {
+      setState(() {
+        _loading = false;
+        _searched = true;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'اكتب اسم دواء أو مادة فعالة أو عرضًا للبحث.',
+            context.read<LanguageProvider>().t('search_enter_query'),
             style: GoogleFonts.tajawal(),
           ),
           backgroundColor: AppColors.warning,
@@ -94,6 +126,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _symptomSearch = intent.isSymptomSearch;
       _relatedSearch = false;
       _loadingMore = false;
+      _loadMoreFailed = false;
     });
     try {
       final categoryIds = intent.categorySlugs.isEmpty
@@ -155,7 +188,11 @@ class _SearchScreenState extends State<SearchScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            friendlyError(e, fallback: 'تعذّر إجراء البحث. حاول مرة أخرى.'),
+            friendlyError(
+              e,
+              fallback: context.read<LanguageProvider>().t('search_failed'),
+              translate: context.read<LanguageProvider>().t,
+            ),
             style: GoogleFonts.tajawal(),
           ),
           backgroundColor: AppColors.error,
@@ -172,6 +209,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _loadMoreProducts() async {
     if (_loading || _loadingMore || !_hasMoreProducts) return;
     _loadingMore = true;
+    _loadMoreFailed = false;
     final seq = _searchSeq;
     setState(() {});
     try {
@@ -187,10 +225,14 @@ class _SearchScreenState extends State<SearchScreen> {
         _productTotal = page.total;
         _hasMoreProducts = _productResults.length < _productTotal;
         _loadingMore = false;
+        _loadMoreFailed = false;
       });
     } catch (e) {
       if (!mounted || seq != _searchSeq) return;
-      setState(() => _loadingMore = false);
+      setState(() {
+        _loadingMore = false;
+        _loadMoreFailed = true;
+      });
     }
   }
 
@@ -210,6 +252,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _productTotal = 0;
       _hasMoreProducts = false;
       _loadingMore = false;
+      _loadMoreFailed = false;
       _pharmacyResults = [];
     });
   }
@@ -224,6 +267,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
@@ -237,7 +281,7 @@ class _SearchScreenState extends State<SearchScreen> {
           style: GoogleFonts.tajawal(color: Colors.white),
           onChanged: _onSearchChanged,
           decoration: InputDecoration(
-            hintText: 'دواء، مادة فعالة، شركة أو باركود',
+            hintText: lang.t('search_hint'),
             hintStyle: GoogleFonts.tajawal(color: Colors.white70),
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
@@ -256,12 +300,12 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 IconButton(
                   icon: const Icon(Icons.search, color: Colors.white),
-                  onPressed: () => _performSearch(_searchCtrl.text),
+                  onPressed: () => _submitSearch(_searchCtrl.text),
                 ),
               ],
             ),
           ),
-          onSubmitted: _performSearch,
+          onSubmitted: _submitSearch,
         ),
       ),
       body: Column(
@@ -287,9 +331,10 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchNotice() {
-    final notice = _symptomSearch
-        ? 'هذه نتائج بحث عامة وليست تشخيصًا أو وصفة طبية. يعتمد اختيار الدواء على حالتك وأدويتك الأخرى؛ استشر الصيدلي أو الطبيب عند الحاجة.'
-        : 'أظهرنا أيضًا منتجات تحتوي على المادة الفعالة نفسها لتسهيل مقارنة البدائل.';
+    final lang = context.watch<LanguageProvider>();
+    final notice = lang.t(
+      _symptomSearch ? 'search_safety_disclaimer' : 'search_substitutes_hint',
+    );
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 2),
@@ -331,7 +376,7 @@ class _SearchScreenState extends State<SearchScreen> {
           const CircularProgressIndicator(color: AppColors.primary),
           const SizedBox(height: 16),
           Text(
-            'جاري البحث...',
+            context.watch<LanguageProvider>().t('searching'),
             style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)),
           ),
         ],
@@ -346,9 +391,9 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildFilterChip('products', 'المنتجات'),
+          _buildFilterChip('products', context.watch<LanguageProvider>().t('home_search_results_products')),
           const SizedBox(width: 16),
-          _buildFilterChip('pharmacies', 'الصيدليات'),
+          _buildFilterChip('pharmacies', context.watch<LanguageProvider>().t('home_search_results_pharmacies')),
         ],
       ),
     );
@@ -392,7 +437,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'ابدأ البحث',
+            context.watch<LanguageProvider>().t('search_start'),
             style: GoogleFonts.tajawal(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -401,7 +446,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'اكتب اسم الدواء أو مادته الفعالة أو الشركة أو الباركود، أو صف ما تبحث عنه مثل: مسكن للصداع',
+            context.watch<LanguageProvider>().t('search_prompt'),
             style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)),
             textAlign: TextAlign.center,
           ),
@@ -429,7 +474,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'لا توجد نتائج',
+            context.watch<LanguageProvider>().t('search_no_results'),
             style: GoogleFonts.tajawal(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -438,7 +483,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'جرب كلمات بحث مختلفة',
+            context.watch<LanguageProvider>().t('search_try_different'),
             style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)),
           ),
         ],
@@ -464,9 +509,22 @@ class _SearchScreenState extends State<SearchScreen> {
         childAspectRatio: 0.72,
       ),
       // One extra cell while the next page is in flight, drawn as a spinner.
-      itemCount: _productResults.length + (_loadingMore ? 1 : 0),
+      itemCount: _productResults.length +
+          (_loadingMore || _loadMoreFailed ? 1 : 0),
       itemBuilder: (ctx, i) {
         if (i >= _productResults.length) {
+          if (_loadMoreFailed) {
+            return Center(
+              child: TextButton.icon(
+                onPressed: _loadMoreProducts,
+                icon: const Icon(Icons.refresh),
+                label: Text(
+                  context.read<LanguageProvider>().t('search_load_more_failed'),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
           return const Center(
             child: CircularProgressIndicator(
               color: AppColors.primary,
@@ -555,7 +613,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       ],
                       const SizedBox(height: 4),
                       Text(
-                        '${p.price.toStringAsFixed(0)} ج.م',
+                        '${p.price.toStringAsFixed(0)} ${context.watch<LanguageProvider>().t('currency')}',
                         style: GoogleFonts.tajawal(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w800,

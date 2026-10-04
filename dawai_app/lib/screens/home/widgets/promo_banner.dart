@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
+import '../../../providers/language_provider.dart';
 
 class PromoBanner extends StatelessWidget {
   final VoidCallback onShopNow;
@@ -9,6 +11,7 @@ class PromoBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -33,9 +36,9 @@ class PromoBanner extends StatelessWidget {
                   child: const Icon(Icons.waving_hand_rounded, color: Colors.white, size: 36),
                 ),
                 const SizedBox(height: 12),
-                Text('أهلاً بيك في دوا!', style: GoogleFonts.tajawal(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+                Text(lang.t('home_welcome'), style: GoogleFonts.tajawal(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
-                Text('خصم ترحيبي خاص بيتك', style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.85), fontSize: 14)),
+                Text(lang.t('home_welcome_discount'), style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.85), fontSize: 14)),
               ],
             ),
           ),
@@ -53,7 +56,7 @@ class PromoBanner extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      Text('خصمك 15%', style: GoogleFonts.tajawal(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.accent)),
+                      Text(lang.t('home_discount_value'), style: GoogleFonts.tajawal(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.accent)),
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -65,7 +68,7 @@ class PromoBanner extends StatelessWidget {
                         child: Text('DAWAI15', style: GoogleFonts.tajawal(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.accent, letterSpacing: 3)),
                       ),
                       const SizedBox(height: 8),
-                      Text('على أول طلب لك', style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textMutedOf(context))),
+                      Text(lang.t('home_discount_first_order'), style: GoogleFonts.tajawal(fontSize: 13, color: AppColors.textMutedOf(context))),
                     ],
                   ),
                 ),
@@ -79,7 +82,7 @@ class PromoBanner extends StatelessWidget {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    child: Text('ابدأ التسوق', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 15)),
+                    child: Text(lang.t('home_start_shopping'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 15)),
                   ),
                 ),
               ],

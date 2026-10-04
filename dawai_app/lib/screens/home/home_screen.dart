@@ -5,8 +5,10 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
+import '../../providers/language_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/update_service.dart';
 import '../../models/pharmacy.dart';
@@ -133,8 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _loading = false;
           _hasError = true;
-          _errorMsg =
-              'فشل تحميل البيانات. تأكد من اتصال الإنترنت وحاول مرة أخرى.';
+          _errorMsg = 'home_data_load_failed';
         });
       }
     }
@@ -163,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'تعذّر الوصول إلى الميكروفون. تحقّق من إذن الميكروفون.',
+              context.read<LanguageProvider>().t('home_microphone_permission'),
               style: GoogleFonts.tajawal(),
             ),
             backgroundColor: AppColors.error,
@@ -185,7 +186,9 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _listening = false);
           _search(words);
         },
-        listenOptions: stt.SpeechListenOptions(localeId: 'ar_EG'),
+        listenOptions: stt.SpeechListenOptions(
+          localeId: context.read<LanguageProvider>().currentLocale.toString(),
+        ),
       );
     } catch (_) {
       if (mounted) {
@@ -193,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'تعذّر إجراء البحث الصوتي.',
+              context.read<LanguageProvider>().t('home_voice_search_failed'),
               style: GoogleFonts.tajawal(),
             ),
             backgroundColor: AppColors.error,
@@ -221,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'جاري فحص صورة الدواء واستخراج التفاصيل...',
+                context.read<LanguageProvider>().t('home_image_searching'),
                 style: GoogleFonts.tajawal(),
               ),
             ],
@@ -237,6 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _triggerEmergencySos() {
+    final lang = context.read<LanguageProvider>();
     showDialog(
       context: context,
       // The dialog's own context is named separately so the handler below can
@@ -260,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 10),
             Text(
-              'طوارئ الصيدليات 24/7',
+              lang.t('home_emergency_title'),
               style: GoogleFonts.tajawal(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
@@ -269,14 +273,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         content: Text(
-          'سيتم توصيلك فوراً بالخط الساخن للصيدلية الأقرب إليك للتوصيل السريع وتأمين الأدوية الحرجة.',
+          lang.t('home_emergency_message'),
           style: GoogleFonts.tajawal(fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: Text(
-              'إلغاء',
+              lang.t('cancel'),
               style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)),
             ),
           ),
@@ -294,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             icon: const Icon(Icons.phone_in_talk, size: 18),
             label: Text(
-              'اتصال عاجل',
+              lang.t('home_urgent_call'),
               style: GoogleFonts.tajawal(fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
@@ -378,6 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildErrorState() {
+    final lang = context.watch<LanguageProvider>();
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -398,7 +403,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'عذراً، حدث خطأ',
+              lang.t('home_error_title'),
               style: GoogleFonts.tajawal(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -406,7 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              _errorMsg,
+              lang.t(_errorMsg),
               style: GoogleFonts.tajawal(
                 fontSize: 14,
                 color: AppColors.textSecondaryOf(context),
@@ -418,7 +423,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: _loadData,
               icon: const Icon(Icons.refresh, size: 20),
               label: Text(
-                'إعادة المحاولة',
+                lang.t('retry'),
                 style: GoogleFonts.tajawal(fontWeight: FontWeight.w700),
               ),
             ),
@@ -429,29 +434,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHowItWorksSection(double padding) {
+    final lang = context.watch<LanguageProvider>();
     final steps = [
       {
         'icon': Icons.search_rounded,
-        'title': 'ابحث',
-        'desc': 'عن الدواء',
+        'title': 'home_step_search',
+        'desc': 'home_step_medicine',
         'color': AppColors.primary,
       },
       {
         'icon': Icons.compare_arrows_rounded,
-        'title': 'قارن',
-        'desc': 'الأسعار',
+        'title': 'home_step_compare',
+        'desc': 'home_step_prices',
         'color': AppColors.accent,
       },
       {
         'icon': Icons.shopping_cart_rounded,
-        'title': 'اطلب',
-        'desc': 'بضغطة زر',
+        'title': 'home_step_order',
+        'desc': 'home_step_one_tap',
         'color': AppColors.secondary,
       },
       {
         'icon': Icons.delivery_dining_rounded,
-        'title': 'استلم',
-        'desc': 'في بابك',
+        'title': 'home_step_receive',
+        'desc': 'home_step_at_door',
         'color': AppColors.success,
       },
     ];
@@ -473,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             Text(
-              'كيف يعمل التطبيق؟',
+              lang.t('home_how_it_works'),
               style: GoogleFonts.tajawal(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
@@ -506,7 +512,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            s['title'] as String,
+                            lang.t(s['title'] as String),
                             style: GoogleFonts.tajawal(
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
@@ -516,7 +522,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           Text(
-                            s['desc'] as String,
+                            lang.t(s['desc'] as String),
                             style: GoogleFonts.tajawal(
                               fontSize: 11,
                               color: AppColors.textMutedOf(context),
@@ -564,7 +570,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           Text(
-            'كيف يعمل التطبيق؟',
+            lang.t('home_how_it_works'),
             style: GoogleFonts.tajawal(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -573,7 +579,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'أربع خطوات بسيطة',
+            lang.t('home_four_simple_steps'),
             style: GoogleFonts.tajawal(
               fontSize: 12,
               color: AppColors.textMutedOf(context),
@@ -618,7 +624,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      s['title'] as String,
+                      lang.t(s['title'] as String),
                       style: GoogleFonts.tajawal(
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
@@ -628,7 +634,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     Text(
-                      s['desc'] as String,
+                      lang.t(s['desc'] as String),
                       style: GoogleFonts.tajawal(
                         fontSize: 11,
                         color: AppColors.textMutedOf(context),
@@ -646,24 +652,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTestimonialsSection(double padding) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lang = context.watch<LanguageProvider>();
     final reviews = [
       {
-        'name': 'أحمد محمد',
+        'name': 'home_testimonial_name_ahmed',
         'rating': 5.0,
-        'text': 'توصيل سريع جداً وأسعار معقولة. صار صيدليتي المفضلة!',
-        'avatar': 'أ',
+        'text': 'home_testimonial_text_ahmed',
       },
       {
-        'name': 'سارة العلي',
+        'name': 'home_testimonial_name_sara',
         'rating': 4.5,
-        'text': 'البحث بالصوت ممتاز وسهل الاستخدام. أنصح بالتطبيق.',
-        'avatar': 'س',
+        'text': 'home_testimonial_text_sara',
       },
       {
-        'name': 'خالد الحربي',
+        'name': 'home_testimonial_name_khaled',
         'rating': 5.0,
-        'text': 'قارنت الأسعار ولقيت أرخص صيدلية في منطقتي. شكراً دوا!',
-        'avatar': 'خ',
+        'text': 'home_testimonial_text_khaled',
       },
     ];
     return Padding(
@@ -672,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'ماذا يقول مستخدمونا',
+            lang.t('home_testimonials_title'),
             style: GoogleFonts.tajawal(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -681,7 +685,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'آراء حقيقية من عملاء دوا',
+            lang.t('home_testimonials_subtitle'),
             style: GoogleFonts.tajawal(
               fontSize: 13,
               color: AppColors.textMutedOf(context),
@@ -696,6 +700,7 @@ class _HomeScreenState extends State<HomeScreen> {
               separatorBuilder: (_, _) => const SizedBox(width: 12),
               itemBuilder: (ctx, i) {
                 final r = reviews[i];
+                final reviewName = lang.t(r['name'] as String);
                 return Container(
                   width: 280,
                   padding: const EdgeInsets.all(16),
@@ -720,7 +725,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               context,
                             ),
                             child: Text(
-                              r['avatar'] as String,
+                              reviewName.substring(0, 1),
                               style: GoogleFonts.tajawal(
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.primary,
@@ -733,7 +738,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  r['name'] as String,
+                                  reviewName,
                                   style: GoogleFonts.tajawal(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 13,
@@ -764,7 +769,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 10),
                       Expanded(
                         child: Text(
-                          r['text'] as String,
+                          lang.t(r['text'] as String),
                           style: GoogleFonts.tajawal(
                             fontSize: 12,
                             color: AppColors.textSecondaryOf(context),
@@ -785,29 +790,30 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTrustFeatures(double padding) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lang = context.watch<LanguageProvider>();
     final items = [
       {
         'icon': Icons.verified_user_rounded,
-        'title': 'صيدليات مرخصة',
-        'desc': '100% معتمدة',
+        'title': 'home_trusted_pharmacies',
+        'desc': 'home_certified',
         'color': AppColors.primary,
       },
       {
         'icon': Icons.attach_money_rounded,
-        'title': 'أسعار منافسة',
-        'desc': 'قارن واختار',
+        'title': 'home_competitive_prices',
+        'desc': 'home_compare_choose',
         'color': AppColors.accent,
       },
       {
         'icon': Icons.delivery_dining_outlined,
-        'title': 'توصيل سريع',
-        'desc': 'لحد بابك',
+        'title': 'home_fast_delivery',
+        'desc': 'home_to_your_door',
         'color': AppColors.secondary,
       },
       {
         'icon': Icons.support_agent_outlined,
-        'title': 'دعم 24/7',
-        'desc': 'وتساب وخط ساخن',
+        'title': 'home_support_247',
+        'desc': 'home_whatsapp_hotline',
         'color': AppColors.success,
       },
     ];
@@ -817,7 +823,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'لماذا دوا؟',
+            lang.t('home_why_dawai'),
             style: GoogleFonts.tajawal(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -870,7 +876,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                item['title'] as String,
+                                lang.t(item['title'] as String),
                                 style: GoogleFonts.tajawal(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 12,
@@ -880,7 +886,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               Text(
-                                item['desc'] as String,
+                                lang.t(item['desc'] as String),
                                 style: GoogleFonts.tajawal(
                                   fontSize: 10,
                                   color: AppColors.textMutedOf(context),

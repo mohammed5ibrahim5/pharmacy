@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../../../models/pharmacy.dart';
 import '../../../widgets/pharmacy_card.dart';
 import '../../../shared/widgets/loading_widget.dart';
+import '../../../providers/language_provider.dart';
 
 class PharmaciesSection extends StatefulWidget {
   final List<Pharmacy> pharmacies;
@@ -42,6 +44,7 @@ class _PharmaciesSectionState extends State<PharmaciesSection> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     if (widget.isLoading || widget.pharmacies.isEmpty) {
       if (!widget.isLoading) return const SizedBox.shrink();
       return Padding(
@@ -76,7 +79,12 @@ class _PharmaciesSectionState extends State<PharmaciesSection> {
       );
     }
 
-    final tabs = ['الأقرب إليك', 'الأعلى تقييماً', 'توصيل سريع', '24 ساعة'];
+    final tabs = [
+      lang.t('home_nearest_pharmacies_tab'),
+      lang.t('home_highest_rated_tab'),
+      lang.t('home_fast_delivery_tab'),
+      lang.t('common_open_24_hours'),
+    ];
     final filtered = _filteredPharmacies;
 
     return Padding(
@@ -90,12 +98,12 @@ class _PharmaciesSectionState extends State<PharmaciesSection> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'الصيدليات القريبة',
+                  lang.t('home_nearby_pharmacies'),
                   style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800),
                 ),
                 TextButton(
                   onPressed: () => context.push('/pharmacy-finder'),
-                  child: Text('الخريطة الحية', style: GoogleFonts.tajawal(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                  child: Text(lang.t('home_live_map'), style: GoogleFonts.tajawal(color: AppColors.primary, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),

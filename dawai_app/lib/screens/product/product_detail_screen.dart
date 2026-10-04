@@ -43,12 +43,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator(color: AppColors.primary)));
     }
     if (_hasError || _product == null) {
       return Scaffold(
-        appBar: AppBar(title: Text('خطأ', style: GoogleFonts.tajawal())),
+        appBar: AppBar(title: Text(lang.t('error'), style: GoogleFonts.tajawal())),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -59,14 +60,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 child: const Icon(Icons.error_outline_rounded, size: 48, color: AppColors.error),
               ),
               const SizedBox(height: 16),
-              Text('الدواء غير موجود', style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
+              Text(lang.t('product_not_found'), style: GoogleFonts.tajawal(fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
-              Text('تحقق من الاتصال بالإنترنت وحاول مرة أخرى', style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
+              Text(lang.t('common_error_loading'), style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context))),
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: _load,
                 icon: const Icon(Icons.refresh, size: 20),
-                label: Text('إعادة المحاولة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+                label: Text(lang.t('retry'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
               ),
             ],
           ),
@@ -75,7 +76,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
     final p = _product!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final lang = context.watch<LanguageProvider>();
     final productName = lang.isArabic || (p.nameEn?.trim().isEmpty ?? true)
         ? p.name
         : p.nameEn!.trim();
@@ -109,7 +109,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   child: Icon(Icons.share_rounded, size: 18, color: isDark ? AppColors.darkText : AppColors.textOf(context)),
                 ),
-                onPressed: () => SharePlus.instance.share(ShareParams(text: '${p.name} - ${p.price} ج.م')),
+                onPressed: () => SharePlus.instance.share(
+                  ShareParams(
+                    text: lang.t('product_share_price')
+                        .replaceFirst('{name}', productName)
+                        .replaceFirst('{price}', p.price.toStringAsFixed(0))
+                        .replaceFirst('{currency}', lang.t('currency')),
+                  ),
+                ),
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -156,7 +163,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(p.price.toStringAsFixed(0), style: GoogleFonts.tajawal(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.primary)),
-                          Text('ج.م', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
+                          Text(lang.t('currency'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
                         ],
                       ),
                     ],
@@ -169,11 +176,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     runSpacing: 8,
                     children: [
                       if (p.requiresPrescription)
-                        _buildBadge(Icons.warning_rounded, 'روشتة', AppColors.warning, AppColors.warningSurfaceOf(context)),
+                        _buildBadge(Icons.warning_rounded, lang.t('cart_prescription_badge'), AppColors.warning, AppColors.warningSurfaceOf(context)),
                       if (!p.isAvailable)
-                        _buildBadge(Icons.inventory_2_outlined, 'نفدت', AppColors.error, AppColors.errorSurfaceOf(context)),
+                        _buildBadge(Icons.inventory_2_outlined, lang.t('product_out_of_stock'), AppColors.error, AppColors.errorSurfaceOf(context)),
                       if (p.isAvailable && p.stockQuantity > 0 && p.stockQuantity <= 10)
-                        _buildBadge(Icons.inventory_rounded, 'متبقي ${p.stockQuantity}', AppColors.accent, AppColors.accentSurfaceOf(context)),
+                        _buildBadge(Icons.inventory_rounded, lang.t('product_stock_remaining').replaceFirst('{count}', '${p.stockQuantity}'), AppColors.accent, AppColors.accentSurfaceOf(context)),
                     ],
                   ),
 
@@ -254,7 +261,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             quantity: _quantity,
                           );
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text('تمت إضافة $_quantity للسلة', style: GoogleFonts.tajawal()),
+                        content: Text(lang.t('product_added_quantity').replaceFirst('{count}', '$_quantity'), style: GoogleFonts.tajawal()),
                         backgroundColor: AppColors.success,
                       ));
                     } : null,

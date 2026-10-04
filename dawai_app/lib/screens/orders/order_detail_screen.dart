@@ -40,7 +40,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (order == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('لم يتم العثور على هذا الطلب.', style: GoogleFonts.tajawal()),
+            content: Text(context.read<LanguageProvider>().t('order_not_found_message'), style: GoogleFonts.tajawal()),
             backgroundColor: AppColors.error,
           ),
         );
@@ -49,7 +49,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (!mounted) return;
       setState(() => _loading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyError(e, fallback: 'تعذّر تحميل تفاصيل الطلب.'), style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
+        SnackBar(content: Text(friendlyError(
+          e,
+          fallback: context.read<LanguageProvider>().t('order_load_failed'),
+          translate: context.read<LanguageProvider>().t,
+        ), style: GoogleFonts.tajawal()), backgroundColor: AppColors.error),
       );
     }
   }
@@ -69,9 +73,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: Text('تفاصيل الطلب', style: GoogleFonts.tajawal())),
+        appBar: AppBar(title: Text(lang.t('order_detail_title'), style: GoogleFonts.tajawal())),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -80,7 +85,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       // Covers both "no such order" and "the fetch failed" — previously this
       // was a dead end with no way to try again.
       return Scaffold(
-        appBar: AppBar(title: Text('تفاصيل الطلب', style: GoogleFonts.tajawal())),
+        appBar: AppBar(title: Text(lang.t('order_detail_title'), style: GoogleFonts.tajawal())),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -91,15 +96,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 child: const Icon(Icons.receipt_long_outlined, size: 48, color: AppColors.error),
               ),
               const SizedBox(height: 16),
-              Text('الطلب غير موجود', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 18)),
+              Text(lang.t('order_not_found_message'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 18)),
               const SizedBox(height: 8),
-              Text('قد يكون الطلب مرتبطاً بحساب آخر أو حُذف.',
+              Text(lang.t('order_not_found_hint'),
                   style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)), textAlign: TextAlign.center),
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: _load,
                 icon: const Icon(Icons.refresh_rounded, size: 20),
-                label: Text('إعادة المحاولة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+                label: Text(lang.t('retry'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
               ),
             ],
           ),
@@ -113,7 +118,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('طلب #${shortId(o.id)}', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        title: Text(lang.t('orders_order_number').replaceFirst('{number}', shortId(o.id)), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_forward_ios_rounded),
           onPressed: () => context.pop(),
@@ -141,7 +146,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(context.watch<LanguageProvider>().statusLabel(o.status), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 16, color: statusColor)),
-                          Text('تحديث مباشر حالة التوصيل', style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMutedOf(context))),
+                          Text(lang.t('order_tracking_live'), style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMutedOf(context))),
                         ],
                       ),
                     ],
@@ -169,8 +174,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('مندوب الصيدلية', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text(o.status == 'shipped' ? 'جاري التوصيل الآن' : 'في انتظار التأكيد', style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.bold)),
+                        Text(lang.t('order_courier'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(lang.t(o.status == 'shipped' ? 'order_delivering_now' : 'order_waiting_confirmation'), style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -178,7 +183,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     icon: const Icon(Icons.phone_rounded, color: AppColors.primary),
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('جاري الاتصال بمندوب التوصيل...', style: GoogleFonts.tajawal())),
+                        SnackBar(content: Text(lang.t('order_contacting_courier'), style: GoogleFonts.tajawal())),
                       );
                     },
                   ),
@@ -193,7 +198,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('المنتجات المطلوبة', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(lang.t('order_requested_products'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 15)),
                   const SizedBox(height: 12),
                   ...o.orders.map((item) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
@@ -210,12 +215,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item.product?.name ?? 'منتج', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 13)),
-                              Text('الكمية: ${item.quantity}', style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMutedOf(context))),
+                              Text(item.product?.name ?? lang.t('orders_product_singular'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(lang.t('order_quantity').replaceFirst('{count}', '${item.quantity}'), style: GoogleFonts.tajawal(fontSize: 11, color: AppColors.textMutedOf(context))),
                             ],
                           ),
                         ),
-                        Text('${item.totalPrice.toStringAsFixed(0)} ج.م', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14)),
+                        Text('${item.totalPrice.toStringAsFixed(0)} ${lang.t('currency')}', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14)),
                       ],
                     ),
                   )),
@@ -230,10 +235,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Widget _buildProgressStepper(String currentStatus) {
     final steps = [
-      {'status': 'pending', 'label': 'تأكيد الطلب'},
-      {'status': 'confirmed', 'label': 'مراجعة الصيدلي'},
-      {'status': 'shipped', 'label': 'جاري التوصيل'},
-      {'status': 'delivered', 'label': 'تم التسليم'},
+      {'status': 'pending', 'label': 'order_step_pending'},
+      {'status': 'confirmed', 'label': 'order_step_confirmed'},
+      {'status': 'shipped', 'label': 'order_step_shipped'},
+      {'status': 'delivered', 'label': 'order_step_delivered'},
     ];
 
     int activeIdx = 0;
@@ -259,7 +264,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                steps[i]['label']!,
+                context.watch<LanguageProvider>().t(steps[i]['label']!),
                 style: GoogleFonts.tajawal(
                   fontSize: 10,
                   fontWeight: isDone ? FontWeight.bold : FontWeight.normal,

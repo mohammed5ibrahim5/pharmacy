@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../config/theme.dart';
+import '../../../core/utils/category_localization.dart';
 import '../../../models/category.dart';
 import '../../../shared/widgets/loading_widget.dart';
+import '../../../providers/language_provider.dart';
 
 class CategoriesSection extends StatefulWidget {
   final List<Category> categories;
@@ -82,6 +85,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     // The strip starts on the left in LTR and on the right in RTL, so the
     // position of each arrow and the direction it points must follow the
     // reading direction — `offset` always counts toward the start edge.
@@ -153,7 +157,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'تصفح الأقسام',
+                            lang.t('home_browse_categories'),
                             style: GoogleFonts.tajawal(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -165,7 +169,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'تسوق حسب الفئة',
+                      lang.t('home_shop_by_category'),
                       style: GoogleFonts.tajawal(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -185,7 +189,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      'عرض الكل',
+                      lang.t('home_view_all'),
                       style: GoogleFonts.tajawal(
                         color: Colors.white,
                         fontSize: 12,
@@ -277,7 +281,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    cat.displayName,
+                                    localizedCategoryName(cat, lang),
                                     style: GoogleFonts.tajawal(
                                       color: Colors.white,
                                       fontSize: 12,
@@ -307,7 +311,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                                       ),
                                     ),
                                     child: Text(
-                                      '$count منتج',
+                                      lang.t('home_product_count').replaceFirst('{count}', '$count'),
                                       style: GoogleFonts.tajawal(
                                         color: Colors.white,
                                         fontSize: 10,

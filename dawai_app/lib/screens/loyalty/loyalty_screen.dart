@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../providers/language_provider.dart';
 
 class LoyaltyScreen extends StatelessWidget {
   const LoyaltyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        title: Text('نقاط الولاء', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+        title: Text(lang.t('loyalty_title'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -34,37 +37,37 @@ class LoyaltyScreen extends StatelessWidget {
                     child: const Icon(Icons.star_rounded, size: 36, color: Colors.white),
                   ),
                   const SizedBox(height: 12),
-                  Text('نقاطك الحالية', style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 14)),
+                  Text(lang.t('loyalty_current_points'), style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 14)),
                   const SizedBox(height: 4),
                   Text('0', style: GoogleFonts.tajawal(color: Colors.white, fontSize: 52, fontWeight: FontWeight.w900)),
-                  Text('نقطة', style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 16)),
+                  Text(lang.t('loyalty_unit_points'), style: GoogleFonts.tajawal(color: Colors.white.withValues(alpha: 0.9), fontSize: 16)),
                 ],
               ),
             ),
             const SizedBox(height: 28),
-            _buildSectionTitle(context, 'كيف تجمع النقاط؟'),
+            _buildSectionTitle(context, lang.t('loyalty_how_to_collect')),
             const SizedBox(height: 12),
-            _buildBenefitCard(context, Icons.shopping_cart_rounded, '1 نقطة لكل 10 ج.م صرف', 'مع كل طلب في التطبيق'),
+            _buildBenefitCard(context, Icons.shopping_cart_rounded, lang.t('loyalty_per_order'), lang.t('loyalty_each_order')),
             const SizedBox(height: 10),
-            _buildBenefitCard(context, Icons.star_rounded, '5 نقاط إضافية', 'عند تقييم الصيدلية'),
+            _buildBenefitCard(context, Icons.star_rounded, lang.t('loyalty_extra_points'), lang.t('loyalty_rate_pharmacy')),
             const SizedBox(height: 10),
-            _buildBenefitCard(context, Icons.card_giftcard, 'نقاط مزدوجة', 'في عيد ميلادك'),
+            _buildBenefitCard(context, Icons.card_giftcard, lang.t('loyalty_double_points'), lang.t('loyalty_on_birthday')),
             const SizedBox(height: 28),
-            _buildSectionTitle(context, 'كيف تستبدل النقاط؟'),
+            _buildSectionTitle(context, lang.t('loyalty_how_to_redeem')),
             const SizedBox(height: 12),
-            _buildBenefitCard(context, Icons.money_off_rounded, '100 نقطة = 10 ج.م خصم', 'خصم مباشر على طلبك'),
+            _buildBenefitCard(context, Icons.money_off_rounded, lang.t('loyalty_direct_discount'), lang.t('loyalty_order_discount')),
             const SizedBox(height: 10),
-            _buildBenefitCard(context, Icons.local_shipping_rounded, '50 نقطة = توصيل مجاني', 'لمرة واحدة'),
+            _buildBenefitCard(context, Icons.local_shipping_rounded, lang.t('loyalty_free_delivery_points'), lang.t('loyalty_once')),
             const SizedBox(height: 28),
-            _buildSectionTitle(context, 'مستويات الولاء'),
+            _buildSectionTitle(context, lang.t('loyalty_levels')),
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildLevelCard(context, Icons.star, 'برونزي', '0', AppColors.accent),
+                _buildLevelCard(context, Icons.star, lang.t('loyalty_bronze'), '0', AppColors.accent),
                 const SizedBox(width: 10),
-                _buildLevelCard(context, Icons.emoji_events, 'فضي', '200', AppColors.textMutedOf(context)),
+                _buildLevelCard(context, Icons.emoji_events, lang.t('loyalty_silver'), '200', AppColors.textMutedOf(context)),
                 const SizedBox(width: 10),
-                _buildLevelCard(context, Icons.emoji_events, 'ذهبي', '500', AppColors.accent),
+                _buildLevelCard(context, Icons.emoji_events, lang.t('loyalty_gold'), '500', AppColors.accent),
               ],
             ),
             const SizedBox(height: 40),
@@ -126,7 +129,7 @@ class LoyaltyScreen extends StatelessWidget {
             Icon(icon, size: 28, color: color),
             const SizedBox(height: 6),
             Text(name, style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.textOf(context))),
-            Text('$points نقطة', style: GoogleFonts.tajawal(fontSize: 10, color: AppColors.textMutedOf(context))),
+            Text(context.watch<LanguageProvider>().t('loyalty_points_count').replaceFirst('{count}', points), style: GoogleFonts.tajawal(fontSize: 10, color: AppColors.textMutedOf(context))),
           ],
         ),
       ),

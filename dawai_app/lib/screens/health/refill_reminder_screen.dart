@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../../config/theme.dart';
+import '../../i18n/ar.dart';
 import '../../providers/language_provider.dart';
 
 class RefillReminderScreen extends StatefulWidget {
@@ -31,7 +32,16 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
       setState(() {
         if (savedListJson != null) {
           final decoded = json.decode(savedListJson) as List;
-          _medications = decoded.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          _medications = decoded.map((e) {
+            final medication = Map<String, dynamic>.from(e as Map);
+            if (medication['dose'] == arTranslations['reminder_dose_unspecified']) {
+              medication['dose'] = null;
+            }
+            if (medication['frequency'] == arTranslations['reminder_as_needed']) {
+              medication['frequency'] = null;
+            }
+            return medication;
+          }).toList();
         }
       });
     } catch (e) {
@@ -120,7 +130,7 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
             const SizedBox(height: 24),
 
             // Medications
-            _buildSectionTitle('أدويتي'),
+            _buildSectionTitle(lang.t('reminder_my_medicines')),
             const SizedBox(height: 12),
             if (_medications.isEmpty)
               Padding(
@@ -155,7 +165,10 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(m['name'], style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, fontSize: 14)),
-                          Text('${m['dose']} - ${m['frequency']}', style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context))),
+                          Text(
+                            '${m['dose'] ?? lang.t('reminder_dose_unspecified')} - ${m['frequency'] ?? lang.t('reminder_as_needed')}',
+                            style: GoogleFonts.tajawal(fontSize: 12, color: AppColors.textMutedOf(context)),
+                          ),
                         ],
                       ),
                     ),
@@ -188,7 +201,7 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                   children: [
                     const Icon(Icons.add_rounded, color: AppColors.primary, size: 20),
                     const SizedBox(width: 8),
-                    Text('إضافة دواء', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    Text(lang.t('reminder_add_medicine'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700, color: AppColors.primary)),
                   ],
                 ),
               ),
@@ -203,37 +216,38 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
   void _showAddMedicationDialog() {
     final nameCtrl = TextEditingController();
     final doseCtrl = TextEditingController();
+    final lang = context.read<LanguageProvider>();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('إضافة دواء', style: GoogleFonts.tajawal(fontWeight: FontWeight.w800)),
+        title: Text(lang.t('reminder_add_medicine'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w800)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: InputDecoration(hintText: 'اسم الدواء', hintStyle: GoogleFonts.tajawal()),
+              decoration: InputDecoration(hintText: lang.t('reminder_medicine_name'), hintStyle: GoogleFonts.tajawal()),
               style: GoogleFonts.tajawal(),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: doseCtrl,
-              decoration: InputDecoration(hintText: 'الجرعة (مثلاً 500mg)', hintStyle: GoogleFonts.tajawal()),
+              decoration: InputDecoration(hintText: lang.t('reminder_dose_hint'), hintStyle: GoogleFonts.tajawal()),
               style: GoogleFonts.tajawal(),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: GoogleFonts.tajawal())),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(lang.t('cancel'), style: GoogleFonts.tajawal())),
           FilledButton(
             onPressed: () {
               if (nameCtrl.text.isNotEmpty) {
                 setState(() {
                   _medications.add({
                     'name': nameCtrl.text.trim(),
-                    'dose': doseCtrl.text.isNotEmpty ? doseCtrl.text.trim() : 'غير محدد',
-                    'frequency': 'حسب الحاجة',
+                    'dose': doseCtrl.text.isNotEmpty ? doseCtrl.text.trim() : null,
+                    'frequency': null,
                     'enabled': true,
                   });
                 });
@@ -241,7 +255,7 @@ class _RefillReminderScreenState extends State<RefillReminderScreen> {
                 Navigator.pop(ctx);
               }
             },
-            child: Text('إضافة', style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
+            child: Text(lang.t('reminder_add'), style: GoogleFonts.tajawal(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

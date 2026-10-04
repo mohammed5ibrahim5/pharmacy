@@ -4,11 +4,13 @@ import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../core/utils/direction.dart';
 import '../../services/api_service.dart';
 import '../../services/location_service.dart';
 import '../../models/pharmacy.dart';
+import '../../providers/language_provider.dart';
 
 class PharmacyFinderScreen extends StatefulWidget {
   const PharmacyFinderScreen({super.key});
@@ -75,7 +77,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'تعذّر تحميل الصيدليات. تحقّق من اتصالك بالإنترنت.';
+        _error = 'pharmacy_load_failed';
       });
     }
   }
@@ -135,6 +137,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Scaffold(
       backgroundColor: AppColors.backgroundOf(context),
       body: SafeArea(
@@ -162,7 +165,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               icon: Icon(_showMap ? Icons.list_rounded : Icons.map_rounded),
-              label: Text(_showMap ? 'القائمة' : 'الخريطة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+              label: Text(lang.t(_showMap ? 'home_show_list' : 'home_show_map'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
             ),
     );
   }
@@ -183,10 +186,10 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
               child: const Icon(Icons.wifi_off_rounded, size: 44, color: AppColors.error),
             ),
             const SizedBox(height: 16),
-            Text('مشكلة في التحميل', style: AppTypography.h3(context), textAlign: TextAlign.center),
+            Text(context.watch<LanguageProvider>().t('pharmacy_loading_problem'), style: AppTypography.h3(context), textAlign: TextAlign.center),
             const SizedBox(height: 8),
             Text(
-              _error ?? '',
+              _error == null ? '' : context.watch<LanguageProvider>().t(_error!),
               style: AppTypography.caption(context),
               textAlign: TextAlign.center,
             ),
@@ -194,7 +197,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
             ElevatedButton.icon(
               onPressed: _loadData,
               icon: const Icon(Icons.refresh_rounded, size: 20),
-              label: Text('إعادة المحاولة', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+              label: Text(context.watch<LanguageProvider>().t('retry'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -220,11 +223,11 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('الصيدليات القريبة', style: AppTypography.h2(context)),
+                Text(context.watch<LanguageProvider>().t('pharmacy_finder_title'), style: AppTypography.h2(context)),
                 Text(
                   // `_filtered` is only populated after `_applyFilters()`, so
                   // during the initial load this used to flash "0 صيدلية".
-                  _loading ? 'جاري التحميل...' : '${_filtered.length} صيدلية متاحة',
+                  _loading ? context.watch<LanguageProvider>().t('loading') : context.watch<LanguageProvider>().t('pharmacy_products_count_label').replaceFirst('{count}', '${_filtered.length}'),
                   style: AppTypography.caption(context),
                 ),
               ],
@@ -250,12 +253,12 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
           onChanged: (v) { _searchQuery = v; _applyFilters(); },
           style: GoogleFonts.tajawal(fontSize: 14, color: AppColors.textOf(context)),
           decoration: InputDecoration(
-            hintText: 'ابحث عن صيدلية...',
+            hintText: context.watch<LanguageProvider>().t('pharmacy_search_hint'),
             hintStyle: GoogleFonts.tajawal(color: AppColors.textMutedOf(context), fontSize: 14),
             prefixIcon: Icon(Icons.search_rounded, color: AppColors.textMutedOf(context), size: 22),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
-                    tooltip: 'مسح البحث',
+                    tooltip: context.watch<LanguageProvider>().t('common_clear_search'),
                     icon: const Icon(Icons.close_rounded, size: 20),
                     onPressed: () {
                       // Clearing the backing string alone left the typed text
@@ -284,22 +287,22 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          _buildChip('الكل', !_filterOpenNow && !_filterDelivery && !_filter24h, () {
+          _buildChip(context.watch<LanguageProvider>().t('common_all'), !_filterOpenNow && !_filterDelivery && !_filter24h, () {
             setState(() { _filterOpenNow = false; _filterDelivery = false; _filter24h = false; });
             _applyFilters();
           }),
           const SizedBox(width: 8),
-          _buildChip('مفتوح الآن', _filterOpenNow, () {
+          _buildChip(context.watch<LanguageProvider>().t('pharmacy_open_now'), _filterOpenNow, () {
             setState(() { _filterOpenNow = !_filterOpenNow; });
             _applyFilters();
           }),
           const SizedBox(width: 8),
-          _buildChip('يوصل', _filterDelivery, () {
+          _buildChip(context.watch<LanguageProvider>().t('pharmacy_delivers'), _filterDelivery, () {
             setState(() { _filterDelivery = !_filterDelivery; });
             _applyFilters();
           }),
           const SizedBox(width: 8),
-          _buildChip('24 ساعة', _filter24h, () {
+          _buildChip(context.watch<LanguageProvider>().t('common_open_24_hours'), _filter24h, () {
             setState(() { _filter24h = !_filter24h; });
             _applyFilters();
           }),
@@ -341,7 +344,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
         children: [
           const CircularProgressIndicator(color: AppColors.primary),
           const SizedBox(height: 16),
-          Text('جاري تحميل الصيدليات...', style: AppTypography.body(context)),
+          Text(context.watch<LanguageProvider>().t('pharmacy_loading'), style: AppTypography.body(context)),
         ],
       ),
     );
@@ -362,9 +365,9 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
               child: const Icon(Icons.local_pharmacy_outlined, size: 48, color: AppColors.primary),
             ),
             const SizedBox(height: 16),
-            Text('لا توجد صيدليات', style: AppTypography.h3(context)),
+            Text(context.watch<LanguageProvider>().t('pharmacy_no_results'), style: AppTypography.h3(context)),
             const SizedBox(height: 8),
-            Text('جرب البحث بكلمات مختلفة', style: AppTypography.caption(context)),
+            Text(context.watch<LanguageProvider>().t('pharmacy_try_different_search'), style: AppTypography.caption(context)),
           ],
         ),
       );
@@ -431,7 +434,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
                             color: AppColors.successSurfaceOf(context),
                             borderRadius: BorderRadius.circular(AppRadius.full),
                           ),
-                          child: Text('24 ساعة', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.success)),
+                          child: Text(context.watch<LanguageProvider>().t('common_open_24_hours'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.success)),
                         ),
                     ],
                   ),
@@ -478,7 +481,7 @@ class _PharmacyFinderScreenState extends State<PharmacyFinderScreen> {
                             children: [
                               const Icon(Icons.delivery_dining_rounded, size: 14, color: AppColors.info),
                               const SizedBox(width: 4),
-                              Text('توصيل', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.info)),
+                              Text(context.watch<LanguageProvider>().t('home_delivery'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.info)),
                             ],
                           ),
                         ),

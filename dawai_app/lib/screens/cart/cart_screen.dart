@@ -195,7 +195,11 @@ class _CartScreenState extends State<CartScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              friendlyError(e, fallback: lang.t('cart_order_failed')),
+              friendlyError(
+                e,
+                fallback: lang.t('cart_order_failed'),
+                translate: lang.t,
+              ),
               style: GoogleFonts.tajawal(),
             ),
             backgroundColor: AppColors.error,
@@ -313,7 +317,7 @@ class _CartScreenState extends State<CartScreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               children: [
                 ...grouped.entries.map((entry) {
-                  final pharmacyName = entry.value.first.pharmacyName ?? 'صيدلية غير معروفة';
+                  final pharmacyName = entry.value.first.pharmacyName ?? lang.t('common_unknown_pharmacy');
                   return _buildPharmacyGroup(pharmacyName, entry.value, state);
                 }),
                 const SizedBox(height: 16),
@@ -373,14 +377,14 @@ class _CartScreenState extends State<CartScreen> {
                 child: const Icon(Icons.shopping_cart_outlined, size: 64, color: AppColors.primary),
               ),
               const SizedBox(height: 24),
-              Text('السلة فارغة', style: AppTypography.h2(context)),
+              Text(context.watch<LanguageProvider>().t('cart_empty'), style: AppTypography.h2(context)),
               const SizedBox(height: 8),
-              Text('أضف بعض المنتجات للبدء في التسوق', style: AppTypography.body(context, color: AppColors.textMutedOf(context))),
+              Text(context.watch<LanguageProvider>().t('cart_empty_hint'), style: AppTypography.body(context, color: AppColors.textMutedOf(context))),
               const SizedBox(height: 28),
               ElevatedButton.icon(
                 onPressed: () => context.go('/'),
                 icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-                label: Text('تصفح المنتجات', style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
+                label: Text(context.watch<LanguageProvider>().t('orders_browse_products'), style: GoogleFonts.tajawal(fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -425,7 +429,7 @@ class _CartScreenState extends State<CartScreen> {
                 Expanded(
                   child: Text(pharmacyName, style: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
                 ),
-                Text('${items.length} منتج', style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
+                Text(context.watch<LanguageProvider>().t('home_product_count').replaceFirst('{count}', '${items.length}'), style: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textMutedOf(context))),
               ],
             ),
           ),
@@ -485,7 +489,7 @@ class _CartScreenState extends State<CartScreen> {
                       color: AppColors.warningSurfaceOf(context),
                       borderRadius: BorderRadius.circular(AppRadius.full),
                     ),
-                    child: Text('روشتة', style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.warning)),
+                    child: Text(lang.t('cart_prescription_badge'), style: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.warning)),
                   ),
                 ],
               ],
@@ -558,7 +562,7 @@ class _CartScreenState extends State<CartScreen> {
         maxLines: 2,
         style: GoogleFonts.tajawal(fontSize: 14),
         decoration: InputDecoration(
-          hintText: 'المنطقة، الشارع، رقم المبنى، الدور...',
+          hintText: context.watch<LanguageProvider>().t('cart_address_detail_hint'),
           hintStyle: GoogleFonts.tajawal(color: AppColors.textMutedOf(context), fontSize: 13),
           prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 20),
           border: InputBorder.none,
@@ -580,7 +584,7 @@ class _CartScreenState extends State<CartScreen> {
         maxLines: 2,
         style: GoogleFonts.tajawal(fontSize: 14),
         decoration: InputDecoration(
-          hintText: 'ملاحظات إضافية (اختياري)',
+          hintText: context.watch<LanguageProvider>().t('cart_notes_optional_hint'),
           hintStyle: GoogleFonts.tajawal(color: AppColors.textMutedOf(context), fontSize: 13),
           prefixIcon: const Icon(Icons.notes_outlined, color: AppColors.secondary, size: 20),
           border: InputBorder.none,

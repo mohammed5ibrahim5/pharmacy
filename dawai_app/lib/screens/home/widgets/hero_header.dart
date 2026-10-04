@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../../../config/theme.dart';
+import '../../../providers/language_provider.dart';
 
 class _DotPatternPainter extends CustomPainter {
   @override
@@ -43,6 +45,7 @@ class HeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     final w = MediaQuery.of(context).size.width;
     final isWide = w > 600;
     final padding = isWide ? 40.0 : 16.0;
@@ -66,7 +69,7 @@ class HeroHeader extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'خصم 15% على أول طلب — استخدم كود: DAWAI15',
+                    '${lang.t('banner_discount_title')} — ${lang.t('banner_discount_code')}',
                     style: GoogleFonts.tajawal(
                       color: Colors.white,
                       fontSize: 12,
@@ -159,7 +162,7 @@ class HeroHeader extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'دوا - Dawai',
+                                  lang.t('app_name'),
                                   style: GoogleFonts.tajawal(
                                     color: Colors.white,
                                     fontSize: 18,
@@ -167,7 +170,7 @@ class HeroHeader extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  'أقرب صيدلية في خدمتك 24/7',
+                                  lang.t('home_service_24_7'),
                                   style: GoogleFonts.tajawal(
                                     color: Colors.white.withValues(alpha: 0.85),
                                     fontSize: 11,
@@ -205,7 +208,7 @@ class HeroHeader extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'صيدلية طوارئ',
+                                  lang.t('home_emergency_pharmacy'),
                                   style: GoogleFonts.tajawal(
                                     color: Colors.white,
                                     fontSize: 11,
@@ -220,7 +223,7 @@ class HeroHeader extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'ابحث عن دوائك واطلبه الآن\nمن أقرب صيدلية مرخصة',
+                      lang.t('home_hero_copy'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.tajawal(
                         fontSize: isWide ? 28 : 22,
@@ -232,7 +235,7 @@ class HeroHeader extends StatelessWidget {
                     const SizedBox(height: 20),
                     _buildSearchBar(context),
                     const SizedBox(height: 14),
-                    _buildTrendingTags(),
+                    _buildTrendingTags(context),
                   ],
                 ),
               ),
@@ -244,6 +247,7 @@ class HeroHeader extends StatelessWidget {
   }
 
   Widget _buildSearchBar(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Container(
       height: 56,
       decoration: BoxDecoration(
@@ -277,7 +281,7 @@ class HeroHeader extends StatelessWidget {
                 color: AppColors.textOf(context),
               ),
               decoration: InputDecoration(
-                hintText: 'ابحث عن دواء أو صيدلية',
+                hintText: lang.t('home_search_medicine_pharmacy'),
                 hintStyle: GoogleFonts.tajawal(
                   color: AppColors.textMutedOf(context),
                   fontSize: 12,
@@ -330,14 +334,12 @@ class HeroHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildTrendingTags() {
-    final tags = [
-      'بنادول اكسترا',
-      'كونجستال',
-      'أوميجا 3',
-      'فيتامين سي',
-      'سيتامول',
-    ];
+  Widget _buildTrendingTags(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
+    final tags = List<String>.generate(
+      5,
+      (index) => lang.t('home_search_trending_${index + 1}'),
+    );
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(

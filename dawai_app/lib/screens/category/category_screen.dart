@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
+import '../../core/utils/category_localization.dart';
 import '../../services/api_service.dart';
 import '../../models/product.dart';
 import '../../models/category.dart';
 import '../../shared/widgets/loading_widget.dart';
 import '../../shared/widgets/load_more_on_scroll.dart';
+import '../../providers/language_provider.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String slug;
@@ -142,7 +145,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final catName = _currentCategory?.displayName ?? widget.slug;
+    final lang = context.watch<LanguageProvider>();
+    final catName = _currentCategory == null
+        ? widget.slug
+        : localizedCategoryName(_currentCategory!, lang);
     final catColor = AppColors.getCategoryColor(widget.slug);
 
     return Scaffold(
@@ -180,7 +186,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 color: Colors.white,
               ),
               onPressed: _toggleOtc,
-              tooltip: 'بدون وصفة طبية فقط',
+              tooltip: lang.t('category_otc_only'),
             ),
         ],
       ),
@@ -227,7 +233,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'فشل تحميل المنتجات',
+            context.watch<LanguageProvider>().t('category_load_failed'),
             style: GoogleFonts.tajawal(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -235,7 +241,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'تحقق من الاتصال بالإنترنت',
+            context.watch<LanguageProvider>().t('category_check_connection'),
             style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)),
           ),
           const SizedBox(height: 24),
@@ -243,7 +249,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             onPressed: _loadData,
             icon: const Icon(Icons.refresh, size: 20),
             label: Text(
-              'إعادة المحاولة',
+              context.watch<LanguageProvider>().t('retry'),
               style: GoogleFonts.tajawal(fontWeight: FontWeight.w700),
             ),
           ),
@@ -273,7 +279,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'لا توجد منتجات',
+              context.watch<LanguageProvider>().t('category_no_products'),
               style: GoogleFonts.tajawal(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -282,8 +288,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
             const SizedBox(height: 8),
             Text(
               _otcOnly
-                  ? 'لا توجد منتجات بدون وصفة طبية'
-                  : 'لم تُضف منتجات لهذه الفئة بعد',
+                  ? context.watch<LanguageProvider>().t('category_no_otc_products')
+                  : context.watch<LanguageProvider>().t('category_empty'),
               style: GoogleFonts.tajawal(color: AppColors.textMutedOf(context)),
               textAlign: TextAlign.center,
             ),
@@ -294,7 +300,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 _otcOnly ? Icons.filter_alt_off_outlined : Icons.search_rounded,
               ),
               label: Text(
-                _otcOnly ? 'عرض كل المنتجات' : 'استكشف منتجات أخرى',
+                context.watch<LanguageProvider>().t(
+                  _otcOnly ? 'category_show_all_products' : 'category_explore_other_products',
+                ),
                 style: GoogleFonts.tajawal(fontWeight: FontWeight.w700),
               ),
             ),
@@ -322,7 +330,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
           child: Row(
             children: [
               Text(
-                '$_total منتج',
+                context.watch<LanguageProvider>().t('home_product_count').replaceFirst('{count}', '$_total'),
                 style: GoogleFonts.tajawal(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -346,7 +354,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'بدون وصفة',
+                          context.watch<LanguageProvider>().t('category_otc_badge'),
                           style: GoogleFonts.tajawal(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -454,7 +462,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${p.price.toStringAsFixed(0)} ج.م',
+                              '${p.price.toStringAsFixed(0)} ${context.watch<LanguageProvider>().t('currency')}',
                               style: GoogleFonts.tajawal(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w800,

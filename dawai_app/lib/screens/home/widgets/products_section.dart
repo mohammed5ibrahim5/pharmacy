@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../config/theme.dart';
 import '../../../models/product.dart';
 import '../../../widgets/product_card.dart';
 import '../../../shared/widgets/loading_widget.dart';
+import '../../../providers/language_provider.dart';
 
 class ProductsSection extends StatelessWidget {
   final List<Product> products;
@@ -22,6 +24,7 @@ class ProductsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     if (isLoading) {
       return Padding(
         padding: const EdgeInsets.only(top: 24),
@@ -75,16 +78,16 @@ class ProductsSection extends StatelessWidget {
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(Icons.local_offer_outlined, size: 14, color: AppColors.primary),
                         const SizedBox(width: 4),
-                        Text('أحدث المنتجات', style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                        Text(lang.t('home_latest_products'), style: GoogleFonts.tajawal(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
                       ]),
                     ),
                     const SizedBox(height: 6),
-                    Text('الأدوية والمنتجات', style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800)),
+                    Text(lang.t('home_medicines_and_products'), style: GoogleFonts.tajawal(fontSize: 18, fontWeight: FontWeight.w800)),
                   ],
                 ),
                 TextButton(
                   onPressed: () => context.push('/search'),
-                  child: Text('تصفح الكل', style: GoogleFonts.tajawal(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                  child: Text(lang.t('home_browse_all'), style: GoogleFonts.tajawal(color: AppColors.primary, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -104,7 +107,7 @@ class ProductsSection extends StatelessWidget {
                   width: 160,
                   child: ProductCard(
                     product: p,
-                    badge: isNew ? 'جديد' : null,
+                    badge: isNew ? lang.t('common_recommended') : null,
                     badgeColor: isNew ? AppColors.success : null,
                   ),
                 );
