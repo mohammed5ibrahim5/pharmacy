@@ -83,11 +83,39 @@ jobs:
           groups: testers
 
   web-build:
-    name: Web - Build
+    name: Web - Lint, Test & Build
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: project
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Web build skipped"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: project/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      # Build needs no secrets: VITE_SUPABASE_* fall back to placeholders in
+      # src/lib/supabase.ts, so the bundle builds cleanly on a fresh checkout.
+      - name: Build
+        run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: project/dist
+          retention-days: 7

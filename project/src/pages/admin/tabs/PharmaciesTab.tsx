@@ -4,12 +4,12 @@ import {
   Clock, Shield, Loader2, Check, Copy, ExternalLink, Navigation, Link2,
   KeyRound, UserCog,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
-import { translateError } from '@/lib/errorMessages';
+import { translateError } from '@/lib/core/errorMessages';
 import {
   PHARMACY_SECTION_KEYS, PHARMACY_SECTIONS_META, type PharmacySectionKey,
-} from '@/lib/pharmacySections';
+} from '@/lib/pharmacy/pharmacySections';
 import { Field, Modal, ImageUrlField, inputClass, useToast } from './shared';
 import type { Pharmacy, PharmacyOwner } from '@/types';
 

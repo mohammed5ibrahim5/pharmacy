@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
-import { localizedError } from '@/lib/errorMessages';
+import { supabase } from '@/lib/core/supabase';
+import { localizedError } from '@/lib/core/errorMessages';
 
 // ===== ┘ê╪╢╪╣ ╪ز╪ش╪▒┘è╪ذ┘è ┘┘â┘ê╪» ╪د┘╪ز╪ص┘é┘é (OTP) ╪ذ╪»┘ê┘ ╪ح╪▒╪│╪د┘ SMS ╪ص┘é┘è┘é┘è =====
 // ╪د┘┘â┘ê╪» ┘è╪╕┘ç╪▒ ╪»╪د╪«┘ ╪د┘╪ز╪╖╪ذ┘è┘é╪î ┘ê╪د┘╪ز╪ص┘é┘é ┘è┘╪╣┘ّ┘ ╪ش┘╪│╪ر Supabase ╪ص┘é┘è┘é┘è╪ر (Anonymous).

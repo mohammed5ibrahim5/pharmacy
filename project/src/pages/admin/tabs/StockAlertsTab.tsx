@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BellRing, Trash2, Loader2, Pill } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
-import { notifyStockAvailable } from '@/lib/loyalty';
+import { notifyStockAvailable } from '@/lib/orders/loyalty';
 import { useToast, ConfirmModal } from './shared';
 
 type StockAlertRow = {

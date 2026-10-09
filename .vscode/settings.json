@@ -1,0 +1,35 @@
+{
+  // شغّل TypeScript/ESLint من نفس نسخة المشروع => مفيش تأخير ولا اختلاف عن CLI
+  "typescript.tsdk": "project/node_modules/typescript/lib",
+  "eslint.workingDirectories": ["project"],
+
+  // منع VS Code من مراقبة/بحث مجلدات الكاش الكبيرة (بطّأت الفتح والبحث قبل كده)
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.dart_tool/**": true,
+    "**/.gradle/**": true,
+    "**/temp_extracted/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.dart_tool": true,
+    "**/pubspec.lock": true,
+    "**/package-lock.json": true
+  },
+  "files.exclude": {
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  },
+
+  // إخفاء ملفات الكاش/السجلات عن الشجرة
+  "**/*.log": true,
+
+  "editor.formatOnSave": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "never"
+  }
+}

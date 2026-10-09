@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import type { Pharmacy, PharmacyOwner } from '@/types';
-import { fetchOwnerByUserId, fetchPharmacy, loginOwner, signOutOwner } from '@/lib/ownerAuth';
+import { fetchOwnerByUserId, fetchPharmacy, loginOwner, signOutOwner } from '@/lib/core/ownerAuth';
 
 interface PharmacyOwnerContextType {
   owner: PharmacyOwner | null;

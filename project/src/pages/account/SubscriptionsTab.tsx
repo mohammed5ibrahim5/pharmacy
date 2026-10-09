@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import {
   fetchSubscriptions,
   updateSubscription,
   updateSubscriptionSchedule,
   cancelSubscription,
   baseProductPrice,
-} from '@/lib/subscriptions';
-import type { ChronicSubscription } from '@/lib/subscriptions';
-import { localizedDate } from '@/lib/format';
+} from '@/lib/orders/subscriptions';
+import type { ChronicSubscription } from '@/lib/orders/subscriptions';
+import { localizedDate } from '@/lib/core/format';
 import {
   CalendarClock,
   CheckCircle2,

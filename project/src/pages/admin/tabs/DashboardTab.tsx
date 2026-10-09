@@ -4,7 +4,7 @@ import {
   BellRing, Sparkles, Activity, Loader2, Ban, MessageCircle, BadgePercent,
   Save, AlertTriangle, RefreshCw, Cross,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings, type WelcomePopupConfig } from '@/context/SettingsContext';
 import type { Pharmacy, Product } from '@/types';
 

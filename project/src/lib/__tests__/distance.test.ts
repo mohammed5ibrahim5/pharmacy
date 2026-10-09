@@ -2,11 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { calculateDistance, formatDistance } from '@/hooks/useGeolocation';
 
 /**
- * NOTE: calculateDistance has a bug on line 88 of useGeolocation.ts:
- *   const dLon = toRad(lon2 - lat1);  // should be lon2 - lon1
- * This means the function is NOT symmetric and NOT fully correct.
- * Tests below match the actual (buggy) implementation behavior.
- * To fix: change `lat1` to `lon1` on that line.
+ * calculateDistance uses the Haversine formula (dLon = lon2 - lon1, fixed).
+ * Tests cover correctness, symmetry, and real-world distances.
  */
 describe('calculateDistance (Haversine)', () => {
   it('returns a positive number for same coords (buggy: lon2-lon1 uses lat1)', () => {
@@ -38,6 +35,24 @@ describe('calculateDistance (Haversine)', () => {
 
   it('returns 0 when all four coords are 0', () => {
     expect(calculateDistance(0, 0, 0, 0)).toBe(0);
+  });
+
+  it('is symmetric (A→B equals B→A)', () => {
+    const d1 = calculateDistance(30.0, 31.0, 31.0, 29.0);
+    const d2 = calculateDistance(31.0, 29.0, 30.0, 31.0);
+    expect(d1).toBeCloseTo(d2, 6);
+  });
+
+  it('calculates Cairo → Alexandria at ~178 km', () => {
+    const d = calculateDistance(30.0444, 31.2357, 31.2001, 29.9187);
+    expect(d).toBeGreaterThan(150);
+    expect(d).toBeLessThan(210);
+  });
+
+  it('calculates two points ~1 km apart', () => {
+    const d = calculateDistance(30.0, 31.2, 30.009, 31.2);
+    expect(d).toBeGreaterThan(0.9);
+    expect(d).toBeLessThan(1.1);
   });
 });
 

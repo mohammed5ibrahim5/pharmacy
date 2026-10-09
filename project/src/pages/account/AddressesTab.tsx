@@ -11,7 +11,7 @@ import {
 export function AddressesTab() {
   const { profile } = useCustomer();
   const { themeColors } = useSettings();
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
 
   const [addresses, setAddresses] = useState<AddressRecord[]>([]);
   const [addrTitle, setAddrTitle] = useState('');

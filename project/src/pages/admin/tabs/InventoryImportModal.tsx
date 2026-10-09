@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { AlertTriangle, CheckCircle2, FileSpreadsheet, Upload, X } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { Modal } from './shared';
 
 type ImportRow = Record<string, unknown>;

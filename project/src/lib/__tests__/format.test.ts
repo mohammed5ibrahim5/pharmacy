@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { localizedDate, localizedTime, localizedDateTime } from '@/lib/format';
+import { localizedDate, localizedTime, localizedDateTime } from '@/lib/core/format';
 
 const FIXED_DATE = '2025-06-15T14:30:00Z';
 

@@ -3,12 +3,12 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useRouter } from '@/context/RouterContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import type { Pharmacy, Product } from '@/types';
-import { ProductCard } from '@/components/ProductCard';
-import { PharmacyCard } from '@/components/PharmacyCard';
+import { ProductCard } from '@/components/product/ProductCard';
+import { PharmacyCard } from '@/components/pharmacy/PharmacyCard';
 import {
-  Heart, Pill, Store, RefreshCw, AlertTriangle, CheckCircle2,
+  Heart, Pill, Store, RefreshCw, AlertTriangle,
 } from 'lucide-react';
 
 export function FavoritesTab() {

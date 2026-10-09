@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, Loader2, Package, ShoppingCart, TrendingUp } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 
 interface Report { orders: number; delivered: number; revenue: number; top_products: Array<{ name: string; quantity: number; revenue: number }> }
 

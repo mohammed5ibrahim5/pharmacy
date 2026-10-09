@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Sparkles } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
 
 type LoyaltyTxRow = {

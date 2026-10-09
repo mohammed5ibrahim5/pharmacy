@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildWhatsAppLink } from '@/lib/whatsapp';
+import { buildWhatsAppLink } from '@/lib/core/whatsapp';
 
 describe('buildWhatsAppLink', () => {
   it('builds a basic link with no text', () => {

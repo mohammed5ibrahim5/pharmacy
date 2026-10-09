@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "▶ Run Web App (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/project/src",
+      "preLaunchTask": "Web: Run Dev Server",
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "🔍 Typecheck + Tests",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run typecheck && npm run test",
+      "cwd": "${workspaceFolder}/project"
+    }
+  ]
+}

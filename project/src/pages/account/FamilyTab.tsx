@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
-import { supabase } from '@/lib/supabase';
-import { localizedError } from '@/lib/errorMessages';
+import { supabase } from '@/lib/core/supabase';
+import { localizedError } from '@/lib/core/errorMessages';
 import type { FamilyMember } from '@/types';
 import {
   Users, Baby, Pencil, Save, Trash2, Plus, Loader2, CheckCircle2,

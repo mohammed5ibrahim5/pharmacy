@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Save } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
-import { CATEGORY_ICON_MAP, categoryColor, categoryIcon } from '@/lib/categoryStyles';
+import { CATEGORY_ICON_MAP, categoryColor, categoryIcon } from '@/lib/core/categoryStyles';
 import { Field, Modal, inputClass, useToast, ConfirmModal } from './shared';
 import type { Category } from '@/types';
 

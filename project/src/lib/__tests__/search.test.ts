@@ -5,7 +5,7 @@ import {
   levenshtein,
   smartSearch,
   findCheaperAlternatives,
-} from '@/lib/search';
+} from '@/lib/core/search';
 import type { Product } from '@/types';
 
 function makeProduct(overrides: Partial<Product> & { id: string; name: string }): Product {
@@ -113,6 +113,14 @@ describe('levenshtein', () => {
 
   it('handles completely different strings', () => {
     expect(levenshtein('abc', 'xyz')).toBe(3);
+  });
+
+  it('calculates substitution distance', () => {
+    expect(levenshtein('kitten', 'sitten')).toBe(1);
+  });
+
+  it('calculates mixed edit distance (saturday → sunday)', () => {
+    expect(levenshtein('saturday', 'sunday')).toBe(3);
   });
 });
 

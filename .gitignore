@@ -15,7 +15,11 @@ dawai_app/android/app/upload-keystore.jks
 *.keystore
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
 *.iml
 
@@ -25,3 +29,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Scratch / transient output
+project/typecheck.txt
+project/dev_output.txt
+dawai_app/temp_*

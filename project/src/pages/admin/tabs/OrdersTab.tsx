@@ -3,19 +3,19 @@ import {
   Package, Store, ShoppingCart, Layers, MapPin, Info, Wallet, Truck, Send,
   Printer, Image as ImageIcon, BellRing, Timer, Search as SearchIcon, Download, Coins,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
-import { translateError } from '@/lib/errorMessages';
-import { buildWhatsAppLink } from '@/lib/whatsapp';
+import { translateError } from '@/lib/core/errorMessages';
+import { buildWhatsAppLink } from '@/lib/core/whatsapp';
 import {
   ORDER_STATUSES, ORDER_STATUS_META,
-} from '@/lib/orders';
-import { PrivateLink } from '@/components/PrivateImage';
-import { InvoiceModal } from '@/components/InvoiceModal';
-import { insertNotification } from '@/lib/notifications';
-import { awardLoyaltyPoints } from '@/lib/loyalty';
+} from '@/lib/orders/orders';
+import { PrivateLink } from '@/components/ui/PrivateImage';
+import { InvoiceModal } from '@/components/modals/InvoiceModal';
+import { insertNotification } from '@/lib/core/notifications';
+import { awardLoyaltyPoints } from '@/lib/orders/loyalty';
 import type { Pharmacy, Product } from '@/types';
-import { soundAlert } from '@/lib/soundAlert';
+import { soundAlert } from '@/lib/core/soundAlert';
 import { useToast } from './shared';
 
 interface OrderRecord {

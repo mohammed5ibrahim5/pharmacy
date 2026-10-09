@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CalendarDays, PackagePlus, Save, X } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { Modal, inputClass } from './shared';
 
 interface Batch {

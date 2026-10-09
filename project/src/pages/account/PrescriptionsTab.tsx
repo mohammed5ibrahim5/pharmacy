@@ -3,23 +3,23 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useOrder } from '@/context/OrderContext';
-import { supabase } from '@/lib/supabase';
-import { localizedError } from '@/lib/errorMessages';
-import { localizedDate } from '@/lib/format';
-import { dataUrlToBlob } from '@/lib/invoice';
-import { buildWhatsAppLink } from '@/lib/whatsapp';
+import { supabase } from '@/lib/core/supabase';
+import { localizedError } from '@/lib/core/errorMessages';
+import { localizedDate } from '@/lib/core/format';
+import { dataUrlToBlob } from '@/lib/orders/invoice';
+import { buildWhatsAppLink } from '@/lib/core/whatsapp';
 import {
   PIPELINE_STATUS_META,
   type Prescription,
   submitPrescriptionVerification,
   respondPrescriptionClarification,
   deletePrescription,
-} from '@/lib/prescriptions';
+} from '@/lib/health/prescriptions';
 import {
   FileText, Phone, Send, Trash2, Camera, Loader2, Clock,
   MessageCircle, CheckCircle2,
 } from 'lucide-react';
-import { PrivateImage } from '@/components/PrivateImage';
+import { PrivateImage } from '@/components/ui/PrivateImage';
 import type { FamilyMember, Product } from '@/types';
 
 export function PrescriptionsTab() {

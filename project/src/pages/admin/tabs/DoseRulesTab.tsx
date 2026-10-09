@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Save, Info, Droplets, X, Calculator } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
-import type { DoseRule } from '@/lib/doseRules';
+import type { DoseRule } from '@/lib/health/doseRules';
 import { Field, inputClass, slugifyEn } from './shared';
 
 interface DoseFormRow { labelAr: string; kind: 'mgPer5ml' | 'mgPerMl'; amount: string; }

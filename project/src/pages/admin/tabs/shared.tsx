@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { X, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { ImageUploader } from '@/components/ImageUploader';
+import { ImageUploader } from '@/components/ui/ImageUploader';
 
 export const inputClass = "w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-transparent focus:ring-2 text-sm text-gray-900";
 

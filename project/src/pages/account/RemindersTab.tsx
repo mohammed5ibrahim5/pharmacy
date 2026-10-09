@@ -7,11 +7,11 @@ import {
   requestNotificationPermission,
   medicationRunOutInfo,
   computeRefillDate,
-} from '@/lib/loyalty';
+} from '@/lib/orders/loyalty';
 import type { MedicationReminder } from '@/types';
 import {
   Bell, Plus, Pill, Clock, Trash2, XCircle, CheckCircle2,
-  AlertTriangle, Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 
 const WEEKDAYS = [
@@ -26,7 +26,7 @@ const WEEKDAYS = [
 
 export function RemindersTab() {
   const { themeColors } = useSettings();
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
 
   const [reminders, setReminders] = useState<MedicationReminder[]>([]);
   const [remName, setRemName] = useState('');

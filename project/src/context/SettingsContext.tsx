@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import type { SiteSettings, HeaderConfig, FooterConfig, HeroConfig, StoreConfig, HowItWorksConfig, HomepageConfig } from '@/types';
-import type { PaymentConfig, CommissionConfig } from '@/lib/orders';
-import { DEFAULT_VERIFICATION_CONFIG, type VerificationConfig } from '@/lib/prescriptions';
+import type { PaymentConfig, CommissionConfig } from '@/lib/orders/orders';
+import { DEFAULT_VERIFICATION_CONFIG, type VerificationConfig } from '@/lib/health/prescriptions';
 
 export { DEFAULT_VERIFICATION_CONFIG };
 export type { VerificationConfig };
-export type { CommissionConfig } from '@/lib/orders';
+export type { CommissionConfig } from '@/lib/orders/orders';
 
 export interface ThemeColors {
   headerBg: string;

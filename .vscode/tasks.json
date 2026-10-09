@@ -1,0 +1,73 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Web: Run Dev Server",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}/project"
+      },
+      "isBackground": true,
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "showReuseMessage": false
+      },
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(VITE|vite|Starting development server).*",
+          "endsPattern": ".*Local:.*http://localhost.*"
+        }
+      }
+    },
+    {
+      "label": "Web: Build",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build"],
+      "options": { "cwd": "${workspaceFolder}/project" },
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": ["$tsc", "$eslint-stylish"]
+    },
+    {
+      "label": "Web: Typecheck",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "typecheck"],
+      "options": { "cwd": "${workspaceFolder}/project" },
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Web: Test",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "test"],
+      "options": { "cwd": "${workspaceFolder}/project" },
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Web: Lint",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "lint"],
+      "options": { "cwd": "${workspaceFolder}/project" },
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": ["$eslint-stylish"]
+    }
+  ]
+}

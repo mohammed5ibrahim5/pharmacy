@@ -4,7 +4,7 @@ import {
   Truck, ShieldCheck, Shield, Users, Star, Zap, FileText, Store, Info, Save, Check,
   BadgePercent, BellRing, Bell, Baby, Scale, Coins,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import {
   useSettings, DEFAULT_THEME_COLORS, DEFAULT_HEADER_CONFIG, DEFAULT_FOOTER_CONFIG,
   DEFAULT_HERO_CONFIG, DEFAULT_HOW_IT_WORKS_CONFIG, DEFAULT_PAYMENT_CONFIG,
@@ -13,9 +13,9 @@ import {
   type ThemeColors, type LoyaltyConfig, type FeaturesConfig, type WelcomePopupConfig,
   type CommissionConfig,
 } from '@/context/SettingsContext';
-import { translateError } from '@/lib/errorMessages';
-import { HERO_BADGE_ICON_MAP, heroBadgeIcon } from '@/lib/heroBadges';
-import { ImageUploader } from '@/components/ImageUploader';
+import { translateError } from '@/lib/core/errorMessages';
+import { HERO_BADGE_ICON_MAP, heroBadgeIcon } from '@/lib/core/heroBadges';
+import { ImageUploader } from '@/components/ui/ImageUploader';
 import { Field, SettingsSection, Toggle, FeatureToggle, ColorField, ImageUrlField, inputClass, withAlphaHex, useToast, ConfirmModal } from './shared';
 import type { SiteSettings, FooterConfig, HeroConfig, HowItWorksConfig, HomepageConfig } from '@/types';
 

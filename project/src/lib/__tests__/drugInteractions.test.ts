@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { identifyProductGroups, checkCartInteractions } from '@/lib/drugInteractions';
+import { identifyProductGroups, checkCartInteractions } from '@/lib/health/drugInteractions';
 import type { Product } from '@/types';
 
 function makeProduct(overrides: Partial<Product> & { id: string; name: string }): Product {
@@ -82,6 +82,18 @@ describe('identifyProductGroups', () => {
   it('returns empty for unknown product', () => {
     const p = makeProduct({ id: '1', name: 'Vitamin C' });
     expect(identifyProductGroups(p)).toEqual([]);
+  });
+
+  it('identifies NSAID by active ingredient', () => {
+    const p = makeProduct({ id: '1', name: 'Unknown Brand', active_ingredient: 'Ibuprofen 400mg' });
+    expect(identifyProductGroups(p)).toContain('nsaid');
+  });
+
+  it('identifies multiple groups for combination products', () => {
+    const p = makeProduct({ id: '1', name: 'كونجستال' });
+    const groups = identifyProductGroups(p);
+    expect(groups).toContain('paracetamol');
+    expect(groups.length).toBeGreaterThanOrEqual(1);
   });
 });
 

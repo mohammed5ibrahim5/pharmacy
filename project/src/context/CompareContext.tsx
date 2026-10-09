@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { CheckCircle2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useLanguage } from '@/context/LanguageContext';
 import type { Pharmacy, Product } from '@/types';
 

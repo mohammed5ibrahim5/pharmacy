@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users, Search, Trash2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { inputClass, useToast, ConfirmModal } from './shared';
 

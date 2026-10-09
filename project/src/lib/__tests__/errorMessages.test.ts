@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { translateError, localizedError } from '@/lib/errorMessages';
+import { translateError, localizedError } from '@/lib/core/errorMessages';
 
 describe('translateError', () => {
   it('returns default for null input', () => {

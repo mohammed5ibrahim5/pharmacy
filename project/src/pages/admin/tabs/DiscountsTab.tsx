@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { TrendingDown, Plus, Edit2, Trash2, Eye, EyeOff, Save } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { Field, Modal, inputClass, useToast, ConfirmModal } from './shared';
 import type { Pharmacy, Product, Discount } from '@/types';

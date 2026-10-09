@@ -1,5 +1,5 @@
 import { useLanguage } from '@/context/LanguageContext';
-import { CheckCircle2, XCircle, Truck } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { ORDER_TRACK_STEPS } from './types';
 
 export function OrderProgressTracker({ status, color }: { status: string; color: string }) {

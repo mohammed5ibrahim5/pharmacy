@@ -5,18 +5,18 @@ import {
   ClipboardList, CircleAlert, TriangleAlert, Fingerprint, Stethoscope,
   CreditCard, Banknote, Info, MessageCircle,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { useAuth } from '@/context/AuthContext';
-import { translateError } from '@/lib/errorMessages';
-import { buildWhatsAppLink } from '@/lib/whatsapp';
-import { ORDER_STATUS_META, PAYMENT_METHOD_LABEL, type PaymentMethod } from '@/lib/orders';
-import { PrivateImage } from '@/components/PrivateImage';
+import { translateError } from '@/lib/core/errorMessages';
+import { buildWhatsAppLink } from '@/lib/core/whatsapp';
+import { ORDER_STATUS_META, PAYMENT_METHOD_LABEL, type PaymentMethod } from '@/lib/orders/orders';
+import { PrivateImage } from '@/components/ui/PrivateImage';
 import {
   PIPELINE_STATUS_META, RISK_LEVEL_META, type Prescription, type PipelineStatus,
   deletePrescription, approvePrescription, rejectPrescription, requestClarification,
   recordDispense, validateNationalId, fetchAuditLog, fetchDoctors, saveDoctor, deleteDoctor,
-} from '@/lib/prescriptions';
+} from '@/lib/health/prescriptions';
 import { useToast, ConfirmModal } from './shared';
 
 export function PrescriptionsTab() {

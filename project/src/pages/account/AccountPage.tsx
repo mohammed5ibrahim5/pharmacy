@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useSettings } from '@/context/SettingsContext';
@@ -16,21 +16,19 @@ import { FavoritesTab } from './FavoritesTab';
 import { SubscriptionsTab } from './SubscriptionsTab';
 import { EditProfileModal } from './EditProfileModal';
 import { OrderTrackingModal } from './OrderTrackingModal';
-import { OrderReviewModal } from '@/components/OrderReviewModal';
+import { OrderReviewModal } from '@/components/modals/OrderReviewModal';
 import {
   ArrowLeft, PackageCheck, FileText, MapPin, Heart, User,
-  Sparkles, LogOut, Pencil, ShieldCheck, Truck, Bell, Users,
-  CheckCircle2, CalendarClock,
+  Sparkles, LogOut, Pencil, ShieldCheck, Bell, Users,
+  CalendarClock,
 } from 'lucide-react';
 
 export function AccountPage({ tab }: { tab: AccountTab }) {
   const { user, profile, setAuthModalOpen, signOut } = useCustomer();
-  const { settings, themeColors, loyaltyConfig, featuresConfig, subscriptionConfig } = useSettings();
+  const { themeColors, loyaltyConfig, featuresConfig, subscriptionConfig } = useSettings();
   const { navigate } = useRouter();
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const {
-    favoriteProducts,
-    favoritePharmacies,
     productFavoritesCount,
     pharmacyFavoritesCount,
   } = useFavorites();
@@ -38,8 +36,6 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [trackingOrder, setTrackingOrder] = useState<OrderRecord | null>(null);
   const [reviewOrder, setReviewOrder] = useState<OrderRecord | null>(null);
-
-  const [toast, setToast] = useState<string | null>(null);
 
   if (!user) {
     return (
@@ -83,13 +79,6 @@ export function AccountPage({ tab }: { tab: AccountTab }) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-slate-900 text-white text-xs font-black px-6 py-3.5 rounded-full shadow-2xl animate-bounce-in flex items-center gap-2 border border-slate-800">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-pulse" />
-          {toast}
-        </div>
-      )}
-
       <div
         className="relative rounded-[2.5rem] text-white overflow-hidden shadow-xl border border-white/10 mb-8"
         style={{ background: `linear-gradient(135deg, ${themeColors.primaryColor}, ${themeColors.secondaryColor})` }}

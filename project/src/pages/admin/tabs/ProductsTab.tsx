@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Package, Plus, Edit2, Trash2, Search, Save, Check, Info, FileSpreadsheet, PackagePlus } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
-import { translateError } from '@/lib/errorMessages';
-import { notifyStockAvailable } from '@/lib/loyalty';
+import { translateError } from '@/lib/core/errorMessages';
+import { notifyStockAvailable } from '@/lib/orders/loyalty';
 import { Field, Modal, ImageUrlField, inputClass, useToast, ConfirmModal } from './shared';
 import type { Pharmacy, Product, Category } from '@/types';
 import { InventoryImportModal } from './InventoryImportModal';

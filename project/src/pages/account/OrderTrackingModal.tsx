@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSettings } from '@/context/SettingsContext';
-import { supabase } from '@/lib/supabase';
-import { localizedDate } from '@/lib/format';
+import { supabase } from '@/lib/core/supabase';
+import { localizedDate } from '@/lib/core/format';
 import { X, Navigation, CheckCircle2, Phone, Clock3, AlertTriangle } from 'lucide-react';
 import { ORDER_TRACK_STEPS } from './types';
 import type { OrderRecord } from './types';

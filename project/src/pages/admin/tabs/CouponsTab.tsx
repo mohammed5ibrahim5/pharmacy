@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Ticket, Plus, Edit2, Trash2, Eye, EyeOff, Copy, Save } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
 import { Field, Modal, inputClass, useToast, ConfirmModal } from './shared';
 import type { Coupon } from '@/types';

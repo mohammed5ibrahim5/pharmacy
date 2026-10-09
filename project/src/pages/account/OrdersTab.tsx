@@ -4,21 +4,20 @@ import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
 import { useRouter } from '@/context/RouterContext';
 import { useOrder } from '@/context/OrderContext';
-import { supabase } from '@/lib/supabase';
-import { localizedError } from '@/lib/errorMessages';
-import { localizedDate } from '@/lib/format';
-import { buildWhatsAppLink } from '@/lib/whatsapp';
-import { createPaymentIntent, findOrderGroupStatus } from '@/lib/payments';
+import { supabase } from '@/lib/core/supabase';
+import { localizedError } from '@/lib/core/errorMessages';
+import { localizedDate } from '@/lib/core/format';
+import { buildWhatsAppLink } from '@/lib/core/whatsapp';
+import { createPaymentIntent, findOrderGroupStatus } from '@/lib/orders/payments';
 import type { FamilyMember } from '@/types';
 import { OrderProgressTracker } from './OrderProgressTracker';
 import {
-  PackageCheck, Search, X, Clock, CheckCircle2, Truck, Store,
+  PackageCheck, Search, X, Clock, CheckCircle2, Store,
   Pill, MapPin, Tag, Wallet, Info, Navigation, Star, CreditCard,
   Loader2, RefreshCw, AlertTriangle, AlertCircle, ExternalLink,
-  Sparkles, ShoppingCart, MessageCircle,
+  MessageCircle,
 } from 'lucide-react';
 import type { OrderRecord } from './types';
-import type { Product } from '@/types';
 import { STATUS_META } from './types';
 
 interface OrdersTabProps {
@@ -31,7 +30,7 @@ export function OrdersTab({ onTrackingOrder, onReviewOrder }: OrdersTabProps) {
   const { themeColors, featuresConfig, settings } = useSettings();
   const { t, lang } = useLanguage();
   const { navigate } = useRouter();
-  const { openOrder, addToCart, openCart } = useOrder();
+  const { openOrder } = useOrder();
 
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);

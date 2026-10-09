@@ -3,7 +3,7 @@ import {
   inventoryAgeHours,
   inventoryFreshnessLabel,
   isInventoryStale,
-} from '@/lib/inventoryFreshness';
+} from '@/lib/pharmacy/inventoryFreshness';
 
 const NOW = Date.parse('2026-10-03T12:00:00.000Z');
 

@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useCustomer } from '@/context/CustomerContext';
-import { fetchLoyaltyBalance, fetchLoyaltyHistory } from '@/lib/loyalty';
-import { localizedDate } from '@/lib/format';
-import { Sparkles, PackageCheck, Wallet, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { fetchLoyaltyBalance, fetchLoyaltyHistory } from '@/lib/orders/loyalty';
+import { localizedDate } from '@/lib/core/format';
+import { Sparkles, PackageCheck, Wallet, TrendingUp } from 'lucide-react';
 import type { LoyaltyTransaction } from '@/types';
 
 export function RewardsTab() {
@@ -14,8 +14,6 @@ export function RewardsTab() {
 
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [loyaltyHistory, setLoyaltyHistory] = useState<LoyaltyTransaction[]>([]);
-
-  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -36,12 +34,6 @@ export function RewardsTab() {
 
   return (
     <>
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[80] bg-slate-900 text-white text-xs font-black px-6 py-3.5 rounded-full shadow-2xl animate-bounce-in flex items-center gap-2 border border-slate-800">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-pulse" />
-          {toast}
-        </div>
-      )}
       <div className="space-y-5 animate-fade-up">
         <div className="flex items-center justify-between pb-3 border-b border-slate-200/60">
           <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">

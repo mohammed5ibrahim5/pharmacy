@@ -4,9 +4,9 @@ import {
   Loader2, AlertTriangle, BarChart3, SearchCheck, ScrollText, BadgePercent,
   PackageCheck, TrendingUp, Clock
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { useSettings } from '@/context/SettingsContext';
-import { ORDER_STATUS_META } from '@/lib/orders';
+import { ORDER_STATUS_META } from '@/lib/orders/orders';
 
 interface SeriesPoint { day: string; count: number }
 interface AnalyticsPayload {

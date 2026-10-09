@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { trackPageView } from '@/lib/analytics';
+import { trackPageView } from '@/lib/core/analytics';
 
 export type AccountTab = 'orders' | 'prescriptions' | 'addresses' | 'favorites' | 'rewards' | 'reminders' | 'family' | 'subscriptions';
 
@@ -27,7 +27,7 @@ const RouterContext = createContext<RouterContextType>({
 });
 
 function parseAccountTab(tab?: string): AccountTab {
-  if (tab === 'prescriptions' || tab === 'addresses' || tab === 'favorites' || tab === 'rewards' || tab === 'reminders' || tab === 'subscriptions') return tab;
+  if (tab === 'prescriptions' || tab === 'addresses' || tab === 'favorites' || tab === 'rewards' || tab === 'reminders' || tab === 'family' || tab === 'subscriptions') return tab;
   return 'orders';
 }
 
